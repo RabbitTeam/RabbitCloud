@@ -1,6 +1,5 @@
 ﻿using Echo.Common;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.FileProviders;
 using Rabbit.Rpc.Client.Address.Resolvers;
 using Rabbit.Rpc.Client.Address.Resolvers.Implementation;
 using Rabbit.Rpc.Client.Implementation;
@@ -23,12 +22,10 @@ namespace Echo.Client
     {
         private static void Main()
         {
-//            new PhysicalFileProvider("d:\\").Watch("routes.txt");
             //服务路由配置信息获取处（与Echo.Server为强制约束）。
             var configuration = new ConfigurationBuilder()
                 .SetBasePath("d:\\")
                 .AddJsonFile("routes.txt", false, true)
-//                .SetFileProvider(new PhysicalFileProvider("d:\\"))
                 .Build();
 
             //客户端基本服务。
@@ -54,6 +51,7 @@ namespace Echo.Client
                 {
                     try
                     {
+                        Console.WriteLine(DateTime.Now);
                         Console.WriteLine($"userService.GetUserName:{await userService.GetUserName(1)}");
                     }
                     catch
