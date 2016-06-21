@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Rabbit.Rpc.Client;
 using System;
 using System.Collections.Generic;
@@ -23,12 +24,12 @@ namespace Rabbit.Rpc.ProxyGenerator.Utilitys
                 MetadataReference.CreateFromFile(typeof(IRemoteInvokeService).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(IServiceProxyGenerater).Assembly.Location)
             }.Concat(references);
-            return Compile(AssemblyInfo.Create("Rabbit.Rpc.Proxys"), trees, references);
+            return Compile(AssemblyInfo.Create("Rabbit.Rpc.ClientProxys"), trees, references);
         }
 
         public static byte[] Compile(AssemblyInfo assemblyInfo, IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references)
         {
-            return Compile(assemblyInfo.Title + ".dll", assemblyInfo, trees, references);
+            return Compile(assemblyInfo.Title, assemblyInfo, trees, references);
         }
 
         public static byte[] Compile(string assemblyName, AssemblyInfo assemblyInfo, IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references)
@@ -70,12 +71,41 @@ namespace Rabbit.Rpc.ProxyGenerator.Utilitys
                                     QualifiedName(
                                         IdentifierName("System"),
                                         IdentifierName("Runtime")),
-                                    IdentifierName("InteropServices")))
+                                    IdentifierName("InteropServices"))),
+                            UsingDirective(
+                                QualifiedName(
+                                    QualifiedName(
+                                        IdentifierName("System"),
+                                        IdentifierName("Runtime")),
+                                    IdentifierName("Versioning")))
                         }))
                 .WithAttributeLists(
                     List(
                         new[]
                         {
+                            AttributeList(
+            SingletonSeparatedList(
+                Attribute(
+                    IdentifierName("TargetFramework"))
+                .WithArgumentList(
+                    AttributeArgumentList(
+                        SeparatedList<AttributeArgumentSyntax>(
+                            new SyntaxNodeOrToken[]{
+                                AttributeArgument(
+                                    LiteralExpression(
+                                        SyntaxKind.StringLiteralExpression,
+                                        Literal(".NETFramework,Version=v4.5"))),
+                                Token(SyntaxKind.CommaToken),
+                                AttributeArgument(
+                                    LiteralExpression(
+                                        SyntaxKind.StringLiteralExpression,
+                                        Literal(".NET Framework 4.5")))
+                                .WithNameEquals(
+                                    NameEquals(
+                                        IdentifierName("FrameworkDisplayName")))})))))
+        .WithTarget(
+            AttributeTargetSpecifier(
+                Token(SyntaxKind.AssemblyKeyword))),
                             AttributeList(
                                 SingletonSeparatedList(
                                     Attribute(

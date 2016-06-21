@@ -1,5 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Rabbit.Rpc.Ids.Implementation;
 using Rabbit.Rpc.ProxyGenerator;
@@ -12,7 +11,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Rabbit.Rpc.ClientGenerator
 {
@@ -62,9 +60,9 @@ namespace Rabbit.Rpc.ClientGenerator
                 switch (command)
                 {
                     case "1":
-                        var bytes = CompilationUtilitys.CompileClientProxy(getTrees(), Enumerable.Empty<MetadataReference>());
+                        var bytes = CompilationUtilitys.CompileClientProxy(getTrees(), assemblyFiles.Select(file => MetadataReference.CreateFromFile(file)));
                         {
-                            var fileName = Path.Combine(outputDirectory, "Rabbit.Rpc.Proxys.dll");
+                            var fileName = Path.Combine(outputDirectory, "Rabbit.Rpc.ClientProxys.dll");
                             File.WriteAllBytes(fileName, bytes);
                             Console.WriteLine($"生成成功，路径：{fileName}");
                         }
@@ -86,130 +84,6 @@ namespace Rabbit.Rpc.ClientGenerator
                         continue;
                 }
             }
-        }
-
-        private static SyntaxTree GetAssemblyInfo()
-        {
-            return CompilationUnit()
-                .WithUsings(
-                    List<UsingDirectiveSyntax>(
-                        new UsingDirectiveSyntax[]
-                        {
-                            UsingDirective(
-                                QualifiedName(
-                                    IdentifierName("System"),
-                                    IdentifierName("Reflection"))),
-                            UsingDirective(
-                                QualifiedName(
-                                    QualifiedName(
-                                        IdentifierName("System"),
-                                        IdentifierName("Runtime")),
-                                    IdentifierName("InteropServices")))
-                        }))
-                .WithAttributeLists(
-                    List<AttributeListSyntax>(
-                        new AttributeListSyntax[]
-                        {
-                            AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
-                                    Attribute(
-                                        IdentifierName("AssemblyTitle"))
-                                        .WithArgumentList(
-                                            AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
-                                                    AttributeArgument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.StringLiteralExpression,
-                                                            Literal("Rabbit.Rpc.Proxys"))))))))
-                                .WithTarget(
-                                    AttributeTargetSpecifier(
-                                        Token(SyntaxKind.AssemblyKeyword))),
-                            AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
-                                    Attribute(
-                                        IdentifierName("AssemblyProduct"))
-                                        .WithArgumentList(
-                                            AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
-                                                    AttributeArgument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.StringLiteralExpression,
-                                                            Literal("Rabbit.Rpc.Proxys"))))))))
-                                .WithTarget(
-                                    AttributeTargetSpecifier(
-                                        Token(SyntaxKind.AssemblyKeyword))),
-                            AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
-                                    Attribute(
-                                        IdentifierName("AssemblyCopyright"))
-                                        .WithArgumentList(
-                                            AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
-                                                    AttributeArgument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.StringLiteralExpression,
-                                                            Literal("Copyright ©  2016"))))))))
-                                .WithTarget(
-                                    AttributeTargetSpecifier(
-                                        Token(SyntaxKind.AssemblyKeyword))),
-                            AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
-                                    Attribute(
-                                        IdentifierName("ComVisible"))
-                                        .WithArgumentList(
-                                            AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
-                                                    AttributeArgument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.FalseLiteralExpression)))))))
-                                .WithTarget(
-                                    AttributeTargetSpecifier(
-                                        Token(SyntaxKind.AssemblyKeyword))),
-                            AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
-                                    Attribute(
-                                        IdentifierName("Guid"))
-                                        .WithArgumentList(
-                                            AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
-                                                    AttributeArgument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.StringLiteralExpression,
-                                                            Literal("30e88903-d3ca-4f26-b586-159242840443"))))))))
-                                .WithTarget(
-                                    AttributeTargetSpecifier(
-                                        Token(SyntaxKind.AssemblyKeyword))),
-                            AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
-                                    Attribute(
-                                        IdentifierName("AssemblyVersion"))
-                                        .WithArgumentList(
-                                            AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
-                                                    AttributeArgument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.StringLiteralExpression,
-                                                            Literal("1.0.0.0"))))))))
-                                .WithTarget(
-                                    AttributeTargetSpecifier(
-                                        Token(SyntaxKind.AssemblyKeyword))),
-                            AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
-                                    Attribute(
-                                        IdentifierName("AssemblyFileVersion"))
-                                        .WithArgumentList(
-                                            AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
-                                                    AttributeArgument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.StringLiteralExpression,
-                                                            Literal("1.0.0.0"))))))))
-                                .WithTarget(
-                                    AttributeTargetSpecifier(
-                                        Token(SyntaxKind.AssemblyKeyword)))
-                        }))
-                .NormalizeWhitespace()
-                .SyntaxTree;
         }
     }
 }

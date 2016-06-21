@@ -70,6 +70,14 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                 .WithUsings(GetUsings())
                 .WithMembers(
                     SingletonList<MemberDeclarationSyntax>(
+                        NamespaceDeclaration(
+                            QualifiedName(
+                                QualifiedName(
+                                    IdentifierName("Rabbit"),
+                                    IdentifierName("Rpc")),
+                                IdentifierName("ClientProxys")))
+                .WithMembers(
+                    SingletonList<MemberDeclarationSyntax>(
                         ClassDeclaration(className)
                             .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                             .WithBaseList(
@@ -81,7 +89,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                                             Token(SyntaxKind.CommaToken),
                                             SimpleBaseType(GetQualifiedNameSyntax(interfaceType))
                                         })))
-                            .WithMembers(List(members))))
+                            .WithMembers(List(members))))))
                 .NormalizeWhitespace().SyntaxTree;
         }
 
