@@ -18,9 +18,8 @@ namespace Rabbit.Rpc.ClientGenerator
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        private static void Main()
         {
-            //            assemblies
             var assemblyFiles =
                 Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assemblies"), "*.dll").ToArray();
             var assemblies = assemblyFiles.Select(i => Assembly.Load(File.ReadAllBytes(i))).ToArray();
@@ -97,7 +96,7 @@ namespace Rabbit.Rpc.ClientGenerator
                         {
                             var className = ((ClassDeclarationSyntax)((CompilationUnitSyntax)syntaxTree.GetRoot()).Members[0]).Identifier.Value;
                             var code = syntaxTree.ToString();
-                            var fileName = Path.Combine(outputDirectory, $"{className}ClientProxy.cs");
+                            var fileName = Path.Combine(outputDirectory, $"{className}.cs");
                             File.WriteAllText(fileName, code, Encoding.UTF8);
                             Console.WriteLine($"生成成功，路径：{fileName}");
                         }

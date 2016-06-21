@@ -66,6 +66,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         public SyntaxTree GenerateProxyTree(Type interfaceType)
         {
             var className = interfaceType.Name.StartsWith("I") ? interfaceType.Name.Substring(1) : interfaceType.Name;
+            className += "ClientProxy";
 
             var members = new List<MemberDeclarationSyntax>
             {
