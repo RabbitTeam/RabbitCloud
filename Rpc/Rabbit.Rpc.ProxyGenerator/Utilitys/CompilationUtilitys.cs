@@ -183,7 +183,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Utilitys
 
         #region Help Class
 
-        internal class AssemblyInfo
+        public class AssemblyInfo
         {
             public string Title { get; set; }
             public string Product { get; set; }
