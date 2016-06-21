@@ -1,99 +1,65 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Rabbit.Rpc.Ids.Implementation;
-using Rabbit.Rpc.ProxyGenerator;
-using Rabbit.Rpc.ProxyGenerator.Implementation;
-using Rabbit.Rpc.ProxyGenerator.Utilitys;
-using Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Attributes;
+using Rabbit.Rpc.Client;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
+using System.Threading.Tasks;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace Rabbit.Rpc.ClientGenerator
+namespace Rabbit.Rpc.ProxyGenerator.Utilitys
 {
-    internal class Program
+    public static class CompilationUtilitys
     {
-        private static void Main()
+        #region Public Method
+
+        public static byte[] CompileClientProxy(IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references)
         {
-            var assemblyFiles =
-                Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assemblies"), "*.dll").ToArray();
-            var assemblies = assemblyFiles.Select(i => Assembly.Load(File.ReadAllBytes(i))).ToArray();
-
-            IServiceProxyGenerater serviceProxyGenerater = new ServiceProxyGenerater(new DefaultServiceIdGenerator());
-
-            Console.WriteLine("成功加载了以下程序集");
-            foreach (var name in assemblies.Select(i => i.GetName().Name))
+            references = new[]
             {
-                Console.WriteLine(name);
-            }
+                MetadataReference.CreateFromFile(typeof(Task).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(ServiceDescriptor).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(IRemoteInvokeService).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(IServiceProxyGenerater).Assembly.Location)
+            }.Concat(references);
+            return Compile(AssemblyInfo.Create("Rabbit.Rpc.Proxys"), trees, references);
+        }
 
-            var services = assemblies
-                .SelectMany(assembly => assembly.GetExportedTypes())
-                .Where(i => i.IsInterface && i.GetCustomAttribute<RpcServiceAttribute>() != null);
+        public static byte[] Compile(AssemblyInfo assemblyInfo, IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references)
+        {
+            return Compile(assemblyInfo.Title + ".dll", assemblyInfo, trees, references);
+        }
 
-            while (true)
+        public static byte[] Compile(string assemblyName, AssemblyInfo assemblyInfo, IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references)
+        {
+            trees = trees.Concat(new[] { GetAssemblyInfo(assemblyInfo) });
+            var compilation = CSharpCompilation.Create(assemblyName, trees, references, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            using (var stream = new MemoryStream())
             {
-                Console.WriteLine("1.生成客户端代理程序集");
-                Console.WriteLine("2.生成客户端代理代码");
-
-                var command = Console.ReadLine();
-
-                Func<IEnumerable<SyntaxTree>> getTrees = () =>
+                var result = compilation.Emit(stream);
+                if (!result.Success)
                 {
-                    var trees = new List<SyntaxTree>();
-                    foreach (var service in services)
+                    foreach (var message in result.Diagnostics.Select(i => i.ToString()))
                     {
-                        trees.Add(serviceProxyGenerater.GenerateProxyTree(service));
+                        Console.WriteLine(message);
                     }
-                    return trees;
-                };
-
-                var outputDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "outputs");
-                if (!Directory.Exists(outputDirectory))
-                {
-                    Directory.CreateDirectory(outputDirectory);
+                    return null;
                 }
-
-                switch (command)
-                {
-                    case "1":
-                        var bytes = CompilationUtilitys.CompileClientProxy(getTrees(), Enumerable.Empty<MetadataReference>());
-                        {
-                            var fileName = Path.Combine(outputDirectory, "Rabbit.Rpc.Proxys.dll");
-                            File.WriteAllBytes(fileName, bytes);
-                            Console.WriteLine($"生成成功，路径：{fileName}");
-                        }
-                        break;
-
-                    case "2":
-                        foreach (var syntaxTree in getTrees())
-                        {
-                            var className = ((ClassDeclarationSyntax)((CompilationUnitSyntax)syntaxTree.GetRoot()).Members[0]).Identifier.Value;
-                            var code = syntaxTree.ToString();
-                            var fileName = Path.Combine(outputDirectory, $"{className}.cs");
-                            File.WriteAllText(fileName, code, Encoding.UTF8);
-                            Console.WriteLine($"生成成功，路径：{fileName}");
-                        }
-                        break;
-
-                    default:
-                        Console.WriteLine("无效的输入！");
-                        continue;
-                }
+                return stream.GetBuffer();
             }
         }
 
-        private static SyntaxTree GetAssemblyInfo()
+        #endregion Public Method
+
+        #region Private Method
+
+        private static SyntaxTree GetAssemblyInfo(AssemblyInfo info)
         {
             return CompilationUnit()
                 .WithUsings(
-                    List<UsingDirectiveSyntax>(
-                        new UsingDirectiveSyntax[]
+                    List(
+                        new[]
                         {
                             UsingDirective(
                                 QualifiedName(
@@ -107,103 +73,104 @@ namespace Rabbit.Rpc.ClientGenerator
                                     IdentifierName("InteropServices")))
                         }))
                 .WithAttributeLists(
-                    List<AttributeListSyntax>(
-                        new AttributeListSyntax[]
+                    List(
+                        new[]
                         {
                             AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
+                                SingletonSeparatedList(
                                     Attribute(
                                         IdentifierName("AssemblyTitle"))
                                         .WithArgumentList(
                                             AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
+                                                SingletonSeparatedList(
                                                     AttributeArgument(
                                                         LiteralExpression(
                                                             SyntaxKind.StringLiteralExpression,
-                                                            Literal("Rabbit.Rpc.Proxys"))))))))
+                                                            Literal(info.Title))))))))
                                 .WithTarget(
                                     AttributeTargetSpecifier(
                                         Token(SyntaxKind.AssemblyKeyword))),
                             AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
+                                SingletonSeparatedList(
                                     Attribute(
                                         IdentifierName("AssemblyProduct"))
                                         .WithArgumentList(
                                             AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
+                                                SingletonSeparatedList(
                                                     AttributeArgument(
                                                         LiteralExpression(
                                                             SyntaxKind.StringLiteralExpression,
-                                                            Literal("Rabbit.Rpc.Proxys"))))))))
+                                                            Literal(info.Product))))))))
                                 .WithTarget(
                                     AttributeTargetSpecifier(
                                         Token(SyntaxKind.AssemblyKeyword))),
                             AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
+                                SingletonSeparatedList(
                                     Attribute(
                                         IdentifierName("AssemblyCopyright"))
                                         .WithArgumentList(
                                             AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
+                                                SingletonSeparatedList(
                                                     AttributeArgument(
                                                         LiteralExpression(
                                                             SyntaxKind.StringLiteralExpression,
-                                                            Literal("Copyright ©  2016"))))))))
+                                                            Literal(info.Copyright))))))))
                                 .WithTarget(
                                     AttributeTargetSpecifier(
                                         Token(SyntaxKind.AssemblyKeyword))),
                             AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
+                                SingletonSeparatedList(
                                     Attribute(
                                         IdentifierName("ComVisible"))
                                         .WithArgumentList(
                                             AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
+                                                SingletonSeparatedList(
                                                     AttributeArgument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.FalseLiteralExpression)))))))
+                                                        LiteralExpression(info.ComVisible
+                                                            ? SyntaxKind.TrueLiteralExpression
+                                                            : SyntaxKind.FalseLiteralExpression)))))))
                                 .WithTarget(
                                     AttributeTargetSpecifier(
                                         Token(SyntaxKind.AssemblyKeyword))),
                             AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
+                                SingletonSeparatedList(
                                     Attribute(
                                         IdentifierName("Guid"))
                                         .WithArgumentList(
                                             AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
+                                                SingletonSeparatedList(
                                                     AttributeArgument(
                                                         LiteralExpression(
                                                             SyntaxKind.StringLiteralExpression,
-                                                            Literal("30e88903-d3ca-4f26-b586-159242840443"))))))))
+                                                            Literal(info.Guid))))))))
                                 .WithTarget(
                                     AttributeTargetSpecifier(
                                         Token(SyntaxKind.AssemblyKeyword))),
                             AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
+                                SingletonSeparatedList(
                                     Attribute(
                                         IdentifierName("AssemblyVersion"))
                                         .WithArgumentList(
                                             AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
+                                                SingletonSeparatedList(
                                                     AttributeArgument(
                                                         LiteralExpression(
                                                             SyntaxKind.StringLiteralExpression,
-                                                            Literal("1.0.0.0"))))))))
+                                                            Literal(info.Version))))))))
                                 .WithTarget(
                                     AttributeTargetSpecifier(
                                         Token(SyntaxKind.AssemblyKeyword))),
                             AttributeList(
-                                SingletonSeparatedList<AttributeSyntax>(
+                                SingletonSeparatedList(
                                     Attribute(
                                         IdentifierName("AssemblyFileVersion"))
                                         .WithArgumentList(
                                             AttributeArgumentList(
-                                                SingletonSeparatedList<AttributeArgumentSyntax>(
+                                                SingletonSeparatedList(
                                                     AttributeArgument(
                                                         LiteralExpression(
                                                             SyntaxKind.StringLiteralExpression,
-                                                            Literal("1.0.0.0"))))))))
+                                                            Literal(info.FileVersion))))))))
                                 .WithTarget(
                                     AttributeTargetSpecifier(
                                         Token(SyntaxKind.AssemblyKeyword)))
@@ -211,5 +178,36 @@ namespace Rabbit.Rpc.ClientGenerator
                 .NormalizeWhitespace()
                 .SyntaxTree;
         }
+
+        #endregion Private Method
+
+        #region Help Class
+
+        internal class AssemblyInfo
+        {
+            public string Title { get; set; }
+            public string Product { get; set; }
+            public string Copyright { get; set; }
+            public string Guid { get; set; }
+            public string Version { get; set; }
+            public string FileVersion { get; set; }
+            public bool ComVisible { get; set; }
+
+            public static AssemblyInfo Create(string name, string copyright = "Copyright ©  Rabbit", string version = "1.0.0.0")
+            {
+                return new AssemblyInfo
+                {
+                    Title = name,
+                    Product = name,
+                    Copyright = copyright,
+                    Guid = System.Guid.NewGuid().ToString("D"),
+                    ComVisible = false,
+                    Version = version,
+                    FileVersion = version
+                };
+            }
+        }
+
+        #endregion Help Class
     }
 }

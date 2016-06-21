@@ -99,6 +99,7 @@
     <Compile Include="IServiceProxyFactory.cs" />
     <Compile Include="IServiceProxyGenerater.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilitys\CompilationUtilitys.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -117,6 +118,7 @@
       <Name>Rabbit.Rpc</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

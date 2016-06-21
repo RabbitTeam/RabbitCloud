@@ -1,10 +1,10 @@
-using Microsoft.CodeAnalysis;
+ï»¿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Rabbit.Rpc.Ids;
+using Rabbit.Rpc.ProxyGenerator.Utilitys;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -32,37 +32,29 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         #region Implementation of IServiceProxyGenerater
 
         /// <summary>
-        /// Éú³É·şÎñ´úÀí¡£
+        /// ç”ŸæˆæœåŠ¡ä»£ç†ã€‚
         /// </summary>
-        /// <param name="interfacTypes">ĞèÒª±»´úÀíµÄ½Ó¿ÚÀàĞÍ¡£</param>
-        /// <returns>·şÎñ´úÀíÊµÏÖ¡£</returns>
+        /// <param name="interfacTypes">éœ€è¦è¢«ä»£ç†çš„æ¥å£ç±»å‹ã€‚</param>
+        /// <returns>æœåŠ¡ä»£ç†å®ç°ã€‚</returns>
         public IEnumerable<Type> GenerateProxys(IEnumerable<Type> interfacTypes)
         {
             var trees = interfacTypes.Select(GenerateProxyTree).ToList();
-            var compilation = CSharpCompilation.Create("Rabbit.Rpc.Proxys.dll", trees, AppDomain.CurrentDomain.GetAssemblies().Select(a => MetadataReference.CreateFromFile(a.Location)).Concat(new[]
-            {
-                MetadataReference.CreateFromFile(typeof(Task).Assembly.Location)
-            }), new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-            using (var stream = new MemoryStream())
-            {
-                var result = compilation.Emit(stream);
-                if (!result.Success)
-                {
-                    foreach (var message in result.Diagnostics.Select(i => i.ToString()))
+            var bytes = CompilationUtilitys.CompileClientProxy(trees,
+                AppDomain.CurrentDomain.GetAssemblies()
+                    .Select(a => MetadataReference.CreateFromFile(a.Location))
+                    .Concat(new[]
                     {
-                        Console.WriteLine(message);
-                    }
-                }
-                var assembly = Assembly.Load(stream.GetBuffer());
-                return assembly.GetExportedTypes();
-            }
+                        MetadataReference.CreateFromFile(typeof(Task).Assembly.Location)
+                    }));
+            var assembly = Assembly.Load(bytes);
+            return assembly.GetExportedTypes();
         }
 
         /// <summary>
-        /// Éú³É·şÎñ´úÀí´úÂëÊ÷¡£
+        /// ç”ŸæˆæœåŠ¡ä»£ç†ä»£ç æ ‘ã€‚
         /// </summary>
-        /// <param name="interfaceType">ĞèÒª±»´úÀíµÄ½Ó¿ÚÀàĞÍ¡£</param>
-        /// <returns>´úÂëÊ÷¡£</returns>
+        /// <param name="interfaceType">éœ€è¦è¢«ä»£ç†çš„æ¥å£ç±»å‹ã€‚</param>
+        /// <returns>ä»£ç æ ‘ã€‚</returns>
         public SyntaxTree GenerateProxyTree(Type interfaceType)
         {
             var className = interfaceType.Name.StartsWith("I") ? interfaceType.Name.Substring(1) : interfaceType.Name;
