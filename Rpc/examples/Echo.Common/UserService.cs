@@ -61,8 +61,6 @@ namespace Echo.Common
 
         public Task<bool> Update(int id, UserModel model)
         {
-            Console.WriteLine(model.Name);
-            Console.WriteLine(model.Age);
             return Task.FromResult(true);
         }
 

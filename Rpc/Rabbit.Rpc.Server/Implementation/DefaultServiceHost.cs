@@ -55,8 +55,8 @@ namespace Rabbit.Rpc.Server.Implementation
                 .ChildHandler(new ActionChannelInitializer<ISocketChannel>(channel =>
                 {
                     var pipeline = channel.Pipeline;
-                    pipeline.AddLast(new LengthFieldPrepender(2));
-                    pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
+                    pipeline.AddLast(new LengthFieldPrepender(4));
+                    pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
                     pipeline.AddLast(new ServerHandler(_serializer, _serviceEntryLocate));
                 }));
             _channel = await bootstrap.BindAsync(endPoint);

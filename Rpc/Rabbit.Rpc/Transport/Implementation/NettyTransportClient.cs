@@ -21,9 +21,10 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         private readonly EndPoint _endPoint;
         private readonly ISerializer _serialization;
-        private IChannel _channel;
 
         private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
+
+        private readonly Task<IChannel> _channel;
 
         #endregion Field
 
@@ -33,6 +34,7 @@ namespace Rabbit.Rpc.Transport.Implementation
         {
             _endPoint = endPoint;
             _serialization = serialization;
+            _channel = ConnectAsync();
         }
 
         #endregion Constructor
@@ -50,7 +52,7 @@ namespace Rabbit.Rpc.Transport.Implementation
             var data = Encoding.UTF8.GetBytes(content);
             var buffer = Unpooled.Buffer(data.Length);
             buffer.WriteBytes(data);
-            var channel = _channel = await ConnectAsync();
+            var channel = await _channel;
             await channel.WriteAndFlushAsync(buffer);
         }
 
@@ -92,8 +94,8 @@ namespace Rabbit.Rpc.Transport.Implementation
                 .Handler(new ActionChannelInitializer<ISocketChannel>(channel =>
                 {
                     var pipeline = channel.Pipeline;
-                    pipeline.AddLast(new LengthFieldPrepender(2));
-                    pipeline.AddLast(new LengthFieldBasedFrameDecoder(ushort.MaxValue, 0, 2, 0, 2));
+                    pipeline.AddLast(new LengthFieldPrepender(4));
+                    pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
 
                     pipeline.AddLast(new MessageReceiveHandler(_serialization, _resultDictionary));
                 }));
@@ -142,7 +144,7 @@ namespace Rabbit.Rpc.Transport.Implementation
         {
             Task.Run(async () =>
             {
-                await _channel.CloseAsync();
+                await (await _channel).CloseAsync();
             }).Wait();
         }
 
