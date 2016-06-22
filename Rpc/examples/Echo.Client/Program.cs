@@ -3,8 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Rabbit.Rpc.Client.Address.Resolvers;
 using Rabbit.Rpc.Client.Address.Resolvers.Implementation;
 using Rabbit.Rpc.Client.Implementation;
+using Rabbit.Rpc.Client.Routing;
 using Rabbit.Rpc.Client.Routing.Implementation;
 using Rabbit.Rpc.Convertibles.Implementation;
+using Rabbit.Rpc.Coordinate.Zookeeper;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.Ids.Implementation;
 using Rabbit.Rpc.ProxyGenerator;
@@ -14,7 +16,10 @@ using Rabbit.Rpc.Serialization.Implementation;
 using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Implementation;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Echo.Client
@@ -23,18 +28,35 @@ namespace Echo.Client
     {
         private static void Main()
         {
-            //服务路由配置信息获取处（与Echo.Server为强制约束）。
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath("d:\\")
-                .AddJsonFile("routes.txt", false, true)
-                .Build();
-
             //客户端基本服务。
             ISerializer serializer = new JsonSerializer();
             IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator();
-            var serviceRouteProvider = new DefaultServiceRouteProvider(configuration.GetSection("routes"));
+
+            var serviceRouteProviders = new List<IServiceRouteProvider>();
+
+            //文件约束
+            {
+                const string path = "d:\\routes.txt";
+                if (!File.Exists(path))
+                {
+                    File.WriteAllText(path, "{}", Encoding.UTF8);
+                }
+                //服务路由配置信息获取处（与Echo.Server为强制约束）。
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath("d:\\")
+                    .AddJsonFile("routes.txt", false, true)
+                    .Build();
+                serviceRouteProviders.Add(new DefaultServiceRouteProvider(configuration.GetSection("routes")));
+            }
+            //zookeeper
+            {
+                serviceRouteProviders.Add(
+                    new ZookeeperServiceRouteProvider(
+                        new ZookeeperServiceRouteProvider.ZookeeperConfigInfo("172.18.20.132:2181"), serializer));
+            }
+
             var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(serializer) });
-            var serviceRouteManager = new DefaultServiceRouteManager(new[] { serviceRouteProvider });
+            var serviceRouteManager = new DefaultServiceRouteManager(serviceRouteProviders);
             IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager);
             ITransportClientFactory transportClientFactory = new NettyTransportClientFactory(serializer);
             var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, serializer);

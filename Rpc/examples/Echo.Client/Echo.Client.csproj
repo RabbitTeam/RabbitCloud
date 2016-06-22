@@ -81,6 +81,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\extensions\coordinates\Rabbit.Rpc.Coordinate.Zookeeper\Rabbit.Rpc.Coordinate.Zookeeper.csproj">
+      <Project>{21bdbe34-ea86-498b-825d-3d2bd79e2a70}</Project>
+      <Name>Rabbit.Rpc.Coordinate.Zookeeper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Rabbit.Rpc.Client\Rabbit.Rpc.Client.csproj">
       <Project>{2B820548-4CDA-4E70-A05B-538B745D56E3}</Project>
       <Name>Rabbit.Rpc.Client</Name>

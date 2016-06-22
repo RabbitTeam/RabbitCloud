@@ -51,6 +51,23 @@ namespace Echo.Server
                 });
                 var configString = serializer.Serialize(new { routes = addressDescriptors });
                 File.WriteAllText("d:\\routes.txt", configString);
+                //zookeeper配置写入 /dotnet/serviceRoutes 为与client的约束
+                {
+/*                    using (var zookeeper = new ZooKeeper("172.18.20.132:2181", TimeSpan.FromSeconds(20), null))
+                    {
+                        if (zookeeper.Exists("/dotnet", false) == null)
+                            zookeeper.Create("/dotnet", null, Ids.CREATOR_ALL_ACL, CreateMode.Persistent);
+                        if (zookeeper.Exists("/dotnet/serviceRoutes", false) == null)
+                        {
+                            zookeeper.Create("/dotnet/serviceRoutes", Encoding.UTF8.GetBytes(configString), Ids.CREATOR_ALL_ACL,
+                                CreateMode.Persistent);
+                        }
+                        else
+                        {
+                            zookeeper.SetData("/dotnet/serviceRoutes", Encoding.UTF8.GetBytes(configString), -1);
+                        }
+                    }*/
+                }
             }
 
             IServiceHost serviceHost = new DefaultServiceHost(serializer, serviceEntryLocate);
