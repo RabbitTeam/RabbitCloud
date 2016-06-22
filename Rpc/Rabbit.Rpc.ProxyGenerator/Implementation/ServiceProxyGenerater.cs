@@ -130,6 +130,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                     UsingDirective(IdentifierName("System")),
                     UsingDirective(GetQualifiedNameSyntax("System.Threading.Tasks")),
                     UsingDirective(GetQualifiedNameSyntax("System.Collections.Generic")),
+                    UsingDirective(GetQualifiedNameSyntax("Rabbit.Rpc.Convertibles")),
                     UsingDirective(GetQualifiedNameSyntax("Rabbit.Rpc.Client")),
                     UsingDirective(GetQualifiedNameSyntax("Rabbit.Rpc.Serialization")),
                     UsingDirective(GetQualifiedNameSyntax("Rabbit.Rpc.ProxyGenerator.Implementation"))
@@ -154,7 +155,12 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                                     Parameter(
                                         Identifier("serializer"))
                                     .WithType(
-                                        IdentifierName("ISerializer"))})))
+                                        IdentifierName("ISerializer")),
+                                    Token(SyntaxKind.CommaToken),
+                                    Parameter(
+                                        Identifier("typeConvertibleService"))
+                                    .WithType(
+                                        IdentifierName("ITypeConvertibleService"))})))
                 .WithInitializer(
                         ConstructorInitializer(
                             SyntaxKind.BaseConstructorInitializer,
@@ -165,7 +171,10 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                                             IdentifierName("remoteInvokeService")),
                                         Token(SyntaxKind.CommaToken),
                                         Argument(
-                                            IdentifierName("serializer"))}))))
+                                            IdentifierName("serializer")),
+                                        Token(SyntaxKind.CommaToken),
+                                        Argument(
+                                            IdentifierName("typeConvertibleService"))}))))
                 .WithBody(Block());
         }
 

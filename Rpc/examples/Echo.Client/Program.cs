@@ -4,6 +4,7 @@ using Rabbit.Rpc.Client.Address.Resolvers;
 using Rabbit.Rpc.Client.Address.Resolvers.Implementation;
 using Rabbit.Rpc.Client.Implementation;
 using Rabbit.Rpc.Client.Routing.Implementation;
+using Rabbit.Rpc.Convertibles.Implementation;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.Ids.Implementation;
 using Rabbit.Rpc.ProxyGenerator;
@@ -32,6 +33,7 @@ namespace Echo.Client
             ISerializer serializer = new JsonSerializer();
             IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator();
             var serviceRouteProvider = new DefaultServiceRouteProvider(configuration.GetSection("routes"));
+            var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(serializer) });
             var serviceRouteManager = new DefaultServiceRouteManager(new[] { serviceRouteProvider });
             IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager);
             ITransportClientFactory transportClientFactory = new NettyTransportClientFactory(serializer);
@@ -40,7 +42,7 @@ namespace Echo.Client
             //服务代理相关。
             IServiceProxyGenerater serviceProxyGenerater = new ServiceProxyGenerater(serviceIdGenerator);
             var services = serviceProxyGenerater.GenerateProxys(new[] { typeof(IUserService) }).ToArray();
-            IServiceProxyFactory serviceProxyFactory = new ServiceProxyFactory(remoteInvokeService, serializer);
+            IServiceProxyFactory serviceProxyFactory = new ServiceProxyFactory(remoteInvokeService, serializer, typeConvertibleService);
 
             //创建IUserService的代理。
             var userService = serviceProxyFactory.CreateProxy<IUserService>(services.Single(typeof(IUserService).IsAssignableFrom));

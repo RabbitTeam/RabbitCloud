@@ -1,4 +1,6 @@
 ﻿using Rabbit.Rpc.Address;
+using Rabbit.Rpc.Convertibles;
+using Rabbit.Rpc.Convertibles.Implementation;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.Ids.Implementation;
 using Rabbit.Rpc.Routing;
@@ -33,7 +35,8 @@ namespace Echo.Server
             ISerializer serializer = new JsonSerializer();
             IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator();
             IServiceInstanceFactory serviceInstanceFactory = new DefaultServiceInstanceFactory();
-            IClrServiceEntryFactory clrServiceEntryFactory = new ClrServiceEntryFactory(serviceInstanceFactory, serviceIdGenerator, serializer);
+            ITypeConvertibleService typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(serializer) });
+            IClrServiceEntryFactory clrServiceEntryFactory = new ClrServiceEntryFactory(serviceInstanceFactory, serviceIdGenerator, typeConvertibleService);
             var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetExportedTypes());
             var serviceEntryProvider = new AttributeServiceEntryProvider(types, clrServiceEntryFactory);
             IServiceEntryManager serviceEntryManager = new DefaultServiceEntryManager(new IServiceEntryProvider[] { serviceEntryProvider });

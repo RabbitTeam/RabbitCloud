@@ -1,4 +1,5 @@
 ﻿using Rabbit.Rpc.Client;
+using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Linq;
@@ -14,15 +15,17 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
 
         private readonly IRemoteInvokeService _remoteInvokeService;
         private readonly ISerializer _serializer;
+        private readonly ITypeConvertibleService _typeConvertibleService;
 
         #endregion Field
 
         #region Constructor
 
-        public ServiceProxyFactory(IRemoteInvokeService remoteInvokeService, ISerializer serializer)
+        public ServiceProxyFactory(IRemoteInvokeService remoteInvokeService, ISerializer serializer, ITypeConvertibleService typeConvertibleService)
         {
             _remoteInvokeService = remoteInvokeService;
             _serializer = serializer;
+            _typeConvertibleService = typeConvertibleService;
         }
 
         #endregion Constructor
@@ -36,7 +39,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         /// <returns>服务代理实例。</returns>
         public object CreateProxy(Type proxyType)
         {
-            var instance = proxyType.GetConstructors().First().Invoke(new object[] { _remoteInvokeService, _serializer });
+            var instance = proxyType.GetConstructors().First().Invoke(new object[] { _remoteInvokeService, _serializer, _typeConvertibleService });
             return instance;
         }
 
