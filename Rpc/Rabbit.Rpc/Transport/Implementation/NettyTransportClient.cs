@@ -7,7 +7,6 @@ using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Transport.Implementation
@@ -48,8 +47,7 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
-            var content = _serialization.Serialize(message);
-            var data = Encoding.UTF8.GetBytes(content);
+            var data = _serialization.Serialize(message);
             var buffer = Unpooled.Buffer(data.Length);
             buffer.WriteBytes(data);
             var channel = await _channel;
@@ -122,7 +120,7 @@ namespace Rabbit.Rpc.Transport.Implementation
             public override void ChannelRead(IChannelHandlerContext context, object message)
             {
                 var buffer = (IByteBuffer)message;
-                var content = buffer.ToString(Encoding.UTF8);
+                var content = buffer.ToArray();
                 var result = _serialization.Deserialize<TransportMessage>(content);
 
                 TaskCompletionSource<TransportMessage> task;

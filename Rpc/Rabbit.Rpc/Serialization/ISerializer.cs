@@ -10,17 +10,17 @@ namespace Rabbit.Rpc.Serialization
         /// <summary>
         /// 序列化。
         /// </summary>
-        /// <param name="obj">需要序列化的对象。</param>
+        /// <param name="instance">需要序列化的对象。</param>
         /// <returns>序列化之后的结果。</returns>
-        string Serialize(object obj);
+        byte[] Serialize(object instance);
 
         /// <summary>
         /// 反序列化。
         /// </summary>
-        /// <param name="content">序列化的内容。</param>
+        /// <param name="bytes">序列化的内容。</param>
         /// <param name="type">对象类型。</param>
         /// <returns>一个对象实例。</returns>
-        object Deserialize(string content, Type type);
+        object Deserialize(byte[] bytes, Type type);
     }
 
     /// <summary>
@@ -33,11 +33,11 @@ namespace Rabbit.Rpc.Serialization
         /// </summary>
         /// <typeparam name="T">对象类型。</typeparam>
         /// <param name="serializer">序列化器。</param>
-        /// <param name="content">序列化的内容。</param>
+        /// <param name="bytes">序列化的内容。</param>
         /// <returns>一个对象实例。</returns>
-        public static T Deserialize<T>(this ISerializer serializer, string content)
+        public static T Deserialize<T>(this ISerializer serializer, byte[] bytes)
         {
-            return (T)serializer.Deserialize(content, typeof(T));
+            return (T)serializer.Deserialize(bytes, typeof(T));
         }
     }
 }

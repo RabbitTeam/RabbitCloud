@@ -5,7 +5,6 @@ using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ZooKeeperNet;
@@ -67,7 +66,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 foreach (var serviceRoute in routes)
                 {
                     var nodePath = $"{path}{serviceRoute.ServiceDescriptor.Id}";
-                    var nodeData = Encoding.UTF8.GetBytes(_serializer.Serialize(serviceRoute));
+                    var nodeData = _serializer.Serialize(serviceRoute);
                     if (_zooKeeper.Exists(nodePath, false) == null)
                     {
                         _zooKeeper.Create(nodePath, nodeData, ZooKeeperNet.Ids.OPEN_ACL_UNSAFE, CreateMode.Persistent);
@@ -154,8 +153,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             if (data == null)
                 return null;
 
-            var content = Encoding.UTF8.GetString(data);
-            var descriptor = _serializer.Deserialize<IpAddressDescriptor>(content);
+            var descriptor = _serializer.Deserialize<IpAddressDescriptor>(data);
 
             return new ServiceRoute
             {

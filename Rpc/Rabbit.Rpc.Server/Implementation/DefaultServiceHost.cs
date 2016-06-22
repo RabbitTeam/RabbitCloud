@@ -8,7 +8,6 @@ using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Server.Implementation
@@ -95,7 +94,7 @@ namespace Rabbit.Rpc.Server.Implementation
             public override void ChannelRead(IChannelHandlerContext context, object message)
             {
                 var buffer = (IByteBuffer)message;
-                var content = buffer.ToString(Encoding.UTF8);
+                var content = buffer.ToArray();
                 var model = _serializer.Deserialize<TransportMessage<RemoteInvokeMessage>>(content);
 
                 var invokeMessage = model.Content;
@@ -106,12 +105,11 @@ namespace Rabbit.Rpc.Server.Implementation
 
                 var result = entry.Func(invokeMessage.Parameters);
 
-                var resultContent = _serializer.Serialize(new TransportMessage<object>
+                var resultData = _serializer.Serialize(new TransportMessage
                 {
                     Content = result,
                     Id = model.Id
                 });
-                var resultData = Encoding.UTF8.GetBytes(resultContent);
 
                 buffer = Unpooled.Buffer(resultData.Length);
                 buffer.WriteBytes(resultData);

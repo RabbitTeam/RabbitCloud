@@ -1,6 +1,7 @@
 ﻿using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Rabbit.Rpc.Convertibles.Implementation
 {
@@ -43,7 +44,8 @@ namespace Rabbit.Rpc.Convertibles.Implementation
 
         private object ComplexTypeConvert(object instance, Type conversionType)
         {
-            return _serializer.Deserialize(instance.ToString(), conversionType);
+            //todo:应该使用更通用的协议byte[]
+            return _serializer.Deserialize(Encoding.UTF8.GetBytes(instance.ToString()), conversionType);
         }
 
         #endregion Private Method

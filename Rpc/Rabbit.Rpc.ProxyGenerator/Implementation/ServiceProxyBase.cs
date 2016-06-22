@@ -3,6 +3,7 @@ using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.ProxyGenerator.Implementation
@@ -51,7 +52,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                 }
             });
 
-            var content = message.Content.ToString();
+            var content = Encoding.UTF8.GetBytes(message.Content.ToString());
             var task = _serializer.Deserialize<TaskModel>(content);
 
             var result = task.Result;

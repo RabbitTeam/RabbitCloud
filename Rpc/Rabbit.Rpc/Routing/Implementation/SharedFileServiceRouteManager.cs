@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Routing.Implementation
@@ -69,7 +68,7 @@ namespace Rabbit.Rpc.Routing.Implementation
             {
                 lock (this)
                 {
-                    File.WriteAllText(_filePath, _serializer.Serialize(routes), Encoding.UTF8);
+                    File.WriteAllBytes(_filePath, _serializer.Serialize(routes));
                 }
             });
         }
@@ -97,7 +96,7 @@ namespace Rabbit.Rpc.Routing.Implementation
             {
                 if (File.Exists(file))
                 {
-                    var content = File.ReadAllText(file, Encoding.UTF8);
+                    var content = File.ReadAllBytes(file);
                     try
                     {
                         _routes = _serializer.Deserialize<IpAddressDescriptor[]>(content).Select(i => new ServiceRoute
