@@ -60,6 +60,8 @@
     <Compile Include="Convertibles\Implementation\DefaultTypeConvertibleService.cs" />
     <Compile Include="Convertibles\ITypeConvertibleProvider.cs" />
     <Compile Include="Convertibles\ITypeConvertibleService.cs" />
+    <Compile Include="Routing\Implementation\SharedFileServiceRouteManager.cs" />
+    <Compile Include="Routing\IServiceRouteManager.cs" />
     <Compile Include="Routing\ServiceRoute.cs" />
     <Compile Include="Exceptions\RpcException.cs" />
     <Compile Include="Ids\IServiceIdGenerator.cs" />

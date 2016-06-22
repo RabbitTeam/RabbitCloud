@@ -1,6 +1,5 @@
 ﻿using Org.Apache.Zookeeper.Data;
 using Rabbit.Rpc.Address;
-using Rabbit.Rpc.Client.Routing;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Serialization;
 using System;
@@ -14,9 +13,9 @@ using ZooKeeperNet;
 namespace Rabbit.Rpc.Coordinate.Zookeeper
 {
     /// <summary>
-    /// 基于Zookeeper的服务路由提供程序。
+    /// 基于zookeeper的服务路由管理者。
     /// </summary>
-    public class ZookeeperServiceRouteProvider : IServiceRouteProvider, IDisposable
+    public class ZooKeeperServiceRouteManager : IServiceRouteManager, IDisposable
     {
         #region Field
 
@@ -28,18 +27,23 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
         #endregion Field
 
-        public ZookeeperServiceRouteProvider(ZookeeperConfigInfo configInfo, ISerializer serializer)
+        #region Constructor
+
+        public ZooKeeperServiceRouteManager(ZookeeperConfigInfo configInfo, ISerializer serializer)
         {
             _configInfo = configInfo;
             _serializer = serializer;
             CreateZooKeeper();
+            CreateSubdirectory(configInfo.RoutePath);
             EnterRoutes();
         }
 
-        #region Implementation of IServiceRouteProvider
+        #endregion Constructor
+
+        #region Implementation of IServiceRouteManager
 
         /// <summary>
-        /// 获取服务路由集合。
+        /// 获取所有可用的服务路由信息。
         /// </summary>
         /// <returns>服务路由集合。</returns>
         public Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
@@ -48,7 +52,65 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             return Task.FromResult(_routes);
         }
 
-        #endregion Implementation of IServiceRouteProvider
+        /// <summary>
+        /// 添加服务路由。
+        /// </summary>
+        /// <param name="routes">服务路由集合。</param>
+        /// <returns>一个任务。</returns>
+        public Task AddRoutesAsync(IEnumerable<ServiceRoute> routes)
+        {
+            return Task.Run(() =>
+            {
+                var path = _configInfo.RoutePath;
+                if (!path.EndsWith("/"))
+                    path += "/";
+                foreach (var serviceRoute in routes)
+                {
+                    var nodePath = $"{path}{serviceRoute.ServiceDescriptor.Id}";
+                    var nodeData = Encoding.UTF8.GetBytes(_serializer.Serialize(serviceRoute));
+                    if (_zooKeeper.Exists(nodePath, false) == null)
+                    {
+                        _zooKeeper.Create(nodePath, nodeData, ZooKeeperNet.Ids.OPEN_ACL_UNSAFE, CreateMode.Persistent);
+                    }
+                    else
+                    {
+                        _zooKeeper.SetData(nodePath, nodeData, -1);
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// 清空所有的服务路由。
+        /// </summary>
+        /// <returns>一个任务。</returns>
+        public Task ClearAsync()
+        {
+            return Task.Run(() =>
+            {
+                var path = _configInfo.RoutePath;
+                var childrens = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+                var index = 0;
+                while (childrens.Any())
+                {
+                    var nodePath = "/" + string.Join("/", childrens);
+
+                    if (_zooKeeper.Exists(nodePath, false) != null)
+                    {
+                        foreach (var child in _zooKeeper.GetChildren(nodePath, false))
+                        {
+                            _zooKeeper.Delete($"{nodePath}/{child}", -1);
+                        }
+                        _zooKeeper.Delete(nodePath, -1);
+                    }
+                    index++;
+                    childrens = childrens.Take(childrens.Length - index).ToArray();
+                }
+            });
+        }
+
+        #endregion Implementation of IServiceRouteManager
 
         #region Private Method
 
@@ -68,19 +130,51 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 }));
         }
 
-        private IEnumerable<ServiceRoute> GetRoutes(byte[] data)
+        private void CreateSubdirectory(string path)
+        {
+            _connectionWait.WaitOne();
+            if (_zooKeeper.Exists(path, false) != null)
+                return;
+            var childrens = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var nodePath = "/";
+
+            foreach (var children in childrens)
+            {
+                nodePath += children;
+                if (_zooKeeper.Exists(nodePath, false) == null)
+                {
+                    _zooKeeper.Create(nodePath, null, ZooKeeperNet.Ids.OPEN_ACL_UNSAFE, CreateMode.Persistent);
+                }
+                nodePath += "/";
+            }
+        }
+
+        private ServiceRoute GetRoute(byte[] data)
         {
             if (data == null)
-                return Enumerable.Empty<ServiceRoute>();
+                return null;
 
             var content = Encoding.UTF8.GetString(data);
-            var config = _serializer.Deserialize<ConfigModel>(content);
+            var descriptor = _serializer.Deserialize<IpAddressDescriptor>(content);
 
-            return config.Routes.Select(r => new ServiceRoute
+            return new ServiceRoute
             {
-                Address = r.Address,
-                ServiceDescriptor = r.ServiceDescriptor
-            }).ToArray();
+                Address = descriptor.Address,
+                ServiceDescriptor = descriptor.ServiceDescriptor
+            };
+        }
+
+        private IEnumerable<ServiceRoute> GetRoutes(IEnumerable<string> childrens)
+        {
+            var rootPath = _configInfo.RoutePath;
+            if (!rootPath.EndsWith("/"))
+                rootPath += "/";
+            foreach (var children in childrens)
+            {
+                var nodePath = $"{rootPath}{children}";
+                var data = _zooKeeper.GetData(nodePath, false, new Stat());
+                yield return GetRoute(data);
+            }
         }
 
         private void EnterRoutes()
@@ -88,14 +182,15 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             if (_routes != null)
                 return;
             _connectionWait.WaitOne();
-            var watcher = new MonitorWatcher(_zooKeeper, _configInfo.RoutePath, newData =>
-               {
-                   _routes = GetRoutes(newData);
-               });
+
+            var watcher = new MonitorWatcher(_zooKeeper, _configInfo.RoutePath, newChildrens =>
+            {
+                _routes = GetRoutes(newChildrens);
+            });
             if (_zooKeeper.Exists(_configInfo.RoutePath, watcher) != null)
             {
-                var data = _zooKeeper.GetData(_configInfo.RoutePath, watcher, new Stat());
-                _routes = GetRoutes(data);
+                var childrens = _zooKeeper.GetChildren(_configInfo.RoutePath, watcher, new Stat());
+                _routes = GetRoutes(childrens);
             }
             else
                 _routes = Enumerable.Empty<ServiceRoute>();
@@ -137,9 +232,9 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         {
             private readonly ZooKeeper _zooKeeper;
             private readonly string _path;
-            private readonly Action<byte[]> _action;
+            private readonly Action<IEnumerable<string>> _action;
 
-            public MonitorWatcher(ZooKeeper zooKeeper, string path, Action<byte[]> action)
+            public MonitorWatcher(ZooKeeper zooKeeper, string path, Action<IEnumerable<string>> action)
             {
                 _zooKeeper = zooKeeper;
                 _path = path;
@@ -157,9 +252,9 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 switch (watchedEvent.Type)
                 {
                     case EventType.NodeCreated:
-                    case EventType.NodeDataChanged:
-                        var data = _zooKeeper.GetData(_path, watcher, new Stat());
-                        _action(data);
+                    case EventType.NodeChildrenChanged:
+                        var childrens = _zooKeeper.GetChildren(_path, watcher, new Stat());
+                        _action(childrens);
                         break;
 
                     case EventType.NodeDeleted:

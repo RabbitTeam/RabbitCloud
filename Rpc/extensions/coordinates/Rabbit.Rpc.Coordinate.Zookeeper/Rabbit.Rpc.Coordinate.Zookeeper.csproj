@@ -42,14 +42,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ZookeeperServiceRouteProvider.cs" />
+    <Compile Include="ZooKeeperServiceRouteManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Rabbit.Rpc.Client\Rabbit.Rpc.Client.csproj">
-      <Project>{2b820548-4cda-4e70-a05b-538b745d56e3}</Project>
-      <Name>Rabbit.Rpc.Client</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Rabbit.Rpc\Rabbit.Rpc.csproj">
       <Project>{CEF91C5E-7986-4C78-AFE5-656917448300}</Project>
       <Name>Rabbit.Rpc</Name>

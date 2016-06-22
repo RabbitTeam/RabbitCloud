@@ -1,5 +1,5 @@
 ﻿using Rabbit.Rpc.Address;
-using Rabbit.Rpc.Client.Routing;
+using Rabbit.Rpc.Routing;
 using System.Linq;
 using System.Threading.Tasks;
 

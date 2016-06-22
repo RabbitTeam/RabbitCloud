@@ -4,6 +4,7 @@ using Rabbit.Rpc.Convertibles.Implementation;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.Ids.Implementation;
 using Rabbit.Rpc.Routing;
+using Rabbit.Rpc.Routing.Implementation;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Serialization.Implementation;
 using Rabbit.Rpc.Server;
@@ -12,7 +13,6 @@ using Rabbit.Rpc.Server.Implementation.ServiceDiscovery;
 using Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Attributes;
 using Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Implementation;
 using System;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -49,25 +49,11 @@ namespace Echo.Server
                     Address = new[] { new IpAddressModel { Ip = "127.0.0.1", Port = 9981 } },
                     ServiceDescriptor = i.Descriptor
                 });
-                var configString = serializer.Serialize(new { routes = addressDescriptors });
-                File.WriteAllText("d:\\routes.txt", configString);
-                //zookeeper配置写入 /dotnet/serviceRoutes 为与client的约束
-                {
-/*                    using (var zookeeper = new ZooKeeper("172.18.20.132:2181", TimeSpan.FromSeconds(20), null))
-                    {
-                        if (zookeeper.Exists("/dotnet", false) == null)
-                            zookeeper.Create("/dotnet", null, Ids.CREATOR_ALL_ACL, CreateMode.Persistent);
-                        if (zookeeper.Exists("/dotnet/serviceRoutes", false) == null)
-                        {
-                            zookeeper.Create("/dotnet/serviceRoutes", Encoding.UTF8.GetBytes(configString), Ids.CREATOR_ALL_ACL,
-                                CreateMode.Persistent);
-                        }
-                        else
-                        {
-                            zookeeper.SetData("/dotnet/serviceRoutes", Encoding.UTF8.GetBytes(configString), -1);
-                        }
-                    }*/
-                }
+
+                var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer);
+                //zookeeper服务路由管理者。
+                //            var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer);
+                serviceRouteManager.AddRoutesAsync(addressDescriptors).Wait();
             }
 
             IServiceHost serviceHost = new DefaultServiceHost(serializer, serviceEntryLocate);

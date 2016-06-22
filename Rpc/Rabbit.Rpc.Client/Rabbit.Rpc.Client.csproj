@@ -63,10 +63,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Routing\IServiceRouteProvider.cs" />
-    <Compile Include="Routing\IServiceRouteManager.cs" />
-    <Compile Include="Routing\Implementation\DefaultServiceRouteManager.cs" />
-    <Compile Include="Routing\Implementation\DefaultServiceRouteProvider.cs" />
     <Compile Include="Address\Resolvers\IAddressResolver.cs" />
     <Compile Include="Address\Resolvers\Implementation\DefaultAddressResolver.cs" />
     <Compile Include="Implementation\RemoteInvokeService.cs" />
