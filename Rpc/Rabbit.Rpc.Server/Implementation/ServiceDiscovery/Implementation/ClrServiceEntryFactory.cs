@@ -79,7 +79,7 @@ namespace Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Implementation
                         }
                         else
                         {
-                            parameter = _serializer.Deserialize(parameterInfo.ParameterType, value.ToString());
+                            parameter = _serializer.Deserialize(value.ToString(), parameterInfo.ParameterType);
                         }
 
                         list.Add(parameter);
