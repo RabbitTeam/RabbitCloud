@@ -33,7 +33,7 @@ namespace Echo.Server
             ISerializer serializer = new JsonSerializer();
             IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator();
             IServiceInstanceFactory serviceInstanceFactory = new DefaultServiceInstanceFactory();
-            IClrServiceEntryFactory clrServiceEntryFactory = new ClrServiceEntryFactory(serviceInstanceFactory, serviceIdGenerator);
+            IClrServiceEntryFactory clrServiceEntryFactory = new ClrServiceEntryFactory(serviceInstanceFactory, serviceIdGenerator, serializer);
             var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetExportedTypes());
             var serviceEntryProvider = new AttributeServiceEntryProvider(types, clrServiceEntryFactory);
             IServiceEntryManager serviceEntryManager = new DefaultServiceEntryManager(new IServiceEntryProvider[] { serviceEntryProvider });

@@ -1,4 +1,5 @@
 using Rabbit.Rpc.Ids;
+using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,15 +16,17 @@ namespace Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Implementation
 
         private readonly IServiceInstanceFactory _serviceFactory;
         private readonly IServiceIdGenerator _serviceIdGenerator;
+        private readonly ISerializer _serializer;
 
         #endregion Field
 
         #region Constructor
 
-        public ClrServiceEntryFactory(IServiceInstanceFactory serviceFactory, IServiceIdGenerator serviceIdGenerator)
+        public ClrServiceEntryFactory(IServiceInstanceFactory serviceFactory, IServiceIdGenerator serviceIdGenerator, ISerializer serializer)
         {
             _serviceFactory = serviceFactory;
             _serviceIdGenerator = serviceIdGenerator;
+            _serializer = serializer;
         }
 
         #endregion Constructor
@@ -68,7 +71,18 @@ namespace Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Implementation
                     foreach (var parameterInfo in method.GetParameters())
                     {
                         var value = parameters[parameterInfo.Name];
-                        list.Add(Convert.ChangeType(value, parameterInfo.ParameterType));
+                        var parameterType = parameterInfo.ParameterType;
+                        object parameter;
+                        if (parameterType.Namespace != null && parameterType.Namespace.StartsWith("System"))
+                        {
+                            parameter = Convert.ChangeType(value, parameterInfo.ParameterType);
+                        }
+                        else
+                        {
+                            parameter = _serializer.Deserialize(parameterInfo.ParameterType, value.ToString());
+                        }
+
+                        list.Add(parameter);
                     }
 
                     return method.Invoke(instance, list.ToArray());

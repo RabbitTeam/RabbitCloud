@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 
 namespace Rabbit.Rpc.Serialization.Implementation
 {
@@ -22,12 +23,12 @@ namespace Rabbit.Rpc.Serialization.Implementation
         /// <summary>
         /// 反序列化。
         /// </summary>
-        /// <typeparam name="T">对象类型。</typeparam>
         /// <param name="content">序列化的内容。</param>
+        /// <param name="type">对象类型。</param>
         /// <returns>一个对象实例。</returns>
-        public T Deserialize<T>(string content)
+        public object Deserialize(string content, Type type)
         {
-            return JsonConvert.DeserializeObject<T>(content);
+            return JsonConvert.DeserializeObject(content, type);
         }
 
         #endregion Implementation of ISerializer

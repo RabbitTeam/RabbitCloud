@@ -53,10 +53,16 @@ namespace Echo.Client
                     {
                         Console.WriteLine(DateTime.Now);
                         Console.WriteLine($"userService.GetUserName:{await userService.GetUserName(1)}");
+                        Console.WriteLine($"userService.GetUserId:{await userService.GetUserId("rabbit")}");
+                        Console.WriteLine($"userService.GetUserLastSignInTime:{await userService.GetUserLastSignInTime(1)}");
+                        Console.WriteLine($"userService.Exists:{(await userService.Exists(1))}");
+                        var user = await userService.GetUser(1);
+                        Console.WriteLine($"userService.GetUser:name={user.Name},age={user.Age}");
+                        Console.WriteLine($"userService.Update:{await userService.Update(1, user)}");
                     }
-                    catch
+                    catch (Exception exception)
                     {
-                        Console.WriteLine("发生了错误。");
+                        Console.WriteLine("发生了错误。" + exception.Message);
                     }
                 }).Wait();
                 Console.ReadLine();

@@ -193,22 +193,16 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
             {
                 returnDeclaration = IdentifierName("Task");
             }
-            var declaration = MethodDeclaration(
-                returnDeclaration,
-                Identifier(method.Name))
-                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AsyncKeyword)));
 
             var parameterList = new List<SyntaxNodeOrToken>();
+            var parameterDeclarationList = new List<SyntaxNodeOrToken>();
 
             foreach (var parameter in method.GetParameters())
             {
-                declaration = declaration.WithParameterList(
-                    ParameterList(
-                        SeparatedList<ParameterSyntax>(
-                            new SyntaxNodeOrToken[]{
-                                Parameter(
+                parameterDeclarationList.Add(Parameter(
                                     Identifier(parameter.Name))
-                                    .WithType(GetQualifiedNameSyntax(parameter.ParameterType))})));
+                                    .WithType(GetQualifiedNameSyntax(parameter.ParameterType)));
+                parameterDeclarationList.Add(Token(SyntaxKind.CommaToken));
 
                 parameterList.Add(InitializerExpression(
                     SyntaxKind.ComplexElementInitializerExpression,
@@ -223,8 +217,15 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
             }
             if (parameterList.Any())
             {
-                parameterList.Remove(parameterList.Last());
+                parameterList.RemoveAt(parameterList.Count - 1);
+                parameterDeclarationList.RemoveAt(parameterDeclarationList.Count - 1);
             }
+
+            var declaration = MethodDeclaration(
+                returnDeclaration,
+                Identifier(method.Name))
+                .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AsyncKeyword)))
+                .WithParameterList(ParameterList(SeparatedList<ParameterSyntax>(parameterDeclarationList)));
 
             ExpressionSyntax expressionSyntax;
             StatementSyntax statementSyntax;

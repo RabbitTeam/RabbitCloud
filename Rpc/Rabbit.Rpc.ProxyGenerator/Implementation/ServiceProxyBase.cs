@@ -1,6 +1,7 @@
 ﻿using Rabbit.Rpc.Client;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -50,7 +51,19 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
 
             var content = message.Content.ToString();
             var task = _serializer.Deserialize<TaskModel>(content);
-            return (T)task.Result;
+
+            var result = task.Result;
+
+            if (result is T)
+            {
+                return (T)result;
+            }
+            var resultType = typeof(T);
+            if (resultType.Namespace != null && resultType.Namespace.StartsWith("System"))
+            {
+                return (T)Convert.ChangeType(result, resultType);
+            }
+            return _serializer.Deserialize<T>(result.ToString());
         }
 
         /// <summary>
