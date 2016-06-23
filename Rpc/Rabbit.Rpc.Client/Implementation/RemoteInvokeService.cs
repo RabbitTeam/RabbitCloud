@@ -54,9 +54,9 @@ namespace Rabbit.Rpc.Client.Implementation
                     Content = context.InvokeMessage,
                     Id = Guid.NewGuid().ToString("N")
                 };
+                var resultMessage = client.ReceiveAsync(message.Id);
                 await client.SendAsync(TransportMessage.Convert(message));
-                var resultMessage = await client.ReceiveAsync(message.Id);
-                return resultMessage;
+                return await resultMessage;
             }
             catch (Exception exception)
             {
