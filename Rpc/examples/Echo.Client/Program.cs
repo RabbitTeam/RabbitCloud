@@ -1,6 +1,8 @@
 ﻿using Echo.Common;
 using Rabbit.Rpc.Client.Address.Resolvers;
 using Rabbit.Rpc.Client.Address.Resolvers.Implementation;
+using Rabbit.Rpc.Client.Address.Resolvers.Implementation.Selectors;
+using Rabbit.Rpc.Client.Address.Resolvers.Implementation.Selectors.Implementation;
 using Rabbit.Rpc.Client.Implementation;
 using Rabbit.Rpc.Convertibles.Implementation;
 using Rabbit.Rpc.Ids;
@@ -31,7 +33,8 @@ namespace Echo.Client
             var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, new ConsoleLogger<SharedFileServiceRouteManager>());
             //zookeeper服务路由管理者。
             //            var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer, new ConsoleLogger<ZooKeeperServiceRouteManager>());
-            IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, new ConsoleLogger<DefaultAddressResolver>());
+            IAddressSelector addressSelector = new RandomAddressSelector();
+            IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, new ConsoleLogger<DefaultAddressResolver>(), addressSelector);
             ITransportClientFactory transportClientFactory = new NettyTransportClientFactory(serializer, new ConsoleLogger<NettyTransportClientFactory>());
             var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, new ConsoleLogger<RemoteInvokeService>());
 

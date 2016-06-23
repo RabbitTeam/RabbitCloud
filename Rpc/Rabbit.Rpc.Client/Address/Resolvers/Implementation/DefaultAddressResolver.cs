@@ -1,4 +1,5 @@
 ﻿using Rabbit.Rpc.Address;
+using Rabbit.Rpc.Client.Address.Resolvers.Implementation.Selectors;
 using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Routing;
 using System.Linq;
@@ -15,15 +16,17 @@ namespace Rabbit.Rpc.Client.Address.Resolvers.Implementation
 
         private readonly IServiceRouteManager _serviceRouteManager;
         private readonly ILogger<DefaultAddressResolver> _logger;
+        private readonly IAddressSelector _addressSelector;
 
         #endregion Field
 
         #region Constructor
 
-        public DefaultAddressResolver(IServiceRouteManager serviceRouteManager, ILogger<DefaultAddressResolver> logger)
+        public DefaultAddressResolver(IServiceRouteManager serviceRouteManager, ILogger<DefaultAddressResolver> logger, IAddressSelector addressSelector)
         {
             _serviceRouteManager = serviceRouteManager;
             _logger = logger;
+            _addressSelector = addressSelector;
         }
 
         #endregion Constructor
@@ -60,7 +63,10 @@ namespace Rabbit.Rpc.Client.Address.Resolvers.Implementation
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.Information($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", descriptor.Address.Select(i => i.ToString()))}。");
 
-            return descriptor.Address?.FirstOrDefault();
+            return await _addressSelector.SelectAsync(new AddressSelectContext
+            {
+                ServiceRoute = descriptor
+            });
         }
 
         #endregion Implementation of IAddressResolver
