@@ -1,10 +1,12 @@
 ﻿using Org.Apache.Zookeeper.Data;
 using Rabbit.Rpc.Address;
+using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ZooKeeperNet;
@@ -21,6 +23,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         private ZooKeeper _zooKeeper;
         private readonly ZookeeperConfigInfo _configInfo;
         private readonly ISerializer _serializer;
+        private readonly ILogger<ZooKeeperServiceRouteManager> _logger;
         private IEnumerable<ServiceRoute> _routes;
         private readonly ManualResetEvent _connectionWait = new ManualResetEvent(false);
 
@@ -28,13 +31,12 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
         #region Constructor
 
-        public ZooKeeperServiceRouteManager(ZookeeperConfigInfo configInfo, ISerializer serializer)
+        public ZooKeeperServiceRouteManager(ZookeeperConfigInfo configInfo, ISerializer serializer, ILogger<ZooKeeperServiceRouteManager> logger)
         {
             _configInfo = configInfo;
             _serializer = serializer;
+            _logger = logger;
             CreateZooKeeper();
-            CreateSubdirectory(configInfo.RoutePath);
-            EnterRoutes();
         }
 
         #endregion Constructor
@@ -60,6 +62,10 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         {
             return Task.Run(() =>
             {
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information("准备添加服务路由。");
+                CreateSubdirectory(_configInfo.RoutePath);
+
                 var path = _configInfo.RoutePath;
                 if (!path.EndsWith("/"))
                     path += "/";
@@ -69,13 +75,19 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                     var nodeData = _serializer.Serialize(serviceRoute);
                     if (_zooKeeper.Exists(nodePath, false) == null)
                     {
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                            _logger.Debug($"节点：{nodePath}不存在将进行创建。");
                         _zooKeeper.Create(nodePath, nodeData, ZooKeeperNet.Ids.OPEN_ACL_UNSAFE, CreateMode.Persistent);
                     }
                     else
                     {
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                            _logger.Debug($"将更新节点：{nodePath}的数据。");
                         _zooKeeper.SetData(nodePath, nodeData, -1);
                     }
                 }
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information("服务路由添加成功。");
             });
         }
 
@@ -87,6 +99,8 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         {
             return Task.Run(() =>
             {
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information("准备清空所有路由配置。");
                 var path = _configInfo.RoutePath;
                 var childrens = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -99,13 +113,20 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                     {
                         foreach (var child in _zooKeeper.GetChildren(nodePath, false))
                         {
-                            _zooKeeper.Delete($"{nodePath}/{child}", -1);
+                            var childPath = $"{nodePath}/{child}";
+                            if (_logger.IsEnabled(LogLevel.Debug))
+                                _logger.Debug($"准备删除：{childPath}。");
+                            _zooKeeper.Delete(childPath, -1);
                         }
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                            _logger.Debug($"准备删除：{nodePath}。");
                         _zooKeeper.Delete(nodePath, -1);
                     }
                     index++;
                     childrens = childrens.Take(childrens.Length - index).ToArray();
                 }
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information("路由配置清空完成。");
             });
         }
 
@@ -134,6 +155,10 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             _connectionWait.WaitOne();
             if (_zooKeeper.Exists(path, false) != null)
                 return;
+
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.Information($"节点{path}不存在，将进行创建。");
+
             var childrens = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             var nodePath = "/";
 
@@ -150,6 +175,9 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
         private ServiceRoute GetRoute(byte[] data)
         {
+            if (_logger.IsEnabled(LogLevel.Debug))
+                _logger.Debug($"准备转换服务路由，配置内容：{Encoding.UTF8.GetString(data)}。");
+
             if (data == null)
                 return null;
 
@@ -169,17 +197,23 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 rootPath += "/";
             foreach (var children in childrens)
             {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.Debug($"准备从节点：{children}中获取路由信息。");
+
                 var nodePath = $"{rootPath}{children}";
                 var watcher = new NodeMonitorWatcher(_zooKeeper, nodePath, newData =>
-                  {
-                      var route = GetRoute(newData);
-                      //删除旧路由。
-                      _routes = _routes.Where(i => i.ServiceDescriptor.Id != route.ServiceDescriptor.Id);
-                      //添加新路由。
-                      if (route != null)
-                          _routes = _routes.Concat(new[] { route });
-                      _routes = _routes.ToArray();
-                  });
+                {
+                    if (_logger.IsEnabled(LogLevel.Information))
+                        _logger.Information(newData == null ? $"路由：{nodePath}被删除。" : $"节点：{nodePath}的数据发生了变更，将更新路由信息。");
+
+                    var route = GetRoute(newData);
+                    //删除旧路由。
+                    _routes = _routes.Where(i => i.ServiceDescriptor.Id != route.ServiceDescriptor.Id);
+                    //添加新路由。
+                    if (route != null)
+                        _routes = _routes.Concat(new[] { route });
+                    _routes = _routes.ToArray();
+                });
                 var data = _zooKeeper.GetData(nodePath, watcher, new Stat());
                 yield return GetRoute(data);
             }
@@ -193,20 +227,35 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
             var watcher = new ChildrenMonitorWatcher(_zooKeeper, _configInfo.RoutePath, newChildrens =>
             {
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information("路由节点发生了变更，将更新数据。");
                 if (newChildrens == null)
                 {
+                    if (_logger.IsEnabled(LogLevel.Warning))
+                        _logger.Warning("没有任何路由节点，路由数据将被清空。");
                     _routes = Enumerable.Empty<ServiceRoute>();
                     return;
                 }
                 //最新的节点数据。
                 newChildrens = newChildrens.ToArray();
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.Debug($"最新的节点信息：{string.Join(",", newChildrens)}");
 
                 //旧的节点数据。
                 var outChildrens = _routes.Select(i => i.ServiceDescriptor.Id).ToArray();
+
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.Debug($"旧的节点信息：{string.Join(",", outChildrens)}");
+
                 //计算出已被删除的节点。
-                var deletedChildrens = outChildrens.Except(newChildrens);
+                var deletedChildrens = outChildrens.Except(newChildrens).ToArray();
                 //结算出新增的节点。
-                var createdChildrens = newChildrens.Except(outChildrens);
+                var createdChildrens = newChildrens.Except(outChildrens).ToArray();
+
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information($"需要被删除的路由节点：{string.Join(",", deletedChildrens)}");
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information($"需要被添加的路由节点：{string.Join(",", createdChildrens)}");
 
                 //删除无效的节点路由。
                 _routes = _routes.Where(i => !deletedChildrens.Contains(i.ServiceDescriptor.Id));
@@ -215,6 +264,8 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 _routes = _routes.Concat(newRoutes);
 
                 _routes = _routes.ToArray();
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information("路由数据更新成功。");
             });
             if (_zooKeeper.Exists(_configInfo.RoutePath, watcher) != null)
             {
@@ -222,7 +273,11 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 _routes = GetRoutes(childrens);
             }
             else
+            {
+                if (_logger.IsEnabled(LogLevel.Warning))
+                    _logger.Warning($"无法获取路由信息，因为节点：{_configInfo.RoutePath}，不存在。");
                 _routes = Enumerable.Empty<ServiceRoute>();
+            }
         }
 
         #endregion Private Method

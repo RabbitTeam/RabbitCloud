@@ -44,8 +44,8 @@ namespace Rabbit.Rpc.Convertibles.Implementation
 
         private object ComplexTypeConvert(object instance, Type conversionType)
         {
-            //todo:应该使用更通用的协议byte[]
-            return _serializer.Deserialize(Encoding.UTF8.GetBytes(instance.ToString()), conversionType);
+            var data = instance as byte[] ?? Encoding.UTF8.GetBytes(instance.ToString());
+            return _serializer.Deserialize(data, conversionType);
         }
 
         #endregion Private Method

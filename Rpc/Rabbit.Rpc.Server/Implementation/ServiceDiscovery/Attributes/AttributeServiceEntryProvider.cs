@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Rabbit.Rpc.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -14,15 +15,17 @@ namespace Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Attributes
 
         private readonly IEnumerable<Type> _types;
         private readonly IClrServiceEntryFactory _clrServiceEntryFactory;
+        private readonly ILogger<AttributeServiceEntryProvider> _logger;
 
         #endregion Field
 
         #region Constructor
 
-        public AttributeServiceEntryProvider(IEnumerable<Type> types, IClrServiceEntryFactory clrServiceEntryFactory)
+        public AttributeServiceEntryProvider(IEnumerable<Type> types, IClrServiceEntryFactory clrServiceEntryFactory, ILogger<AttributeServiceEntryProvider> logger)
         {
             _types = types;
             _clrServiceEntryFactory = clrServiceEntryFactory;
+            _logger = logger;
         }
 
         #endregion Constructor
@@ -35,8 +38,14 @@ namespace Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Attributes
         /// <returns>服务条目集合。</returns>
         public IEnumerable<ServiceEntry> GetEntries()
         {
-            var services = _types.Where(i => i.IsInterface && i.GetCustomAttribute<RpcServiceAttribute>() != null);
-            var serviceImplementations = _types.Where(i => i.IsClass && !i.IsAbstract).ToArray();
+            var services = _types.Where(i => i.IsInterface && i.GetCustomAttribute<RpcServiceAttribute>() != null).ToArray();
+            var serviceImplementations = _types.Where(i => i.IsClass && !i.IsAbstract && i.Namespace != null && !i.Namespace.StartsWith("System") && !i.Namespace.StartsWith("Microsoft")).ToArray();
+
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.Information($"发现了以下服务：{string.Join(",", services.Select(i => i.ToString()))}。");
+                //                _logger.Information($"发现了以下服务实现：{string.Join(",", serviceImplementations.Select(i => i.ToString()))}。");
+            }
 
             var entries = new List<ServiceEntry>();
             foreach (var service in services)

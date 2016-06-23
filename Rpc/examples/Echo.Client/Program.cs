@@ -5,6 +5,7 @@ using Rabbit.Rpc.Client.Implementation;
 using Rabbit.Rpc.Convertibles.Implementation;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.Ids.Implementation;
+using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.ProxyGenerator;
 using Rabbit.Rpc.ProxyGenerator.Implementation;
 using Rabbit.Rpc.Routing.Implementation;
@@ -24,15 +25,15 @@ namespace Echo.Client
         {
             //客户端基本服务。
             ISerializer serializer = new JsonSerializer();
-            IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator();
+            IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator(new ConsoleLogger<DefaultServiceIdGenerator>());
 
-            var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(serializer) });
-            var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer);
+            var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(serializer) }, new ConsoleLogger<DefaultTypeConvertibleService>());
+            var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, new ConsoleLogger<SharedFileServiceRouteManager>());
             //zookeeper服务路由管理者。
-            //            var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer);
-            IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager);
-            ITransportClientFactory transportClientFactory = new NettyTransportClientFactory(serializer);
-            var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, serializer);
+            //            var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer, new ConsoleLogger<ZooKeeperServiceRouteManager>());
+            IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, new ConsoleLogger<DefaultAddressResolver>());
+            ITransportClientFactory transportClientFactory = new NettyTransportClientFactory(serializer, new ConsoleLogger<NettyTransportClientFactory>());
+            var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, new ConsoleLogger<RemoteInvokeService>());
 
             //服务代理相关。
             IServiceProxyGenerater serviceProxyGenerater = new ServiceProxyGenerater(serviceIdGenerator);

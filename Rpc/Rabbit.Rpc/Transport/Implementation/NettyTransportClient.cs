@@ -3,10 +3,12 @@ using DotNetty.Codecs;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
+using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Transport.Implementation
@@ -20,6 +22,7 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         private readonly EndPoint _endPoint;
         private readonly ISerializer _serialization;
+        private readonly ILogger _logger;
 
         private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
 
@@ -29,10 +32,11 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Constructor
 
-        public NettyTransportClient(EndPoint endPoint, ISerializer serialization)
+        public NettyTransportClient(EndPoint endPoint, ISerializer serialization, ILogger logger)
         {
             _endPoint = endPoint;
             _serialization = serialization;
+            _logger = logger;
             _channel = ConnectAsync();
         }
 
@@ -47,11 +51,24 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
-            var data = _serialization.Serialize(message);
-            var buffer = Unpooled.Buffer(data.Length);
-            buffer.WriteBytes(data);
-            var channel = await _channel;
-            await channel.WriteAndFlushAsync(buffer);
+            try
+            {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.Debug("准备发送消息。");
+                var data = _serialization.Serialize(message);
+                var buffer = Unpooled.Buffer(data.Length);
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.Debug($"数据包大小为：{data.Length}。");
+                buffer.WriteBytes(data);
+                var channel = await _channel;
+                await channel.WriteAndFlushAsync(buffer);
+            }
+            catch (Exception exception)
+            {
+                if (_logger.IsEnabled(LogLevel.Fatal))
+                    _logger.Fatal("消息发送失败。", exception);
+                throw;
+            }
         }
 
         /// <summary>
@@ -61,6 +78,8 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <returns>一个任务。</returns>
         public async Task<TransportMessage> ReceiveAsync(string id)
         {
+            if (_logger.IsEnabled(LogLevel.Debug))
+                _logger.Debug($"准备获取Id为：{id}的响应内容。");
             TaskCompletionSource<TransportMessage> task;
             if (_resultDictionary.ContainsKey(id))
             {
@@ -82,8 +101,11 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Private Method
 
-        private Task<IChannel> ConnectAsync()
+        private async Task<IChannel> ConnectAsync()
         {
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.Information($"准备连接到服务器：{_endPoint}。");
+
             var bootstrap = new Bootstrap();
             bootstrap
                 .Channel<TcpSocketChannel>()
@@ -95,9 +117,14 @@ namespace Rabbit.Rpc.Transport.Implementation
                     pipeline.AddLast(new LengthFieldPrepender(4));
                     pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
 
-                    pipeline.AddLast(new MessageReceiveHandler(_serialization, _resultDictionary));
+                    pipeline.AddLast(new MessageReceiveHandler(_serialization, _resultDictionary, _logger));
                 }));
-            return bootstrap.ConnectAsync(_endPoint);
+            var result = await bootstrap.ConnectAsync(_endPoint);
+
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.Information($"连接到服务器：{_endPoint}，成功。");
+
+            return result;
         }
 
         #endregion Private Method
@@ -108,11 +135,13 @@ namespace Rabbit.Rpc.Transport.Implementation
         {
             private readonly ISerializer _serialization;
             private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultConcurrentDictionary;
+            private readonly ILogger _logger;
 
-            public MessageReceiveHandler(ISerializer serialization, ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> resultConcurrentDictionary)
+            public MessageReceiveHandler(ISerializer serialization, ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> resultConcurrentDictionary, ILogger logger)
             {
                 _serialization = serialization;
                 _resultConcurrentDictionary = resultConcurrentDictionary;
+                _logger = logger;
             }
 
             #region Overrides of ChannelHandlerAdapter
@@ -120,14 +149,22 @@ namespace Rabbit.Rpc.Transport.Implementation
             public override void ChannelRead(IChannelHandlerContext context, object message)
             {
                 var buffer = (IByteBuffer)message;
-                var content = buffer.ToArray();
-                var result = _serialization.Deserialize<TransportMessage>(content);
+
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.Information($"接收到消息：{buffer.ToString(Encoding.UTF8)}。");
 
                 TaskCompletionSource<TransportMessage> task;
-                if (_resultConcurrentDictionary.TryGetValue(result.Id, out task))
-                {
-                    task.SetResult(result);
-                }
+                var content = buffer.ToArray();
+                var result = _serialization.Deserialize<TransportMessage>(content);
+                if (!_resultConcurrentDictionary.TryGetValue(result.Id, out task))
+                    return;
+                task.SetResult(result);
+            }
+
+            public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
+            {
+                if (_logger.IsEnabled(LogLevel.Error))
+                    _logger.Error($"与服务器：{context.Channel.RemoteAddress}通信时发送了错误。", exception);
             }
 
             #endregion Overrides of ChannelHandlerAdapter

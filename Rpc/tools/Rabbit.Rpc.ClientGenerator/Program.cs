@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Rabbit.Rpc.Ids.Implementation;
+using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.ProxyGenerator;
 using Rabbit.Rpc.ProxyGenerator.Implementation;
 using Rabbit.Rpc.ProxyGenerator.Utilitys;
@@ -22,7 +23,7 @@ namespace Rabbit.Rpc.ClientGenerator
                 Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "assemblies"), "*.dll").ToArray();
             var assemblies = assemblyFiles.Select(i => Assembly.Load(File.ReadAllBytes(i))).ToArray();
 
-            IServiceProxyGenerater serviceProxyGenerater = new ServiceProxyGenerater(new DefaultServiceIdGenerator());
+            IServiceProxyGenerater serviceProxyGenerater = new ServiceProxyGenerater(new DefaultServiceIdGenerator(new NullLogger<DefaultServiceIdGenerator>()));
 
             Console.WriteLine("成功加载了以下程序集");
             foreach (var name in assemblies.Select(i => i.GetName().Name))

@@ -1,4 +1,5 @@
 ﻿using Rabbit.Rpc.Address;
+using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace Rabbit.Rpc.Routing.Implementation
 
         private readonly string _filePath;
         private readonly ISerializer _serializer;
+        private readonly ILogger<SharedFileServiceRouteManager> _logger;
         private IEnumerable<ServiceRoute> _routes;
         private readonly FileSystemWatcher _fileSystemWatcher;
 
@@ -24,10 +26,11 @@ namespace Rabbit.Rpc.Routing.Implementation
 
         #region Constructor
 
-        public SharedFileServiceRouteManager(string filePath, ISerializer serializer)
+        public SharedFileServiceRouteManager(string filePath, ISerializer serializer, ILogger<SharedFileServiceRouteManager> logger)
         {
             _filePath = filePath;
             _serializer = serializer;
+            _logger = logger;
             _fileSystemWatcher = new FileSystemWatcher(Path.GetDirectoryName(filePath), "*" + Path.GetExtension(filePath));
             _fileSystemWatcher.Changed += _fileSystemWatcher_Changed;
             _fileSystemWatcher.Created += _fileSystemWatcher_Changed;
@@ -39,6 +42,8 @@ namespace Rabbit.Rpc.Routing.Implementation
 
         private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.Information($"文件{_filePath}发生了变更，将重新获取路由信息。");
             EntryRoutes(_filePath);
         }
 
@@ -96,6 +101,8 @@ namespace Rabbit.Rpc.Routing.Implementation
             {
                 if (File.Exists(file))
                 {
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.Debug($"准备从文件：{file}中获取服务路由。");
                     var content = File.ReadAllBytes(file);
                     try
                     {
@@ -104,14 +111,20 @@ namespace Rabbit.Rpc.Routing.Implementation
                             Address = i.Address,
                             ServiceDescriptor = i.ServiceDescriptor
                         }).ToArray();
+                        if (_logger.IsEnabled(LogLevel.Information))
+                            _logger.Information($"成功获取到以下路由信息：{string.Join(",", _routes.Select(i => i.ServiceDescriptor.Id))}。");
                     }
-                    catch
+                    catch (Exception exception)
                     {
+                        if (_logger.IsEnabled(LogLevel.Fatal))
+                            _logger.Fatal("获取路由信息时发生了错误。", exception);
                         _routes = Enumerable.Empty<ServiceRoute>();
                     }
                 }
                 else
                 {
+                    if (_logger.IsEnabled(LogLevel.Warning))
+                        _logger.Warning($"无法获取路由信息，因为文件：{file}不存在。");
                     _routes = Enumerable.Empty<ServiceRoute>();
                 }
             }

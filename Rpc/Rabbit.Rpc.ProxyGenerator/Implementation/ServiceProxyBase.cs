@@ -52,8 +52,8 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                 }
             });
 
-            var content = Encoding.UTF8.GetBytes(message.Content.ToString());
-            var task = _serializer.Deserialize<TaskModel>(content);
+            var data = message.Content as byte[] ?? Encoding.UTF8.GetBytes(message.Content.ToString());
+            var task = _serializer.Deserialize<TaskModel>(data);
 
             var result = task.Result;
 

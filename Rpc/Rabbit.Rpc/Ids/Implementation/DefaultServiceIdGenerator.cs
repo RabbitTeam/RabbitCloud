@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Rabbit.Rpc.Logging;
+using System;
 using System.Linq;
 using System.Reflection;
 
@@ -9,6 +10,13 @@ namespace Rabbit.Rpc.Ids.Implementation
     /// </summary>
     public class DefaultServiceIdGenerator : IServiceIdGenerator
     {
+        private readonly ILogger<DefaultServiceIdGenerator> _logger;
+
+        public DefaultServiceIdGenerator(ILogger<DefaultServiceIdGenerator> logger)
+        {
+            _logger = logger;
+        }
+
         #region Implementation of IServiceIdFactory
 
         /// <summary>
@@ -23,12 +31,15 @@ namespace Rabbit.Rpc.Ids.Implementation
             var type = method.DeclaringType;
             if (type == null)
                 throw new ArgumentNullException(nameof(method.DeclaringType), "方法的定义类型不能为空。");
+
             var id = $"{type.FullName}.{method.Name}";
             var parameters = method.GetParameters();
             if (parameters.Any())
             {
                 id += "_" + string.Join("_", parameters.Select(i => i.Name));
             }
+            if (_logger.IsEnabled(LogLevel.Debug))
+                _logger.Debug($"为方法：{method}生成服务Id：{id}。");
             return id;
         }
 
