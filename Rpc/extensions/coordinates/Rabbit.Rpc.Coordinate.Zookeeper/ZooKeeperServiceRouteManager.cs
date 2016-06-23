@@ -170,7 +170,17 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             foreach (var children in childrens)
             {
                 var nodePath = $"{rootPath}{children}";
-                var data = _zooKeeper.GetData(nodePath, false, new Stat());
+                var watcher = new NodeMonitorWatcher(_zooKeeper, nodePath, newData =>
+                  {
+                      var route = GetRoute(newData);
+                      //删除旧路由。
+                      _routes = _routes.Where(i => i.ServiceDescriptor.Id != route.ServiceDescriptor.Id);
+                      //添加新路由。
+                      if (route != null)
+                          _routes = _routes.Concat(new[] { route });
+                      _routes = _routes.ToArray();
+                  });
+                var data = _zooKeeper.GetData(nodePath, watcher, new Stat());
                 yield return GetRoute(data);
             }
         }
@@ -181,9 +191,30 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 return;
             _connectionWait.WaitOne();
 
-            var watcher = new MonitorWatcher(_zooKeeper, _configInfo.RoutePath, newChildrens =>
+            var watcher = new ChildrenMonitorWatcher(_zooKeeper, _configInfo.RoutePath, newChildrens =>
             {
-                _routes = GetRoutes(newChildrens);
+                if (newChildrens == null)
+                {
+                    _routes = Enumerable.Empty<ServiceRoute>();
+                    return;
+                }
+                //最新的节点数据。
+                newChildrens = newChildrens.ToArray();
+
+                //旧的节点数据。
+                var outChildrens = _routes.Select(i => i.ServiceDescriptor.Id).ToArray();
+                //计算出已被删除的节点。
+                var deletedChildrens = outChildrens.Except(newChildrens);
+                //结算出新增的节点。
+                var createdChildrens = newChildrens.Except(outChildrens);
+
+                //删除无效的节点路由。
+                _routes = _routes.Where(i => !deletedChildrens.Contains(i.ServiceDescriptor.Id));
+                //获取新增的路由信息。
+                var newRoutes = GetRoutes(createdChildrens);
+                _routes = _routes.Concat(newRoutes);
+
+                _routes = _routes.ToArray();
             });
             if (_zooKeeper.Exists(_configInfo.RoutePath, watcher) != null)
             {
@@ -226,43 +257,101 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             #endregion Implementation of IWatcher
         }
 
-        protected class MonitorWatcher : IWatcher
+        protected abstract class WatcherBase : IWatcher
         {
-            private readonly ZooKeeper _zooKeeper;
-            private readonly string _path;
-            private readonly Action<IEnumerable<string>> _action;
+            protected string Path { get; }
 
-            public MonitorWatcher(ZooKeeper zooKeeper, string path, Action<IEnumerable<string>> action)
+            protected WatcherBase(string path)
             {
-                _zooKeeper = zooKeeper;
-                _path = path;
-                _action = action;
+                Path = path;
             }
 
             #region Implementation of IWatcher
 
             public void Process(WatchedEvent watchedEvent)
             {
-                if (watchedEvent.State != KeeperState.SyncConnected || watchedEvent.Path != _path)
+                if (watchedEvent.State != KeeperState.SyncConnected || watchedEvent.Path != Path)
                     return;
+                ProcessImpl(watchedEvent);
+            }
 
-                var watcher = new MonitorWatcher(_zooKeeper, _path, _action);
+            #endregion Implementation of IWatcher
+
+            protected abstract void ProcessImpl(WatchedEvent watchedEvent);
+        }
+
+        protected class NodeMonitorWatcher : WatcherBase
+        {
+            private readonly ZooKeeper _zooKeeper;
+            private readonly Action<byte[]> _action;
+
+            public NodeMonitorWatcher(ZooKeeper zooKeeper, string path, Action<byte[]> action) : base(path)
+            {
+                _zooKeeper = zooKeeper;
+                _action = action;
+            }
+
+            #region Overrides of WatcherBase
+
+            protected override void ProcessImpl(WatchedEvent watchedEvent)
+            {
+                var path = Path;
                 switch (watchedEvent.Type)
                 {
-                    case EventType.NodeCreated:
-                    case EventType.NodeChildrenChanged:
-                        var childrens = _zooKeeper.GetChildren(_path, watcher, new Stat());
-                        _action(childrens);
+                    case EventType.NodeDataChanged:
+                        var data = _zooKeeper.GetData(path, new NodeMonitorWatcher(_zooKeeper, path, _action), new Stat());
+                        _action(data);
                         break;
 
                     case EventType.NodeDeleted:
-                        _zooKeeper.Exists(_path, watcher);
                         _action(null);
                         break;
                 }
             }
 
-            #endregion Implementation of IWatcher
+            #endregion Overrides of WatcherBase
+        }
+
+        protected class ChildrenMonitorWatcher : WatcherBase
+        {
+            private readonly ZooKeeper _zooKeeper;
+            private readonly Action<IEnumerable<string>> _action;
+
+            public ChildrenMonitorWatcher(ZooKeeper zooKeeper, string path, Action<IEnumerable<string>> action) : base(path)
+            {
+                _zooKeeper = zooKeeper;
+                _action = action;
+            }
+
+            #region Overrides of WatcherBase
+
+            protected override void ProcessImpl(WatchedEvent watchedEvent)
+            {
+                var path = Path;
+                var watcher = new ChildrenMonitorWatcher(_zooKeeper, path, _action);
+                switch (watchedEvent.Type)
+                {
+                    case EventType.NodeCreated:
+                    case EventType.NodeChildrenChanged:
+                        if (_zooKeeper.Exists(path, watcher) != null)
+                        {
+                            var childrens = _zooKeeper.GetChildren(path, watcher, new Stat());
+                            _action(childrens);
+                        }
+                        else
+                        {
+                            _action(null);
+                        }
+                        break;
+
+                    case EventType.NodeDeleted:
+                        _zooKeeper.Exists(path, watcher);
+                        _action(null);
+                        break;
+                }
+            }
+
+            #endregion Overrides of WatcherBase
         }
 
         #endregion Watcher Class
