@@ -17,7 +17,7 @@ namespace Rabbit.Rpc.Logging
         /// <returns>如果开启返回true，否则返回false。</returns>
         public bool IsEnabled(LogLevel level)
         {
-            return true;
+            return (int)level > 2;
         }
 
         /// <summary>
