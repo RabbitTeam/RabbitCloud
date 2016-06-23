@@ -29,6 +29,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "coordinates", "coordinates"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabbit.Rpc.Coordinate.Zookeeper", "extensions\coordinates\Rabbit.Rpc.Coordinate.Zookeeper\Rabbit.Rpc.Coordinate.Zookeeper.csproj", "{21BDBE34-EA86-498B-825D-3D2BD79E2A70}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{013F8D49-C672-4CAD-8DFC-A8BDB0899E81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabbit.Rpc.Tests", "tests\Rabbit.Rpc.Tests\Rabbit.Rpc.Tests.csproj", "{A7BD6D14-A78A-4356-8166-1ECB88DDF69A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +75,10 @@ Global
 		{21BDBE34-EA86-498B-825D-3D2BD79E2A70}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21BDBE34-EA86-498B-825D-3D2BD79E2A70}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21BDBE34-EA86-498B-825D-3D2BD79E2A70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7BD6D14-A78A-4356-8166-1ECB88DDF69A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7BD6D14-A78A-4356-8166-1ECB88DDF69A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7BD6D14-A78A-4356-8166-1ECB88DDF69A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7BD6D14-A78A-4356-8166-1ECB88DDF69A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -82,5 +90,6 @@ Global
 		{0C514CF9-E910-43E3-9BCB-7F54E3A6C6A9} = {B86FDAE1-369F-42BE-B5D7-B37F19B0D508}
 		{12DE8D05-3319-4D1F-8CB6-C796A592C2CB} = {DD9931BD-AAAD-423A-8AC8-94ECB06D8828}
 		{21BDBE34-EA86-498B-825D-3D2BD79E2A70} = {12DE8D05-3319-4D1F-8CB6-C796A592C2CB}
+		{A7BD6D14-A78A-4356-8166-1ECB88DDF69A} = {013F8D49-C672-4CAD-8DFC-A8BDB0899E81}
 	EndGlobalSection
 EndGlobal

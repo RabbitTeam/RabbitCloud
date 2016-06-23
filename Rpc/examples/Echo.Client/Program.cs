@@ -33,7 +33,8 @@ namespace Echo.Client
             var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, new ConsoleLogger<SharedFileServiceRouteManager>());
             //zookeeper服务路由管理者。
             //            var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer, new ConsoleLogger<ZooKeeperServiceRouteManager>());
-            IAddressSelector addressSelector = new RandomAddressSelector();
+            //            IAddressSelector addressSelector = new RandomAddressSelector();
+            IAddressSelector addressSelector = new PollingAddressSelector();
             IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, new ConsoleLogger<DefaultAddressResolver>(), addressSelector);
             ITransportClientFactory transportClientFactory = new NettyTransportClientFactory(serializer, new ConsoleLogger<NettyTransportClientFactory>());
             var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, new ConsoleLogger<RemoteInvokeService>());
