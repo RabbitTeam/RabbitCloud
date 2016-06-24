@@ -2,40 +2,41 @@
 using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport.Channels;
+using Rabbit.Rpc.Transport.Channels.Implementation;
 using System;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Transport.Implementation
 {
+    /// <summary>
+    /// 一个默认的传输客户端实现。
+    /// </summary>
     public class TransportClient : ITransportClient, IDisposable
     {
+        #region Field
+
         private readonly ITransportChannel _transportChannel;
         private readonly ILogger _logger;
         private readonly ISerializer _serializer;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
 
-        public TransportClient(ITransportChannel transportChannel, ILogger logger, ISerializer serializer)
+        #endregion Field
+
+        #region Constructor
+
+        public TransportClient(EndPoint remoteAddress, ILogger logger, ISerializer serializer)
         {
-            _transportChannel = transportChannel;
+            _transportChannel = new NettyTransportChannel(logger);
             _logger = logger;
             _serializer = serializer;
-            _transportChannel.Received += (c, message) =>
-            {
-                var buffer = (IByteBuffer)message;
-
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.Information($"接收到消息：{buffer.ToString(Encoding.UTF8)}。");
-
-                TaskCompletionSource<TransportMessage> task;
-                var content = buffer.ToArray();
-                var result = _serializer.Deserialize<TransportMessage>(content);
-                if (!_resultDictionary.TryGetValue(result.Id, out task))
-                    return;
-                task.SetResult(result);
-            };
+            _transportChannel.Received += _transportChannel_Received;
+            _transportChannel.ConnectAsync(remoteAddress);
         }
+
+        #endregion Constructor
 
         #region Implementation of ITransportClient
 
@@ -98,9 +99,35 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            (_transportChannel as IDisposable)?.Dispose();
+            Task.Run(async () =>
+            {
+                await _transportChannel.DisconnectAsync();
+            }).Wait();
+            foreach (var taskCompletionSource in _resultDictionary.Values)
+            {
+                taskCompletionSource.TrySetCanceled();
+            }
         }
 
         #endregion Implementation of IDisposable
+
+        #region Private Method
+
+        private void _transportChannel_Received(ITransportChannel channel, object message)
+        {
+            var buffer = (IByteBuffer)message;
+
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.Information($"接收到消息：{buffer.ToString(Encoding.UTF8)}。");
+
+            TaskCompletionSource<TransportMessage> task;
+            var content = buffer.ToArray();
+            var result = _serializer.Deserialize<TransportMessage>(content);
+            if (!_resultDictionary.TryGetValue(result.Id, out task))
+                return;
+            task.SetResult(result);
+        }
+
+        #endregion Private Method
     }
 }

@@ -1,14 +1,26 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Transport.Channels
 {
+    #region Delegate
+
     /// <summary>
     /// 接受到消息的委托。
     /// </summary>
     /// <param name="channel">传输通道。</param>
     /// <param name="message">接收到的消息。</param>
     public delegate void ReceivedDelegate(ITransportChannel channel, object message);
+
+    /// <summary>
+    /// 异常抓住委托。
+    /// </summary>
+    /// <param name="channel">传输通道。</param>
+    /// <param name="exception">获得的异常。</param>
+    public delegate void ExceptionCaughtDelegate(ITransportChannel channel, Exception exception);
+
+    #endregion Delegate
 
     /// <summary>
     /// 一个抽象的传输通道。
@@ -19,6 +31,11 @@ namespace Rabbit.Rpc.Transport.Channels
         /// 接收到消息的事件。
         /// </summary>
         event ReceivedDelegate Received;
+
+        /// <summary>
+        /// 异常抓住事件。
+        /// </summary>
+        event ExceptionCaughtDelegate ExceptionCaught;
 
         /// <summary>
         /// 是否打开。
@@ -35,13 +52,6 @@ namespace Rabbit.Rpc.Transport.Channels
         /// </summary>
         EndPoint RemoteAddress { get; }
 
-        /*/// <summary>
-        /// 绑定到
-        /// </summary>
-        /// <param name="localAddress"></param>
-        /// <returns></returns>
-                Task BindAsync(EndPoint localAddress);*/
-
         /// <summary>
         /// 连接到远程服务器。
         /// </summary>
@@ -57,7 +67,7 @@ namespace Rabbit.Rpc.Transport.Channels
         /// <returns>一个任务。</returns>
         Task ConnectAsync(EndPoint remoteAddress, EndPoint localAddress);
 
-        /*/// <summary>
+        /// <summary>
         /// 关闭通道。
         /// </summary>
         /// <returns>一个人任务。</returns>
@@ -67,7 +77,7 @@ namespace Rabbit.Rpc.Transport.Channels
         /// 断开频道。
         /// </summary>
         /// <returns></returns>
-        Task DisconnectAsync();*/
+        Task DisconnectAsync();
 
         /// <summary>
         /// 写入。

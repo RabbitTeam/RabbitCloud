@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Transport
 {
@@ -13,6 +12,6 @@ namespace Rabbit.Rpc.Transport
         /// </summary>
         /// <param name="endPoint">终结点。</param>
         /// <returns>传输客户端实例。</returns>
-        Task<ITransportClient> CreateClient(EndPoint endPoint);
+        ITransportClient CreateClient(EndPoint endPoint);
     }
 }
