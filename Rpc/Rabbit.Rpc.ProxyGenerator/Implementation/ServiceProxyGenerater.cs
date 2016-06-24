@@ -198,10 +198,9 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
 
             foreach (var genericTypeArgument in type.GenericTypeArguments)
             {
-                if (genericTypeArgument.IsGenericType)
-                    list.Add(GetTypeSyntax(genericTypeArgument));
-                else
-                    list.Add(GetQualifiedNameSyntax(genericTypeArgument.FullName));
+                list.Add(genericTypeArgument.IsGenericType
+                    ? GetTypeSyntax(genericTypeArgument)
+                    : GetQualifiedNameSyntax(genericTypeArgument.FullName));
                 list.Add(Token(SyntaxKind.CommaToken));
             }
 

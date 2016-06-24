@@ -74,8 +74,12 @@
     <Compile Include="Serialization\Implementation\JsonSerializer.cs" />
     <Compile Include="Serialization\ISerializer.cs" />
     <Compile Include="ServiceDescriptor.cs" />
+    <Compile Include="Transport\Channels\Implementation\NettyTransportChannel.cs" />
     <Compile Include="Transport\Implementation\NettyTransportClientFactory.cs" />
     <Compile Include="Transport\Implementation\NettyTransportClient.cs" />
+    <Compile Include="Transport\Implementation\TransportClient.cs" />
+    <Compile Include="Transport\Implementation\TransportClientFactory.cs" />
+    <Compile Include="Transport\Channels\ITransportChannel.cs" />
     <Compile Include="Transport\ITransportClient.cs" />
     <Compile Include="Transport\ITransportClientFactory.cs" />
     <Compile Include="Transport\TransportMessage.cs" />

@@ -1,30 +1,29 @@
-﻿/*using Rabbit.Rpc.Logging;
+﻿using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
+using Rabbit.Rpc.Transport.Channels.Implementation;
 
 namespace Rabbit.Rpc.Transport.Implementation
 {
-    /// <summary>
-    /// 基于Netty传输客户端的工厂实现。
-    /// </summary>
-    public class NettyTransportClientFactory : ITransportClientFactory, IDisposable
+    public class TransportClientFactory : ITransportClientFactory, IDisposable
     {
         #region Field
 
-        private readonly ISerializer _serialization;
-        private readonly ILogger<NettyTransportClientFactory> _logger;
-        private readonly ConcurrentDictionary<string, Lazy<ITransportClient>> _clients = new ConcurrentDictionary<string, Lazy<ITransportClient>>();
+        private readonly ISerializer _serializer;
+        private readonly ILogger<TransportClientFactory> _logger;
+        private readonly ConcurrentDictionary<string, Lazy<Task<ITransportClient>>> _clients = new ConcurrentDictionary<string, Lazy<Task<ITransportClient>>>();
 
         #endregion Field
 
         #region Constructor
 
-        public NettyTransportClientFactory(ISerializer serialization, ILogger<NettyTransportClientFactory> logger)
+        public TransportClientFactory(ISerializer serializer, ILogger<TransportClientFactory> logger)
         {
-            _serialization = serialization;
+            _serializer = serializer;
             _logger = logger;
         }
 
@@ -37,12 +36,20 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// </summary>
         /// <param name="endPoint">终结点。</param>
         /// <returns>传输客户端实例。</returns>
-        public ITransportClient CreateClient(EndPoint endPoint)
+        public async Task<ITransportClient> CreateClient(EndPoint endPoint)
         {
             var key = endPoint.ToString();
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.Debug($"准备为服务端地址：{key}创建客户端。");
-            return _clients.GetOrAdd(endPoint.ToString(), k => new Lazy<ITransportClient>(() => new NettyTransportClient(endPoint, _serialization, _logger))).Value;
+            return await _clients.GetOrAdd(endPoint.ToString()
+                , k =>
+                new Lazy<Task<ITransportClient>>(
+                    async () =>
+                    {
+                        var channel = new NettyTransportChannel(_logger);
+                        await channel.ConnectAsync(endPoint);
+                        return new TransportClient(channel, _logger, _serializer);
+                    })).Value;
         }
 
         #endregion Implementation of ITransportClientFactory
@@ -60,4 +67,4 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #endregion Implementation of IDisposable
     }
-}*/
+}

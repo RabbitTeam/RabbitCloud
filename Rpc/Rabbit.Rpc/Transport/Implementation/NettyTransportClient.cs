@@ -1,4 +1,4 @@
-﻿using DotNetty.Buffers;
+﻿/*using DotNetty.Buffers;
 using DotNetty.Codecs;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
@@ -185,4 +185,4 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #endregion Implementation of IDisposable
     }
-}
+}*/
