@@ -184,24 +184,37 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
             return array.Select(GenerateMethodDeclaration).ToArray();
         }
 
+        private static TypeSyntax GetTypeSyntax(Type type)
+        {
+            //没有返回值。
+            if (type == null)
+                return null;
+
+            //非泛型。
+            if (!type.IsGenericType)
+                return GetQualifiedNameSyntax(type.FullName);
+
+            var list = new List<SyntaxNodeOrToken>();
+
+            foreach (var genericTypeArgument in type.GenericTypeArguments)
+            {
+                if (genericTypeArgument.IsGenericType)
+                    list.Add(GetTypeSyntax(genericTypeArgument));
+                else
+                    list.Add(GetQualifiedNameSyntax(genericTypeArgument.FullName));
+                list.Add(Token(SyntaxKind.CommaToken));
+            }
+
+            var array = list.Take(list.Count - 1).ToArray();
+            var typeArgumentListSyntax = TypeArgumentList(SeparatedList<TypeSyntax>(array));
+            return GenericName(type.Name.Substring(0, type.Name.IndexOf('`')))
+                .WithTypeArgumentList(typeArgumentListSyntax);
+        }
+
         private MemberDeclarationSyntax GenerateMethodDeclaration(MethodInfo method)
         {
             var serviceId = _serviceIdGenerator.GenerateServiceId(method);
-
-            var arguments = method.ReturnType.GetGenericArguments();
-            var resultType = arguments.Any() ? arguments.First() : null;
-            SimpleNameSyntax returnDeclaration;
-            if (resultType != null)
-            {
-                returnDeclaration = GenericName(Identifier("Task")).WithTypeArgumentList(
-                    TypeArgumentList(
-                        SingletonSeparatedList<TypeSyntax>(
-                            GetQualifiedNameSyntax(resultType))));
-            }
-            else
-            {
-                returnDeclaration = IdentifierName("Task");
-            }
+            var returnDeclaration = GetTypeSyntax(method.ReturnType);
 
             var parameterList = new List<SyntaxNodeOrToken>();
             var parameterDeclarationList = new List<SyntaxNodeOrToken>();
@@ -239,12 +252,10 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
             ExpressionSyntax expressionSyntax;
             StatementSyntax statementSyntax;
 
-            if (resultType != null)
+            if (method.ReturnType != typeof(Task))
             {
                 expressionSyntax = GenericName(
-                    Identifier("Invoke")).WithTypeArgumentList(
-                        TypeArgumentList(
-                            SingletonSeparatedList<TypeSyntax>(GetQualifiedNameSyntax(resultType))));
+                    Identifier("Invoke")).WithTypeArgumentList(((GenericNameSyntax)returnDeclaration).TypeArgumentList);
             }
             else
             {
@@ -284,7 +295,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                                                 Literal(serviceId)))
                                 }))));
 
-            if (resultType != null)
+            if (method.ReturnType != typeof(Task))
             {
                 statementSyntax = ReturnStatement(expressionSyntax);
             }
