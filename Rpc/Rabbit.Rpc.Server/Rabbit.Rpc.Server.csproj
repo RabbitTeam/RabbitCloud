@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Implementation\DefaultServiceEntryLocate.cs" />
+    <Compile Include="Implementation\DefaultServiceExecutor.cs" />
     <Compile Include="Implementation\ServiceDiscovery\Attributes\AttributeServiceEntryProvider.cs" />
     <Compile Include="Implementation\ServiceDiscovery\Attributes\RpcServiceAttribute.cs" />
     <Compile Include="Implementation\ServiceDiscovery\Implementation\ClrServiceEntryFactory.cs" />
@@ -70,10 +71,12 @@
     <Compile Include="Implementation\ServiceDiscovery\IClrServiceEntryFactory.cs" />
     <Compile Include="Implementation\ServiceDiscovery\IServiceInstanceFactory.cs" />
     <Compile Include="Implementation\DefaultServiceEntryManager.cs" />
-    <Compile Include="Implementation\DefaultServiceHost.cs" />
+    <Compile Include="Implementation\NettyServiceHost.cs" />
+    <Compile Include="Implementation\ServiceHostAbstract.cs" />
     <Compile Include="IServiceEntryLocate.cs" />
     <Compile Include="IServiceEntryManager.cs" />
     <Compile Include="IServiceEntryProvider.cs" />
+    <Compile Include="IServiceExecutor.cs" />
     <Compile Include="IServiceHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceEntry.cs" />

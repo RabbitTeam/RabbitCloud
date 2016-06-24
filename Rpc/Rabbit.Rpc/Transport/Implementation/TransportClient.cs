@@ -3,11 +3,8 @@ using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
-using Rabbit.Rpc.Transport.Channels;
-using Rabbit.Rpc.Transport.Channels.Implementation;
 using System;
 using System.Collections.Concurrent;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,7 +17,8 @@ namespace Rabbit.Rpc.Transport.Implementation
     {
         #region Field
 
-        private readonly ITransportChannel _transportChannel;
+        private readonly IMessageSender _messageSender;
+        private readonly IMessageListener _messageListener;
         private readonly ILogger _logger;
         private readonly ISerializer<byte[]> _serializer;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<RemoteInvokeResultMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<RemoteInvokeResultMessage>>();
@@ -29,13 +27,13 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Constructor
 
-        public TransportClient(EndPoint remoteAddress, ILogger logger, ISerializer<byte[]> serializer)
+        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<byte[]> serializer)
         {
-            _transportChannel = new NettyTransportChannel(logger);
+            _messageSender = messageSender;
+            _messageListener = messageListener;
             _logger = logger;
             _serializer = serializer;
-            _transportChannel.Received += _transportChannel_Received;
-            _transportChannel.ConnectAsync(remoteAddress);
+            messageListener.Received += MessageListener_Received;
         }
 
         #endregion Constructor
@@ -61,7 +59,7 @@ namespace Rabbit.Rpc.Transport.Implementation
                     _logger.Debug($"数据包大小为：{data.Length}。");
 
                 buffer.WriteBytes(data);
-                await _transportChannel.WriteAndFlushAsync(buffer);
+                await _messageSender.SendAndFlushAsync(buffer);
             }
             catch (Exception exception)
             {
@@ -105,10 +103,9 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            Task.Run(async () =>
-            {
-                await _transportChannel.DisconnectAsync();
-            }).Wait();
+            (_messageSender as IDisposable)?.Dispose();
+            (_messageListener as IDisposable)?.Dispose();
+
             foreach (var taskCompletionSource in _resultDictionary.Values)
             {
                 taskCompletionSource.TrySetCanceled();
@@ -119,7 +116,7 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Private Method
 
-        private void _transportChannel_Received(ITransportChannel channel, object message)
+        private void MessageListener_Received(IMessageSender sender, object message)
         {
             var buffer = (IByteBuffer)message;
 

@@ -59,7 +59,7 @@ namespace Echo.Server
                 serviceRouteManager.AddRoutesAsync(addressDescriptors).Wait();
             }
 
-            IServiceHost serviceHost = new DefaultServiceHost(byteArraySerializer, serviceEntryLocate, new ConsoleLogger<DefaultServiceHost>());
+            IServiceHost serviceHost = new NettyServiceHost(new DefaultServiceExecutor(serviceEntryLocate,byteArraySerializer,new ConsoleLogger<DefaultServiceExecutor>()) ,new ConsoleLogger<NettyServiceHost>());
 
             Task.Factory.StartNew(async () =>
             {
