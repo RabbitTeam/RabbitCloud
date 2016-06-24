@@ -63,7 +63,8 @@ namespace Rabbit.Rpc.Logging
 
             Console.WriteLine($"level：{level}");
             Console.WriteLine($"message：{message}");
-            Console.WriteLine($"exception：{exception}");
+            if (exception != null)
+                Console.WriteLine($"exception：{exception}");
             Console.WriteLine("========================================");
 
             Console.ResetColor();

@@ -159,7 +159,7 @@ namespace Rabbit.Rpc.Server.Implementation
                 {
                     if (_logger.IsEnabled(LogLevel.Error))
                         _logger.Error("执行本地逻辑时候发生了错误。", exception);
-                    resultMessage.ExceptionMessage = exception.Message;
+                    resultMessage.ExceptionMessage = GetExceptionMessage(exception);
                 }
 
                 try
@@ -193,6 +193,23 @@ namespace Rabbit.Rpc.Server.Implementation
             }
 
             #endregion Overrides of ChannelHandlerAdapter
+
+            #region Private Method
+
+            private static string GetExceptionMessage(Exception exception)
+            {
+                if (exception == null)
+                    return string.Empty;
+
+                var message = exception.Message;
+                if (exception.InnerException != null)
+                {
+                    message += "|InnerException:" + GetExceptionMessage(exception.InnerException);
+                }
+                return message;
+            }
+
+            #endregion Private Method
         }
 
         #endregion Help Class

@@ -29,6 +29,8 @@ namespace Echo.Common
         Task<IDictionary<string, string>> GetDictionary();
 
         Task Try();
+
+        Task TryThrowException();
     }
 
     public class UserService : IUserService
@@ -77,6 +79,11 @@ namespace Echo.Common
         public Task Try()
         {
             return Task.CompletedTask;
+        }
+
+        public Task TryThrowException()
+        {
+            throw new Exception("用户Id非法！");
         }
 
         #endregion Implementation of IUserService

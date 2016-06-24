@@ -135,7 +135,7 @@ namespace Rabbit.Rpc.Transport.Implementation
 
             if (!string.IsNullOrEmpty(result.ExceptionMessage))
             {
-                task.TrySetException(new RpcException(result.ExceptionMessage));
+                task.TrySetException(new RpcRemoteException(result.ExceptionMessage));
             }
             else
             {
