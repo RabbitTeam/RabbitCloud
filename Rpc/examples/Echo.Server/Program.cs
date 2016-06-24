@@ -33,10 +33,12 @@ namespace Echo.Server
         private static void Main()
         {
             //相关服务初始化。
-            ISerializer serializer = new JsonSerializer();
+            ISerializer<string> serializer = new JsonSerializer();
+            ISerializer<byte[]> byteArraySerializer = new StringByteArraySerializer(serializer);
+            ISerializer<object> objectSerializer = new StringObjectSerializer(serializer);
             IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator(new ConsoleLogger<DefaultServiceIdGenerator>());
             IServiceInstanceFactory serviceInstanceFactory = new DefaultServiceInstanceFactory(new ConsoleLogger<DefaultServiceInstanceFactory>());
-            ITypeConvertibleService typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(serializer) }, new NullLogger<DefaultTypeConvertibleService>());
+            ITypeConvertibleService typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(objectSerializer) }, new NullLogger<DefaultTypeConvertibleService>());
             IClrServiceEntryFactory clrServiceEntryFactory = new ClrServiceEntryFactory(serviceInstanceFactory, serviceIdGenerator, typeConvertibleService);
             var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetExportedTypes());
             var serviceEntryProvider = new AttributeServiceEntryProvider(types, clrServiceEntryFactory, new ConsoleLogger<AttributeServiceEntryProvider>());
@@ -57,7 +59,7 @@ namespace Echo.Server
                 serviceRouteManager.AddRoutesAsync(addressDescriptors).Wait();
             }
 
-            IServiceHost serviceHost = new DefaultServiceHost(serializer, serviceEntryLocate, new ConsoleLogger<DefaultServiceHost>());
+            IServiceHost serviceHost = new DefaultServiceHost(byteArraySerializer, serviceEntryLocate, new ConsoleLogger<DefaultServiceHost>());
 
             Task.Factory.StartNew(async () =>
             {

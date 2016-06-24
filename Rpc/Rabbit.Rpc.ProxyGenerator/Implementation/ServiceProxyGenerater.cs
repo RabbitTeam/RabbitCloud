@@ -146,21 +146,18 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                 .WithParameterList(
                     ParameterList(
                         SeparatedList<ParameterSyntax>(
-                                new SyntaxNodeOrToken[]{
-                                    Parameter(
-                                        Identifier("remoteInvokeService"))
+                            new SyntaxNodeOrToken[]
+                            {
+                                Parameter(
+                                    Identifier("remoteInvokeService"))
                                     .WithType(
                                         IdentifierName("IRemoteInvokeService")),
-                                    Token(SyntaxKind.CommaToken),
-                                    Parameter(
-                                        Identifier("serializer"))
+                                Token(SyntaxKind.CommaToken),
+                                Parameter(
+                                    Identifier("typeConvertibleService"))
                                     .WithType(
-                                        IdentifierName("ISerializer")),
-                                    Token(SyntaxKind.CommaToken),
-                                    Parameter(
-                                        Identifier("typeConvertibleService"))
-                                    .WithType(
-                                        IdentifierName("ITypeConvertibleService"))})))
+                                        IdentifierName("ITypeConvertibleService"))
+                            })))
                 .WithInitializer(
                         ConstructorInitializer(
                             SyntaxKind.BaseConstructorInitializer,
@@ -169,9 +166,6 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                                     new SyntaxNodeOrToken[]{
                                         Argument(
                                             IdentifierName("remoteInvokeService")),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            IdentifierName("serializer")),
                                         Token(SyntaxKind.CommaToken),
                                         Argument(
                                             IdentifierName("typeConvertibleService"))}))))

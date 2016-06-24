@@ -22,7 +22,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
         private ZooKeeper _zooKeeper;
         private readonly ZookeeperConfigInfo _configInfo;
-        private readonly ISerializer _serializer;
+        private readonly ISerializer<byte[]> _serializer;
         private readonly ILogger<ZooKeeperServiceRouteManager> _logger;
         private IEnumerable<ServiceRoute> _routes;
         private readonly ManualResetEvent _connectionWait = new ManualResetEvent(false);
@@ -31,7 +31,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
         #region Constructor
 
-        public ZooKeeperServiceRouteManager(ZookeeperConfigInfo configInfo, ISerializer serializer, ILogger<ZooKeeperServiceRouteManager> logger)
+        public ZooKeeperServiceRouteManager(ZookeeperConfigInfo configInfo, ISerializer<byte[]> serializer, ILogger<ZooKeeperServiceRouteManager> logger)
         {
             _configInfo = configInfo;
             _serializer = serializer;
@@ -181,7 +181,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             if (data == null)
                 return null;
 
-            var descriptor = _serializer.Deserialize<IpAddressDescriptor>(data);
+            var descriptor = _serializer.Deserialize<byte[], IpAddressDescriptor>(data);
 
             return new ServiceRoute
             {

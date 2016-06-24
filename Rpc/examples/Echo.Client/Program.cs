@@ -26,23 +26,25 @@ namespace Echo.Client
         private static void Main()
         {
             //客户端基本服务。
-            ISerializer serializer = new JsonSerializer();
+            ISerializer<string> serializer = new JsonSerializer();
+            ISerializer<byte[]> byteArraySerializer = new StringByteArraySerializer(serializer);
+            ISerializer<object> objectSerializer = new StringObjectSerializer(serializer);
             IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator(new ConsoleLogger<DefaultServiceIdGenerator>());
 
-            var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(serializer) }, new ConsoleLogger<DefaultTypeConvertibleService>());
+            var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(objectSerializer) }, new ConsoleLogger<DefaultTypeConvertibleService>());
             var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, new ConsoleLogger<SharedFileServiceRouteManager>());
             //zookeeper服务路由管理者。
             //            var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer, new ConsoleLogger<ZooKeeperServiceRouteManager>());
             //            IAddressSelector addressSelector = new RandomAddressSelector();
             IAddressSelector addressSelector = new PollingAddressSelector();
             IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, new ConsoleLogger<DefaultAddressResolver>(), addressSelector);
-            ITransportClientFactory transportClientFactory = new NettyTransportClientFactory(serializer, new ConsoleLogger<NettyTransportClientFactory>());
+            ITransportClientFactory transportClientFactory = new TransportClientFactory(byteArraySerializer, new ConsoleLogger<TransportClientFactory>());
             var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, new ConsoleLogger<RemoteInvokeService>());
 
             //服务代理相关。
             IServiceProxyGenerater serviceProxyGenerater = new ServiceProxyGenerater(serviceIdGenerator);
             var services = serviceProxyGenerater.GenerateProxys(new[] { typeof(IUserService) }).ToArray();
-            IServiceProxyFactory serviceProxyFactory = new ServiceProxyFactory(remoteInvokeService, serializer, typeConvertibleService);
+            IServiceProxyFactory serviceProxyFactory = new ServiceProxyFactory(remoteInvokeService, typeConvertibleService);
 
             //创建IUserService的代理。
             var userService = serviceProxyFactory.CreateProxy<IUserService>(services.Single(typeof(IUserService).IsAssignableFrom));
@@ -51,21 +53,15 @@ namespace Echo.Client
             {
                 Task.Run(async () =>
                 {
-                    try
-                    {
-                        Console.WriteLine(DateTime.Now);
-                        Console.WriteLine($"userService.GetUserName:{await userService.GetUserName(1)}");
-                        Console.WriteLine($"userService.GetUserId:{await userService.GetUserId("rabbit")}");
-                        Console.WriteLine($"userService.GetUserLastSignInTime:{await userService.GetUserLastSignInTime(1)}");
-                        Console.WriteLine($"userService.Exists:{await userService.Exists(1)}");
-                        var user = await userService.GetUser(1);
-                        Console.WriteLine($"userService.GetUser:name={user.Name},age={user.Age}");
-                        Console.WriteLine($"userService.Update:{await userService.Update(1, user)}");
-                    }
-                    catch (Exception exception)
-                    {
-                        Console.WriteLine("发生了错误。" + exception.Message);
-                    }
+                    /*                    Console.WriteLine($"userService.GetUserName:{await userService.GetUserName(1)}");
+                                        Console.WriteLine($"userService.GetUserId:{await userService.GetUserId("rabbit")}");
+                                        Console.WriteLine($"userService.GetUserLastSignInTime:{await userService.GetUserLastSignInTime(1)}");
+                                        Console.WriteLine($"userService.Exists:{await userService.Exists(1)}");
+                                        var user = await userService.GetUser(1);
+                                        Console.WriteLine($"userService.GetUser:name={user.Name},age={user.Age}");
+                                        Console.WriteLine($"userService.Update:{await userService.Update(1, user)}");*/
+                    Console.WriteLine($"userService.GetDictionary:{(await userService.GetDictionary())["key"]}");
+                    //                    await userService.Try();
                 }).Wait();
                 Console.ReadLine();
             }

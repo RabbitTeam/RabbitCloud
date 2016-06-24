@@ -63,6 +63,8 @@
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\NullLogger.cs" />
+    <Compile Include="Messages\TransportMessage.cs" />
+    <Compile Include="Messages\RemoteInvokeResultMessage.cs" />
     <Compile Include="Routing\Implementation\SharedFileServiceRouteManager.cs" />
     <Compile Include="Routing\IServiceRouteManager.cs" />
     <Compile Include="Routing\ServiceRoute.cs" />
@@ -71,6 +73,8 @@
     <Compile Include="Ids\Implementation\DefaultServiceIdGenerator.cs" />
     <Compile Include="Messages\RemoteInvokeMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serialization\Implementation\StringByteArraySerializer.cs" />
+    <Compile Include="Serialization\Implementation\StringObjectSerializer.cs" />
     <Compile Include="Serialization\Implementation\JsonSerializer.cs" />
     <Compile Include="Serialization\ISerializer.cs" />
     <Compile Include="ServiceDescriptor.cs" />
@@ -80,7 +84,6 @@
     <Compile Include="Transport\Channels\ITransportChannel.cs" />
     <Compile Include="Transport\ITransportClient.cs" />
     <Compile Include="Transport\ITransportClientFactory.cs" />
-    <Compile Include="Transport\TransportMessage.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

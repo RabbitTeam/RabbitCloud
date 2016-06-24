@@ -1,9 +1,7 @@
 ﻿using Rabbit.Rpc.Client;
 using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Messages;
-using Rabbit.Rpc.Serialization;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.ProxyGenerator.Implementation
@@ -16,17 +14,15 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         #region Field
 
         private readonly IRemoteInvokeService _remoteInvokeService;
-        private readonly ISerializer _serializer;
         private readonly ITypeConvertibleService _typeConvertibleService;
 
         #endregion Field
 
         #region Constructor
 
-        protected ServiceProxyBase(IRemoteInvokeService remoteInvokeService, ISerializer serializer, ITypeConvertibleService typeConvertibleService)
+        protected ServiceProxyBase(IRemoteInvokeService remoteInvokeService, ITypeConvertibleService typeConvertibleService)
         {
             _remoteInvokeService = remoteInvokeService;
-            _serializer = serializer;
             _typeConvertibleService = typeConvertibleService;
         }
 
@@ -52,12 +48,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                 }
             });
 
-            var data = message.Content as byte[] ?? Encoding.UTF8.GetBytes(message.Content.ToString());
-            var task = _serializer.Deserialize<TaskModel>(data);
-
-            var result = task.Result;
-
-            result = _typeConvertibleService.Convert(result, typeof(T));
+            var result = _typeConvertibleService.Convert(message.Result, typeof(T));
 
             return (T)result;
         }
@@ -81,14 +72,5 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         }
 
         #endregion Protected Method
-
-        #region Help Class
-
-        internal class TaskModel
-        {
-            public object Result { get; set; }
-        }
-
-        #endregion Help Class
     }
 }

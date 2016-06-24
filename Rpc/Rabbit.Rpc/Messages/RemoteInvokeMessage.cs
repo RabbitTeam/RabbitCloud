@@ -1,12 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Rabbit.Rpc.Messages
 {
     /// <summary>
     /// 远程调用消息。
     /// </summary>
-    public class RemoteInvokeMessage
+    public class RemoteInvokeMessage : TransportMessage
     {
+        public RemoteInvokeMessage()
+        {
+            Id = Guid.NewGuid().ToString("N");
+        }
+
         /// <summary>
         /// 服务Id。
         /// </summary>

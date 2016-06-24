@@ -1,5 +1,6 @@
 using Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Attributes;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Echo.Common
@@ -24,6 +25,10 @@ namespace Echo.Common
         Task<UserModel> GetUser(int id);
 
         Task<bool> Update(int id, UserModel model);
+
+        Task<IDictionary<string, string>> GetDictionary();
+
+        Task Try();
     }
 
     public class UserService : IUserService
@@ -62,6 +67,16 @@ namespace Echo.Common
         public Task<bool> Update(int id, UserModel model)
         {
             return Task.FromResult(true);
+        }
+
+        public Task<IDictionary<string, string>> GetDictionary()
+        {
+            return Task.FromResult<IDictionary<string, string>>(new Dictionary<string, string> { { "key", "value" } });
+        }
+
+        public Task Try()
+        {
+            return Task.CompletedTask;
         }
 
         #endregion Implementation of IUserService

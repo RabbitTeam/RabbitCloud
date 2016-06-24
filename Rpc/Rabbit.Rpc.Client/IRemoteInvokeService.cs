@@ -1,4 +1,4 @@
-﻿using Rabbit.Rpc.Transport;
+﻿using Rabbit.Rpc.Messages;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,15 +13,15 @@ namespace Rabbit.Rpc.Client
         /// 调用。
         /// </summary>
         /// <param name="context">调用上下文。</param>
-        /// <returns>传输消息实例。</returns>
-        Task<TransportMessage> InvokeAsync(RemoteInvokeContext context);
+        /// <returns>远程调用结果消息模型。</returns>
+        Task<RemoteInvokeResultMessage> InvokeAsync(RemoteInvokeContext context);
 
         /// <summary>
         /// 调用。
         /// </summary>
         /// <param name="context">调用上下文。</param>
         /// <param name="cancellationToken">取消操作通知实例。</param>
-        /// <returns>传输消息实例。</returns>
-        Task<TransportMessage> InvokeAsync(RemoteInvokeContext context, CancellationToken cancellationToken);
+        /// <returns>远程调用结果消息模型。</returns>
+        Task<RemoteInvokeResultMessage> InvokeAsync(RemoteInvokeContext context, CancellationToken cancellationToken);
     }
 }

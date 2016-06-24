@@ -1,7 +1,6 @@
 ﻿using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Rabbit.Rpc.Convertibles.Implementation
 {
@@ -10,9 +9,9 @@ namespace Rabbit.Rpc.Convertibles.Implementation
     /// </summary>
     public class DefaultTypeConvertibleProvider : ITypeConvertibleProvider
     {
-        private readonly ISerializer _serializer;
+        private readonly ISerializer<object> _serializer;
 
-        public DefaultTypeConvertibleProvider(ISerializer serializer)
+        public DefaultTypeConvertibleProvider(ISerializer<object> serializer)
         {
             _serializer = serializer;
         }
@@ -44,8 +43,7 @@ namespace Rabbit.Rpc.Convertibles.Implementation
 
         private object ComplexTypeConvert(object instance, Type conversionType)
         {
-            var data = instance as byte[] ?? Encoding.UTF8.GetBytes(instance.ToString());
-            return _serializer.Deserialize(data, conversionType);
+            return _serializer.Deserialize(instance, conversionType);
         }
 
         #endregion Private Method

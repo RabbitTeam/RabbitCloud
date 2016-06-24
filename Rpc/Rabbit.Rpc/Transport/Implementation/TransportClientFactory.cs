@@ -11,7 +11,7 @@ namespace Rabbit.Rpc.Transport.Implementation
     {
         #region Field
 
-        private readonly ISerializer _serializer;
+        private readonly ISerializer<byte[]> _serializer;
         private readonly ILogger<TransportClientFactory> _logger;
         private readonly ConcurrentDictionary<string, Lazy<ITransportClient>> _clients = new ConcurrentDictionary<string, Lazy<ITransportClient>>();
 
@@ -19,7 +19,7 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Constructor
 
-        public TransportClientFactory(ISerializer serializer, ILogger<TransportClientFactory> logger)
+        public TransportClientFactory(ISerializer<byte[]> serializer, ILogger<TransportClientFactory> logger)
         {
             _serializer = serializer;
             _logger = logger;

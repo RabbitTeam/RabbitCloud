@@ -76,7 +76,9 @@ namespace Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Implementation
                         list.Add(parameter);
                     }
 
-                    return implementationMethod.Invoke(instance, list.ToArray());
+                    var result = implementationMethod.Invoke(instance, list.ToArray());
+
+                    return result;
                 }
             };
         }

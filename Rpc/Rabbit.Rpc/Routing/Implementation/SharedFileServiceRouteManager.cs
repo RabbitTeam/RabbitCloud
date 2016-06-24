@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Routing.Implementation
@@ -17,7 +18,7 @@ namespace Rabbit.Rpc.Routing.Implementation
         #region Field
 
         private readonly string _filePath;
-        private readonly ISerializer _serializer;
+        private readonly ISerializer<string> _serializer;
         private readonly ILogger<SharedFileServiceRouteManager> _logger;
         private IEnumerable<ServiceRoute> _routes;
         private readonly FileSystemWatcher _fileSystemWatcher;
@@ -26,25 +27,22 @@ namespace Rabbit.Rpc.Routing.Implementation
 
         #region Constructor
 
-        public SharedFileServiceRouteManager(string filePath, ISerializer serializer, ILogger<SharedFileServiceRouteManager> logger)
+        public SharedFileServiceRouteManager(string filePath, ISerializer<string> serializer, ILogger<SharedFileServiceRouteManager> logger)
         {
             _filePath = filePath;
             _serializer = serializer;
             _logger = logger;
-            _fileSystemWatcher = new FileSystemWatcher(Path.GetDirectoryName(filePath), "*" + Path.GetExtension(filePath));
+
+            var directoryName = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directoryName))
+                _fileSystemWatcher = new FileSystemWatcher(directoryName, "*" + Path.GetExtension(filePath));
+
             _fileSystemWatcher.Changed += _fileSystemWatcher_Changed;
             _fileSystemWatcher.Created += _fileSystemWatcher_Changed;
             _fileSystemWatcher.Deleted += _fileSystemWatcher_Changed;
             _fileSystemWatcher.Renamed += _fileSystemWatcher_Changed;
             _fileSystemWatcher.IncludeSubdirectories = false;
             _fileSystemWatcher.EnableRaisingEvents = true;
-        }
-
-        private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
-        {
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.Information($"文件{_filePath}发生了变更，将重新获取路由信息。");
-            EntryRoutes(_filePath);
         }
 
         #endregion Constructor
@@ -73,7 +71,7 @@ namespace Rabbit.Rpc.Routing.Implementation
             {
                 lock (this)
                 {
-                    File.WriteAllBytes(_filePath, _serializer.Serialize(routes));
+                    File.WriteAllText(_filePath, _serializer.Serialize(routes), Encoding.UTF8);
                 }
             });
         }
@@ -103,10 +101,10 @@ namespace Rabbit.Rpc.Routing.Implementation
                 {
                     if (_logger.IsEnabled(LogLevel.Debug))
                         _logger.Debug($"准备从文件：{file}中获取服务路由。");
-                    var content = File.ReadAllBytes(file);
+                    var content = File.ReadAllText(file);
                     try
                     {
-                        _routes = _serializer.Deserialize<IpAddressDescriptor[]>(content).Select(i => new ServiceRoute
+                        _routes = _serializer.Deserialize<string, IpAddressDescriptor[]>(content).Select(i => new ServiceRoute
                         {
                             Address = i.Address,
                             ServiceDescriptor = i.ServiceDescriptor
@@ -130,6 +128,13 @@ namespace Rabbit.Rpc.Routing.Implementation
             }
         }
 
+        private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        {
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.Information($"文件{_filePath}发生了变更，将重新获取路由信息。");
+            EntryRoutes(_filePath);
+        }
+
         #endregion Private Method
 
         protected class IpAddressDescriptor
@@ -143,7 +148,7 @@ namespace Rabbit.Rpc.Routing.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            _fileSystemWatcher.Dispose();
+            _fileSystemWatcher?.Dispose();
         }
 
         #endregion Implementation of IDisposable
