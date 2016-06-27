@@ -49,9 +49,8 @@ namespace Rabbit.Rpc.Client.Implementation
             try
             {
                 var client = _transportClientFactory.CreateClient(address.CreateEndPoint());
-                var message = TransportMessage.CreateInvokeMessage(context.InvokeMessage);
-                var resultMessage = client.ReceiveAsync(message.Id);
-                await client.SendAsync(message);
+                var transportMessage = await client.SendAsync(context.InvokeMessage);
+                var resultMessage = client.ReceiveAsync(transportMessage.Id);
                 return await resultMessage;
             }
             catch (Exception exception)

@@ -42,18 +42,22 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// 发送消息。
         /// </summary>
         /// <param name="message">远程调用消息模型。</param>
-        /// <returns>一个任务。</returns>
-        public async Task SendAsync(TransportMessage message)
+        /// <returns>远程调用消息的传输消息。</returns>
+        public async Task<TransportMessage> SendAsync(RemoteInvokeMessage message)
         {
             try
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("准备发送消息。");
 
-                await _messageSender.SendAndFlushAsync(message);
+                var transportMessage = TransportMessage.CreateInvokeMessage(message);
+
+                await _messageSender.SendAndFlushAsync(transportMessage);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("消息发送成功。");
+
+                return transportMessage;
             }
             catch (Exception exception)
             {
