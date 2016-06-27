@@ -63,7 +63,6 @@
     <Compile Include="Serialization\Implementation\JsonSerializer.cs" />
     <Compile Include="Serialization\ISerializer.cs" />
     <Compile Include="ServiceDescriptor.cs" />
-    <Compile Include="Transport\IMessageChannel.cs" />
     <Compile Include="Transport\IMessageListener.cs" />
     <Compile Include="Transport\IMessageSender.cs" />
     <Compile Include="Transport\Implementation\TransportClient.cs" />
