@@ -50,6 +50,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TransportMessageChannelHandlerAdapter.cs" />
     <Compile Include="DotNettyMessageSender.cs" />
     <Compile Include="DotNettyServiceHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

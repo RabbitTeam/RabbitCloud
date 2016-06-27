@@ -1,4 +1,6 @@
-﻿namespace Rabbit.Rpc.Transport.Implementation
+﻿using Rabbit.Rpc.Messages;
+
+namespace Rabbit.Rpc.Transport.Implementation
 {
     /// <summary>
     /// 消息监听者。
@@ -17,7 +19,7 @@
         /// </summary>
         /// <param name="sender">消息发送者。</param>
         /// <param name="message">接收到的消息。</param>
-        public void OnReceived(IMessageSender sender, object message)
+        public void OnReceived(IMessageSender sender, TransportMessage message)
         {
             Received?.Invoke(sender, message);
         }

@@ -1,4 +1,5 @@
-﻿using Rabbit.Rpc.Transport;
+﻿using Rabbit.Rpc.Messages;
+using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Implementation;
 using System.Net;
 using System.Threading.Tasks;
@@ -51,7 +52,7 @@ namespace Rabbit.Rpc.Server.Implementation
 
         #region Private Method
 
-        private void MessageListener_Received(IMessageSender sender, object message)
+        private void MessageListener_Received(IMessageSender sender, TransportMessage message)
         {
             _serviceExecutor.ExecuteAsync(sender, message);
         }

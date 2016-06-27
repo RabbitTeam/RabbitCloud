@@ -1,9 +1,9 @@
-﻿using DotNetty.Buffers;
-using DotNetty.Codecs;
+﻿using DotNetty.Codecs;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Rabbit.Rpc.Logging;
+using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Server;
 using Rabbit.Rpc.Server.Implementation;
@@ -61,6 +61,7 @@ namespace Rabbit.Transport.DotNetty
                     var pipeline = channel.Pipeline;
                     pipeline.AddLast(new LengthFieldPrepender(4));
                     pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
+                    pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_serializer));
                     pipeline.AddLast(new ServerHandler(MessageListener, _logger, _serializer));
                 }));
             _channel = await bootstrap.BindAsync(endPoint);
@@ -101,9 +102,9 @@ namespace Rabbit.Transport.DotNetty
 
             public override void ChannelRead(IChannelHandlerContext context, object message)
             {
-                var buffer = (IByteBuffer)message;
-                var data = buffer.ToArray();
-                _messageListener.OnReceived(new DotNettyServerMessageSender(_serializer, context), data);
+                var transportMessage = (TransportMessage)message;
+
+                _messageListener.OnReceived(new DotNettyServerMessageSender(_serializer, context), transportMessage);
             }
 
             public override void ChannelReadComplete(IChannelHandlerContext context)

@@ -37,22 +37,18 @@ namespace Rabbit.Rpc.Server.Implementation
         /// </summary>
         /// <param name="sender">消息发送者。</param>
         /// <param name="message">调用消息。</param>
-        public async Task ExecuteAsync(IMessageSender sender, object message)
+        public async Task ExecuteAsync(IMessageSender sender, TransportMessage message)
         {
-            var data = (byte[])message;
-
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.Information("接收到消息。");
 
-            var transportMessage = _serializer.Deserialize<byte[], TransportMessage>(data);
-
-            if (!transportMessage.IsInvokeMessage())
+            if (!message.IsInvokeMessage())
                 return;
 
             RemoteInvokeMessage remoteInvokeMessage;
             try
             {
-                remoteInvokeMessage = _objecSerializer.Deserialize<object, RemoteInvokeMessage>(transportMessage.Content);
+                remoteInvokeMessage = _objecSerializer.Deserialize<object, RemoteInvokeMessage>(message.Content);
             }
             catch (Exception exception)
             {
@@ -103,7 +99,7 @@ namespace Rabbit.Rpc.Server.Implementation
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("准备发送响应消息。");
 
-                await sender.SendAsync(TransportMessage.CreateInvokeResultMessage(transportMessage.Id, resultMessage));
+                await sender.SendAsync(TransportMessage.CreateInvokeResultMessage(message.Id, resultMessage));
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("响应消息发送成功。");
             }

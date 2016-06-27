@@ -18,7 +18,6 @@ namespace Rabbit.Rpc.Transport.Implementation
         private readonly IMessageSender _messageSender;
         private readonly IMessageListener _messageListener;
         private readonly ILogger _logger;
-        private readonly ISerializer<byte[]> _serializer;
         private readonly ISerializer<object> _objecSerializer;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
 
@@ -26,12 +25,11 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Constructor
 
-        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<byte[]> serializer, ISerializer<object> objecSerializer)
+        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<object> objecSerializer)
         {
             _messageSender = messageSender;
             _messageListener = messageListener;
             _logger = logger;
-            _serializer = serializer;
             _objecSerializer = objecSerializer;
             messageListener.Received += MessageListener_Received;
         }
@@ -113,28 +111,25 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Private Method
 
-        private void MessageListener_Received(IMessageSender sender, object message)
+        private void MessageListener_Received(IMessageSender sender, TransportMessage message)
         {
-            var buffer = (byte[])message;
-
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.Information("接收到消息。");
 
             TaskCompletionSource<TransportMessage> task;
-            var result = _serializer.Deserialize<byte[], TransportMessage>(buffer);
-            if (!_resultDictionary.TryGetValue(result.Id, out task))
+            if (!_resultDictionary.TryGetValue(message.Id, out task))
                 return;
 
-            if (result.ContentType == typeof(RemoteInvokeResultMessage).FullName)
+            if (message.IsInvokeResultMessage())
             {
-                var content = _objecSerializer.Deserialize<object, RemoteInvokeResultMessage>(result.Content);
+                var content = _objecSerializer.Deserialize<object, RemoteInvokeResultMessage>(message.Content);
                 if (!string.IsNullOrEmpty(content.ExceptionMessage))
                 {
                     task.TrySetException(new RpcRemoteException(content.ExceptionMessage));
                 }
                 else
                 {
-                    task.SetResult(result);
+                    task.SetResult(message);
                 }
             }
         }

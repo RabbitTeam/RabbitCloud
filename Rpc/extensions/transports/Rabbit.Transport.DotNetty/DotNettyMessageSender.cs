@@ -1,5 +1,6 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Transport.Channels;
+using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
 using System;
@@ -19,7 +20,7 @@ namespace Rabbit.Transport.DotNetty
             _serializer = serializer;
         }
 
-        protected IByteBuffer GetByteBuffer(object message)
+        protected IByteBuffer GetByteBuffer(TransportMessage message)
         {
             var data = _serializer.Serialize(message);
 
@@ -60,7 +61,7 @@ namespace Rabbit.Transport.DotNetty
         /// </summary>
         /// <param name="message">消息内容。</param>
         /// <returns>一个任务。</returns>
-        public async Task SendAsync(object message)
+        public async Task SendAsync(TransportMessage message)
         {
             var buffer = GetByteBuffer(message);
             await (await _channel).WriteAsync(buffer);
@@ -71,7 +72,7 @@ namespace Rabbit.Transport.DotNetty
         /// </summary>
         /// <param name="message">消息内容。</param>
         /// <returns>一个任务。</returns>
-        public async Task SendAndFlushAsync(object message)
+        public async Task SendAndFlushAsync(TransportMessage message)
         {
             var buffer = GetByteBuffer(message);
             await (await _channel).WriteAndFlushAsync(buffer);
@@ -99,7 +100,7 @@ namespace Rabbit.Transport.DotNetty
         /// </summary>
         /// <param name="message">消息内容。</param>
         /// <returns>一个任务。</returns>
-        public Task SendAsync(object message)
+        public Task SendAsync(TransportMessage message)
         {
             var buffer = GetByteBuffer(message);
             return _context.WriteAsync(buffer);
@@ -110,7 +111,7 @@ namespace Rabbit.Transport.DotNetty
         /// </summary>
         /// <param name="message">消息内容。</param>
         /// <returns>一个任务。</returns>
-        public Task SendAndFlushAsync(object message)
+        public Task SendAndFlushAsync(TransportMessage message)
         {
             var buffer = GetByteBuffer(message);
             return _context.WriteAndFlushAsync(buffer);

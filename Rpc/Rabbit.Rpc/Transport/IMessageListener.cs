@@ -1,11 +1,13 @@
-﻿namespace Rabbit.Rpc.Transport
+﻿using Rabbit.Rpc.Messages;
+
+namespace Rabbit.Rpc.Transport
 {
     /// <summary>
     /// 接受到消息的委托。
     /// </summary>
     /// <param name="sender">消息发送者。</param>
     /// <param name="message">接收到的消息。</param>
-    public delegate void ReceivedDelegate(IMessageSender sender, object message);
+    public delegate void ReceivedDelegate(IMessageSender sender, TransportMessage message);
 
     /// <summary>
     /// 一个抽象的消息监听者。
@@ -22,6 +24,6 @@
         /// </summary>
         /// <param name="sender">消息发送者。</param>
         /// <param name="message">接收到的消息。</param>
-        void OnReceived(IMessageSender sender, object message);
+        void OnReceived(IMessageSender sender, TransportMessage message);
     }
 }
