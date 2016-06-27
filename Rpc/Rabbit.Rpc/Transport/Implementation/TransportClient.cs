@@ -19,18 +19,20 @@ namespace Rabbit.Rpc.Transport.Implementation
         private readonly IMessageListener _messageListener;
         private readonly ILogger _logger;
         private readonly ISerializer<byte[]> _serializer;
-        private readonly ConcurrentDictionary<string, TaskCompletionSource<RemoteInvokeResultMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<RemoteInvokeResultMessage>>();
+        private readonly ISerializer<object> _objecSerializer;
+        private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
 
         #endregion Field
 
         #region Constructor
 
-        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<byte[]> serializer)
+        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<byte[]> serializer, ISerializer<object> objecSerializer)
         {
             _messageSender = messageSender;
             _messageListener = messageListener;
             _logger = logger;
             _serializer = serializer;
+            _objecSerializer = objecSerializer;
             messageListener.Received += MessageListener_Received;
         }
 
@@ -43,7 +45,7 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// </summary>
         /// <param name="message">远程调用消息模型。</param>
         /// <returns>一个任务。</returns>
-        public async Task SendAsync(RemoteInvokeMessage message)
+        public async Task SendAsync(TransportMessage message)
         {
             try
             {
@@ -73,7 +75,7 @@ namespace Rabbit.Rpc.Transport.Implementation
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.Debug($"准备获取Id为：{id}的响应内容。");
 
-            TaskCompletionSource<RemoteInvokeResultMessage> task;
+            TaskCompletionSource<TransportMessage> task;
             if (_resultDictionary.ContainsKey(id))
             {
                 if (_resultDictionary.TryRemove(id, out task))
@@ -83,9 +85,10 @@ namespace Rabbit.Rpc.Transport.Implementation
             }
             else
             {
-                task = new TaskCompletionSource<RemoteInvokeResultMessage>();
+                task = new TaskCompletionSource<TransportMessage>();
                 _resultDictionary.TryAdd(id, task);
-                return await task.Task;
+                var result = await task.Task;
+                return _objecSerializer.Deserialize<object, RemoteInvokeResultMessage>(result.Content);
             }
             return null;
         }
@@ -117,18 +120,22 @@ namespace Rabbit.Rpc.Transport.Implementation
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.Information("接收到消息。");
 
-            TaskCompletionSource<RemoteInvokeResultMessage> task;
-            var result = _serializer.Deserialize<byte[], RemoteInvokeResultMessage>(buffer);
+            TaskCompletionSource<TransportMessage> task;
+            var result = _serializer.Deserialize<byte[], TransportMessage>(buffer);
             if (!_resultDictionary.TryGetValue(result.Id, out task))
                 return;
 
-            if (!string.IsNullOrEmpty(result.ExceptionMessage))
+            if (result.ContentType == typeof(RemoteInvokeResultMessage).FullName)
             {
-                task.TrySetException(new RpcRemoteException(result.ExceptionMessage));
-            }
-            else
-            {
-                task.SetResult(result);
+                var content = _objecSerializer.Deserialize<object, RemoteInvokeResultMessage>(result.Content);
+                if (!string.IsNullOrEmpty(content.ExceptionMessage))
+                {
+                    task.TrySetException(new RpcRemoteException(content.ExceptionMessage));
+                }
+                else
+                {
+                    task.SetResult(result);
+                }
             }
         }
 

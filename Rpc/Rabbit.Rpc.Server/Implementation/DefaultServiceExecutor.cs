@@ -14,16 +14,18 @@ namespace Rabbit.Rpc.Server.Implementation
         private readonly IServiceEntryLocate _serviceEntryLocate;
         private readonly ISerializer<byte[]> _serializer;
         private readonly ILogger<DefaultServiceExecutor> _logger;
+        private readonly ISerializer<object> _objecSerializer;
 
         #endregion Field
 
         #region Constructor
 
-        public DefaultServiceExecutor(IServiceEntryLocate serviceEntryLocate, ISerializer<byte[]> serializer, ILogger<DefaultServiceExecutor> logger)
+        public DefaultServiceExecutor(IServiceEntryLocate serviceEntryLocate, ISerializer<byte[]> serializer, ILogger<DefaultServiceExecutor> logger, ISerializer<object> objecSerializer)
         {
             _serviceEntryLocate = serviceEntryLocate;
             _serializer = serializer;
             _logger = logger;
+            _objecSerializer = objecSerializer;
         }
 
         #endregion Constructor
@@ -42,10 +44,15 @@ namespace Rabbit.Rpc.Server.Implementation
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.Information("接收到消息。");
 
+            var transportMessage = _serializer.Deserialize<byte[], TransportMessage>(data);
+
+            if (!transportMessage.IsInvokeMessage())
+                return;
+
             RemoteInvokeMessage remoteInvokeMessage;
             try
             {
-                remoteInvokeMessage = _serializer.Deserialize<byte[], RemoteInvokeMessage>(data);
+                remoteInvokeMessage = _objecSerializer.Deserialize<object, RemoteInvokeMessage>(transportMessage.Content);
             }
             catch (Exception exception)
             {
@@ -65,10 +72,7 @@ namespace Rabbit.Rpc.Server.Implementation
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.Debug("准备执行本地逻辑。");
 
-            var resultMessage = new RemoteInvokeResultMessage
-            {
-                Id = remoteInvokeMessage.Id
-            };
+            var resultMessage = new RemoteInvokeResultMessage();
             try
             {
                 var result = entry.Func(remoteInvokeMessage.Parameters);
@@ -99,7 +103,7 @@ namespace Rabbit.Rpc.Server.Implementation
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("准备发送响应消息。");
 
-                await sender.SendAsync(resultMessage);
+                await sender.SendAsync(TransportMessage.CreateInvokeResultMessage(transportMessage.Id, resultMessage));
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("响应消息发送成功。");
             }

@@ -39,7 +39,7 @@ namespace Echo.Client
             //            IAddressSelector addressSelector = new RandomAddressSelector();
             IAddressSelector addressSelector = new PollingAddressSelector();
             IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, new ConsoleLogger<DefaultAddressResolver>(), addressSelector);
-            ITransportClientFactory transportClientFactory = new DotNettyTransportClientFactory(byteArraySerializer, new ConsoleLogger<DotNettyTransportClientFactory>());
+            ITransportClientFactory transportClientFactory = new DotNettyTransportClientFactory(byteArraySerializer,objectSerializer, new ConsoleLogger<DotNettyTransportClientFactory>());
             var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, new ConsoleLogger<RemoteInvokeService>());
 
             //服务代理相关。

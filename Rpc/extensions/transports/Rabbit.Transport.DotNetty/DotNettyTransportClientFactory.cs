@@ -23,6 +23,7 @@ namespace Rabbit.Transport.DotNetty
         #region Field
 
         private readonly ISerializer<byte[]> _serializer;
+        private readonly ISerializer<object> _objecSerializer;
         private readonly ILogger<DotNettyTransportClientFactory> _logger;
         private readonly ConcurrentDictionary<string, Lazy<ITransportClient>> _clients = new ConcurrentDictionary<string, Lazy<ITransportClient>>();
         private readonly Bootstrap _bootstrap;
@@ -31,9 +32,10 @@ namespace Rabbit.Transport.DotNetty
 
         #region Constructor
 
-        public DotNettyTransportClientFactory(ISerializer<byte[]> serializer, ILogger<DotNettyTransportClientFactory> logger)
+        public DotNettyTransportClientFactory(ISerializer<byte[]> serializer, ISerializer<object> objecSerializer, ILogger<DotNettyTransportClientFactory> logger)
         {
             _serializer = serializer;
+            _objecSerializer = objecSerializer;
             _logger = logger;
             _bootstrap = GetBootstrap();
         }
@@ -68,7 +70,7 @@ namespace Rabbit.Transport.DotNetty
                     var bootstrap = _bootstrap;
                     var channel = bootstrap.ConnectAsync(endPoint);
                     var messageSender = new DotNettyMessageClientSender(_serializer, channel);
-                    var client = new TransportClient(messageSender, messageListener, _logger, _serializer);
+                    var client = new TransportClient(messageSender, messageListener, _logger, _serializer, _objecSerializer);
                     return client;
                 }
                 )).Value;

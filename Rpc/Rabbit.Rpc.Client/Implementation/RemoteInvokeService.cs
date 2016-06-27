@@ -49,7 +49,7 @@ namespace Rabbit.Rpc.Client.Implementation
             try
             {
                 var client = _transportClientFactory.CreateClient(address.CreateEndPoint());
-                var message = context.InvokeMessage;
+                var message = TransportMessage.CreateInvokeMessage(context.InvokeMessage);
                 var resultMessage = client.ReceiveAsync(message.Id);
                 await client.SendAsync(message);
                 return await resultMessage;
