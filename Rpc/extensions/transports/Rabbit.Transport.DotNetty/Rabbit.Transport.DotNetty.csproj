@@ -51,6 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DotNettyMessageSender.cs" />
+    <Compile Include="DotNettyServiceHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DotNettyTransportClientFactory.cs" />
   </ItemGroup>
@@ -58,6 +59,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Rabbit.Rpc.Server\Rabbit.Rpc.Server.csproj">
+      <Project>{5757ee9f-62af-4c4c-b6c6-8b4fd410d974}</Project>
+      <Name>Rabbit.Rpc.Server</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\Rabbit.Rpc\Rabbit.Rpc.csproj">
       <Project>{cef91c5e-7986-4c78-afe5-656917448300}</Project>
       <Name>Rabbit.Rpc</Name>

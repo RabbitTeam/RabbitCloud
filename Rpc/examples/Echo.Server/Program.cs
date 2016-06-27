@@ -13,6 +13,7 @@ using Rabbit.Rpc.Server.Implementation;
 using Rabbit.Rpc.Server.Implementation.ServiceDiscovery;
 using Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Attributes;
 using Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Implementation;
+using Rabbit.Transport.DotNetty;
 using System;
 using System.Linq;
 using System.Net;
@@ -59,7 +60,7 @@ namespace Echo.Server
                 serviceRouteManager.AddRoutesAsync(addressDescriptors).Wait();
             }
 
-            IServiceHost serviceHost = new NettyServiceHost(new DefaultServiceExecutor(serviceEntryLocate, byteArraySerializer, new ConsoleLogger<DefaultServiceExecutor>()), new ConsoleLogger<NettyServiceHost>(), byteArraySerializer);
+            IServiceHost serviceHost = new DotNettyServiceHost(new DefaultServiceExecutor(serviceEntryLocate, byteArraySerializer, new ConsoleLogger<DefaultServiceExecutor>()), new ConsoleLogger<DotNettyServiceHost>(), byteArraySerializer);
 
             Task.Factory.StartNew(async () =>
             {

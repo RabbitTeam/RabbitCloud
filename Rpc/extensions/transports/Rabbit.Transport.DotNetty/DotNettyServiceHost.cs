@@ -5,22 +5,23 @@ using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Serialization;
+using Rabbit.Rpc.Server;
+using Rabbit.Rpc.Server.Implementation;
 using Rabbit.Rpc.Transport;
-using Rabbit.Transport.DotNetty;
 using System;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Rabbit.Rpc.Server.Implementation
+namespace Rabbit.Transport.DotNetty
 {
     /// <summary>
     /// 默认的服务主机实现。
     /// </summary>
-    public class NettyServiceHost : ServiceHostAbstract
+    public class DotNettyServiceHost : ServiceHostAbstract
     {
         #region Field
 
-        private readonly ILogger<NettyServiceHost> _logger;
+        private readonly ILogger<DotNettyServiceHost> _logger;
         private readonly ISerializer<byte[]> _serializer;
         private IChannel _channel;
 
@@ -28,7 +29,7 @@ namespace Rabbit.Rpc.Server.Implementation
 
         #region Constructor
 
-        public NettyServiceHost(IServiceExecutor serviceExecutor, ILogger<NettyServiceHost> logger, ISerializer<byte[]> serializer) : base(serviceExecutor)
+        public DotNettyServiceHost(IServiceExecutor serviceExecutor, ILogger<DotNettyServiceHost> logger, ISerializer<byte[]> serializer) : base(serviceExecutor)
         {
             _logger = logger;
             _serializer = serializer;
