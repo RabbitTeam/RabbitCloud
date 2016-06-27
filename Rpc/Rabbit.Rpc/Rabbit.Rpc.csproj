@@ -30,22 +30,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DotNetty.Buffers, Version=0.3.1.0, Culture=neutral, PublicKeyToken=e7a0210a354f294a, processorArchitecture=MSIL">
-      <HintPath>..\packages\DotNetty.Buffers-signed.0.3.1\lib\net45\DotNetty.Buffers.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="DotNetty.Codecs, Version=0.3.1.0, Culture=neutral, PublicKeyToken=e7a0210a354f294a, processorArchitecture=MSIL">
-      <HintPath>..\packages\DotNetty.Codecs-signed.0.3.1\lib\net45\DotNetty.Codecs.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="DotNetty.Common, Version=0.3.1.0, Culture=neutral, PublicKeyToken=e7a0210a354f294a, processorArchitecture=MSIL">
-      <HintPath>..\packages\DotNetty.Common-signed.0.3.1\lib\net45\DotNetty.Common.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="DotNetty.Transport, Version=0.3.1.0, Culture=neutral, PublicKeyToken=e7a0210a354f294a, processorArchitecture=MSIL">
-      <HintPath>..\packages\DotNetty.Transport-signed.0.3.1\lib\net45\DotNetty.Transport.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -83,11 +67,9 @@
     <Compile Include="Transport\IMessageListener.cs" />
     <Compile Include="Transport\IMessageSender.cs" />
     <Compile Include="Transport\Implementation\TransportClient.cs" />
-    <Compile Include="Transport\Implementation\TransportClientFactory.cs" />
     <Compile Include="Transport\ITransportClient.cs" />
     <Compile Include="Transport\ITransportClientFactory.cs" />
-    <Compile Include="Transport\Implementation\NettyMessageListener.cs" />
-    <Compile Include="Transport\Implementation\NettyMessageSender.cs" />
+    <Compile Include="Transport\Implementation\MessageListener.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

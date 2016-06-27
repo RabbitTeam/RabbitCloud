@@ -1,10 +1,8 @@
-﻿using DotNetty.Buffers;
-using Rabbit.Rpc.Logging;
+﻿using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
 using System;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Server.Implementation
@@ -39,20 +37,19 @@ namespace Rabbit.Rpc.Server.Implementation
         /// <param name="message">调用消息。</param>
         public async Task ExecuteAsync(IMessageSender sender, object message)
         {
-            var buffer = (IByteBuffer)message;
+            var data = (byte[])message;
 
             if (_logger.IsEnabled(LogLevel.Information))
-                _logger.Information($"接收到消息：{buffer.ToString(Encoding.UTF8)}。");
+                _logger.Information("接收到消息。");
 
-            var content = buffer.ToArray();
             RemoteInvokeMessage remoteInvokeMessage;
             try
             {
-                remoteInvokeMessage = _serializer.Deserialize<byte[], RemoteInvokeMessage>(content);
+                remoteInvokeMessage = _serializer.Deserialize<byte[], RemoteInvokeMessage>(data);
             }
             catch (Exception exception)
             {
-                _logger.Error($"将接收到的消息反序列化成 TransportMessage<RemoteInvokeMessage> 时发送了错误，消息内容：{buffer.ToString(Encoding.UTF8)}。", exception);
+                _logger.Error($"将接收到的消息反序列化成 TransportMessage<RemoteInvokeMessage> 时发送了错误。", exception);
                 return;
             }
 
@@ -101,11 +98,8 @@ namespace Rabbit.Rpc.Server.Implementation
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("准备发送响应消息。");
-                var resultData = _serializer.Serialize(resultMessage);
 
-                buffer = Unpooled.Buffer(resultData.Length);
-                buffer.WriteBytes(resultData);
-                await sender.SendAsync(buffer);
+                await sender.SendAsync(resultMessage);
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("响应消息发送成功。");
             }

@@ -15,7 +15,7 @@ using Rabbit.Rpc.Routing.Implementation;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Serialization.Implementation;
 using Rabbit.Rpc.Transport;
-using Rabbit.Rpc.Transport.Implementation;
+using Rabbit.Transport.DotNetty;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -39,7 +39,7 @@ namespace Echo.Client
             //            IAddressSelector addressSelector = new RandomAddressSelector();
             IAddressSelector addressSelector = new PollingAddressSelector();
             IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, new ConsoleLogger<DefaultAddressResolver>(), addressSelector);
-            ITransportClientFactory transportClientFactory = new TransportClientFactory(byteArraySerializer, new ConsoleLogger<TransportClientFactory>());
+            ITransportClientFactory transportClientFactory = new DotNettyTransportClientFactory(byteArraySerializer, new ConsoleLogger<DotNettyTransportClientFactory>());
             var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, new ConsoleLogger<RemoteInvokeService>());
 
             //服务代理相关。

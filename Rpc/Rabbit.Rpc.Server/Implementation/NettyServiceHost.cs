@@ -1,10 +1,12 @@
-﻿using DotNetty.Codecs;
+﻿using DotNetty.Buffers;
+using DotNetty.Codecs;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Rabbit.Rpc.Logging;
+using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
-using Rabbit.Rpc.Transport.Implementation;
+using Rabbit.Transport.DotNetty;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -19,15 +21,17 @@ namespace Rabbit.Rpc.Server.Implementation
         #region Field
 
         private readonly ILogger<NettyServiceHost> _logger;
+        private readonly ISerializer<byte[]> _serializer;
         private IChannel _channel;
 
         #endregion Field
 
         #region Constructor
 
-        public NettyServiceHost(IServiceExecutor serviceExecutor, ILogger<NettyServiceHost> logger) : base(serviceExecutor)
+        public NettyServiceHost(IServiceExecutor serviceExecutor, ILogger<NettyServiceHost> logger, ISerializer<byte[]> serializer) : base(serviceExecutor)
         {
             _logger = logger;
+            _serializer = serializer;
         }
 
         #endregion Constructor
@@ -56,7 +60,7 @@ namespace Rabbit.Rpc.Server.Implementation
                     var pipeline = channel.Pipeline;
                     pipeline.AddLast(new LengthFieldPrepender(4));
                     pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                    pipeline.AddLast(new ServerHandler(MessageListener, _logger));
+                    pipeline.AddLast(new ServerHandler(MessageListener, _logger, _serializer));
                 }));
             _channel = await bootstrap.BindAsync(endPoint);
 
@@ -83,18 +87,22 @@ namespace Rabbit.Rpc.Server.Implementation
         {
             private readonly IMessageListener _messageListener;
             private readonly ILogger _logger;
+            private readonly ISerializer<byte[]> _serializer;
 
-            public ServerHandler(IMessageListener messageListener, ILogger logger)
+            public ServerHandler(IMessageListener messageListener, ILogger logger, ISerializer<byte[]> serializer)
             {
                 _messageListener = messageListener;
                 _logger = logger;
+                _serializer = serializer;
             }
 
             #region Overrides of ChannelHandlerAdapter
 
             public override void ChannelRead(IChannelHandlerContext context, object message)
             {
-                _messageListener.OnReceived(new NettyServerMessageSender(context), message);
+                var buffer = (IByteBuffer)message;
+                var data = buffer.ToArray();
+                _messageListener.OnReceived(new DotNettyServerMessageSender(_serializer, context), data);
             }
 
             public override void ChannelReadComplete(IChannelHandlerContext context)

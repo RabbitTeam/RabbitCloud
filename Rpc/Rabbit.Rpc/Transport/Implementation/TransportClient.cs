@@ -1,11 +1,9 @@
-﻿using DotNetty.Buffers;
-using Rabbit.Rpc.Exceptions;
+﻿using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Concurrent;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Transport.Implementation
@@ -52,14 +50,10 @@ namespace Rabbit.Rpc.Transport.Implementation
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.Debug("准备发送消息。");
 
-                var data = _serializer.Serialize(message);
-                var buffer = Unpooled.Buffer(data.Length);
+                await _messageSender.SendAndFlushAsync(message);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.Debug($"数据包大小为：{data.Length}。");
-
-                buffer.WriteBytes(data);
-                await _messageSender.SendAndFlushAsync(buffer);
+                    _logger.Debug("消息发送成功。");
             }
             catch (Exception exception)
             {
@@ -118,15 +112,13 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         private void MessageListener_Received(IMessageSender sender, object message)
         {
-            var buffer = (IByteBuffer)message;
+            var buffer = (byte[])message;
 
-            //todo:不一定是string类型的消息
             if (_logger.IsEnabled(LogLevel.Information))
-                _logger.Information($"接收到消息：{buffer.ToString(Encoding.UTF8)}。");
+                _logger.Information("接收到消息。");
 
             TaskCompletionSource<RemoteInvokeResultMessage> task;
-            var content = buffer.ToArray();
-            var result = _serializer.Deserialize<byte[], RemoteInvokeResultMessage>(content);
+            var result = _serializer.Deserialize<byte[], RemoteInvokeResultMessage>(buffer);
             if (!_resultDictionary.TryGetValue(result.Id, out task))
                 return;
 

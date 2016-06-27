@@ -82,6 +82,10 @@
     <Compile Include="ServiceEntry.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\extensions\transports\Rabbit.Transport.DotNetty\Rabbit.Transport.DotNetty.csproj">
+      <Project>{b1abb1ab-0163-4059-a8de-219b003d9226}</Project>
+      <Name>Rabbit.Transport.DotNetty</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Rabbit.Rpc\Rabbit.Rpc.csproj">
       <Project>{cef91c5e-7986-4c78-afe5-656917448300}</Project>
       <Name>Rabbit.Rpc</Name>

@@ -1,17 +1,41 @@
-﻿using DotNetty.Transport.Channels;
+﻿using DotNetty.Buffers;
+using DotNetty.Transport.Channels;
+using Rabbit.Rpc.Serialization;
+using Rabbit.Rpc.Transport;
 using System;
 using System.Threading.Tasks;
 
-namespace Rabbit.Rpc.Transport.Implementation
+namespace Rabbit.Transport.DotNetty
 {
     /// <summary>
-    /// 基于Netty客户端的消息发送者。
+    /// 基于DotNetty的消息发送者基类。
     /// </summary>
-    public class NettyMessageClientSender : IMessageSender, IDisposable
+    public abstract class DotNettyMessageSender
+    {
+        private readonly ISerializer<byte[]> _serializer;
+
+        protected DotNettyMessageSender(ISerializer<byte[]> serializer)
+        {
+            _serializer = serializer;
+        }
+
+        protected IByteBuffer GetByteBuffer(object message)
+        {
+            var data = _serializer.Serialize(message);
+
+            var buffer = Unpooled.Buffer(data.Length, data.Length);
+            return buffer.WriteBytes(data);
+        }
+    }
+
+    /// <summary>
+    /// 基于DotNetty客户端的消息发送者。
+    /// </summary>
+    public class DotNettyMessageClientSender : DotNettyMessageSender, IMessageSender, IDisposable
     {
         private readonly Task<IChannel> _channel;
 
-        public NettyMessageClientSender(Task<IChannel> channel)
+        public DotNettyMessageClientSender(ISerializer<byte[]> serializer, Task<IChannel> channel) : base(serializer)
         {
             _channel = channel;
         }
@@ -38,7 +62,8 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <returns>一个任务。</returns>
         public async Task SendAsync(object message)
         {
-            await (await _channel).WriteAsync(message);
+            var buffer = GetByteBuffer(message);
+            await (await _channel).WriteAsync(buffer);
         }
 
         /// <summary>
@@ -48,20 +73,21 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(object message)
         {
-            await (await _channel).WriteAndFlushAsync(message);
+            var buffer = GetByteBuffer(message);
+            await (await _channel).WriteAndFlushAsync(buffer);
         }
 
         #endregion Implementation of IMessageSender
     }
 
     /// <summary>
-    /// 基于Netty服务端的消息发送者。
+    /// 基于DotNetty服务端的消息发送者。
     /// </summary>
-    public class NettyServerMessageSender : IMessageSender
+    public class DotNettyServerMessageSender : DotNettyMessageSender, IMessageSender
     {
         private readonly IChannelHandlerContext _context;
 
-        public NettyServerMessageSender(IChannelHandlerContext context)
+        public DotNettyServerMessageSender(ISerializer<byte[]> serializer, IChannelHandlerContext context) : base(serializer)
         {
             _context = context;
         }
@@ -75,7 +101,8 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <returns>一个任务。</returns>
         public Task SendAsync(object message)
         {
-            return _context.WriteAsync(message);
+            var buffer = GetByteBuffer(message);
+            return _context.WriteAsync(buffer);
         }
 
         /// <summary>
@@ -85,7 +112,8 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// <returns>一个任务。</returns>
         public Task SendAndFlushAsync(object message)
         {
-            return _context.WriteAndFlushAsync(message);
+            var buffer = GetByteBuffer(message);
+            return _context.WriteAndFlushAsync(buffer);
         }
 
         #endregion Implementation of IMessageSender

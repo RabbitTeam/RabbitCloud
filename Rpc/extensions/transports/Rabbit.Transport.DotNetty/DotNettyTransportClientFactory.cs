@@ -1,31 +1,37 @@
-﻿using DotNetty.Codecs;
+﻿using DotNetty.Buffers;
+using DotNetty.Codecs;
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Serialization;
+using Rabbit.Rpc.Transport;
+using Rabbit.Rpc.Transport.Implementation;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Rabbit.Rpc.Transport.Implementation
+namespace Rabbit.Transport.DotNetty
 {
-    public class TransportClientFactory : ITransportClientFactory, IDisposable
+    /// <summary>
+    /// 基于DotNetty的传输客户端工厂。
+    /// </summary>
+    public class DotNettyTransportClientFactory : ITransportClientFactory, IDisposable
     {
         #region Field
 
         private readonly ISerializer<byte[]> _serializer;
-        private readonly ILogger<TransportClientFactory> _logger;
+        private readonly ILogger<DotNettyTransportClientFactory> _logger;
         private readonly ConcurrentDictionary<string, Lazy<ITransportClient>> _clients = new ConcurrentDictionary<string, Lazy<ITransportClient>>();
-        private Bootstrap _bootstrap;
+        private readonly Bootstrap _bootstrap;
 
         #endregion Field
 
         #region Constructor
 
-        public TransportClientFactory(ISerializer<byte[]> serializer, ILogger<TransportClientFactory> logger)
+        public DotNettyTransportClientFactory(ISerializer<byte[]> serializer, ILogger<DotNettyTransportClientFactory> logger)
         {
             _serializer = serializer;
             _logger = logger;
@@ -56,12 +62,12 @@ namespace Rabbit.Rpc.Transport.Implementation
                         var pipeline = c.Pipeline;
                         pipeline.AddLast(new LengthFieldPrepender(4));
                         pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                        pipeline.AddLast(new DefaultChannelHandler(messageListener));
+                        pipeline.AddLast(new DefaultChannelHandler(messageListener, _serializer));
                     }));
 
                     var bootstrap = _bootstrap;
                     var channel = bootstrap.ConnectAsync(endPoint);
-                    var messageSender = new NettyMessageClientSender(channel);
+                    var messageSender = new DotNettyMessageClientSender(_serializer, channel);
                     var client = new TransportClient(messageSender, messageListener, _logger, _serializer);
                     return client;
                 }
@@ -97,17 +103,21 @@ namespace Rabbit.Rpc.Transport.Implementation
         protected class DefaultChannelHandler : ChannelHandlerAdapter
         {
             private readonly IMessageListener _messageListener;
+            private readonly ISerializer<byte[]> _serializer;
 
-            public DefaultChannelHandler(IMessageListener messageListener)
+            public DefaultChannelHandler(IMessageListener messageListener, ISerializer<byte[]> serializer)
             {
                 _messageListener = messageListener;
+                _serializer = serializer;
             }
 
             #region Overrides of ChannelHandlerAdapter
 
             public override void ChannelRead(IChannelHandlerContext context, object message)
             {
-                _messageListener.OnReceived(new NettyMessageClientSender(Task.FromResult(context.Channel)), message);
+                var buffer = (IByteBuffer)message;
+                var data = buffer.ToArray();
+                _messageListener.OnReceived(new DotNettyMessageClientSender(_serializer, Task.FromResult(context.Channel)), data);
             }
 
             #endregion Overrides of ChannelHandlerAdapter

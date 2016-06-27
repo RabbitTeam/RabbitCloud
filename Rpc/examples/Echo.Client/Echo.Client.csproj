@@ -85,6 +85,10 @@
       <Project>{21bdbe34-ea86-498b-825d-3d2bd79e2a70}</Project>
       <Name>Rabbit.Rpc.Coordinate.Zookeeper</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\extensions\transports\Rabbit.Transport.DotNetty\Rabbit.Transport.DotNetty.csproj">
+      <Project>{b1abb1ab-0163-4059-a8de-219b003d9226}</Project>
+      <Name>Rabbit.Transport.DotNetty</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Rabbit.Rpc.Client\Rabbit.Rpc.Client.csproj">
       <Project>{2B820548-4CDA-4E70-A05B-538B745D56E3}</Project>
       <Name>Rabbit.Rpc.Client</Name>
