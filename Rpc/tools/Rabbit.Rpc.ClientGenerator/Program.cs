@@ -5,7 +5,7 @@ using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.ProxyGenerator;
 using Rabbit.Rpc.ProxyGenerator.Implementation;
 using Rabbit.Rpc.ProxyGenerator.Utilitys;
-using Rabbit.Rpc.Server.Implementation.ServiceDiscovery.Attributes;
+using Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using System;
 using System.Collections.Generic;
 using System.IO;

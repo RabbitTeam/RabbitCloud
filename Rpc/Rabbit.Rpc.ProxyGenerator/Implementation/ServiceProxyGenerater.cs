@@ -1,8 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.ProxyGenerator.Utilitys;
+using Rabbit.Rpc.Runtime.Client;
+using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -130,10 +133,10 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                     UsingDirective(IdentifierName("System")),
                     UsingDirective(GetQualifiedNameSyntax("System.Threading.Tasks")),
                     UsingDirective(GetQualifiedNameSyntax("System.Collections.Generic")),
-                    UsingDirective(GetQualifiedNameSyntax("Rabbit.Rpc.Convertibles")),
-                    UsingDirective(GetQualifiedNameSyntax("Rabbit.Rpc.Client")),
-                    UsingDirective(GetQualifiedNameSyntax("Rabbit.Rpc.Serialization")),
-                    UsingDirective(GetQualifiedNameSyntax("Rabbit.Rpc.ProxyGenerator.Implementation"))
+                    UsingDirective(GetQualifiedNameSyntax(typeof(ITypeConvertibleService).Namespace)),
+                    UsingDirective(GetQualifiedNameSyntax(typeof(IRemoteInvokeService).Namespace)),
+                    UsingDirective(GetQualifiedNameSyntax(typeof(ISerializer<>).Namespace)),
+                    UsingDirective(GetQualifiedNameSyntax(typeof(ServiceProxyBase).Namespace))
                 });
         }
 
