@@ -4,6 +4,7 @@ using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Messages;
+using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Implementation;
@@ -25,6 +26,7 @@ namespace Rabbit.Transport.DotNetty
         private readonly ISerializer<byte[]> _serializer;
         private readonly ISerializer<object> _objecSerializer;
         private readonly ILogger<DotNettyTransportClientFactory> _logger;
+        private readonly IServiceExecutor _serviceExecutor;
         private readonly ConcurrentDictionary<string, Lazy<ITransportClient>> _clients = new ConcurrentDictionary<string, Lazy<ITransportClient>>();
         private readonly Bootstrap _bootstrap;
 
@@ -32,11 +34,17 @@ namespace Rabbit.Transport.DotNetty
 
         #region Constructor
 
-        public DotNettyTransportClientFactory(ISerializer<byte[]> serializer, ISerializer<object> objecSerializer, ILogger<DotNettyTransportClientFactory> logger)
+        public DotNettyTransportClientFactory(ISerializer<byte[]> serializer, ISerializer<object> objecSerializer,
+            ILogger<DotNettyTransportClientFactory> logger) : this(serializer, objecSerializer, logger, null)
+        {
+        }
+
+        public DotNettyTransportClientFactory(ISerializer<byte[]> serializer, ISerializer<object> objecSerializer, ILogger<DotNettyTransportClientFactory> logger, IServiceExecutor serviceExecutor)
         {
             _serializer = serializer;
             _objecSerializer = objecSerializer;
             _logger = logger;
+            _serviceExecutor = serviceExecutor;
             _bootstrap = GetBootstrap();
         }
 
@@ -71,7 +79,7 @@ namespace Rabbit.Transport.DotNetty
                     var bootstrap = _bootstrap;
                     var channel = bootstrap.ConnectAsync(endPoint);
                     var messageSender = new DotNettyMessageClientSender(_serializer, channel);
-                    var client = new TransportClient(messageSender, messageListener, _logger, _objecSerializer);
+                    var client = new TransportClient(messageSender, messageListener, _logger, _objecSerializer, _serviceExecutor);
                     return client;
                 }
                 )).Value;

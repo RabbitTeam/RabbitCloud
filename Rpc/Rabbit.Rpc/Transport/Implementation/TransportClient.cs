@@ -1,6 +1,7 @@
 ﻿using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.Messages;
+using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Concurrent;
@@ -19,18 +20,24 @@ namespace Rabbit.Rpc.Transport.Implementation
         private readonly IMessageListener _messageListener;
         private readonly ILogger _logger;
         private readonly ISerializer<object> _objecSerializer;
+        private readonly IServiceExecutor _serviceExecutor;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
 
         #endregion Field
 
         #region Constructor
 
-        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<object> objecSerializer)
+        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<object> objecSerializer) : this(messageSender, messageListener, logger, objecSerializer, null)
+        {
+        }
+
+        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<object> objecSerializer, IServiceExecutor serviceExecutor)
         {
             _messageSender = messageSender;
             _messageListener = messageListener;
             _logger = logger;
             _objecSerializer = objecSerializer;
+            _serviceExecutor = serviceExecutor;
             messageListener.Received += MessageListener_Received;
         }
 
@@ -135,6 +142,10 @@ namespace Rabbit.Rpc.Transport.Implementation
                 {
                     task.SetResult(message);
                 }
+            }
+            if (message.IsInvokeMessage())
+            {
+                _serviceExecutor?.ExecuteAsync(sender, message);
             }
         }
 
