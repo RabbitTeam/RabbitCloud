@@ -72,7 +72,16 @@ namespace Rabbit.Rpc.ClientGenerator
                     case "2":
                         foreach (var syntaxTree in getTrees())
                         {
-                            var className = ((ClassDeclarationSyntax)((CompilationUnitSyntax)syntaxTree.GetRoot()).Members[0]).Identifier.Value;
+                            var className = string.Empty;
+                            var tempRoot = ((CompilationUnitSyntax)syntaxTree.GetRoot()).Members[0];
+                            if (tempRoot is NamespaceDeclarationSyntax)
+                            {
+                                className = ((tempRoot as NamespaceDeclarationSyntax).Members[0] as ClassDeclarationSyntax).Identifier.ValueText;
+                            }
+                            else if (tempRoot is ClassDeclarationSyntax)
+                            {
+                                className = (tempRoot as ClassDeclarationSyntax).Identifier.ValueText;
+                            }
                             var code = syntaxTree.ToString();
                             var fileName = Path.Combine(outputDirectory, $"{className}.cs");
                             File.WriteAllText(fileName, code, Encoding.UTF8);
