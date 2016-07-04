@@ -7,23 +7,22 @@ namespace Rabbit.Transport.DotNetty
 {
     public static class RpcServiceCollectionExtensions
     {
-        public static IRpcBuilder AddDotNettyTransport(this IRpcBuilder builder)
+        public static IRpcBuilder AddDotNettyClient(this IRpcBuilder builder)
         {
             var services = builder.Services;
 
             services.AddSingleton<ITransportClientFactory, DotNettyTransportClientFactory>();
-            services.AddSingleton<IServiceHost, DotNettyServiceHost>();
 
             return builder;
         }
 
-        public static IRpcBuilder AddServer(this IServiceCollection services)
+        public static IRpcBuilder AddDotNettyServer(this IRpcBuilder builder)
         {
+            var services = builder.Services;
+
             services.AddSingleton<IServiceHost, DotNettyServiceHost>();
 
-            return services
-                .AddRpcCore()
-                .AddServerCore();
+            return builder;
         }
     }
 }

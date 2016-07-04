@@ -28,11 +28,12 @@ namespace Echo.Server
 
             serviceCollection
                 .AddLogging()
-                .AddServer()
+                .AddRpcCore()
+                .AddServerCore()
                 .SetSharedFileRouteManager("d:\\routes.txt")
                 //zookeeper服务路由管理者。
                 //                .SetZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"))
-                .AddDotNettyTransport();
+                .AddDotNettyServer();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 

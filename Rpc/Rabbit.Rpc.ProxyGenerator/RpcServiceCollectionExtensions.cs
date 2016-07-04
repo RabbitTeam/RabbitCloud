@@ -6,14 +6,22 @@ namespace Rabbit.Rpc.ProxyGenerator
 {
     public static class RpcServiceCollectionExtensions
     {
-        public static IRpcBuilder AddClient(this IServiceCollection services)
+        public static IRpcBuilder AddClientProxy(this IRpcBuilder builder)
         {
+            var services = builder.Services;
+
             services.AddSingleton<IServiceProxyGenerater, ServiceProxyGenerater>();
             services.AddSingleton<IServiceProxyFactory, ServiceProxyFactory>();
 
+            return builder;
+        }
+
+        public static IRpcBuilder AddClient(this IServiceCollection services)
+        {
             return services
                 .AddRpcCore()
                 .AddClientCore()
+                .AddClientProxy()
                 .SetAddressSelector<PollingAddressSelector>();
         }
     }

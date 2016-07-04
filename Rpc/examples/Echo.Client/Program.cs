@@ -21,7 +21,7 @@ namespace Echo.Client
                 .AddLogging()
                 .AddClient()
                 .SetSharedFileRouteManager("d:\\routes.txt")
-                .AddDotNettyTransport();
+                .AddDotNettyClient();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
