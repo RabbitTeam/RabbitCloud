@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 
 namespace Rabbit.Rpc.Logging
 {
@@ -139,4 +139,4 @@ namespace Rabbit.Rpc.Logging
             logger.Log(LogLevel.Fatal, message, exception);
         }
     }
-}
+}*/

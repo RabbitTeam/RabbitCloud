@@ -1,5 +1,5 @@
-﻿using Rabbit.Rpc.Address;
-using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
@@ -100,7 +100,7 @@ namespace Rabbit.Rpc.Routing.Implementation
                 if (File.Exists(file))
                 {
                     if (_logger.IsEnabled(LogLevel.Debug))
-                        _logger.Debug($"准备从文件：{file}中获取服务路由。");
+                        _logger.LogDebug($"准备从文件：{file}中获取服务路由。");
                     var content = File.ReadAllText(file);
                     try
                     {
@@ -110,19 +110,19 @@ namespace Rabbit.Rpc.Routing.Implementation
                             ServiceDescriptor = i.ServiceDescriptor
                         }).ToArray();
                         if (_logger.IsEnabled(LogLevel.Information))
-                            _logger.Information($"成功获取到以下路由信息：{string.Join(",", _routes.Select(i => i.ServiceDescriptor.Id))}。");
+                            _logger.LogInformation($"成功获取到以下路由信息：{string.Join(",", _routes.Select(i => i.ServiceDescriptor.Id))}。");
                     }
                     catch (Exception exception)
                     {
-                        if (_logger.IsEnabled(LogLevel.Fatal))
-                            _logger.Fatal("获取路由信息时发生了错误。", exception);
+                        if (_logger.IsEnabled(LogLevel.Error))
+                            _logger.LogError("获取路由信息时发生了错误。", exception);
                         _routes = Enumerable.Empty<ServiceRoute>();
                     }
                 }
                 else
                 {
                     if (_logger.IsEnabled(LogLevel.Warning))
-                        _logger.Warning($"无法获取路由信息，因为文件：{file}不存在。");
+                        _logger.LogWarning($"无法获取路由信息，因为文件：{file}不存在。");
                     _routes = Enumerable.Empty<ServiceRoute>();
                 }
             }
@@ -131,7 +131,7 @@ namespace Rabbit.Rpc.Routing.Implementation
         private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             if (_logger.IsEnabled(LogLevel.Information))
-                _logger.Information($"文件{_filePath}发生了变更，将重新获取路由信息。");
+                _logger.LogInformation($"文件{_filePath}发生了变更，将重新获取路由信息。");
             EntryRoutes(_filePath);
         }
 

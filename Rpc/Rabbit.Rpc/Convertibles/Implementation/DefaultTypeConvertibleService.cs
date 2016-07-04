@@ -1,5 +1,5 @@
-﻿using Rabbit.Rpc.Exceptions;
-using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +25,7 @@ namespace Rabbit.Rpc.Convertibles.Implementation
             _logger = logger;
             providers = providers.ToArray();
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug($"发现了以下类型转换提供程序：{string.Join(",", providers.Select(p => p.ToString()))}。");
+                _logger.LogDebug($"发现了以下类型转换提供程序：{string.Join(",", providers.Select(p => p.ToString()))}。");
             _converters = providers.SelectMany(p => p.GetConverters()).ToArray();
         }
 
@@ -47,7 +47,7 @@ namespace Rabbit.Rpc.Convertibles.Implementation
                 throw new ArgumentNullException(nameof(conversionType));
 
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug($"准备将 {instance.GetType()} 转换为：{conversionType}。");
+                _logger.LogDebug($"准备将 {instance.GetType()} 转换为：{conversionType}。");
 
             object result = null;
             foreach (var converter in _converters)
@@ -60,8 +60,8 @@ namespace Rabbit.Rpc.Convertibles.Implementation
                 return result;
             var exception = new RpcException($"无法将实例：{instance}转换为{conversionType}。");
 
-            if (_logger.IsEnabled(LogLevel.Fatal))
-                _logger.Fatal($"将 {instance.GetType()} 转换成 {conversionType} 时发生了错误。", exception);
+            if (_logger.IsEnabled(LogLevel.Error))
+                _logger.LogError($"将 {instance.GetType()} 转换成 {conversionType} 时发生了错误。", exception);
             throw exception;
         }
 

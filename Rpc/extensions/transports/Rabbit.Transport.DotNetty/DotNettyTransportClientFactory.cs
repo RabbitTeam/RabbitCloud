@@ -2,7 +2,7 @@
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
-using Rabbit.Rpc.Logging;
+using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Serialization;
@@ -61,7 +61,7 @@ namespace Rabbit.Transport.DotNetty
         {
             var key = endPoint.ToString();
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug($"准备为服务端地址：{key}创建客户端。");
+                _logger.LogDebug($"准备为服务端地址：{key}创建客户端。");
             return _clients.GetOrAdd(key
                 , k => new Lazy<ITransportClient>(() =>
                 {

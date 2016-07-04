@@ -1,9 +1,9 @@
 ﻿using Echo.Common;
+using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Convertibles.Implementation;
 using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.Ids.Implementation;
-using Rabbit.Rpc.Logging;
 using Rabbit.Rpc.ProxyGenerator;
 using Rabbit.Rpc.ProxyGenerator.Implementation;
 using Rabbit.Rpc.Routing.Implementation;
@@ -26,21 +26,24 @@ namespace Echo.Client
     {
         private static void Main()
         {
+            ILoggerFactory loggerFactory = new LoggerFactory();
+            loggerFactory.AddConsole((c, l) => (int)l >= 3);
+
             //客户端基本服务。
             ISerializer<string> serializer = new JsonSerializer();
             ISerializer<byte[]> byteArraySerializer = new StringByteArraySerializer(serializer);
             ISerializer<object> objectSerializer = new StringObjectSerializer(serializer);
-            IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator(new ConsoleLogger<DefaultServiceIdGenerator>());
+            IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator(loggerFactory.CreateLogger<DefaultServiceIdGenerator>());
 
-            var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(objectSerializer) }, new ConsoleLogger<DefaultTypeConvertibleService>());
-            var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, new ConsoleLogger<SharedFileServiceRouteManager>());
+            var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(objectSerializer) }, loggerFactory.CreateLogger<DefaultTypeConvertibleService>());
+            var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, loggerFactory.CreateLogger<SharedFileServiceRouteManager>());
             //zookeeper服务路由管理者。
             //            var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer, new ConsoleLogger<ZooKeeperServiceRouteManager>());
             //            IAddressSelector addressSelector = new RandomAddressSelector();
             IAddressSelector addressSelector = new PollingAddressSelector();
-            IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, new ConsoleLogger<DefaultAddressResolver>(), addressSelector);
-            ITransportClientFactory transportClientFactory = new DotNettyTransportClientFactory(byteArraySerializer,objectSerializer, new ConsoleLogger<DotNettyTransportClientFactory>());
-            var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, new ConsoleLogger<RemoteInvokeService>());
+            IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, loggerFactory.CreateLogger<DefaultAddressResolver>(), addressSelector);
+            ITransportClientFactory transportClientFactory = new DotNettyTransportClientFactory(byteArraySerializer, objectSerializer, loggerFactory.CreateLogger<DotNettyTransportClientFactory>());
+            var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, loggerFactory.CreateLogger<RemoteInvokeService>());
 
             //服务代理相关。
             IServiceProxyGenerater serviceProxyGenerater = new ServiceProxyGenerater(serviceIdGenerator);
@@ -50,7 +53,7 @@ namespace Echo.Client
             //创建IUserService的代理。
             var userService = serviceProxyFactory.CreateProxy<IUserService>(services.Single(typeof(IUserService).IsAssignableFrom));
 
-            var logger = new ConsoleLogger();
+            var logger = loggerFactory.CreateLogger(typeof(Program));
             while (true)
             {
                 Task.Run(async () =>
@@ -69,7 +72,7 @@ namespace Echo.Client
                     }
                     catch (RpcRemoteException remoteException)
                     {
-                        logger.Error(remoteException.Message);
+                        logger.LogError(remoteException.Message);
                     }
                 }).Wait();
                 Console.ReadLine();

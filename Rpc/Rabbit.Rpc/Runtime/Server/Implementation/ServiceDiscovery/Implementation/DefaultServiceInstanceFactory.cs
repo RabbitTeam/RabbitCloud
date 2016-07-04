@@ -1,4 +1,4 @@
-﻿using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System;
 
 namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementation
@@ -30,8 +30,8 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
             }
             catch (Exception exception)
             {
-                if (_logger.IsEnabled(LogLevel.Fatal))
-                    _logger.Fatal($"为类型：{serviceType}创建实例时发生了错误。", exception);
+                if (_logger.IsEnabled(LogLevel.Error))
+                    _logger.LogError($"为类型：{serviceType}创建实例时发生了错误。", exception);
                 throw;
             }
         }

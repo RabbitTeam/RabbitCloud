@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 
 namespace Rabbit.Rpc.Logging
 {
@@ -18,24 +19,30 @@ namespace Rabbit.Rpc.Logging
 
         #region Implementation of ILogger
 
+        /// <summary>Writes a log entry.</summary>
+        /// <param name="logLevel">Entry will be written on this level.</param>
+        /// <param name="eventId">Id of the event.</param>
+        /// <param name="state">The entry to be written. Can be also an object.</param>
+        /// <param name="exception">The exception related to this entry.</param>
+        /// <param name="formatter">Function to create a <c>string</c> message of the <paramref name="state" /> and <paramref name="exception" />.</param>
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        {
+        }
+
         /// <summary>
-        /// 判断日志记录器是否开启。
+        /// Checks if the given <paramref name="logLevel" /> is enabled.
         /// </summary>
-        /// <param name="level">日志等级。</param>
-        /// <returns>如果开启返回true，否则返回false。</returns>
-        public bool IsEnabled(LogLevel level)
+        /// <param name="logLevel">level to be checked.</param>
+        /// <returns><c>true</c> if enabled.</returns>
+        public bool IsEnabled(LogLevel logLevel)
         {
             return false;
         }
 
-        /// <summary>
-        /// 记录日志。
-        /// </summary>
-        /// <param name="level">日志等级。</param>
-        /// <param name="message">消息。</param>
-        /// <param name="exception">异常。</param>
-        /// <returns>任务。</returns>
-        public void Log(LogLevel level, string message, Exception exception = null)
+        /// <summary>Begins a logical operation scope.</summary>
+        /// <param name="state">The identifier for the scope.</param>
+        /// <returns>An IDisposable that ends the logical operation scope on dispose.</returns>
+        public IDisposable BeginScope<TState>(TState state)
         {
             throw new NotImplementedException();
         }

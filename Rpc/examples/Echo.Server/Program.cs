@@ -1,4 +1,5 @@
-﻿using Rabbit.Rpc.Address;
+﻿using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Convertibles.Implementation;
 using Rabbit.Rpc.Ids;
@@ -33,16 +34,19 @@ namespace Echo.Server
 
         private static void Main()
         {
+            ILoggerFactory loggerFactory = new LoggerFactory();
+            loggerFactory.AddConsole();
+
             //相关服务初始化。
             ISerializer<string> serializer = new JsonSerializer();
             ISerializer<byte[]> byteArraySerializer = new StringByteArraySerializer(serializer);
             ISerializer<object> objectSerializer = new StringObjectSerializer(serializer);
-            IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator(new ConsoleLogger<DefaultServiceIdGenerator>());
-            IServiceInstanceFactory serviceInstanceFactory = new DefaultServiceInstanceFactory(new ConsoleLogger<DefaultServiceInstanceFactory>());
+            IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator(loggerFactory.CreateLogger<DefaultServiceIdGenerator>());
+            IServiceInstanceFactory serviceInstanceFactory = new DefaultServiceInstanceFactory(loggerFactory.CreateLogger<DefaultServiceInstanceFactory>());
             ITypeConvertibleService typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(objectSerializer) }, new NullLogger<DefaultTypeConvertibleService>());
             IClrServiceEntryFactory clrServiceEntryFactory = new ClrServiceEntryFactory(serviceInstanceFactory, serviceIdGenerator, typeConvertibleService);
             var types = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetExportedTypes());
-            var serviceEntryProvider = new AttributeServiceEntryProvider(types, clrServiceEntryFactory, new ConsoleLogger<AttributeServiceEntryProvider>());
+            var serviceEntryProvider = new AttributeServiceEntryProvider(types, clrServiceEntryFactory, loggerFactory.CreateLogger<AttributeServiceEntryProvider>());
             IServiceEntryManager serviceEntryManager = new DefaultServiceEntryManager(new IServiceEntryProvider[] { serviceEntryProvider });
             IServiceEntryLocate serviceEntryLocate = new DefaultServiceEntryLocate(serviceEntryManager);
 
@@ -54,13 +58,13 @@ namespace Echo.Server
                     ServiceDescriptor = i.Descriptor
                 });
 
-                var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, new ConsoleLogger<SharedFileServiceRouteManager>());
+                var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, loggerFactory.CreateLogger<SharedFileServiceRouteManager>());
                 //zookeeper服务路由管理者。
                 //                var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer, new ConsoleLogger<ZooKeeperServiceRouteManager>());
                 serviceRouteManager.AddRoutesAsync(addressDescriptors).Wait();
             }
 
-            IServiceHost serviceHost = new DotNettyServiceHost(new DefaultServiceExecutor(serviceEntryLocate, byteArraySerializer, new ConsoleLogger<DefaultServiceExecutor>(),objectSerializer), new ConsoleLogger<DotNettyServiceHost>(), byteArraySerializer);
+            IServiceHost serviceHost = new DotNettyServiceHost(new DefaultServiceExecutor(serviceEntryLocate, loggerFactory.CreateLogger<DefaultServiceExecutor>(), objectSerializer), loggerFactory.CreateLogger<DotNettyServiceHost>(), byteArraySerializer);
 
             Task.Factory.StartNew(async () =>
             {

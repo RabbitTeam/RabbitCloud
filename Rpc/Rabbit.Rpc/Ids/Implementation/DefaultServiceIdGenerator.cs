@@ -1,4 +1,4 @@
-﻿using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -39,7 +39,7 @@ namespace Rabbit.Rpc.Ids.Implementation
                 id += "_" + string.Join("_", parameters.Select(i => i.Name));
             }
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug($"为方法：{method}生成服务Id：{id}。");
+                _logger.LogDebug($"为方法：{method}生成服务Id：{id}。");
             return id;
         }
 

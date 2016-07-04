@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 
 namespace Rabbit.Rpc.Logging
 {
@@ -72,4 +72,4 @@ namespace Rabbit.Rpc.Logging
 
         #endregion Implementation of ILogger
     }
-}
+}*/

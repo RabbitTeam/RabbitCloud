@@ -2,7 +2,7 @@
 using DotNetty.Transport.Bootstrapping;
 using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
-using Rabbit.Rpc.Logging;
+using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Runtime.Server.Implementation;
@@ -47,7 +47,7 @@ namespace Rabbit.Transport.DotNetty
         public override async Task StartAsync(EndPoint endPoint)
         {
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug($"准备启动服务主机，监听地址：{endPoint}。");
+                _logger.LogDebug($"准备启动服务主机，监听地址：{endPoint}。");
 
             var bossGroup = new MultithreadEventLoopGroup(1);
             var workerGroup = new MultithreadEventLoopGroup();
@@ -67,7 +67,7 @@ namespace Rabbit.Transport.DotNetty
             _channel = await bootstrap.BindAsync(endPoint);
 
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug($"服务主机启动成功，监听地址：{endPoint}。");
+                _logger.LogDebug($"服务主机启动成功，监听地址：{endPoint}。");
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace Rabbit.Transport.DotNetty
             public override void ExceptionCaught(IChannelHandlerContext context, Exception exception)
             {
                 if (_logger.IsEnabled(LogLevel.Error))
-                    _logger.Error($"与服务器：{context.Channel.RemoteAddress}通信时发送了错误。", exception);
+                    _logger.LogError($"与服务器：{context.Channel.RemoteAddress}通信时发送了错误。", exception);
             }
 
             #endregion Overrides of ChannelHandlerAdapter

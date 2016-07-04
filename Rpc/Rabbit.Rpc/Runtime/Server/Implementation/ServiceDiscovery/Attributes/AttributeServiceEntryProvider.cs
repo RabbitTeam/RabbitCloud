@@ -1,4 +1,4 @@
-﻿using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,8 +43,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Attributes
 
             if (_logger.IsEnabled(LogLevel.Information))
             {
-                _logger.Information($"发现了以下服务：{string.Join(",", services.Select(i => i.ToString()))}。");
-                //                _logger.Information($"发现了以下服务实现：{string.Join(",", serviceImplementations.Select(i => i.ToString()))}。");
+                _logger.LogInformation($"发现了以下服务：{string.Join(",", services.Select(i => i.ToString()))}。");
             }
 
             var entries = new List<ServiceEntry>();

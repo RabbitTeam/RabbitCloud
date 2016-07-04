@@ -1,5 +1,5 @@
-﻿using Rabbit.Rpc.Exceptions;
-using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers;
 using Rabbit.Rpc.Transport;
@@ -55,7 +55,7 @@ namespace Rabbit.Rpc.Runtime.Client.Implementation
             }
             catch (Exception exception)
             {
-                _logger.Fatal($"发起请求中发生了错误，服务Id：{invokeMessage.ServiceId}。", exception);
+                _logger.LogError($"发起请求中发生了错误，服务Id：{invokeMessage.ServiceId}。", exception);
                 throw;
             }
         }

@@ -1,5 +1,5 @@
-﻿using Rabbit.Rpc.Exceptions;
-using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Serialization;
@@ -55,21 +55,21 @@ namespace Rabbit.Rpc.Transport.Implementation
             try
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.Debug("准备发送消息。");
+                    _logger.LogDebug("准备发送消息。");
 
                 var transportMessage = TransportMessage.CreateInvokeMessage(message);
 
                 await _messageSender.SendAndFlushAsync(transportMessage);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.Debug("消息发送成功。");
+                    _logger.LogDebug("消息发送成功。");
 
                 return transportMessage;
             }
             catch (Exception exception)
             {
-                if (_logger.IsEnabled(LogLevel.Fatal))
-                    _logger.Fatal("消息发送失败。", exception);
+                if (_logger.IsEnabled(LogLevel.Error))
+                    _logger.LogError("消息发送失败。", exception);
                 throw;
             }
         }
@@ -82,7 +82,7 @@ namespace Rabbit.Rpc.Transport.Implementation
         public async Task<RemoteInvokeResultMessage> ReceiveAsync(string id)
         {
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug($"准备获取Id为：{id}的响应内容。");
+                _logger.LogDebug($"准备获取Id为：{id}的响应内容。");
 
             TaskCompletionSource<TransportMessage> task;
             if (_resultDictionary.ContainsKey(id))
@@ -125,7 +125,7 @@ namespace Rabbit.Rpc.Transport.Implementation
         private void MessageListener_Received(IMessageSender sender, TransportMessage message)
         {
             if (_logger.IsEnabled(LogLevel.Information))
-                _logger.Information("接收到消息。");
+                _logger.LogInformation("接收到消息。");
 
             TaskCompletionSource<TransportMessage> task;
             if (!_resultDictionary.TryGetValue(message.Id, out task))

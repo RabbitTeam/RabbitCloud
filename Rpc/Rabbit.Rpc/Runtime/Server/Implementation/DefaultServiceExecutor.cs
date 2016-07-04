@@ -1,4 +1,4 @@
-﻿using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
@@ -12,7 +12,6 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
         #region Field
 
         private readonly IServiceEntryLocate _serviceEntryLocate;
-        private readonly ISerializer<byte[]> _serializer;
         private readonly ILogger<DefaultServiceExecutor> _logger;
         private readonly ISerializer<object> _objecSerializer;
 
@@ -20,10 +19,9 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
 
         #region Constructor
 
-        public DefaultServiceExecutor(IServiceEntryLocate serviceEntryLocate, ISerializer<byte[]> serializer, ILogger<DefaultServiceExecutor> logger, ISerializer<object> objecSerializer)
+        public DefaultServiceExecutor(IServiceEntryLocate serviceEntryLocate, ILogger<DefaultServiceExecutor> logger, ISerializer<object> objecSerializer)
         {
             _serviceEntryLocate = serviceEntryLocate;
-            _serializer = serializer;
             _logger = logger;
             _objecSerializer = objecSerializer;
         }
@@ -40,7 +38,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
         public async Task ExecuteAsync(IMessageSender sender, TransportMessage message)
         {
             if (_logger.IsEnabled(LogLevel.Information))
-                _logger.Information("接收到消息。");
+                _logger.LogInformation("接收到消息。");
 
             if (!message.IsInvokeMessage())
                 return;
@@ -52,7 +50,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             }
             catch (Exception exception)
             {
-                _logger.Error($"将接收到的消息反序列化成 TransportMessage<RemoteInvokeMessage> 时发送了错误。", exception);
+                _logger.LogError("将接收到的消息反序列化成 TransportMessage<RemoteInvokeMessage> 时发送了错误。", exception);
                 return;
             }
 
@@ -61,12 +59,12 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             if (entry == null)
             {
                 if (_logger.IsEnabled(LogLevel.Error))
-                    _logger.Error($"根据服务Id：{remoteInvokeMessage.ServiceId}，找不到服务条目。");
+                    _logger.LogError($"根据服务Id：{remoteInvokeMessage.ServiceId}，找不到服务条目。");
                 return;
             }
 
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug("准备执行本地逻辑。");
+                _logger.LogDebug("准备执行本地逻辑。");
 
             var resultMessage = new RemoteInvokeResultMessage();
             try
@@ -90,23 +88,23 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             catch (Exception exception)
             {
                 if (_logger.IsEnabled(LogLevel.Error))
-                    _logger.Error("执行本地逻辑时候发生了错误。", exception);
+                    _logger.LogError("执行本地逻辑时候发生了错误。", exception);
                 resultMessage.ExceptionMessage = GetExceptionMessage(exception);
             }
 
             try
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.Debug("准备发送响应消息。");
+                    _logger.LogDebug("准备发送响应消息。");
 
                 await sender.SendAsync(TransportMessage.CreateInvokeResultMessage(message.Id, resultMessage));
                 if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.Debug("响应消息发送成功。");
+                    _logger.LogDebug("响应消息发送成功。");
             }
             catch (Exception exception)
             {
                 if (_logger.IsEnabled(LogLevel.Error))
-                    _logger.Error("发送响应消息时候发生了异常。", exception);
+                    _logger.LogError("发送响应消息时候发生了异常。", exception);
             }
         }
 

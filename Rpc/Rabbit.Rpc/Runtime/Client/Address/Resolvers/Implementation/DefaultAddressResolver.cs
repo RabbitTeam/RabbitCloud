@@ -1,5 +1,5 @@
-﻿using Rabbit.Rpc.Address;
-using Rabbit.Rpc.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
 using System.Linq;
@@ -41,14 +41,14 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation
         public async Task<AddressModel> Resolver(string serviceId)
         {
             if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.Debug($"准备为服务id：{serviceId}，解析可用地址。");
+                _logger.LogDebug($"准备为服务id：{serviceId}，解析可用地址。");
             var descriptors = await _serviceRouteManager.GetRoutesAsync();
             var descriptor = descriptors.FirstOrDefault(i => i.ServiceDescriptor.Id == serviceId);
 
             if (descriptor == null)
             {
                 if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.Warning($"根据服务id：{serviceId}，找不到相关服务信息。");
+                    _logger.LogWarning($"根据服务id：{serviceId}，找不到相关服务信息。");
                 return null;
             }
 
@@ -56,12 +56,12 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation
             if (!hasAddress.HasValue || !hasAddress.Value)
             {
                 if (_logger.IsEnabled(LogLevel.Warning))
-                    _logger.Warning($"根据服务id：{serviceId}，找不到可用的地址。");
+                    _logger.LogWarning($"根据服务id：{serviceId}，找不到可用的地址。");
                 return null;
             }
 
             if (_logger.IsEnabled(LogLevel.Information))
-                _logger.Information($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", descriptor.Address.Select(i => i.ToString()))}。");
+                _logger.LogInformation($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", descriptor.Address.Select(i => i.ToString()))}。");
 
             return await _addressSelector.SelectAsync(new AddressSelectContext
             {
