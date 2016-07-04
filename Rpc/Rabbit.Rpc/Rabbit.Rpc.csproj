@@ -66,6 +66,7 @@
     <Compile Include="Ids\Implementation\DefaultServiceIdGenerator.cs" />
     <Compile Include="Messages\RemoteInvokeMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RpcServiceCollectionExtensions.cs" />
     <Compile Include="Runtime\Client\Address\Resolvers\IAddressResolver.cs" />
     <Compile Include="Runtime\Client\Address\Resolvers\Implementation\DefaultAddressResolver.cs" />
     <Compile Include="Runtime\Client\Address\Resolvers\Implementation\Selectors\IAddressSelector.cs" />

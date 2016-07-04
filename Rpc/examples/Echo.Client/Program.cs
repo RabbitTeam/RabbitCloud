@@ -1,20 +1,9 @@
 ﻿using Echo.Common;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Rabbit.Rpc.Convertibles.Implementation;
+using Rabbit.Rpc;
 using Rabbit.Rpc.Exceptions;
-using Rabbit.Rpc.Ids;
-using Rabbit.Rpc.Ids.Implementation;
 using Rabbit.Rpc.ProxyGenerator;
-using Rabbit.Rpc.ProxyGenerator.Implementation;
-using Rabbit.Rpc.Routing.Implementation;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
-using Rabbit.Rpc.Runtime.Client.Implementation;
-using Rabbit.Rpc.Serialization;
-using Rabbit.Rpc.Serialization.Implementation;
-using Rabbit.Rpc.Transport;
 using Rabbit.Transport.DotNetty;
 using System;
 using System.Linq;
@@ -26,34 +15,27 @@ namespace Echo.Client
     {
         private static void Main()
         {
-            ILoggerFactory loggerFactory = new LoggerFactory();
-            loggerFactory.AddConsole((c, l) => (int)l >= 3);
+            var serviceCollection = new ServiceCollection();
 
-            //客户端基本服务。
-            ISerializer<string> serializer = new JsonSerializer();
-            ISerializer<byte[]> byteArraySerializer = new StringByteArraySerializer(serializer);
-            ISerializer<object> objectSerializer = new StringObjectSerializer(serializer);
-            IServiceIdGenerator serviceIdGenerator = new DefaultServiceIdGenerator(loggerFactory.CreateLogger<DefaultServiceIdGenerator>());
+            serviceCollection
+                .AddLogging()
+                .AddClient()
+                .SetSharedFileRouteManager("d:\\routes.txt")
+                .AddDotNettyTransport();
 
-            var typeConvertibleService = new DefaultTypeConvertibleService(new[] { new DefaultTypeConvertibleProvider(objectSerializer) }, loggerFactory.CreateLogger<DefaultTypeConvertibleService>());
-            var serviceRouteManager = new SharedFileServiceRouteManager("d:\\routes.txt", serializer, loggerFactory.CreateLogger<SharedFileServiceRouteManager>());
-            //zookeeper服务路由管理者。
-            //            var serviceRouteManager = new ZooKeeperServiceRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"), serializer, new ConsoleLogger<ZooKeeperServiceRouteManager>());
-            //            IAddressSelector addressSelector = new RandomAddressSelector();
-            IAddressSelector addressSelector = new PollingAddressSelector();
-            IAddressResolver addressResolver = new DefaultAddressResolver(serviceRouteManager, loggerFactory.CreateLogger<DefaultAddressResolver>(), addressSelector);
-            ITransportClientFactory transportClientFactory = new DotNettyTransportClientFactory(byteArraySerializer, objectSerializer, loggerFactory.CreateLogger<DotNettyTransportClientFactory>());
-            var remoteInvokeService = new RemoteInvokeService(addressResolver, transportClientFactory, loggerFactory.CreateLogger<RemoteInvokeService>());
+            var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            //服务代理相关。
-            IServiceProxyGenerater serviceProxyGenerater = new ServiceProxyGenerater(serviceIdGenerator);
+            serviceProvider.GetRequiredService<ILoggerFactory>()
+                .AddConsole((c, l) => (int)l >= 3);
+
+            var serviceProxyGenerater = serviceProvider.GetRequiredService<IServiceProxyGenerater>();
+            var serviceProxyFactory = serviceProvider.GetRequiredService<IServiceProxyFactory>();
             var services = serviceProxyGenerater.GenerateProxys(new[] { typeof(IUserService) }).ToArray();
-            IServiceProxyFactory serviceProxyFactory = new ServiceProxyFactory(remoteInvokeService, typeConvertibleService);
 
             //创建IUserService的代理。
             var userService = serviceProxyFactory.CreateProxy<IUserService>(services.Single(typeof(IUserService).IsAssignableFrom));
 
-            var logger = loggerFactory.CreateLogger(typeof(Program));
+            var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             while (true)
             {
                 Task.Run(async () =>
