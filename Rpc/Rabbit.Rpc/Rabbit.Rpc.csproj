@@ -85,6 +85,7 @@
     <Compile Include="Runtime\Server\Implementation\ServiceDiscovery\Implementation\ClrServiceEntryFactory.cs" />
     <Compile Include="Runtime\Server\Implementation\ServiceDiscovery\Implementation\DefaultServiceInstanceFactory.cs" />
     <Compile Include="Runtime\Server\Implementation\ServiceDiscovery\IServiceInstanceFactory.cs" />
+    <Compile Include="Runtime\Server\Implementation\DefaultServiceHost.cs" />
     <Compile Include="Runtime\Server\Implementation\ServiceHostAbstract.cs" />
     <Compile Include="Runtime\Server\IServiceEntryLocate.cs" />
     <Compile Include="Runtime\Server\IServiceEntryManager.cs" />

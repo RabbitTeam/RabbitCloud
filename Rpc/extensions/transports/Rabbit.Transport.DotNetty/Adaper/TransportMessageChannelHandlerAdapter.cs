@@ -2,7 +2,7 @@
 using DotNetty.Transport.Channels;
 using Rabbit.Rpc.Transport.Codec;
 
-namespace Rabbit.Transport.DotNetty
+namespace Rabbit.Transport.DotNetty.Adaper
 {
     internal class TransportMessageChannelHandlerAdapter : ChannelHandlerAdapter
     {

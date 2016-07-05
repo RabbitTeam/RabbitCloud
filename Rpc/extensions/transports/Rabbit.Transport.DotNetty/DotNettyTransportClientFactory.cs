@@ -9,6 +9,7 @@ using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Codec;
 using Rabbit.Rpc.Transport.Implementation;
+using Rabbit.Transport.DotNetty.Adaper;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;

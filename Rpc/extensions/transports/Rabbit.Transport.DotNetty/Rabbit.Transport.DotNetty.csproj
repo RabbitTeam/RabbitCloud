@@ -58,10 +58,10 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DotNettyServerMessageListener.cs" />
     <Compile Include="RpcServiceCollectionExtensions.cs" />
-    <Compile Include="TransportMessageChannelHandlerAdapter.cs" />
+    <Compile Include="Adaper\TransportMessageChannelHandlerAdapter.cs" />
     <Compile Include="DotNettyMessageSender.cs" />
-    <Compile Include="DotNettyServiceHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DotNettyTransportClientFactory.cs" />
   </ItemGroup>

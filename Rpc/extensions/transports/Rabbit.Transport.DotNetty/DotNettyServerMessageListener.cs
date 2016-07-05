@@ -4,24 +4,20 @@ using DotNetty.Transport.Channels;
 using DotNetty.Transport.Channels.Sockets;
 using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Messages;
-using Rabbit.Rpc.Runtime.Server;
-using Rabbit.Rpc.Runtime.Server.Implementation;
 using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Codec;
+using Rabbit.Transport.DotNetty.Adaper;
 using System;
 using System.Net;
 using System.Threading.Tasks;
 
 namespace Rabbit.Transport.DotNetty
 {
-    /// <summary>
-    /// 默认的服务主机实现。
-    /// </summary>
-    public class DotNettyServiceHost : ServiceHostAbstract
+    public class DotNettyServerMessageListener : IMessageListener, IDisposable
     {
         #region Field
 
-        private readonly ILogger<DotNettyServiceHost> _logger;
+        private readonly ILogger<DotNettyServerMessageListener> _logger;
         private readonly ITransportMessageEncoder _transportMessageEncoder;
         private readonly ITransportMessageDecoder _transportMessageDecoder;
         private IChannel _channel;
@@ -30,7 +26,7 @@ namespace Rabbit.Transport.DotNetty
 
         #region Constructor
 
-        public DotNettyServiceHost(IServiceExecutor serviceExecutor, ILogger<DotNettyServiceHost> logger, ITransportMessageEncoder transportMessageEncoder, ITransportMessageDecoder transportMessageDecoder) : base(serviceExecutor)
+        public DotNettyServerMessageListener(ILogger<DotNettyServerMessageListener> logger, ITransportMessageEncoder transportMessageEncoder, ITransportMessageDecoder transportMessageDecoder)
         {
             _logger = logger;
             _transportMessageEncoder = transportMessageEncoder;
@@ -39,14 +35,23 @@ namespace Rabbit.Transport.DotNetty
 
         #endregion Constructor
 
-        #region Overrides of ServiceHostAbstract
+        #region Implementation of IMessageListener
+
+        public event ReceivedDelegate Received;
 
         /// <summary>
-        /// 启动主机。
+        /// 触发接收到消息事件。
         /// </summary>
-        /// <param name="endPoint">主机终结点。</param>
-        /// <returns>一个任务。</returns>
-        public override async Task StartAsync(EndPoint endPoint)
+        /// <param name="sender">消息发送者。</param>
+        /// <param name="message">接收到的消息。</param>
+        public void OnReceived(IMessageSender sender, TransportMessage message)
+        {
+            Received?.Invoke(sender, message);
+        }
+
+        #endregion Implementation of IMessageListener
+
+        public async Task StartAsync(EndPoint endPoint)
         {
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.LogDebug($"准备启动服务主机，监听地址：{endPoint}。");
@@ -64,7 +69,11 @@ namespace Rabbit.Transport.DotNetty
                     pipeline.AddLast(new LengthFieldPrepender(4));
                     pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
                     pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
-                    pipeline.AddLast(new ServerHandler(MessageListener, _logger, _transportMessageEncoder));
+                    pipeline.AddLast(new ServerHandler((contenxt, message) =>
+                    {
+                        var sender = new DotNettyServerMessageSender(_transportMessageEncoder, contenxt);
+                        OnReceived(sender, message);
+                    }, _logger));
                 }));
             _channel = await bootstrap.BindAsync(endPoint);
 
@@ -72,10 +81,10 @@ namespace Rabbit.Transport.DotNetty
                 _logger.LogDebug($"服务主机启动成功，监听地址：{endPoint}。");
         }
 
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public override void Dispose()
+        #region Implementation of IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
         {
             Task.Run(async () =>
             {
@@ -83,21 +92,19 @@ namespace Rabbit.Transport.DotNetty
             }).Wait();
         }
 
-        #endregion Overrides of ServiceHostAbstract
+        #endregion Implementation of IDisposable
 
         #region Help Class
 
         private class ServerHandler : ChannelHandlerAdapter
         {
-            private readonly IMessageListener _messageListener;
+            private readonly Action<IChannelHandlerContext, TransportMessage> _readAction;
             private readonly ILogger _logger;
-            private readonly ITransportMessageEncoder _transportMessageEncoder;
 
-            public ServerHandler(IMessageListener messageListener, ILogger logger, ITransportMessageEncoder transportMessageEncoder)
+            public ServerHandler(Action<IChannelHandlerContext, TransportMessage> readAction, ILogger logger)
             {
-                _messageListener = messageListener;
+                _readAction = readAction;
                 _logger = logger;
-                _transportMessageEncoder = transportMessageEncoder;
             }
 
             #region Overrides of ChannelHandlerAdapter
@@ -106,7 +113,7 @@ namespace Rabbit.Transport.DotNetty
             {
                 var transportMessage = (TransportMessage)message;
 
-                _messageListener.OnReceived(new DotNettyServerMessageSender(_transportMessageEncoder, context), transportMessage);
+                _readAction(context, transportMessage);
             }
 
             public override void ChannelReadComplete(IChannelHandlerContext context)
