@@ -106,6 +106,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\extensions\codecs\Rabbit.Rpc.Codec.ProtoBuffer\Rabbit.Rpc.Codec.ProtoBuffer.csproj">
+      <Project>{99a64337-0c1b-4b8a-8bb5-367ab6da8a75}</Project>
+      <Name>Rabbit.Rpc.Codec.ProtoBuffer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\extensions\coordinates\Rabbit.Rpc.Coordinate.Zookeeper\Rabbit.Rpc.Coordinate.Zookeeper.csproj">
       <Project>{21bdbe34-ea86-498b-825d-3d2bd79e2a70}</Project>
       <Name>Rabbit.Rpc.Coordinate.Zookeeper</Name>

@@ -33,6 +33,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "transports", "transports", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabbit.Transport.DotNetty", "extensions\transports\Rabbit.Transport.DotNetty\Rabbit.Transport.DotNetty.csproj", "{B1ABB1AB-0163-4059-A8DE-219B003D9226}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "codecs", "codecs", "{C6D75A9A-EFDF-4265-8ED1-EDD6C501CCED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabbit.Rpc.Codec.ProtoBuffer", "extensions\codecs\Rabbit.Rpc.Codec.ProtoBuffer\Rabbit.Rpc.Codec.ProtoBuffer.csproj", "{99A64337-0C1B-4B8A-8BB5-367AB6DA8A75}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +79,10 @@ Global
 		{B1ABB1AB-0163-4059-A8DE-219B003D9226}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1ABB1AB-0163-4059-A8DE-219B003D9226}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1ABB1AB-0163-4059-A8DE-219B003D9226}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99A64337-0C1B-4B8A-8BB5-367AB6DA8A75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99A64337-0C1B-4B8A-8BB5-367AB6DA8A75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99A64337-0C1B-4B8A-8BB5-367AB6DA8A75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99A64337-0C1B-4B8A-8BB5-367AB6DA8A75}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -89,5 +97,7 @@ Global
 		{A7BD6D14-A78A-4356-8166-1ECB88DDF69A} = {013F8D49-C672-4CAD-8DFC-A8BDB0899E81}
 		{60FBAB8C-4AC3-43CE-8F65-EE6450E45CB1} = {DD9931BD-AAAD-423A-8AC8-94ECB06D8828}
 		{B1ABB1AB-0163-4059-A8DE-219B003D9226} = {60FBAB8C-4AC3-43CE-8F65-EE6450E45CB1}
+		{C6D75A9A-EFDF-4265-8ED1-EDD6C501CCED} = {DD9931BD-AAAD-423A-8AC8-94ECB06D8828}
+		{99A64337-0C1B-4B8A-8BB5-367AB6DA8A75} = {C6D75A9A-EFDF-4265-8ED1-EDD6C501CCED}
 	EndGlobalSection
 EndGlobal

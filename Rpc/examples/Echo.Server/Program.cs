@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Rabbit.Rpc;
 using Rabbit.Rpc.Address;
+using Rabbit.Rpc.Codec.ProtoBuffer;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Transport.DotNetty;
@@ -29,6 +30,8 @@ namespace Echo.Server
             serviceCollection
                 .AddLogging()
                 .AddRpcCore()
+                //                .UseJsonCodec()
+                .UseProtoBufferCodec()
                 .AddServiceRuntime()
                 .UseSharedFileRouteManager("d:\\routes.txt")
                 //zookeeper服务路由管理者。

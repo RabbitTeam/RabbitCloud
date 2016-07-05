@@ -7,6 +7,19 @@ namespace Rabbit.Rpc.Messages
     /// </summary>
     public class TransportMessage
     {
+        public TransportMessage()
+        {
+        }
+
+        public TransportMessage(object content)
+        {
+            if (content == null)
+                throw new ArgumentNullException(nameof(content));
+
+            Content = content;
+            ContentType = content.GetType().FullName;
+        }
+
         /// <summary>
         /// 消息Id。
         /// </summary>
@@ -47,11 +60,9 @@ namespace Rabbit.Rpc.Messages
         /// <returns>调用传输消息。</returns>
         public static TransportMessage CreateInvokeMessage(RemoteInvokeMessage invokeMessage)
         {
-            return new TransportMessage
+            return new TransportMessage(invokeMessage)
             {
-                Id = Guid.NewGuid().ToString("N"),
-                Content = invokeMessage,
-                ContentType = typeof(RemoteInvokeMessage).FullName
+                Id = Guid.NewGuid().ToString("N")
             };
         }
 
@@ -63,11 +74,9 @@ namespace Rabbit.Rpc.Messages
         /// <returns>调用结果传输消息。</returns>
         public static TransportMessage CreateInvokeResultMessage(string id, RemoteInvokeResultMessage invokeResultMessage)
         {
-            return new TransportMessage
+            return new TransportMessage(invokeResultMessage)
             {
-                Id = id,
-                Content = invokeResultMessage,
-                ContentType = typeof(RemoteInvokeResultMessage).FullName
+                Id = id
             };
         }
     }

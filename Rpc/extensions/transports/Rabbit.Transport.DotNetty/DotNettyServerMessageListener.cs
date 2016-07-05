@@ -18,19 +18,19 @@ namespace Rabbit.Transport.DotNetty
         #region Field
 
         private readonly ILogger<DotNettyServerMessageListener> _logger;
-        private readonly ITransportMessageEncoder _transportMessageEncoder;
         private readonly ITransportMessageDecoder _transportMessageDecoder;
+        private readonly ITransportMessageEncoder _transportMessageEncoder;
         private IChannel _channel;
 
         #endregion Field
 
         #region Constructor
 
-        public DotNettyServerMessageListener(ILogger<DotNettyServerMessageListener> logger, ITransportMessageEncoder transportMessageEncoder, ITransportMessageDecoder transportMessageDecoder)
+        public DotNettyServerMessageListener(ILogger<DotNettyServerMessageListener> logger, ITransportMessageCodecFactory codecFactory)
         {
             _logger = logger;
-            _transportMessageEncoder = transportMessageEncoder;
-            _transportMessageDecoder = transportMessageDecoder;
+            _transportMessageEncoder = codecFactory.GetEncoder();
+            _transportMessageDecoder = codecFactory.GetDecoder();
         }
 
         #endregion Constructor

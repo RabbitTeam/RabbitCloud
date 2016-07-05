@@ -2,7 +2,7 @@
 using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Server;
-using Rabbit.Rpc.Serialization;
+using Rabbit.Rpc.Transport.Codec;
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -19,7 +19,7 @@ namespace Rabbit.Rpc.Transport.Implementation
         private readonly IMessageSender _messageSender;
         private readonly IMessageListener _messageListener;
         private readonly ILogger _logger;
-        private readonly ISerializer<object> _objecSerializer;
+        private readonly ITransportMessageDecoder _transportMessageDecoder;
         private readonly IServiceExecutor _serviceExecutor;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
 
@@ -27,12 +27,11 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Constructor
 
-        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<object> objecSerializer, IServiceExecutor serviceExecutor)
+        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, IServiceExecutor serviceExecutor)
         {
             _messageSender = messageSender;
             _messageListener = messageListener;
             _logger = logger;
-            _objecSerializer = objecSerializer;
             _serviceExecutor = serviceExecutor;
             messageListener.Received += MessageListener_Received;
         }
@@ -93,7 +92,8 @@ namespace Rabbit.Rpc.Transport.Implementation
                 task = new TaskCompletionSource<TransportMessage>();
                 _resultDictionary.TryAdd(id, task);
                 var result = await task.Task;
-                return _objecSerializer.Deserialize<object, RemoteInvokeResultMessage>(result.Content);
+
+                return (RemoteInvokeResultMessage)result.Content;
             }
             return null;
         }
@@ -129,7 +129,7 @@ namespace Rabbit.Rpc.Transport.Implementation
 
             if (message.IsInvokeResultMessage())
             {
-                var content = _objecSerializer.Deserialize<object, RemoteInvokeResultMessage>(message.Content);
+                var content = (RemoteInvokeResultMessage)message.Content;
                 if (!string.IsNullOrEmpty(content.ExceptionMessage))
                 {
                     task.TrySetException(new RpcRemoteException(content.ExceptionMessage));

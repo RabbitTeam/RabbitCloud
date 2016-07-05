@@ -193,6 +193,59 @@ namespace Rabbit.Rpc
             return builder;
         }
 
+        #region Codec Factory
+
+        /// <summary>
+        /// 使用编解码器。
+        /// </summary>
+        /// <param name="builder">Rpc服务构建者。</param>
+        /// <param name="codecFactory"></param>
+        /// <returns>Rpc服务构建者。</returns>
+        public static IRpcBuilder UseCodec(this IRpcBuilder builder, ITransportMessageCodecFactory codecFactory)
+        {
+            builder.Services.AddSingleton(codecFactory);
+
+            return builder;
+        }
+
+        /// <summary>
+        /// 使用编解码器。
+        /// </summary>
+        /// <typeparam name="T">编解码器工厂实现类型。</typeparam>
+        /// <param name="builder">Rpc服务构建者。</param>
+        /// <returns>Rpc服务构建者。</returns>
+        public static IRpcBuilder UseCodec<T>(this IRpcBuilder builder) where T : class, ITransportMessageCodecFactory
+        {
+            builder.Services.AddSingleton<ITransportMessageCodecFactory, T>();
+
+            return builder;
+        }
+
+        /// <summary>
+        /// 使用编解码器。
+        /// </summary>
+        /// <param name="builder">Rpc服务构建者。</param>
+        /// <param name="codecFactory">编解码器工厂创建委托。</param>
+        /// <returns>Rpc服务构建者。</returns>
+        public static IRpcBuilder UseCodec(this IRpcBuilder builder, Func<IServiceProvider, ITransportMessageCodecFactory> codecFactory)
+        {
+            builder.Services.AddSingleton(codecFactory);
+
+            return builder;
+        }
+
+        #endregion Codec Factory
+
+        /// <summary>
+        /// 使用Json编解码器。
+        /// </summary>
+        /// <param name="builder">Rpc服务构建者。</param>
+        /// <returns>Rpc服务构建者。</returns>
+        public static IRpcBuilder UseJsonCodec(this IRpcBuilder builder)
+        {
+            return builder.UseCodec<JsonTransportMessageCodecFactory>();
+        }
+
         /// <summary>
         /// 添加客户端运行时服务。
         /// </summary>
@@ -238,19 +291,14 @@ namespace Rabbit.Rpc
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
 
-            var builder = new RpcBuilder(services);
-
-            builder.AddJsonSerialization();
-
-            services.AddSingleton<ITransportMessageEncoder, ByteTransportMessageEncoder>();
-            services.AddSingleton<ITransportMessageDecoder, ByteJsonTransportMessageDecoder>();
-
             services.AddSingleton<IServiceIdGenerator, DefaultServiceIdGenerator>();
 
             services.AddSingleton<ITypeConvertibleProvider, DefaultTypeConvertibleProvider>();
             services.AddSingleton<ITypeConvertibleService, DefaultTypeConvertibleService>();
 
-            return builder;
+            return new RpcBuilder(services)
+                .AddJsonSerialization()
+                .UseJsonCodec();
         }
     }
 }

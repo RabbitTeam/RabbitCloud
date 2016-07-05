@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Messages;
-using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
 using System;
 using System.Threading.Tasks;
@@ -13,17 +12,15 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
 
         private readonly IServiceEntryLocate _serviceEntryLocate;
         private readonly ILogger<DefaultServiceExecutor> _logger;
-        private readonly ISerializer<object> _objecSerializer;
 
         #endregion Field
 
         #region Constructor
 
-        public DefaultServiceExecutor(IServiceEntryLocate serviceEntryLocate, ILogger<DefaultServiceExecutor> logger, ISerializer<object> objecSerializer)
+        public DefaultServiceExecutor(IServiceEntryLocate serviceEntryLocate, ILogger<DefaultServiceExecutor> logger)
         {
             _serviceEntryLocate = serviceEntryLocate;
             _logger = logger;
-            _objecSerializer = objecSerializer;
         }
 
         #endregion Constructor
@@ -46,7 +43,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             RemoteInvokeMessage remoteInvokeMessage;
             try
             {
-                remoteInvokeMessage = _objecSerializer.Deserialize<object, RemoteInvokeMessage>(message.Content);
+                remoteInvokeMessage = (RemoteInvokeMessage)message.Content;
             }
             catch (Exception exception)
             {

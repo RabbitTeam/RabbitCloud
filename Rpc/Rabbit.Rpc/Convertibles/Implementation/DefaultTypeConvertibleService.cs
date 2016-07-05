@@ -46,6 +46,9 @@ namespace Rabbit.Rpc.Convertibles.Implementation
             if (conversionType == null)
                 throw new ArgumentNullException(nameof(conversionType));
 
+            if (conversionType.IsInstanceOfType(instance))
+                return instance;
+
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.LogDebug($"准备将 {instance.GetType()} 转换为：{conversionType}。");
 

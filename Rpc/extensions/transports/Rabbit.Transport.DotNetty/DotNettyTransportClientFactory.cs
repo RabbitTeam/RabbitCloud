@@ -5,7 +5,6 @@ using DotNetty.Transport.Channels.Sockets;
 using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Server;
-using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Codec;
 using Rabbit.Rpc.Transport.Implementation;
@@ -28,7 +27,6 @@ namespace Rabbit.Transport.DotNetty
         private readonly ITransportMessageEncoder _transportMessageEncoder;
         private readonly ITransportMessageDecoder _transportMessageDecoder;
         private readonly ILogger<DotNettyTransportClientFactory> _logger;
-        private readonly ISerializer<object> _objectSerializer;
         private readonly IServiceExecutor _serviceExecutor;
         private readonly ConcurrentDictionary<string, Lazy<ITransportClient>> _clients = new ConcurrentDictionary<string, Lazy<ITransportClient>>();
         private readonly Bootstrap _bootstrap;
@@ -37,17 +35,16 @@ namespace Rabbit.Transport.DotNetty
 
         #region Constructor
 
-        public DotNettyTransportClientFactory(ITransportMessageEncoder transportMessageEncoder, ITransportMessageDecoder transportMessageDecoder, ILogger<DotNettyTransportClientFactory> logger, ISerializer<object> objectSerializer)
-            : this(transportMessageEncoder, transportMessageDecoder, logger, objectSerializer, null)
+        public DotNettyTransportClientFactory(ITransportMessageCodecFactory codecFactory, ILogger<DotNettyTransportClientFactory> logger)
+            : this(codecFactory, logger, null)
         {
         }
 
-        public DotNettyTransportClientFactory(ITransportMessageEncoder transportMessageEncoder, ITransportMessageDecoder transportMessageDecoder, ILogger<DotNettyTransportClientFactory> logger, ISerializer<object> objectSerializer, IServiceExecutor serviceExecutor)
+        public DotNettyTransportClientFactory(ITransportMessageCodecFactory codecFactory, ILogger<DotNettyTransportClientFactory> logger, IServiceExecutor serviceExecutor)
         {
-            _transportMessageEncoder = transportMessageEncoder;
-            _transportMessageDecoder = transportMessageDecoder;
+            _transportMessageEncoder = codecFactory.GetEncoder();
+            _transportMessageDecoder = codecFactory.GetDecoder();
             _logger = logger;
-            _objectSerializer = objectSerializer;
             _serviceExecutor = serviceExecutor;
             _bootstrap = GetBootstrap();
         }
@@ -83,7 +80,7 @@ namespace Rabbit.Transport.DotNetty
                     var bootstrap = _bootstrap;
                     var channel = bootstrap.ConnectAsync(endPoint);
                     var messageSender = new DotNettyMessageClientSender(_transportMessageEncoder, channel);
-                    var client = new TransportClient(messageSender, messageListener, _logger, _objectSerializer, _serviceExecutor);
+                    var client = new TransportClient(messageSender, messageListener, _logger, _serviceExecutor);
                     return client;
                 }
                 )).Value;

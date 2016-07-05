@@ -98,8 +98,10 @@
     <Compile Include="Serialization\Implementation\JsonSerializer.cs" />
     <Compile Include="Serialization\ISerializer.cs" />
     <Compile Include="ServiceDescriptor.cs" />
-    <Compile Include="Transport\Codec\Implementation\ByteJsonTransportMessageDecoder.cs" />
-    <Compile Include="Transport\Codec\Implementation\ByteTransportMessageEncoder.cs" />
+    <Compile Include="Transport\Codec\Implementation\JsonTransportMessageDecoder.cs" />
+    <Compile Include="Transport\Codec\Implementation\JsonTransportMessageCodecFactory.cs" />
+    <Compile Include="Transport\Codec\Implementation\JsonTransportMessageEncoder.cs" />
+    <Compile Include="Transport\Codec\ITransportMessageCodecFactory.cs" />
     <Compile Include="Transport\Codec\ITransportMessageEncoder.cs" />
     <Compile Include="Transport\Codec\ITransportMessageDecoder.cs" />
     <Compile Include="Transport\IMessageListener.cs" />

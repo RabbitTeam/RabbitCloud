@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Rabbit.Rpc;
+using Rabbit.Rpc.Codec.ProtoBuffer;
 using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.ProxyGenerator;
 using Rabbit.Transport.DotNetty;
@@ -20,6 +21,8 @@ namespace Echo.Client
             serviceCollection
                 .AddLogging()
                 .AddClient()
+                                //                .UseJsonCodec()
+                                .UseProtoBufferCodec()
                 .UseSharedFileRouteManager("d:\\routes.txt")
                 //zookeeper服务路由管理者。
                 //                .UseZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"))
