@@ -22,7 +22,7 @@ namespace Echo.Client
                 .AddLogging()
                 .AddClient()
                                 //                .UseJsonCodec()
-                                .UseProtoBufferCodec()
+                .UseProtoBufferCodec()
                 .UseSharedFileRouteManager("d:\\routes.txt")
                 //zookeeper服务路由管理者。
                 //                .UseZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"))
