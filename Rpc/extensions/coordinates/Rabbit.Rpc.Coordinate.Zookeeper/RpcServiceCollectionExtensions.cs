@@ -12,9 +12,9 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         /// <param name="builder">Rpc服务构建者。</param>
         /// <param name="configInfo">ZooKeeper设置信息。</param>
         /// <returns>Rpc服务构建者。</returns>
-        public static IRpcBuilder SetZooKeeperRouteManager(this IRpcBuilder builder, ZooKeeperServiceRouteManager.ZookeeperConfigInfo configInfo)
+        public static IRpcBuilder UseZooKeeperRouteManager(this IRpcBuilder builder, ZooKeeperServiceRouteManager.ZookeeperConfigInfo configInfo)
         {
-            return builder.SetRouteManager(provider => new ZooKeeperServiceRouteManager(configInfo, provider.GetRequiredService<ISerializer<byte[]>>(), provider.GetRequiredService<ILogger<ZooKeeperServiceRouteManager>>()));
+            return builder.UseRouteManager(provider => new ZooKeeperServiceRouteManager(configInfo, provider.GetRequiredService<ISerializer<byte[]>>(), provider.GetRequiredService<ILogger<ZooKeeperServiceRouteManager>>()));
         }
     }
 }

@@ -97,6 +97,10 @@
     <Compile Include="Serialization\Implementation\JsonSerializer.cs" />
     <Compile Include="Serialization\ISerializer.cs" />
     <Compile Include="ServiceDescriptor.cs" />
+    <Compile Include="Transport\Codec\Implementation\ByteJsonTransportMessageDecoder.cs" />
+    <Compile Include="Transport\Codec\Implementation\ByteTransportMessageEncoder.cs" />
+    <Compile Include="Transport\Codec\ITransportMessageEncoder.cs" />
+    <Compile Include="Transport\Codec\ITransportMessageDecoder.cs" />
     <Compile Include="Transport\IMessageListener.cs" />
     <Compile Include="Transport\IMessageSender.cs" />
     <Compile Include="Transport\Implementation\TransportClient.cs" />
@@ -107,6 +111,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

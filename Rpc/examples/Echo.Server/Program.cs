@@ -29,10 +29,10 @@ namespace Echo.Server
             serviceCollection
                 .AddLogging()
                 .AddRpcCore()
-                .AddServerCore()
-                .SetSharedFileRouteManager("d:\\routes.txt")
+                .AddServiceRuntime()
+                .UseSharedFileRouteManager("d:\\routes.txt")
                 //zookeeper服务路由管理者。
-                //                .SetZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"))
+                //                .UseZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"))
                 .AddDotNettyServer();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
@@ -40,10 +40,9 @@ namespace Echo.Server
             serviceProvider.GetRequiredService<ILoggerFactory>()
                 .AddConsole((c, l) => (int)l >= 3);
 
-            var serviceEntryManager = serviceProvider.GetRequiredService<IServiceEntryManager>();
-
             //自动生成服务路由（这边的文件与Echo.Client为强制约束）
             {
+                var serviceEntryManager = serviceProvider.GetRequiredService<IServiceEntryManager>();
                 var addressDescriptors = serviceEntryManager.GetEntries().Select(i => new ServiceRoute
                 {
                     Address = new[] { new IpAddressModel { Ip = "127.0.0.1", Port = 9981 } },

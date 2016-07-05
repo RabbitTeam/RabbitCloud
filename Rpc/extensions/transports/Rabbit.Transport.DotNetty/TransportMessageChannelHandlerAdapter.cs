@@ -1,17 +1,16 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Transport.Channels;
-using Rabbit.Rpc.Messages;
-using Rabbit.Rpc.Serialization;
+using Rabbit.Rpc.Transport.Codec;
 
 namespace Rabbit.Transport.DotNetty
 {
     internal class TransportMessageChannelHandlerAdapter : ChannelHandlerAdapter
     {
-        private readonly ISerializer<byte[]> _serializer;
+        private readonly ITransportMessageDecoder _transportMessageDecoder;
 
-        public TransportMessageChannelHandlerAdapter(ISerializer<byte[]> serializer)
+        public TransportMessageChannelHandlerAdapter(ITransportMessageDecoder transportMessageDecoder)
         {
-            _serializer = serializer;
+            _transportMessageDecoder = transportMessageDecoder;
         }
 
         #region Overrides of ChannelHandlerAdapter
@@ -20,7 +19,7 @@ namespace Rabbit.Transport.DotNetty
         {
             var buffer = (IByteBuffer)message;
             var data = buffer.ToArray();
-            var transportMessage = _serializer.Deserialize<byte[], TransportMessage>(data);
+            var transportMessage = _transportMessageDecoder.Decode(data);
             context.FireChannelRead(transportMessage);
         }
 

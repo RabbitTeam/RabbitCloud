@@ -7,6 +7,7 @@ using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
+using Rabbit.Rpc.Transport.Codec;
 using Rabbit.Rpc.Transport.Implementation;
 using System;
 using System.Collections.Concurrent;
@@ -23,9 +24,10 @@ namespace Rabbit.Transport.DotNetty
     {
         #region Field
 
-        private readonly ISerializer<byte[]> _serializer;
-        private readonly ISerializer<object> _objecSerializer;
+        private readonly ITransportMessageEncoder _transportMessageEncoder;
+        private readonly ITransportMessageDecoder _transportMessageDecoder;
         private readonly ILogger<DotNettyTransportClientFactory> _logger;
+        private readonly ISerializer<object> _objectSerializer;
         private readonly IServiceExecutor _serviceExecutor;
         private readonly ConcurrentDictionary<string, Lazy<ITransportClient>> _clients = new ConcurrentDictionary<string, Lazy<ITransportClient>>();
         private readonly Bootstrap _bootstrap;
@@ -34,16 +36,17 @@ namespace Rabbit.Transport.DotNetty
 
         #region Constructor
 
-        public DotNettyTransportClientFactory(ISerializer<byte[]> serializer, ISerializer<object> objecSerializer,
-            ILogger<DotNettyTransportClientFactory> logger) : this(serializer, objecSerializer, logger, null)
+        public DotNettyTransportClientFactory(ITransportMessageEncoder transportMessageEncoder, ITransportMessageDecoder transportMessageDecoder, ILogger<DotNettyTransportClientFactory> logger, ISerializer<object> objectSerializer)
+            : this(transportMessageEncoder, transportMessageDecoder, logger, objectSerializer, null)
         {
         }
 
-        public DotNettyTransportClientFactory(ISerializer<byte[]> serializer, ISerializer<object> objecSerializer, ILogger<DotNettyTransportClientFactory> logger, IServiceExecutor serviceExecutor)
+        public DotNettyTransportClientFactory(ITransportMessageEncoder transportMessageEncoder, ITransportMessageDecoder transportMessageDecoder, ILogger<DotNettyTransportClientFactory> logger, ISerializer<object> objectSerializer, IServiceExecutor serviceExecutor)
         {
-            _serializer = serializer;
-            _objecSerializer = objecSerializer;
+            _transportMessageEncoder = transportMessageEncoder;
+            _transportMessageDecoder = transportMessageDecoder;
             _logger = logger;
+            _objectSerializer = objectSerializer;
             _serviceExecutor = serviceExecutor;
             _bootstrap = GetBootstrap();
         }
@@ -72,14 +75,14 @@ namespace Rabbit.Transport.DotNetty
                         var pipeline = c.Pipeline;
                         pipeline.AddLast(new LengthFieldPrepender(4));
                         pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                        pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_serializer));
-                        pipeline.AddLast(new DefaultChannelHandler(messageListener, _serializer));
+                        pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
+                        pipeline.AddLast(new DefaultChannelHandler(messageListener, _transportMessageEncoder));
                     }));
 
                     var bootstrap = _bootstrap;
                     var channel = bootstrap.ConnectAsync(endPoint);
-                    var messageSender = new DotNettyMessageClientSender(_serializer, channel);
-                    var client = new TransportClient(messageSender, messageListener, _logger, _objecSerializer, _serviceExecutor);
+                    var messageSender = new DotNettyMessageClientSender(_transportMessageEncoder, channel);
+                    var client = new TransportClient(messageSender, messageListener, _logger, _objectSerializer, _serviceExecutor);
                     return client;
                 }
                 )).Value;
@@ -114,12 +117,12 @@ namespace Rabbit.Transport.DotNetty
         protected class DefaultChannelHandler : ChannelHandlerAdapter
         {
             private readonly IMessageListener _messageListener;
-            private readonly ISerializer<byte[]> _serializer;
+            private readonly ITransportMessageEncoder _transportMessageEncoder;
 
-            public DefaultChannelHandler(IMessageListener messageListener, ISerializer<byte[]> serializer)
+            public DefaultChannelHandler(IMessageListener messageListener, ITransportMessageEncoder transportMessageEncoder)
             {
                 _messageListener = messageListener;
-                _serializer = serializer;
+                _transportMessageEncoder = transportMessageEncoder;
             }
 
             #region Overrides of ChannelHandlerAdapter
@@ -128,7 +131,7 @@ namespace Rabbit.Transport.DotNetty
             {
                 var transportMessage = message as TransportMessage;
 
-                _messageListener.OnReceived(new DotNettyMessageClientSender(_serializer, Task.FromResult(context.Channel)), transportMessage);
+                _messageListener.OnReceived(new DotNettyMessageClientSender(_transportMessageEncoder, Task.FromResult(context.Channel)), transportMessage);
             }
 
             #endregion Overrides of ChannelHandlerAdapter

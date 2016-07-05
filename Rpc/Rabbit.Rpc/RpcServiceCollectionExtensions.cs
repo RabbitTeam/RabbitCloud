@@ -10,6 +10,7 @@ using Rabbit.Rpc.Runtime.Client;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
+using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
 using Rabbit.Rpc.Runtime.Client.Implementation;
 using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Runtime.Server.Implementation;
@@ -18,6 +19,8 @@ using Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementation;
 using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Serialization.Implementation;
+using Rabbit.Rpc.Transport.Codec;
+using Rabbit.Rpc.Transport.Codec.Implementation;
 using System;
 using System.Linq;
 
@@ -82,7 +85,7 @@ namespace Rabbit.Rpc
         /// <typeparam name="T">服务路由管理者实现。</typeparam>
         /// <param name="builder">Rpc服务构建者。</param>
         /// <returns>Rpc服务构建者。</returns>
-        public static IRpcBuilder SetRouteManager<T>(this IRpcBuilder builder) where T : class, IServiceRouteManager
+        public static IRpcBuilder UseRouteManager<T>(this IRpcBuilder builder) where T : class, IServiceRouteManager
         {
             builder.Services.AddSingleton<IServiceRouteManager, T>();
             return builder;
@@ -94,7 +97,7 @@ namespace Rabbit.Rpc
         /// <param name="builder">Rpc服务构建者。</param>
         /// <param name="factory">服务路由管理者实例工厂。</param>
         /// <returns>Rpc服务构建者。</returns>
-        public static IRpcBuilder SetRouteManager(this IRpcBuilder builder, Func<IServiceProvider, IServiceRouteManager> factory)
+        public static IRpcBuilder UseRouteManager(this IRpcBuilder builder, Func<IServiceProvider, IServiceRouteManager> factory)
         {
             builder.Services.AddSingleton(factory);
             return builder;
@@ -106,7 +109,7 @@ namespace Rabbit.Rpc
         /// <param name="builder">Rpc服务构建者。</param>
         /// <param name="instance">服务路由管理者实例。</param>
         /// <returns>Rpc服务构建者。</returns>
-        public static IRpcBuilder SetRouteManager(this IRpcBuilder builder, IServiceRouteManager instance)
+        public static IRpcBuilder UseRouteManager(this IRpcBuilder builder, IServiceRouteManager instance)
         {
             builder.Services.AddSingleton(instance);
             return builder;
@@ -120,9 +123,9 @@ namespace Rabbit.Rpc
         /// <param name="builder">Rpc服务构建者。</param>
         /// <param name="filePath">文件路径。</param>
         /// <returns>Rpc服务构建者。</returns>
-        public static IRpcBuilder SetSharedFileRouteManager(this IRpcBuilder builder, string filePath)
+        public static IRpcBuilder UseSharedFileRouteManager(this IRpcBuilder builder, string filePath)
         {
-            return builder.SetRouteManager(provider => new SharedFileServiceRouteManager(filePath, provider.GetRequiredService<ISerializer<string>>(), provider.GetRequiredService<ILogger<SharedFileServiceRouteManager>>()));
+            return builder.UseRouteManager(provider => new SharedFileServiceRouteManager(filePath, provider.GetRequiredService<ISerializer<string>>(), provider.GetRequiredService<ILogger<SharedFileServiceRouteManager>>()));
         }
 
         #region AddressSelector
@@ -133,7 +136,7 @@ namespace Rabbit.Rpc
         /// <typeparam name="T">地址选择器实现类型。</typeparam>
         /// <param name="builder">Rpc服务构建者。</param>
         /// <returns>Rpc服务构建者。</returns>
-        public static IRpcBuilder SetAddressSelector<T>(this IRpcBuilder builder) where T : class, IAddressSelector
+        public static IRpcBuilder UseAddressSelector<T>(this IRpcBuilder builder) where T : class, IAddressSelector
         {
             builder.Services.AddSingleton<IAddressSelector, T>();
             return builder;
@@ -145,7 +148,7 @@ namespace Rabbit.Rpc
         /// <param name="builder">Rpc服务构建者。</param>
         /// <param name="factory">服务地址选择器实例工厂。</param>
         /// <returns>Rpc服务构建者。</returns>
-        public static IRpcBuilder SetAddressSelector(this IRpcBuilder builder,
+        public static IRpcBuilder UseAddressSelector(this IRpcBuilder builder,
             Func<IServiceProvider, IAddressSelector> factory)
         {
             builder.Services.AddSingleton(factory);
@@ -159,7 +162,7 @@ namespace Rabbit.Rpc
         /// <param name="builder">Rpc服务构建者。</param>
         /// <param name="instance">地址选择器实例。</param>
         /// <returns>Rpc服务构建者。</returns>
-        public static IRpcBuilder SetAddressSelector(this IRpcBuilder builder, IAddressSelector instance)
+        public static IRpcBuilder UseAddressSelector(this IRpcBuilder builder, IAddressSelector instance)
         {
             builder.Services.AddSingleton(instance);
 
@@ -168,17 +171,49 @@ namespace Rabbit.Rpc
 
         #endregion AddressSelector
 
-        public static IRpcBuilder AddClientCore(this IRpcBuilder builder)
+        /// <summary>
+        /// 使用轮询的地址选择器。
+        /// </summary>
+        /// <param name="builder">Rpc服务构建者。</param>
+        /// <returns>Rpc服务构建者。</returns>
+        public static IRpcBuilder UsePollingAddressSelector(this IRpcBuilder builder)
+        {
+            builder.Services.AddSingleton<IAddressSelector, PollingAddressSelector>();
+            return builder;
+        }
+
+        /// <summary>
+        /// 使用随机的地址选择器。
+        /// </summary>
+        /// <param name="builder">Rpc服务构建者。</param>
+        /// <returns>Rpc服务构建者。</returns>
+        public static IRpcBuilder UseRandomAddressSelector(this IRpcBuilder builder)
+        {
+            builder.Services.AddSingleton<IAddressSelector, RandomAddressSelector>();
+            return builder;
+        }
+
+        /// <summary>
+        /// 添加客户端运行时服务。
+        /// </summary>
+        /// <param name="builder">Rpc服务构建者。</param>
+        /// <returns>Rpc服务构建者。</returns>
+        public static IRpcBuilder AddClientRuntime(this IRpcBuilder builder)
         {
             var services = builder.Services;
 
             services.AddSingleton<IAddressResolver, DefaultAddressResolver>();
             services.AddSingleton<IRemoteInvokeService, RemoteInvokeService>();
 
-            return builder;
+            return builder.UsePollingAddressSelector();
         }
 
-        public static IRpcBuilder AddServerCore(this IRpcBuilder builder)
+        /// <summary>
+        /// 添加服务运行时服务。
+        /// </summary>
+        /// <param name="builder">Rpc服务构建者。</param>
+        /// <returns>Rpc服务构建者。</returns>
+        public static IRpcBuilder AddServiceRuntime(this IRpcBuilder builder)
         {
             var services = builder.Services;
 
@@ -193,6 +228,11 @@ namespace Rabbit.Rpc
             return builder;
         }
 
+        /// <summary>
+        /// 添加RPC核心服务。
+        /// </summary>
+        /// <param name="services">服务集合。</param>
+        /// <returns>Rpc服务构建者。</returns>
         public static IRpcBuilder AddRpcCore(this IServiceCollection services)
         {
             if (services == null)
@@ -201,6 +241,9 @@ namespace Rabbit.Rpc
             var builder = new RpcBuilder(services);
 
             builder.AddJsonSerialization();
+
+            services.AddSingleton<ITransportMessageEncoder, ByteTransportMessageEncoder>();
+            services.AddSingleton<ITransportMessageDecoder, ByteJsonTransportMessageDecoder>();
 
             services.AddSingleton<IServiceIdGenerator, DefaultServiceIdGenerator>();
 

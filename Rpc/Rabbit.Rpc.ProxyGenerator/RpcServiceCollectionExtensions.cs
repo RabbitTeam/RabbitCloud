@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Rpc.ProxyGenerator.Implementation;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
 
 namespace Rabbit.Rpc.ProxyGenerator
 {
@@ -20,9 +19,8 @@ namespace Rabbit.Rpc.ProxyGenerator
         {
             return services
                 .AddRpcCore()
-                .AddClientCore()
-                .AddClientProxy()
-                .SetAddressSelector<PollingAddressSelector>();
+                .AddClientRuntime()
+                .AddClientProxy();
         }
     }
 }

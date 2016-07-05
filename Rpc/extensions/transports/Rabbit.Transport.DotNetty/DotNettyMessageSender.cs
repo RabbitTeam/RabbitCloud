@@ -1,8 +1,8 @@
 ﻿using DotNetty.Buffers;
 using DotNetty.Transport.Channels;
 using Rabbit.Rpc.Messages;
-using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
+using Rabbit.Rpc.Transport.Codec;
 using System;
 using System.Threading.Tasks;
 
@@ -13,16 +13,16 @@ namespace Rabbit.Transport.DotNetty
     /// </summary>
     public abstract class DotNettyMessageSender
     {
-        private readonly ISerializer<byte[]> _serializer;
+        private readonly ITransportMessageEncoder _transportMessageEncoder;
 
-        protected DotNettyMessageSender(ISerializer<byte[]> serializer)
+        protected DotNettyMessageSender(ITransportMessageEncoder transportMessageEncoder)
         {
-            _serializer = serializer;
+            _transportMessageEncoder = transportMessageEncoder;
         }
 
         protected IByteBuffer GetByteBuffer(TransportMessage message)
         {
-            var data = _serializer.Serialize(message);
+            var data = _transportMessageEncoder.Encode(message);
 
             var buffer = Unpooled.Buffer(data.Length, data.Length);
             return buffer.WriteBytes(data);
@@ -36,7 +36,7 @@ namespace Rabbit.Transport.DotNetty
     {
         private readonly Task<IChannel> _channel;
 
-        public DotNettyMessageClientSender(ISerializer<byte[]> serializer, Task<IChannel> channel) : base(serializer)
+        public DotNettyMessageClientSender(ITransportMessageEncoder transportMessageEncoder, Task<IChannel> channel) : base(transportMessageEncoder)
         {
             _channel = channel;
         }
@@ -88,7 +88,7 @@ namespace Rabbit.Transport.DotNetty
     {
         private readonly IChannelHandlerContext _context;
 
-        public DotNettyServerMessageSender(ISerializer<byte[]> serializer, IChannelHandlerContext context) : base(serializer)
+        public DotNettyServerMessageSender(ITransportMessageEncoder transportMessageEncoder, IChannelHandlerContext context) : base(transportMessageEncoder)
         {
             _context = context;
         }

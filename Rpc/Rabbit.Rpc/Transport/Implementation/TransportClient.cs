@@ -27,10 +27,6 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Constructor
 
-        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<object> objecSerializer) : this(messageSender, messageListener, logger, objecSerializer, null)
-        {
-        }
-
         public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, ISerializer<object> objecSerializer, IServiceExecutor serviceExecutor)
         {
             _messageSender = messageSender;
@@ -144,9 +140,7 @@ namespace Rabbit.Rpc.Transport.Implementation
                 }
             }
             if (message.IsInvokeMessage())
-            {
                 _serviceExecutor?.ExecuteAsync(sender, message);
-            }
         }
 
         #endregion Private Method

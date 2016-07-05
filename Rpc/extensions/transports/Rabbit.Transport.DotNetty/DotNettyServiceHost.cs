@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Runtime.Server.Implementation;
-using Rabbit.Rpc.Serialization;
 using Rabbit.Rpc.Transport;
+using Rabbit.Rpc.Transport.Codec;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -22,17 +22,19 @@ namespace Rabbit.Transport.DotNetty
         #region Field
 
         private readonly ILogger<DotNettyServiceHost> _logger;
-        private readonly ISerializer<byte[]> _serializer;
+        private readonly ITransportMessageEncoder _transportMessageEncoder;
+        private readonly ITransportMessageDecoder _transportMessageDecoder;
         private IChannel _channel;
 
         #endregion Field
 
         #region Constructor
 
-        public DotNettyServiceHost(IServiceExecutor serviceExecutor, ILogger<DotNettyServiceHost> logger, ISerializer<byte[]> serializer) : base(serviceExecutor)
+        public DotNettyServiceHost(IServiceExecutor serviceExecutor, ILogger<DotNettyServiceHost> logger, ITransportMessageEncoder transportMessageEncoder, ITransportMessageDecoder transportMessageDecoder) : base(serviceExecutor)
         {
             _logger = logger;
-            _serializer = serializer;
+            _transportMessageEncoder = transportMessageEncoder;
+            _transportMessageDecoder = transportMessageDecoder;
         }
 
         #endregion Constructor
@@ -61,8 +63,8 @@ namespace Rabbit.Transport.DotNetty
                     var pipeline = channel.Pipeline;
                     pipeline.AddLast(new LengthFieldPrepender(4));
                     pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
-                    pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_serializer));
-                    pipeline.AddLast(new ServerHandler(MessageListener, _logger, _serializer));
+                    pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
+                    pipeline.AddLast(new ServerHandler(MessageListener, _logger, _transportMessageEncoder));
                 }));
             _channel = await bootstrap.BindAsync(endPoint);
 
@@ -89,13 +91,13 @@ namespace Rabbit.Transport.DotNetty
         {
             private readonly IMessageListener _messageListener;
             private readonly ILogger _logger;
-            private readonly ISerializer<byte[]> _serializer;
+            private readonly ITransportMessageEncoder _transportMessageEncoder;
 
-            public ServerHandler(IMessageListener messageListener, ILogger logger, ISerializer<byte[]> serializer)
+            public ServerHandler(IMessageListener messageListener, ILogger logger, ITransportMessageEncoder transportMessageEncoder)
             {
                 _messageListener = messageListener;
                 _logger = logger;
-                _serializer = serializer;
+                _transportMessageEncoder = transportMessageEncoder;
             }
 
             #region Overrides of ChannelHandlerAdapter
@@ -104,7 +106,7 @@ namespace Rabbit.Transport.DotNetty
             {
                 var transportMessage = (TransportMessage)message;
 
-                _messageListener.OnReceived(new DotNettyServerMessageSender(_serializer, context), transportMessage);
+                _messageListener.OnReceived(new DotNettyServerMessageSender(_transportMessageEncoder, context), transportMessage);
             }
 
             public override void ChannelReadComplete(IChannelHandlerContext context)
