@@ -5,11 +5,16 @@ using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Codec.ProtoBuffer;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Runtime.Server;
-using Rabbit.Transport.DotNetty;
+using Rabbit.Transport.Simple;
 using System;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+
+#if !NET451
+using System.Text;
+#endif
+
 using System.Threading.Tasks;
 
 namespace Echo.Server
@@ -20,23 +25,27 @@ namespace Echo.Server
         {
             //因为没有引用Echo.Common中的任何类型
             //所以强制加载Echo.Common程序集以保证Echo.Common在AppDomain中被加载。
+#if NET451
             Assembly.Load("Echo.Common");
+#else
+            Assembly.Load(new AssemblyName("Echo.Common"));
+#endif
         }
 
         public static void Main(string[] args)
         {
+#if !NET451
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+#endif
             var serviceCollection = new ServiceCollection();
 
             serviceCollection
                 .AddLogging()
                 .AddRpcCore()
-                //                .UseJsonCodec()
                 .UseProtoBufferCodec()
                 .AddServiceRuntime()
                 .UseSharedFileRouteManager("d:\\routes.txt")
-                //zookeeper服务路由管理者。
-                //                .UseZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"))
-                .UseDotNettyTransport();
+                .UseSimpleTransport();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 

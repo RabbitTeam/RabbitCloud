@@ -284,8 +284,7 @@ namespace Rabbit.Rpc
 #if NET45 || NET451
                 var assemblys = AppDomain.CurrentDomain.GetAssemblies();
 #else
-                var assemblyNames = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.Assemblies).Select(i => i.Name);
-                var assemblys = assemblyNames.Select(Assembly.Load);
+                var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));
 #endif
 
                 var types = assemblys.SelectMany(i => i.ExportedTypes).ToArray();

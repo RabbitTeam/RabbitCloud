@@ -18,7 +18,15 @@ namespace Rabbit.Rpc.Codec.ProtoBuffer.Messages
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
 
-            TypeName = value.GetType().AssemblyQualifiedName;
+            var valueType = value.GetType();
+            var code = Type.GetTypeCode(valueType);
+
+            //如果是简单类型则取短名称，否则取长名称。
+            if (code != TypeCode.Object)
+                TypeName = valueType.FullName;
+            else
+                TypeName = valueType.AssemblyQualifiedName;
+
             Content = SerializerUtilitys.Serialize(value);
         }
 

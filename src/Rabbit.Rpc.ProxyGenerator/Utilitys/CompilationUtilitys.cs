@@ -63,6 +63,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Utilitys
                 }
                 return null;
             }
+            stream.Seek(0, SeekOrigin.Begin);
             return stream;
         }
 

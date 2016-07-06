@@ -5,9 +5,15 @@ using Rabbit.Rpc;
 using Rabbit.Rpc.Codec.ProtoBuffer;
 using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.ProxyGenerator;
-using Rabbit.Transport.DotNetty;
+using Rabbit.Transport.Simple;
 using System;
 using System.Linq;
+using System.Reflection;
+
+#if !NET451
+using System.Text;
+#endif
+
 using System.Threading.Tasks;
 
 namespace Echo.Client
@@ -16,17 +22,17 @@ namespace Echo.Client
     {
         public static void Main(string[] args)
         {
+#if !NET451
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+#endif
             var serviceCollection = new ServiceCollection();
 
             serviceCollection
                 .AddLogging()
                 .AddClient()
-                //                .UseJsonCodec()
-                .UseProtoBufferCodec()
                 .UseSharedFileRouteManager("d:\\routes.txt")
-                //zookeeper服务路由管理者。
-                //                .UseZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"))
-                .UseDotNettyTransport();
+                .UseSimpleTransport()
+                .UseProtoBufferCodec();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
@@ -38,7 +44,7 @@ namespace Echo.Client
             var services = serviceProxyGenerater.GenerateProxys(new[] { typeof(IUserService) }).ToArray();
 
             //创建IUserService的代理。
-            var userService = serviceProxyFactory.CreateProxy<IUserService>(services.Single(typeof(IUserService).IsAssignableFrom));
+            var userService = serviceProxyFactory.CreateProxy<IUserService>(services.Single(typeof(IUserService).GetTypeInfo().IsAssignableFrom));
 
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             while (true)

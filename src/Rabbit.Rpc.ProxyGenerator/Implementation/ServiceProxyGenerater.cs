@@ -12,8 +12,10 @@ using System.Linq;
 using System.Reflection;
 
 #if !NET45
+
 using System.Runtime.Loader;
 using Microsoft.Extensions.DependencyModel;
+
 #endif
 
 using System.Threading.Tasks;
@@ -50,7 +52,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
 #if NET45
             var assemblys = AppDomain.CurrentDomain.GetAssemblies();
 #else
-            var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.Assemblies.Select(z => Assembly.Load(z.Name)));
+            var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));
 #endif
             var trees = interfacTypes.Select(GenerateProxyTree).ToList();
             var stream = CompilationUtilitys.CompileClientProxy(trees,

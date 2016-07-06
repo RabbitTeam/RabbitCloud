@@ -44,6 +44,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0E82C06D
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Rabbit.Rpc.Tests", "src\tests\Rabbit.Rpc.Tests\Rabbit.Rpc.Tests.xproj", "{0AD2A7DC-819D-4F74-BB61-3A973F5E4E01}"
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Rabbit.Transport.Simple", "src\extensions\transports\Rabbit.Transport.Simple\Rabbit.Transport.Simple.xproj", "{40114E66-0570-4EFE-B136-47A774F5D1A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,6 +92,10 @@ Global
 		{0AD2A7DC-819D-4F74-BB61-3A973F5E4E01}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AD2A7DC-819D-4F74-BB61-3A973F5E4E01}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0AD2A7DC-819D-4F74-BB61-3A973F5E4E01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40114E66-0570-4EFE-B136-47A774F5D1A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40114E66-0570-4EFE-B136-47A774F5D1A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40114E66-0570-4EFE-B136-47A774F5D1A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40114E66-0570-4EFE-B136-47A774F5D1A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -112,5 +118,6 @@ Global
 		{DD3E4F3A-DCD2-480C-B9F0-954AE53A37EA} = {639C7666-7172-4D2F-92BC-04B29529101B}
 		{0E82C06D-56BA-47EB-8374-1A0351B31A30} = {3234A92D-1575-464E-8C29-4EA29FF8EBF4}
 		{0AD2A7DC-819D-4F74-BB61-3A973F5E4E01} = {0E82C06D-56BA-47EB-8374-1A0351B31A30}
+		{40114E66-0570-4EFE-B136-47A774F5D1A6} = {678AB1D7-4A8E-457C-848C-68E2A3A11B41}
 	EndGlobalSection
 EndGlobal

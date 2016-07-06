@@ -11,12 +11,21 @@
     "Microsoft.Extensions.Logging.Console": "1.0.0",
     "Rabbit.Rpc": "1.0.0-*",
     "Rabbit.Rpc.Codec.ProtoBuffer": "1.0.0-*",
-    "Rabbit.Rpc.Coordinate.Zookeeper": "1.0.0-*",
-    "Rabbit.Transport.DotNetty": "1.0.0-*"
+    "Rabbit.Transport.Simple": "1.0.0-*"
   },
 
   "frameworks": {
     "net451": {
+    },
+    "netcoreapp1.0": {
+      "imports": "dnxcore50",
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        },
+        "System.Text.Encoding.CodePages": "4.0.1"
+      }
     }
   }
 }
