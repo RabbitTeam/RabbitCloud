@@ -30,7 +30,11 @@ namespace Echo.Client
             serviceCollection
                 .AddLogging()
                 .AddClient()
+#if !NET451
+                .UseSharedFileRouteManager(System.IO.Path.Combine(AppContext.BaseDirectory,"routes.txt"))
+#else
                 .UseSharedFileRouteManager("d:\\routes.txt")
+#endif
                 .UseSimpleTransport()
                 .UseProtoBufferCodec();
 
