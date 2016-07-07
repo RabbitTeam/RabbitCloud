@@ -19,6 +19,7 @@ using Microsoft.Extensions.DependencyModel;
 #endif
 
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Rabbit.Rpc.ProxyGenerator.Implementation
@@ -28,14 +29,16 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         #region Field
 
         private readonly IServiceIdGenerator _serviceIdGenerator;
+        private readonly ILogger<ServiceProxyGenerater> _logger;
 
         #endregion Field
 
         #region Constructor
 
-        public ServiceProxyGenerater(IServiceIdGenerator serviceIdGenerator)
+        public ServiceProxyGenerater(IServiceIdGenerator serviceIdGenerator, ILogger<ServiceProxyGenerater> logger)
         {
             _serviceIdGenerator = serviceIdGenerator;
+            _logger = logger;
         }
 
         #endregion Constructor
@@ -61,7 +64,8 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                     .Concat(new[]
                     {
                         MetadataReference.CreateFromFile(typeof(Task).GetTypeInfo().Assembly.Location)
-                    }));
+                    }),
+                _logger);
 
             using (stream)
             {

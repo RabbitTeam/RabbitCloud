@@ -1,8 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Runtime.Client;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,7 +22,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Utilitys
     {
         #region Public Method
 
-        public static MemoryStream CompileClientProxy(IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references)
+        public static MemoryStream CompileClientProxy(IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references, ILogger logger = null)
         {
 #if !NET45
             var assemblys = new[]
@@ -40,26 +40,26 @@ namespace Rabbit.Rpc.ProxyGenerator.Utilitys
                 MetadataReference.CreateFromFile(typeof(IRemoteInvokeService).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(IServiceProxyGenerater).GetTypeInfo().Assembly.Location)
             }.Concat(references);
-            return Compile(AssemblyInfo.Create("Rabbit.Rpc.ClientProxys"), trees, references);
+            return Compile(AssemblyInfo.Create("Rabbit.Rpc.ClientProxys"), trees, references, logger);
         }
 
-        public static MemoryStream Compile(AssemblyInfo assemblyInfo, IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references)
+        public static MemoryStream Compile(AssemblyInfo assemblyInfo, IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references, ILogger logger = null)
         {
-            return Compile(assemblyInfo.Title, assemblyInfo, trees, references);
+            return Compile(assemblyInfo.Title, assemblyInfo, trees, references, logger);
         }
 
-        public static MemoryStream Compile(string assemblyName, AssemblyInfo assemblyInfo, IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references)
+        public static MemoryStream Compile(string assemblyName, AssemblyInfo assemblyInfo, IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references, ILogger logger = null)
         {
             trees = trees.Concat(new[] { GetAssemblyInfo(assemblyInfo) });
             var compilation = CSharpCompilation.Create(assemblyName, trees, references, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
             var stream = new MemoryStream();
             var result = compilation.Emit(stream);
-            if (!result.Success)
+            if (!result.Success && logger != null)
             {
                 foreach (var message in result.Diagnostics.Select(i => i.ToString()))
                 {
-                    Console.WriteLine(message);
+                    logger.LogError(message);
                 }
                 return null;
             }

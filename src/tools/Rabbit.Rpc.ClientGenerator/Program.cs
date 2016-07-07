@@ -1,9 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Rabbit.Rpc.Ids.Implementation;
-using Rabbit.Rpc.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.ProxyGenerator;
-using Rabbit.Rpc.ProxyGenerator.Implementation;
 using Rabbit.Rpc.ProxyGenerator.Utilitys;
 using Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using System;
@@ -28,7 +27,7 @@ namespace Rabbit.Rpc.ClientGenerator
         /// <summary>
         /// 服务代理生成器。
         /// </summary>
-        private static readonly IServiceProxyGenerater ServiceProxyGenerater = new ServiceProxyGenerater(new DefaultServiceIdGenerator(new NullLogger<DefaultServiceIdGenerator>()));
+        private static readonly IServiceProxyGenerater ServiceProxyGenerater;
 
         /// <summary>
         /// 所获取到的程序集文件路径。
@@ -49,12 +48,31 @@ namespace Rabbit.Rpc.ClientGenerator
             {"2", GenerateCodeFiles}
         };
 
+        private static readonly ILogger Logger;
+
         #endregion Field
 
         #region Constructor
 
         static Program()
         {
+            var services = new ServiceCollection();
+
+            services
+                .AddLogging()
+                .AddRpcCore()
+                .AddClientProxy();
+
+            var provider = services.BuildServiceProvider();
+
+            var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
+            loggerFactory
+                .AddConsole();
+
+            Logger = loggerFactory.CreateLogger<Program>();
+
+            ServiceProxyGenerater = provider.GetRequiredService<IServiceProxyGenerater>();
+
             AssemblyFiles =
                 Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "assemblies"), "*.dll").ToArray();
 
@@ -102,7 +120,7 @@ namespace Rabbit.Rpc.ClientGenerator
 
         private static void GenerateAssembly()
         {
-            using (var stream = CompilationUtilitys.CompileClientProxy(GetTrees(), AssemblyFiles.Select(file => MetadataReference.CreateFromFile(file))))
+            using (var stream = CompilationUtilitys.CompileClientProxy(GetTrees(), AssemblyFiles.Select(file => MetadataReference.CreateFromFile(file)), Logger))
             {
                 var fileName = Path.Combine(OutputDirectory, "Rabbit.Rpc.ClientProxys.dll");
                 File.WriteAllBytes(fileName, stream.ToArray());
