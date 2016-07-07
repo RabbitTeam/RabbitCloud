@@ -13,14 +13,14 @@ namespace Rabbit.Rpc.Codec.ProtoBuffer.Messages
             Id = transportMessage.Id;
             ContentType = transportMessage.ContentType;
 
-            object contentObject = null;
+            object contentObject;
             if (transportMessage.IsInvokeMessage())
             {
-                contentObject = new ProtoBufferRemoteInvokeMessage((RemoteInvokeMessage)transportMessage.Content);
+                contentObject = new ProtoBufferRemoteInvokeMessage(transportMessage.GetContent<RemoteInvokeMessage>());
             }
             else if (transportMessage.IsInvokeResultMessage())
             {
-                contentObject = new ProtoBufferRemoteInvokeResultMessage((RemoteInvokeResultMessage)transportMessage.Content);
+                contentObject = new ProtoBufferRemoteInvokeResultMessage(transportMessage.GetContent<RemoteInvokeResultMessage>());
             }
             else
             {

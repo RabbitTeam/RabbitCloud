@@ -2,7 +2,6 @@
 using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Server;
-using Rabbit.Rpc.Transport.Codec;
 using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -19,7 +18,6 @@ namespace Rabbit.Rpc.Transport.Implementation
         private readonly IMessageSender _messageSender;
         private readonly IMessageListener _messageListener;
         private readonly ILogger _logger;
-        private readonly ITransportMessageDecoder _transportMessageDecoder;
         private readonly IServiceExecutor _serviceExecutor;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
 
@@ -45,7 +43,7 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// </summary>
         /// <param name="message">远程调用消息模型。</param>
         /// <returns>远程调用消息的传输消息。</returns>
-        public async Task<TransportMessage> SendAsync(RemoteInvokeMessage message)
+        public async Task<RemoteInvokeResultMessage> SendAsync(RemoteInvokeMessage message)
         {
             try
             {
@@ -54,12 +52,16 @@ namespace Rabbit.Rpc.Transport.Implementation
 
                 var transportMessage = TransportMessage.CreateInvokeMessage(message);
 
+                //注册结果回调
+                var callbackTask = RegisterResultCallbackAsync(transportMessage.Id);
+
+                //发送
                 await _messageSender.SendAndFlushAsync(transportMessage);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.LogDebug("消息发送成功。");
 
-                return transportMessage;
+                return await callbackTask;
             }
             catch (Exception exception)
             {
@@ -67,35 +69,6 @@ namespace Rabbit.Rpc.Transport.Implementation
                     _logger.LogError("消息发送失败。", exception);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// 接受指定消息id的响应消息。
-        /// </summary>
-        /// <param name="id">消息Id。</param>
-        /// <returns>远程调用结果消息模型。</returns>
-        public async Task<RemoteInvokeResultMessage> ReceiveAsync(string id)
-        {
-            if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.LogDebug($"准备获取Id为：{id}的响应内容。");
-
-            TaskCompletionSource<TransportMessage> task;
-            if (_resultDictionary.ContainsKey(id))
-            {
-                if (_resultDictionary.TryRemove(id, out task))
-                {
-                    await task.Task;
-                }
-            }
-            else
-            {
-                task = new TaskCompletionSource<TransportMessage>();
-                _resultDictionary.TryAdd(id, task);
-                var result = await task.Task;
-
-                return (RemoteInvokeResultMessage)result.Content;
-            }
-            return null;
         }
 
         #endregion Implementation of ITransportClient
@@ -118,6 +91,31 @@ namespace Rabbit.Rpc.Transport.Implementation
 
         #region Private Method
 
+        /// <summary>
+        /// 注册指定消息的回调任务。
+        /// </summary>
+        /// <param name="id">消息Id。</param>
+        /// <returns>远程调用结果消息模型。</returns>
+        private async Task<RemoteInvokeResultMessage> RegisterResultCallbackAsync(string id)
+        {
+            if (_logger.IsEnabled(LogLevel.Debug))
+                _logger.LogDebug($"准备获取Id为：{id}的响应内容。");
+
+            var task = new TaskCompletionSource<TransportMessage>();
+            _resultDictionary.TryAdd(id, task);
+            try
+            {
+                var result = await task.Task;
+                return result.GetContent<RemoteInvokeResultMessage>();
+            }
+            finally
+            {
+                //删除回调任务
+                TaskCompletionSource<TransportMessage> value;
+                _resultDictionary.TryRemove(id, out value);
+            }
+        }
+
         private void MessageListener_Received(IMessageSender sender, TransportMessage message)
         {
             if (_logger.IsEnabled(LogLevel.Information))
@@ -129,7 +127,7 @@ namespace Rabbit.Rpc.Transport.Implementation
 
             if (message.IsInvokeResultMessage())
             {
-                var content = (RemoteInvokeResultMessage)message.Content;
+                var content = message.GetContent<RemoteInvokeResultMessage>();
                 if (!string.IsNullOrEmpty(content.ExceptionMessage))
                 {
                     task.TrySetException(new RpcRemoteException(content.ExceptionMessage));

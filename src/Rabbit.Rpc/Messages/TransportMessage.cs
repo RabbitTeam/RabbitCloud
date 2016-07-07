@@ -54,6 +54,16 @@ namespace Rabbit.Rpc.Messages
         }
 
         /// <summary>
+        /// 获取内容。
+        /// </summary>
+        /// <typeparam name="T">内容类型。</typeparam>
+        /// <returns>内容实例。</returns>
+        public T GetContent<T>()
+        {
+            return (T)Content;
+        }
+
+        /// <summary>
         /// 创建一个调用传输消息。
         /// </summary>
         /// <param name="invokeMessage">调用实例。</param>

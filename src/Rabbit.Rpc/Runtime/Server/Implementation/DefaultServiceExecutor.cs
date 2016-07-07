@@ -44,7 +44,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             RemoteInvokeMessage remoteInvokeMessage;
             try
             {
-                remoteInvokeMessage = (RemoteInvokeMessage)message.Content;
+                remoteInvokeMessage = message.GetContent<RemoteInvokeMessage>();
             }
             catch (Exception exception)
             {

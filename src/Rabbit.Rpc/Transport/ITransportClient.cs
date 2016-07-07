@@ -13,13 +13,6 @@ namespace Rabbit.Rpc.Transport
         /// </summary>
         /// <param name="message">远程调用消息模型。</param>
         /// <returns>远程调用消息的传输消息。</returns>
-        Task<TransportMessage> SendAsync(RemoteInvokeMessage message);
-
-        /// <summary>
-        /// 接受指定消息id的响应消息。
-        /// </summary>
-        /// <param name="id">消息Id。</param>
-        /// <returns>远程调用结果消息模型。</returns>
-        Task<RemoteInvokeResultMessage> ReceiveAsync(string id);
+        Task<RemoteInvokeResultMessage> SendAsync(RemoteInvokeMessage message);
     }
 }
