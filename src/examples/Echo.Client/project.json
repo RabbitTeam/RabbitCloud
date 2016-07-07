@@ -12,7 +12,8 @@
     "Rabbit.Rpc": "1.0.0-*",
     "Rabbit.Rpc.Codec.ProtoBuffer": "1.0.0-*",
     "Rabbit.Rpc.ProxyGenerator": "1.0.0-*",
-    "Rabbit.Transport.Simple": "1.0.0-*"
+    "Rabbit.Transport.Simple": "1.0.0-*",
+    "Rabbit.Rpc.Coordinate.Zookeeper": "1.0.0-*"
   },
 
   "frameworks": {
