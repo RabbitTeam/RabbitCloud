@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.ProxyGenerator.Utilitys;
 using Rabbit.Rpc.Runtime.Client;
@@ -19,6 +18,7 @@ using Microsoft.Extensions.DependencyModel;
 #endif
 
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Rabbit.Rpc.ProxyGenerator.Implementation
@@ -28,14 +28,16 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         #region Field
 
         private readonly IServiceIdGenerator _serviceIdGenerator;
+        private readonly ILogger<ServiceProxyGenerater> _logger;
 
         #endregion Field
 
         #region Constructor
 
-        public ServiceProxyGenerater(IServiceIdGenerator serviceIdGenerator)
+        public ServiceProxyGenerater(IServiceIdGenerator serviceIdGenerator, ILogger<ServiceProxyGenerater> logger)
         {
             _serviceIdGenerator = serviceIdGenerator;
+            _logger = logger;
         }
 
         #endregion Constructor
@@ -61,7 +63,8 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                     .Concat(new[]
                     {
                         MetadataReference.CreateFromFile(typeof(Task).GetTypeInfo().Assembly.Location)
-                    }));
+                    })
+                    , _logger);
 
             using (stream)
             {
@@ -155,7 +158,6 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                     UsingDirective(IdentifierName("System")),
                     UsingDirective(GetQualifiedNameSyntax("System.Threading.Tasks")),
                     UsingDirective(GetQualifiedNameSyntax("System.Collections.Generic")),
-                    UsingDirective(GetQualifiedNameSyntax(typeof(ITypeConvertibleService).Namespace)),
                     UsingDirective(GetQualifiedNameSyntax(typeof(IRemoteInvokeService).Namespace)),
                     UsingDirective(GetQualifiedNameSyntax(typeof(ISerializer<>).Namespace)),
                     UsingDirective(GetQualifiedNameSyntax(typeof(ServiceProxyBase).Namespace))
@@ -176,12 +178,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                                 Parameter(
                                     Identifier("remoteInvokeService"))
                                     .WithType(
-                                        IdentifierName("IRemoteInvokeService")),
-                                Token(SyntaxKind.CommaToken),
-                                Parameter(
-                                    Identifier("typeConvertibleService"))
-                                    .WithType(
-                                        IdentifierName("ITypeConvertibleService"))
+                                        IdentifierName("IRemoteInvokeService"))
                             })))
                 .WithInitializer(
                         ConstructorInitializer(
@@ -190,10 +187,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                                 SeparatedList<ArgumentSyntax>(
                                     new SyntaxNodeOrToken[]{
                                         Argument(
-                                            IdentifierName("remoteInvokeService")),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            IdentifierName("typeConvertibleService"))}))))
+                                            IdentifierName("remoteInvokeService"))}))))
                 .WithBody(Block());
         }
 

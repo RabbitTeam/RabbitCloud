@@ -1,4 +1,3 @@
-using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Ids;
 using System;
 using System.Collections.Generic;
@@ -16,17 +15,15 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
 
         private readonly IServiceInstanceFactory _serviceFactory;
         private readonly IServiceIdGenerator _serviceIdGenerator;
-        private readonly ITypeConvertibleService _typeConvertibleService;
 
         #endregion Field
 
         #region Constructor
 
-        public ClrServiceEntryFactory(IServiceInstanceFactory serviceFactory, IServiceIdGenerator serviceIdGenerator, ITypeConvertibleService typeConvertibleService)
+        public ClrServiceEntryFactory(IServiceInstanceFactory serviceFactory, IServiceIdGenerator serviceIdGenerator)
         {
             _serviceFactory = serviceFactory;
             _serviceIdGenerator = serviceIdGenerator;
-            _typeConvertibleService = typeConvertibleService;
         }
 
         #endregion Constructor
@@ -70,10 +67,8 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
                     foreach (var parameterInfo in implementationMethod.GetParameters())
                     {
                         var value = parameters[parameterInfo.Name];
-                        var parameterType = parameterInfo.ParameterType;
 
-                        var parameter = _typeConvertibleService.Convert(value, parameterType);
-                        list.Add(parameter);
+                        list.Add(value);
                     }
 
                     var result = implementationMethod.Invoke(instance, list.ToArray());

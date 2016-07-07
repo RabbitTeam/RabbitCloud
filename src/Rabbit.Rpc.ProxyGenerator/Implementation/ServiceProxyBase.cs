@@ -1,5 +1,4 @@
-﻿using Rabbit.Rpc.Convertibles;
-using Rabbit.Rpc.Messages;
+﻿using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Client;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,16 +13,14 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         #region Field
 
         private readonly IRemoteInvokeService _remoteInvokeService;
-        private readonly ITypeConvertibleService _typeConvertibleService;
 
         #endregion Field
 
         #region Constructor
 
-        protected ServiceProxyBase(IRemoteInvokeService remoteInvokeService, ITypeConvertibleService typeConvertibleService)
+        protected ServiceProxyBase(IRemoteInvokeService remoteInvokeService)
         {
             _remoteInvokeService = remoteInvokeService;
-            _typeConvertibleService = typeConvertibleService;
         }
 
         #endregion Constructor
@@ -48,9 +45,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
                 }
             });
 
-            var result = _typeConvertibleService.Convert(message.Result, typeof(T));
-
-            return (T)result;
+            return message.Result == null ? default(T) : (T)message.Result;
         }
 
         /// <summary>
