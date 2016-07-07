@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Org.Apache.Zookeeper.Data;
+using org.apache.zookeeper;
 using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Serialization;
@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ZooKeeperNet;
 
 namespace Rabbit.Rpc.Coordinate.Zookeeper
 {
@@ -36,7 +35,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             _configInfo = configInfo;
             _serializer = serializer;
             _logger = logger;
-            CreateZooKeeper();
+            CreateZooKeeper().Wait();
         }
 
         #endregion Constructor
@@ -47,10 +46,10 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         /// 获取所有可用的服务路由信息。
         /// </summary>
         /// <returns>服务路由集合。</returns>
-        public Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
+        public async Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
         {
-            EnterRoutes();
-            return Task.FromResult(_routes);
+            await EnterRoutes();
+            return _routes;
         }
 
         /// <summary>
@@ -58,102 +57,102 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         /// </summary>
         /// <param name="routes">服务路由集合。</param>
         /// <returns>一个任务。</returns>
-        public Task AddRoutesAsync(IEnumerable<ServiceRoute> routes)
+        public async Task AddRoutesAsync(IEnumerable<ServiceRoute> routes)
         {
-            return Task.Run(() =>
-            {
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.LogInformation("准备添加服务路由。");
-                CreateSubdirectory(_configInfo.RoutePath);
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("准备添加服务路由。");
+            await CreateSubdirectory(_configInfo.RoutePath);
 
-                var path = _configInfo.RoutePath;
-                if (!path.EndsWith("/"))
-                    path += "/";
-                foreach (var serviceRoute in routes)
+            var path = _configInfo.RoutePath;
+            if (!path.EndsWith("/"))
+                path += "/";
+            foreach (var serviceRoute in routes)
+            {
+                var nodePath = $"{path}{serviceRoute.ServiceDescriptor.Id}";
+                var nodeData = _serializer.Serialize(serviceRoute);
+                if (await _zooKeeper.existsAsync(nodePath) == null)
                 {
-                    var nodePath = $"{path}{serviceRoute.ServiceDescriptor.Id}";
-                    var nodeData = _serializer.Serialize(serviceRoute);
-                    if (_zooKeeper.Exists(nodePath, false) == null)
-                    {
-                        if (_logger.IsEnabled(LogLevel.Debug))
-                            _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
-                        _zooKeeper.Create(nodePath, nodeData, ZooKeeperNet.Ids.OPEN_ACL_UNSAFE, CreateMode.Persistent);
-                    }
-                    else
-                    {
-                        if (_logger.IsEnabled(LogLevel.Debug))
-                            _logger.LogDebug($"将更新节点：{nodePath}的数据。");
-                        _zooKeeper.SetData(nodePath, nodeData, -1);
-                    }
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
+
+                    await _zooKeeper.createAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
                 }
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.LogInformation("服务路由添加成功。");
-            });
+                else
+                {
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.LogDebug($"将更新节点：{nodePath}的数据。");
+                    await _zooKeeper.setDataAsync(nodePath, nodeData);
+                }
+            }
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("服务路由添加成功。");
         }
 
         /// <summary>
         /// 清空所有的服务路由。
         /// </summary>
         /// <returns>一个任务。</returns>
-        public Task ClearAsync()
+        public async Task ClearAsync()
         {
-            return Task.Run(() =>
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("准备清空所有路由配置。");
+            var path = _configInfo.RoutePath;
+            var childrens = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var index = 0;
+            while (childrens.Any())
             {
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.LogInformation("准备清空所有路由配置。");
-                var path = _configInfo.RoutePath;
-                var childrens = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                var nodePath = "/" + string.Join("/", childrens);
 
-                var index = 0;
-                while (childrens.Any())
+                if (await _zooKeeper.existsAsync(nodePath) != null)
                 {
-                    var nodePath = "/" + string.Join("/", childrens);
-
-                    if (_zooKeeper.Exists(nodePath, false) != null)
+                    var result = await _zooKeeper.getChildrenAsync(nodePath);
+                    if (result?.Children != null)
                     {
-                        foreach (var child in _zooKeeper.GetChildren(nodePath, false))
+                        foreach (var child in result.Children)
                         {
                             var childPath = $"{nodePath}/{child}";
                             if (_logger.IsEnabled(LogLevel.Debug))
                                 _logger.LogDebug($"准备删除：{childPath}。");
-                            _zooKeeper.Delete(childPath, -1);
+                            await _zooKeeper.deleteAsync(childPath);
                         }
-                        if (_logger.IsEnabled(LogLevel.Debug))
-                            _logger.LogDebug($"准备删除：{nodePath}。");
-                        _zooKeeper.Delete(nodePath, -1);
                     }
-                    index++;
-                    childrens = childrens.Take(childrens.Length - index).ToArray();
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.LogDebug($"准备删除：{nodePath}。");
+                    await _zooKeeper.deleteAsync(nodePath);
                 }
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.LogInformation("路由配置清空完成。");
-            });
+                index++;
+                childrens = childrens.Take(childrens.Length - index).ToArray();
+            }
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("路由配置清空完成。");
         }
 
         #endregion Implementation of IServiceRouteManager
 
         #region Private Method
 
-        private void CreateZooKeeper()
+        private async Task CreateZooKeeper()
         {
-            _zooKeeper?.Dispose();
-            _zooKeeper = new ZooKeeper(_configInfo.ConnectionString, _configInfo.SessionTimeout
+            if (_zooKeeper != null)
+                await _zooKeeper.closeAsync();
+            _zooKeeper = new ZooKeeper(_configInfo.ConnectionString, (int)_configInfo.SessionTimeout.TotalMilliseconds
                 , new ReconnectionWatcher(
                 () =>
                 {
                     _connectionWait.Set();
                 },
-                () =>
+                async () =>
                 {
                     _connectionWait.Reset();
-                    CreateZooKeeper();
+                    await CreateZooKeeper();
                 }));
         }
 
-        private void CreateSubdirectory(string path)
+        private async Task CreateSubdirectory(string path)
         {
             _connectionWait.WaitOne();
-            if (_zooKeeper.Exists(path, false) != null)
+            if (await _zooKeeper.existsAsync(path) != null)
                 return;
 
             if (_logger.IsEnabled(LogLevel.Information))
@@ -165,9 +164,9 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             foreach (var children in childrens)
             {
                 nodePath += children;
-                if (_zooKeeper.Exists(nodePath, false) == null)
+                if (await _zooKeeper.existsAsync(nodePath) == null)
                 {
-                    _zooKeeper.Create(nodePath, null, ZooKeeperNet.Ids.OPEN_ACL_UNSAFE, CreateMode.Persistent);
+                    await _zooKeeper.createAsync(nodePath, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
                 }
                 nodePath += "/";
             }
@@ -190,11 +189,15 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             };
         }
 
-        private IEnumerable<ServiceRoute> GetRoutes(IEnumerable<string> childrens)
+        private async Task<IEnumerable<ServiceRoute>> GetRoutes(IEnumerable<string> childrens)
         {
             var rootPath = _configInfo.RoutePath;
             if (!rootPath.EndsWith("/"))
                 rootPath += "/";
+
+            childrens = childrens.ToArray();
+            var routes = new List<ServiceRoute>(childrens.Count());
+
             foreach (var children in childrens)
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
@@ -214,18 +217,20 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                         _routes = _routes.Concat(new[] { route });
                     _routes = _routes.ToArray();
                 });
-                var data = _zooKeeper.GetData(nodePath, watcher, new Stat());
-                yield return GetRoute(data);
+                var data = await _zooKeeper.getDataAsync(nodePath, watcher);
+                routes.Add(GetRoute(data.Data));
             }
+
+            return routes.ToArray();
         }
 
-        private void EnterRoutes()
+        private async Task EnterRoutes()
         {
             if (_routes != null)
                 return;
             _connectionWait.WaitOne();
 
-            var watcher = new ChildrenMonitorWatcher(_zooKeeper, _configInfo.RoutePath, newChildrens =>
+            var watcher = new ChildrenMonitorWatcher(_zooKeeper, _configInfo.RoutePath, async newChildrens =>
             {
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation("路由节点发生了变更，将更新数据。");
@@ -260,17 +265,18 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 //删除无效的节点路由。
                 _routes = _routes.Where(i => !deletedChildrens.Contains(i.ServiceDescriptor.Id));
                 //获取新增的路由信息。
-                var newRoutes = GetRoutes(createdChildrens);
+                var newRoutes = await GetRoutes(createdChildrens);
                 _routes = _routes.Concat(newRoutes);
 
                 _routes = _routes.ToArray();
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation("路由数据更新成功。");
             });
-            if (_zooKeeper.Exists(_configInfo.RoutePath, watcher) != null)
+            if (await _zooKeeper.existsAsync(_configInfo.RoutePath, watcher) != null)
             {
-                var childrens = _zooKeeper.GetChildren(_configInfo.RoutePath, watcher, new Stat());
-                _routes = GetRoutes(childrens);
+                var result = await _zooKeeper.getChildrenAsync(_configInfo.RoutePath, watcher);
+                var childrens = result.Children;
+                _routes = await GetRoutes(childrens);
             }
             else
             {
@@ -284,7 +290,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
         #region Watcher Class
 
-        protected class ReconnectionWatcher : IWatcher
+        protected class ReconnectionWatcher : Watcher
         {
             private readonly Action _connectioned;
             private readonly Action _disconnect;
@@ -295,11 +301,14 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 _disconnect = disconnect;
             }
 
-            #region Implementation of IWatcher
+            #region Overrides of Watcher
 
-            public void Process(WatchedEvent @event)
+            /// <summary>Processes the specified event.</summary>
+            /// <param name="watchedEvent">The event.</param>
+            /// <returns></returns>
+            public override async Task process(WatchedEvent watchedEvent)
             {
-                if (@event.State == KeeperState.SyncConnected)
+                if (watchedEvent.getState() == Event.KeeperState.SyncConnected)
                 {
                     _connectioned();
                 }
@@ -307,12 +316,17 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 {
                     _disconnect();
                 }
+#if NET45||NET451
+                await Task.FromResult(1);
+#else
+                await Task.CompletedTask;
+#endif
             }
 
-            #endregion Implementation of IWatcher
+            #endregion Overrides of Watcher
         }
 
-        protected abstract class WatcherBase : IWatcher
+        protected abstract class WatcherBase : Watcher
         {
             protected string Path { get; }
 
@@ -321,18 +335,14 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 Path = path;
             }
 
-            #region Implementation of IWatcher
-
-            public void Process(WatchedEvent watchedEvent)
+            public override async Task process(WatchedEvent watchedEvent)
             {
-                if (watchedEvent.State != KeeperState.SyncConnected || watchedEvent.Path != Path)
+                if (watchedEvent.getState() != Event.KeeperState.SyncConnected || watchedEvent.getPath() != Path)
                     return;
-                ProcessImpl(watchedEvent);
+                await ProcessImpl(watchedEvent);
             }
 
-            #endregion Implementation of IWatcher
-
-            protected abstract void ProcessImpl(WatchedEvent watchedEvent);
+            protected abstract Task ProcessImpl(WatchedEvent watchedEvent);
         }
 
         protected class NodeMonitorWatcher : WatcherBase
@@ -348,17 +358,17 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
             #region Overrides of WatcherBase
 
-            protected override void ProcessImpl(WatchedEvent watchedEvent)
+            protected override async Task ProcessImpl(WatchedEvent watchedEvent)
             {
                 var path = Path;
-                switch (watchedEvent.Type)
+                switch (watchedEvent.get_Type())
                 {
-                    case EventType.NodeDataChanged:
-                        var data = _zooKeeper.GetData(path, new NodeMonitorWatcher(_zooKeeper, path, _action), new Stat());
-                        _action(data);
+                    case Event.EventType.NodeDataChanged:
+                        var data = await _zooKeeper.getDataAsync(path, new NodeMonitorWatcher(_zooKeeper, path, _action));
+                        _action(data.Data);
                         break;
 
-                    case EventType.NodeDeleted:
+                    case Event.EventType.NodeDeleted:
                         _action(null);
                         break;
                 }
@@ -380,17 +390,18 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
             #region Overrides of WatcherBase
 
-            protected override void ProcessImpl(WatchedEvent watchedEvent)
+            protected override async Task ProcessImpl(WatchedEvent watchedEvent)
             {
                 var path = Path;
                 var watcher = new ChildrenMonitorWatcher(_zooKeeper, path, _action);
-                switch (watchedEvent.Type)
+                switch (watchedEvent.get_Type())
                 {
-                    case EventType.NodeCreated:
-                    case EventType.NodeChildrenChanged:
-                        if (_zooKeeper.Exists(path, watcher) != null)
+                    case Event.EventType.NodeCreated:
+                    case Event.EventType.NodeChildrenChanged:
+                        if (await _zooKeeper.existsAsync(path, watcher) != null)
                         {
-                            var childrens = _zooKeeper.GetChildren(path, watcher, new Stat());
+                            var result = await _zooKeeper.getChildrenAsync(path, watcher);
+                            var childrens = result.Children;
                             _action(childrens);
                         }
                         else
@@ -399,8 +410,8 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                         }
                         break;
 
-                    case EventType.NodeDeleted:
-                        _zooKeeper.Exists(path, watcher);
+                    case Event.EventType.NodeDeleted:
+                        await _zooKeeper.existsAsync(path, watcher);
                         _action(null);
                         break;
                 }
@@ -483,7 +494,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         public void Dispose()
         {
             _connectionWait.Dispose();
-            _zooKeeper.Dispose();
+            _zooKeeper.closeAsync().Wait();
         }
 
         #endregion Implementation of IDisposable

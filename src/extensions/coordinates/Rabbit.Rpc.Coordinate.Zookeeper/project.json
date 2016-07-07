@@ -4,10 +4,14 @@
   "dependencies": {
     "NETStandard.Library": "1.6.0",
     "Rabbit.Rpc": "1.0.0-*",
-    "ZooKeeper.Net": "3.4.6.2"
+    "ZooKeeperNetEx": "3.4.8.4"
   },
 
   "frameworks": {
-    "net45": {}
+    "net45": {},
+    "net451": {},
+    "netstandard1.6": {
+      "imports": "dnxcore50"
+    }
   }
 }
