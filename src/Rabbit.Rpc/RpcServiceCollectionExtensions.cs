@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Convertibles;
+using Rabbit.Rpc.Convertibles.Implementation;
 using Rabbit.Rpc.Ids;
 using Rabbit.Rpc.Ids.Implementation;
 using Rabbit.Rpc.Routing;
@@ -308,6 +310,9 @@ namespace Rabbit.Rpc
                 throw new ArgumentNullException(nameof(services));
 
             services.AddSingleton<IServiceIdGenerator, DefaultServiceIdGenerator>();
+
+            services.AddSingleton<ITypeConvertibleProvider, DefaultTypeConvertibleProvider>();
+            services.AddSingleton<ITypeConvertibleService, DefaultTypeConvertibleService>();
 
             return new RpcBuilder(services)
                 .AddJsonSerialization()
