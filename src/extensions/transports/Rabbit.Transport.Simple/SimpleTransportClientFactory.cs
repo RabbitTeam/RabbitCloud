@@ -44,7 +44,7 @@ namespace Rabbit.Transport.Simple
             return _clients.GetOrAdd(key, k => new Lazy<ITransportClient>(() =>
             {
                 var messageListener = new MessageListener();
-                var client = new TcpSocketSaeaClient((IPEndPoint)endPoint, new SimpleMessageDispatcher(messageListener, _transportMessageCodecFactory), config);
+                var client = new TcpSocketSaeaClient((IPEndPoint)endPoint, new SimpleMessageDispatcher(messageListener, _transportMessageCodecFactory, _logger), config);
                 client.Connect().Wait();
                 return new TransportClient(new SimpleClientMessageSender(_transportMessageCodecFactory.GetEncoder(), client), messageListener, _logger, _serviceExecutor);
             })).Value;
@@ -69,12 +69,14 @@ namespace Rabbit.Transport.Simple
     internal class SimpleMessageDispatcher : ITcpSocketSaeaClientMessageDispatcher
     {
         private readonly IMessageListener _messageListener;
+        private readonly ILogger _logger;
         private readonly ITransportMessageEncoder _transportMessageEncoder;
         private readonly ITransportMessageDecoder _transportMessageDecoder;
 
-        public SimpleMessageDispatcher(IMessageListener messageListener, ITransportMessageCodecFactory transportMessageCodecFactory)
+        public SimpleMessageDispatcher(IMessageListener messageListener, ITransportMessageCodecFactory transportMessageCodecFactory, ILogger logger)
         {
             _messageListener = messageListener;
+            _logger = logger;
             _transportMessageEncoder = transportMessageCodecFactory.GetEncoder();
             _transportMessageDecoder = transportMessageCodecFactory.GetDecoder();
         }
@@ -92,7 +94,14 @@ namespace Rabbit.Transport.Simple
 
         public async Task OnServerDataReceived(TcpSocketSaeaClient client, byte[] data, int offset, int count)
         {
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("接收到数据包。");
+
             var message = _transportMessageDecoder.Decode(data.Skip(offset).Take(count).ToArray());
+
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("接收到消息：" + message.Id);
+
             _messageListener.OnReceived(new SimpleClientMessageSender(_transportMessageEncoder, client), message);
 
 #if NET45 || NET451

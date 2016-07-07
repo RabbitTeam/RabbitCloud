@@ -1,4 +1,5 @@
-﻿using Rabbit.Rpc.Messages;
+﻿using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Codec;
 using Rabbit.Transport.Simple.Tcp.Server;
@@ -15,16 +16,19 @@ namespace Rabbit.Transport.Simple
 
         private readonly ITransportMessageDecoder _transportMessageDecoder;
         private readonly ITransportMessageEncoder _transportMessageEncoder;
+        private readonly ILogger<SimpleServerMessageListener> _logger;
+
         private TcpSocketSaeaServer _server;
 
         #endregion Field
 
         #region Constructor
 
-        public SimpleServerMessageListener(ITransportMessageCodecFactory codecFactory)
+        public SimpleServerMessageListener(ITransportMessageCodecFactory codecFactory, ILogger<SimpleServerMessageListener> logger)
         {
             _transportMessageEncoder = codecFactory.GetEncoder();
             _transportMessageDecoder = codecFactory.GetDecoder();
+            _logger = logger;
         }
 
         #endregion Constructor
@@ -50,9 +54,9 @@ namespace Rabbit.Transport.Simple
             var config = new TcpSocketSaeaServerConfiguration();
             _server = new TcpSocketSaeaServer((IPEndPoint)endPoint, new SimpleMessageDispatcher((session, message) =>
             {
-                var sender = new SimpleServerMessageSender(_transportMessageEncoder, session);
+                var sender = new SimpleServerMessageSender(_transportMessageEncoder, session, _logger);
                 OnReceived(sender, message);
-            }, _transportMessageDecoder), config);
+            }, _transportMessageDecoder, _logger), config);
             _server.Listen();
 
 #if NET45 || NET451
@@ -66,11 +70,13 @@ namespace Rabbit.Transport.Simple
         {
             private readonly Action<TcpSocketSaeaSession, TransportMessage> _readAction;
             private readonly ITransportMessageDecoder _transportMessageDecoder;
+            private readonly ILogger _logger;
 
-            public SimpleMessageDispatcher(Action<TcpSocketSaeaSession, TransportMessage> readAction, ITransportMessageDecoder transportMessageDecoder)
+            public SimpleMessageDispatcher(Action<TcpSocketSaeaSession, TransportMessage> readAction, ITransportMessageDecoder transportMessageDecoder, ILogger logger)
             {
                 _readAction = readAction;
                 _transportMessageDecoder = transportMessageDecoder;
+                _logger = logger;
             }
 
             #region Implementation of ITcpSocketSaeaServerMessageDispatcher
@@ -86,7 +92,11 @@ namespace Rabbit.Transport.Simple
 
             public Task OnSessionDataReceived(TcpSocketSaeaSession session, byte[] data, int offset, int count)
             {
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("接收到数据包。");
                 var message = _transportMessageDecoder.Decode(data.Skip(offset).Take(count).ToArray());
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("接收到消息：" + message.Id);
                 _readAction(session, message);
 #if NET45 || NET451
                 return Task.FromResult(1);

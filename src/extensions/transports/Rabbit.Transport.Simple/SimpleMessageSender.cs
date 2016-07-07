@@ -1,4 +1,5 @@
-﻿using Rabbit.Rpc.Messages;
+﻿using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Codec;
 using Rabbit.Transport.Simple.Tcp.Client;
@@ -63,10 +64,12 @@ namespace Rabbit.Transport.Simple
     public class SimpleServerMessageSender : SimpleMessageSender, IMessageSender
     {
         private readonly TcpSocketSaeaSession _session;
+        private readonly ILogger _logger;
 
-        public SimpleServerMessageSender(ITransportMessageEncoder transportMessageEncoder, TcpSocketSaeaSession session) : base(transportMessageEncoder)
+        public SimpleServerMessageSender(ITransportMessageEncoder transportMessageEncoder, TcpSocketSaeaSession session, ILogger logger) : base(transportMessageEncoder)
         {
             _session = session;
+            _logger = logger;
         }
 
         #region Implementation of IMessageSender
@@ -78,6 +81,9 @@ namespace Rabbit.Transport.Simple
         /// <returns>一个任务。</returns>
         public async Task SendAsync(TransportMessage message)
         {
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("准备发送消息：" + message.Id);
+
             var data = GetByteBuffer(message);
             await _session.SendAsync(data, 0, data.Length);
         }
@@ -89,6 +95,9 @@ namespace Rabbit.Transport.Simple
         /// <returns>一个任务。</returns>
         public async Task SendAndFlushAsync(TransportMessage message)
         {
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("准备发送消息：" + message.Id);
+
             var data = GetByteBuffer(message);
             await _session.SendAsync(data, 0, data.Length);
         }
