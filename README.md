@@ -1,4 +1,4 @@
-# Rabbit.Rpc
+# Rabbit Rpc
 一个轻量级跨平台的Rpc。
 ## 特性
 1. Apache License 2.0协议开源
