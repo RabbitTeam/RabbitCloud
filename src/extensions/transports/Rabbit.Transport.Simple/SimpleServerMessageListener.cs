@@ -59,7 +59,7 @@ namespace Rabbit.Transport.Simple
             }, _transportMessageDecoder, _logger), config);
             _server.Listen();
 
-#if NET45 || NET451
+#if NET
             await Task.FromResult(1);
 #else
             await Task.CompletedTask;
@@ -83,10 +83,10 @@ namespace Rabbit.Transport.Simple
 
             public Task OnSessionStarted(TcpSocketSaeaSession session)
             {
-#if NET45 || NET451
+#if NET
                 return Task.FromResult(1);
 #else
-            return Task.CompletedTask;
+                return Task.CompletedTask;
 #endif
             }
 
@@ -98,19 +98,19 @@ namespace Rabbit.Transport.Simple
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation("接收到消息：" + message.Id);
                 _readAction(session, message);
-#if NET45 || NET451
+#if NET
                 return Task.FromResult(1);
 #else
-            return Task.CompletedTask;
+                return Task.CompletedTask;
 #endif
             }
 
             public Task OnSessionClosed(TcpSocketSaeaSession session)
             {
-#if NET45 || NET451
+#if NET
                 return Task.FromResult(1);
 #else
-            return Task.CompletedTask;
+                return Task.CompletedTask;
 #endif
             }
 

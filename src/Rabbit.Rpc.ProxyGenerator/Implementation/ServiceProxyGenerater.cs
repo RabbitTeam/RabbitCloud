@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-#if !NET45
+#if !NET
 
 using System.Runtime.Loader;
 using Microsoft.Extensions.DependencyModel;
@@ -52,7 +52,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
         /// <returns>服务代理实现。</returns>
         public IEnumerable<Type> GenerateProxys(IEnumerable<Type> interfacTypes)
         {
-#if NET45
+#if NET
             var assemblys = AppDomain.CurrentDomain.GetAssemblies();
 #else
             var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));
@@ -69,7 +69,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
 
             using (stream)
             {
-#if NET45
+#if NET
                 var assembly = Assembly.Load(stream.ToArray());
 #else
                 var assembly = AssemblyLoadContext.Default.LoadFromStream(stream);

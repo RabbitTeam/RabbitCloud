@@ -11,6 +11,9 @@
       "dependencies": {
         "protobuf-net": "2.0.0.668",
         "System.Xml.ReaderWriter": "4.0.0"
+      },
+      "buildOptions": {
+        "define": [ "NET" ]
       }
     },
     "netstandard1.6": {

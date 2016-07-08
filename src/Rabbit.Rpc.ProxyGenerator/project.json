@@ -8,7 +8,11 @@
   },
 
   "frameworks": {
-    "net45": {},
+    "net45": {
+      "buildOptions": {
+        "define": [ "NET" ]
+      }
+    },
     "netstandard1.6": {
       "dependencies": {
         "System.Runtime.Loader": "4.0.0",

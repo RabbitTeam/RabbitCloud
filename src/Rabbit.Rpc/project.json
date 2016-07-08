@@ -9,8 +9,16 @@
   },
 
   "frameworks": {
-    "net45": {},
-    "net451": {},
+    "net45": {
+      "buildOptions": {
+        "define": [ "NET" ]
+      }
+    },
+    "net451": {
+      "buildOptions": {
+        "define": [ "NET" ]
+      }
+    },
     "netstandard1.6": {
       "dependencies": {
         "Microsoft.Extensions.DependencyModel": "1.0.0"

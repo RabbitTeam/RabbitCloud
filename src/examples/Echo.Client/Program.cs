@@ -10,7 +10,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-#if !NET451
+#if !NET
 using System.Text;
 #endif
 
@@ -22,7 +22,7 @@ namespace Echo.Client
     {
         public static void Main(string[] args)
         {
-#if !NET451
+#if !NET
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 #endif
             var serviceCollection = new ServiceCollection();
@@ -30,7 +30,7 @@ namespace Echo.Client
             serviceCollection
                 .AddLogging()
                 .AddClient()
-#if !NET451
+#if !NET
                 .UseSharedFileRouteManager(System.IO.Path.Combine(AppContext.BaseDirectory,"routes.txt"))
 #else
                 .UseSharedFileRouteManager("d:\\routes.txt")

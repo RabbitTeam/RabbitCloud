@@ -22,7 +22,7 @@ namespace Rabbit.Rpc.Routing.Implementation
         private readonly ISerializer<string> _serializer;
         private readonly ILogger<SharedFileServiceRouteManager> _logger;
         private IEnumerable<ServiceRoute> _routes;
-#if NET45 || NET451
+#if NET
         private readonly FileSystemWatcher _fileSystemWatcher;
 #endif
 
@@ -36,7 +36,7 @@ namespace Rabbit.Rpc.Routing.Implementation
             _serializer = serializer;
             _logger = logger;
 
-#if NET45 || NET451
+#if NET
             var directoryName = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directoryName))
                 _fileSystemWatcher = new FileSystemWatcher(directoryName, "*" + Path.GetExtension(filePath));
@@ -133,7 +133,7 @@ namespace Rabbit.Rpc.Routing.Implementation
             }
         }
 
-#if NET45 || NET451
+#if NET
 
         private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
@@ -157,7 +157,7 @@ namespace Rabbit.Rpc.Routing.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-#if NET45 || NET451
+#if NET
             _fileSystemWatcher?.Dispose();
 #endif
         }

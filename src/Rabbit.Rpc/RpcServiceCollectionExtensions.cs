@@ -24,7 +24,7 @@ using Rabbit.Rpc.Transport.Codec.Implementation;
 using System;
 using System.Linq;
 
-#if !NET45 && !NET451
+#if !NET
 
 using Microsoft.Extensions.DependencyModel;
 using System.Reflection;
@@ -281,7 +281,7 @@ namespace Rabbit.Rpc
             services.AddSingleton<IClrServiceEntryFactory, ClrServiceEntryFactory>();
             services.AddSingleton<IServiceEntryProvider>(provider =>
             {
-#if NET45 || NET451
+#if NET
                 var assemblys = AppDomain.CurrentDomain.GetAssemblies();
 #else
                 var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));

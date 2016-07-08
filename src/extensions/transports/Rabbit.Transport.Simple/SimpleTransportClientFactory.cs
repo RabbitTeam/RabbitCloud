@@ -85,7 +85,7 @@ namespace Rabbit.Transport.Simple
 
         public Task OnServerConnected(TcpSocketSaeaClient client)
         {
-#if NET45 || NET451
+#if NET
             return Task.FromResult(1);
 #else
             return Task.CompletedTask;
@@ -104,7 +104,7 @@ namespace Rabbit.Transport.Simple
 
             _messageListener.OnReceived(new SimpleClientMessageSender(_transportMessageEncoder, client), message);
 
-#if NET45 || NET451
+#if NET
             await Task.FromResult(1);
 #else
             await Task.CompletedTask;
@@ -113,7 +113,7 @@ namespace Rabbit.Transport.Simple
 
         public Task OnServerDisconnected(TcpSocketSaeaClient client)
         {
-#if NET45 || NET451
+#if NET
             return Task.FromResult(1);
 #else
             return Task.CompletedTask;

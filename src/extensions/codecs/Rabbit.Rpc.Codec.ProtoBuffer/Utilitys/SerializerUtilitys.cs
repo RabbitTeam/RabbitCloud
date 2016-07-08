@@ -10,7 +10,7 @@ namespace Rabbit.Rpc.Codec.ProtoBuffer.Utilitys
         {
             using (var stream = new MemoryStream())
             {
-#if NET451
+#if NET
                 Serializer.NonGeneric.Serialize(stream, instance);
 #else
                 Serializer.Serialize(stream,instance);
@@ -25,7 +25,7 @@ namespace Rabbit.Rpc.Codec.ProtoBuffer.Utilitys
                 return null;
             using (var stream = new MemoryStream(data))
             {
-#if NET451
+#if NET
                 return Serializer.NonGeneric.Deserialize(type, stream);
 #else
                 return Serializer.Deserialize(type, stream);

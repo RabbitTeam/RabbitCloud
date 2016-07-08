@@ -10,6 +10,9 @@
     "net451": {
       "dependencies": {
         "protobuf-net": "2.0.0.668"
+      },
+      "buildOptions": {
+        "define": [ "NET" ]
       }
     },
     "netstandard1.6": {

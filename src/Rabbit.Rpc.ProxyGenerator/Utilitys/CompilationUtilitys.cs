@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-#if !NET45
+#if !NET
 
 using Microsoft.Extensions.DependencyModel;
 
@@ -24,7 +24,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Utilitys
 
         public static MemoryStream CompileClientProxy(IEnumerable<SyntaxTree> trees, IEnumerable<MetadataReference> references, ILogger logger = null)
         {
-#if !NET45
+#if !NET
             var assemblys = new[]
             {
                 "System.Runtime",

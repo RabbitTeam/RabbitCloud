@@ -83,7 +83,7 @@ namespace Echo.Common
 
         public Task Try()
         {
-#if NET451
+#if NET
             return Task.FromResult(1);
 #else
             return Task.CompletedTask;

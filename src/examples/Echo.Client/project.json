@@ -17,7 +17,11 @@
   },
 
   "frameworks": {
-    "net451": {},
+    "net451": {
+      "buildOptions": {
+        "define": [ "NET" ]
+      }
+    },
     "netcoreapp1.0": {
       "imports": "dnxcore50",
       "dependencies": {

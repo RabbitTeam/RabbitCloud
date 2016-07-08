@@ -11,7 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 
-#if !NET451
+#if !NET
 using System.Text;
 #endif
 
@@ -25,7 +25,7 @@ namespace Echo.Server
         {
             //因为没有引用Echo.Common中的任何类型
             //所以强制加载Echo.Common程序集以保证Echo.Common在AppDomain中被加载。
-#if NET451
+#if NET
             Assembly.Load("Echo.Common");
 #else
             Assembly.Load(new AssemblyName("Echo.Common"));
@@ -34,7 +34,7 @@ namespace Echo.Server
 
         public static void Main(string[] args)
         {
-#if !NET451
+#if !NET
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 #endif
             var serviceCollection = new ServiceCollection();

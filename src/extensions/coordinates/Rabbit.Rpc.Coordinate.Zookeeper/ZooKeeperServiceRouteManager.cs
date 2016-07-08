@@ -316,7 +316,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 {
                     _disconnect();
                 }
-#if NET45||NET451
+#if NET
                 await Task.FromResult(1);
 #else
                 await Task.CompletedTask;
