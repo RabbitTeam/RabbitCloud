@@ -66,13 +66,13 @@ OS | CPU | 内存 | 硬盘 | 网络环境 | 虚拟机
 Windows 10 x64 | I7 3610QM | 16GB | SSD | 127.0.0.1 | 否
 Ubuntu 16.04 x64 | I7 3610QM | 4GB | SSD | 127.0.0.1 | 是
 
-### Windows10+NETCoreApp1.0+JSON协议+Simple传输
+### Windows10 + NETCoreApp1.0 + JSON协议 + Simple传输
 ![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082114249-1409569407.png)
-### Windows10+NETCoreApp1.0+ProtoBuffer协议+Simple传输
+### Windows10 + NETCoreApp1.0 + ProtoBuffer协议 + Simple传输
 ![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082117733-1064697075.png)
-### Ubuntu16.04-x64+NETCoreApp1.0+JSON协议+Simple传输
+### Ubuntu16.04-x64 + NETCoreApp1.0 + JSON协议 + Simple传输
 ![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082119405-1980756077.png)
-### Windows10+NETCoreApp1.0+JSON协议+Simple传输
+### Windows10 + NETCoreApp1.0 + JSON协议 + Simple传输
 ![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082123889-1516684603.png)
 
 ## 相关文章
