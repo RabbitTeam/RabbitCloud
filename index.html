@@ -20,10 +20,172 @@
 
     <section class="main-content">
       <h1>
-<a id="rpc" class="anchor" href="#rpc" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rpc</h1>
+<a id="rabbit-rpc" class="anchor" href="#rabbit-rpc" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit Rpc</h1>
 
-<p>一个简单的Rpc框架。
-<a href="http://www.cnblogs.com/ants/p/5605754.html">博文介绍</a></p>
+<p>一个轻量级跨平台的Rpc。</p>
+
+<h2>
+<a id="特性" class="anchor" href="#%E7%89%B9%E6%80%A7" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>特性</h2>
+
+<ol>
+<li>Apache License 2.0协议开源</li>
+<li>支持客户端负载均衡（提供了轮询、随机算法的实现）</li>
+<li>支持ZooKeeper和文件共享形式的服务协调</li>
+<li>运行时客户端代理生成（基于Roslyn）</li>
+<li>预生成客户端代理</li>
+<li>客户端代理预生成（基于Roslyn）</li>
+<li>抽象的编解码器（提供了JSON、ProtoBuffer协议的实现）</li>
+<li>抽象的传输通道（提供了DotNetty与Cowboy.Sockets的移植实现）</li>
+<li>异常信息传递（服务端运行时的本地异常可以传递至客户端）</li>
+<li><strong>NET Core项目架构</strong></li>
+<li><strong>跨平台运行</strong></li>
+</ol>
+
+<h2>
+<a id="项目概况" class="anchor" href="#%E9%A1%B9%E7%9B%AE%E6%A6%82%E5%86%B5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>项目概况</h2>
+
+<p><img src="http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082111186-595090265.png" alt=""></p>
+
+<h3>
+<a id="rabbitrpc支持跨平台" class="anchor" href="#rabbitrpc%E6%94%AF%E6%8C%81%E8%B7%A8%E5%B9%B3%E5%8F%B0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit.Rpc（支持跨平台）</h3>
+
+<ol>
+<li>Rpc核心类库，有如下功能：</li>
+<li>服务Id生成</li>
+<li>传输消息模型</li>
+<li>类型转换</li>
+<li>服务路由抽象</li>
+<li>序列化器抽象（默认提供JSON序列化器）</li>
+<li>传输抽象</li>
+<li>编解码器抽象（默认提供JSON的编解码器实现）</li>
+<li>客户端运行时（地址解析器、地址选择器，远程调用服务）</li>
+<li>服务端运行时（服务条目管理、服务执行器、服务发现抽象、RpcServiceAttribute标记服务发现实现）</li>
+</ol>
+
+<h3>
+<a id="rabbitrpcproxygenerator支持跨平台" class="anchor" href="#rabbitrpcproxygenerator%E6%94%AF%E6%8C%81%E8%B7%A8%E5%B9%B3%E5%8F%B0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit.Rpc.ProxyGenerator（支持跨平台）</h3>
+
+<p>服务代理生成器，提供的功能：</p>
+
+<ol>
+<li>服务代理实现生成</li>
+<li>服务代理实例创建</li>
+</ol>
+
+<h3>
+<a id="extensions相关扩展" class="anchor" href="#extensions%E7%9B%B8%E5%85%B3%E6%89%A9%E5%B1%95" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>extensions（相关扩展）</h3>
+
+<h4>
+<a id="rabbitrpccodecprotobuffer支持跨平台" class="anchor" href="#rabbitrpccodecprotobuffer%E6%94%AF%E6%8C%81%E8%B7%A8%E5%B9%B3%E5%8F%B0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit.Rpc.Codec.ProtoBuffer（支持跨平台）</h4>
+
+<p>ProtoBuffer协议的编解码器实现。</p>
+
+<h4>
+<a id="rabbitrpccoordinatezookeeper支持跨平台" class="anchor" href="#rabbitrpccoordinatezookeeper%E6%94%AF%E6%8C%81%E8%B7%A8%E5%B9%B3%E5%8F%B0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit.Rpc.Coordinate.Zookeeper（支持跨平台）</h4>
+
+<p>基于ZooKeeper的服务路由管理。</p>
+
+<h4>
+<a id="rabbittransportdotnetty暂不支持跨平台" class="anchor" href="#rabbittransportdotnetty%E6%9A%82%E4%B8%8D%E6%94%AF%E6%8C%81%E8%B7%A8%E5%B9%B3%E5%8F%B0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit.Transport.DotNetty（暂不支持跨平台）</h4>
+
+<p>基于DotNetty的传输实现。</p>
+
+<p><em>ps:官方以有将DotNetty支持NET Core的计划，大伙可以再等等，待官方支持后，会尽快进行适配。</em></p>
+
+<h4>
+<a id="rabbittransportsimple支持跨平台" class="anchor" href="#rabbittransportsimple%E6%94%AF%E6%8C%81%E8%B7%A8%E5%B9%B3%E5%8F%B0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit.Transport.Simple（支持跨平台）</h4>
+
+<p>由于DotNetty不支持跨平台运行，为了让rpc能在其它平台上跑通，故移植了“Cowboy.Sockets”实现了一个简单的传输实现。</p>
+
+<h3>
+<a id="tools" class="anchor" href="#tools" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>tools</h3>
+
+<h4>
+<a id="rabbitrpctests" class="anchor" href="#rabbitrpctests" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit.Rpc.Tests</h4>
+
+<p>单元测试项目。</p>
+
+<h4>
+<a id="rabbitrpcclientgenerator支持跨平台" class="anchor" href="#rabbitrpcclientgenerator%E6%94%AF%E6%8C%81%E8%B7%A8%E5%B9%B3%E5%8F%B0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Rabbit.Rpc.ClientGenerator（支持跨平台）</h4>
+
+<p>预生产服务代理的工具，提供了如下功能：</p>
+
+<ol>
+<li>生成服务代理实现代码文件</li>
+<li>生成服务代理实现程序集文件</li>
+</ol>
+
+<h2>
+<a id="性能测试" class="anchor" href="#%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>性能测试</h2>
+
+<p>测试环境</p>
+
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>CPU</th>
+<th>内存</th>
+<th>硬盘</th>
+<th>网络环境</th>
+<th>虚拟机</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows 10 x64</td>
+<td>I7 3610QM</td>
+<td>16GB</td>
+<td>SSD</td>
+<td>127.0.0.1</td>
+<td>否</td>
+</tr>
+<tr>
+<td>Ubuntu 16.04 x64</td>
+<td>I7 3610QM</td>
+<td>4GB</td>
+<td>SSD</td>
+<td>127.0.0.1</td>
+<td>是</td>
+</tr>
+</tbody>
+</table>
+
+<h3>
+<a id="windows10netcoreapp10json协议simple传输" class="anchor" href="#windows10netcoreapp10json%E5%8D%8F%E8%AE%AEsimple%E4%BC%A0%E8%BE%93" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Windows10+NETCoreApp1.0+JSON协议+Simple传输</h3>
+
+<p><img src="http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082114249-1409569407.png" alt=""></p>
+
+<h3>
+<a id="windows10netcoreapp10protobuffer协议simple传输" class="anchor" href="#windows10netcoreapp10protobuffer%E5%8D%8F%E8%AE%AEsimple%E4%BC%A0%E8%BE%93" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Windows10+NETCoreApp1.0+ProtoBuffer协议+Simple传输</h3>
+
+<p><img src="http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082117733-1064697075.png" alt=""></p>
+
+<h3>
+<a id="ubuntu1604-x64netcoreapp10json协议simple传输" class="anchor" href="#ubuntu1604-x64netcoreapp10json%E5%8D%8F%E8%AE%AEsimple%E4%BC%A0%E8%BE%93" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ubuntu16.04-x64+NETCoreApp1.0+JSON协议+Simple传输</h3>
+
+<p><img src="http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082119405-1980756077.png" alt=""></p>
+
+<h3>
+<a id="windows10netcoreapp10json协议simple传输-1" class="anchor" href="#windows10netcoreapp10json%E5%8D%8F%E8%AE%AEsimple%E4%BC%A0%E8%BE%93-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Windows10+NETCoreApp1.0+JSON协议+Simple传输</h3>
+
+<p><img src="http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082123889-1516684603.png" alt=""></p>
+
+<h2>
+<a id="相关文章" class="anchor" href="#%E7%9B%B8%E5%85%B3%E6%96%87%E7%AB%A0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>相关文章</h2>
+
+<ul>
+<li><a href="http://www.cnblogs.com/ants/p/5652132.html">拥抱.NET Core，跨平台的轻量级RPC：Rabbit.Rpc</a></li>
+<li><a href="http://www.cnblogs.com/ants/p/5605754.html">.NET轻量级RPC框架：Rabbit.Rpc</a></li>
+</ul>
+
+<h2>
+<a id="交流方式" class="anchor" href="#%E4%BA%A4%E6%B5%81%E6%96%B9%E5%BC%8F" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>交流方式</h2>
+
+<ul>
+<li><a href="http://jq.qq.com/?_wv=1027&amp;k=29DzAfj">QQ群：384413261（RabbitHub）</a></li>
+<li><a href="mailto:majian159@live.com">Email：majian159@live.com</a></li>
+</ul>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/RabbitTeam/Rpc">Rpc</a> is maintained by <a href="https://github.com/RabbitTeam">RabbitTeam</a>.</span>
