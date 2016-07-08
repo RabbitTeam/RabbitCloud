@@ -13,8 +13,6 @@
     "Rabbit.Rpc.Codec.ProtoBuffer": "1.0.0-*",
     "Rabbit.Rpc.Coordinate.Zookeeper": "1.0.0-*",
     "Rabbit.Transport.Simple": "1.0.0-*",
-    "Microsoft.NETCore.Runtime.CoreCLR": "1.0.2",
-    "Microsoft.NETCore.DotNetHostPolicy": "1.0.1",
     "Rabbit.Transport.DotNetty": "1.0.0-*"
   },
 
