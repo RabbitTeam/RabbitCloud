@@ -74,3 +74,13 @@ Ubuntu 16.04 x64 | I7 3610QM | 4GB | SSD | 127.0.0.1 | 是
 ![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082119405-1980756077.png)
 ### Windows10+NETCoreApp1.0+JSON协议+Simple传输
 ![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082123889-1516684603.png)
+
+## 相关文章
+[拥抱.NET Core，跨平台的轻量级RPC：Rabbit.Rpc](http://www.cnblogs.com/ants/p/5652132.html)
+
+[.NET轻量级RPC框架：Rabbit.Rpc](http://www.cnblogs.com/ants/p/5605754.html)
+
+## 交流方式
+[QQ群：384413261（RabbitHub）](http://jq.qq.com/?_wv=1027&k=29DzAfj)
+
+[Email：majian159@live.com](mailto:majian159@live.com)
