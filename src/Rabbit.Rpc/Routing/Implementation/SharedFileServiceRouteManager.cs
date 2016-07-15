@@ -13,7 +13,6 @@ namespace Rabbit.Rpc.Routing.Implementation
     /// <summary>
     /// 基于共享文件的服务路由管理者。
     /// </summary>
-    //todo:netcore还不支持文件变更即时更新
     public class SharedFileServiceRouteManager : IServiceRouteManager, IDisposable
     {
         #region Field
@@ -22,9 +21,7 @@ namespace Rabbit.Rpc.Routing.Implementation
         private readonly ISerializer<string> _serializer;
         private readonly ILogger<SharedFileServiceRouteManager> _logger;
         private IEnumerable<ServiceRoute> _routes;
-#if NET
         private readonly FileSystemWatcher _fileSystemWatcher;
-#endif
 
         #endregion Field
 
@@ -36,7 +33,6 @@ namespace Rabbit.Rpc.Routing.Implementation
             _serializer = serializer;
             _logger = logger;
 
-#if NET
             var directoryName = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directoryName))
                 _fileSystemWatcher = new FileSystemWatcher(directoryName, "*" + Path.GetExtension(filePath));
@@ -47,7 +43,6 @@ namespace Rabbit.Rpc.Routing.Implementation
             _fileSystemWatcher.Renamed += _fileSystemWatcher_Changed;
             _fileSystemWatcher.IncludeSubdirectories = false;
             _fileSystemWatcher.EnableRaisingEvents = true;
-#endif
         }
 
         #endregion Constructor
@@ -133,16 +128,12 @@ namespace Rabbit.Rpc.Routing.Implementation
             }
         }
 
-#if NET
-
         private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation($"文件{_filePath}发生了变更，将重新获取路由信息。");
             EntryRoutes(_filePath);
         }
-
-#endif
 
         #endregion Private Method
 
