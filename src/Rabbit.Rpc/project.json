@@ -33,7 +33,8 @@
     },
     "netstandard1.6": {
       "dependencies": {
-        "Microsoft.Extensions.DependencyModel": "1.0.0"
+        "Microsoft.Extensions.DependencyModel": "1.0.0",
+        "Microsoft.Extensions.FileProviders.Physical": "1.0.0"
       }
     }
   }
