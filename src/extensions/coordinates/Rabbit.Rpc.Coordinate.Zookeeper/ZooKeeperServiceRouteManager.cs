@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using org.apache.zookeeper;
-using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
+using Rabbit.Rpc.Routing.Implementation;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
@@ -15,13 +15,14 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
     /// <summary>
     /// 基于zookeeper的服务路由管理者。
     /// </summary>
-    public class ZooKeeperServiceRouteManager : IServiceRouteManager, IDisposable
+    public class ZooKeeperServiceRouteManager : ServiceRouteManagerBase, IDisposable
     {
         #region Field
 
         private ZooKeeper _zooKeeper;
         private readonly ZookeeperConfigInfo _configInfo;
         private readonly ISerializer<byte[]> _serializer;
+        private readonly IServiceRouteFactory _serviceRouteFactory;
         private readonly ILogger<ZooKeeperServiceRouteManager> _logger;
         private IEnumerable<ServiceRoute> _routes;
         private readonly ManualResetEvent _connectionWait = new ManualResetEvent(false);
@@ -30,69 +31,34 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
 
         #region Constructor
 
-        public ZooKeeperServiceRouteManager(ZookeeperConfigInfo configInfo, ISerializer<byte[]> serializer, ILogger<ZooKeeperServiceRouteManager> logger)
+        public ZooKeeperServiceRouteManager(ZookeeperConfigInfo configInfo, ISerializer<byte[]> serializer, ISerializer<string> stringSerializer, IServiceRouteFactory serviceRouteFactory, ILogger<ZooKeeperServiceRouteManager> logger) : base(stringSerializer)
         {
             _configInfo = configInfo;
             _serializer = serializer;
+            _serviceRouteFactory = serviceRouteFactory;
             _logger = logger;
             CreateZooKeeper().Wait();
         }
 
         #endregion Constructor
 
-        #region Implementation of IServiceRouteManager
+        #region Overrides of ServiceRouteManagerBase
 
         /// <summary>
         /// 获取所有可用的服务路由信息。
         /// </summary>
         /// <returns>服务路由集合。</returns>
-        public async Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
+        public override async Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
         {
             await EnterRoutes();
             return _routes;
         }
 
         /// <summary>
-        /// 添加服务路由。
-        /// </summary>
-        /// <param name="routes">服务路由集合。</param>
-        /// <returns>一个任务。</returns>
-        public async Task AddRoutesAsync(IEnumerable<ServiceRoute> routes)
-        {
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation("准备添加服务路由。");
-            await CreateSubdirectory(_configInfo.RoutePath);
-
-            var path = _configInfo.RoutePath;
-            if (!path.EndsWith("/"))
-                path += "/";
-            foreach (var serviceRoute in routes)
-            {
-                var nodePath = $"{path}{serviceRoute.ServiceDescriptor.Id}";
-                var nodeData = _serializer.Serialize(serviceRoute);
-                if (await _zooKeeper.existsAsync(nodePath) == null)
-                {
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                        _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
-
-                    await _zooKeeper.createAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-                }
-                else
-                {
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                        _logger.LogDebug($"将更新节点：{nodePath}的数据。");
-                    await _zooKeeper.setDataAsync(nodePath, nodeData);
-                }
-            }
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation("服务路由添加成功。");
-        }
-
-        /// <summary>
         /// 清空所有的服务路由。
         /// </summary>
         /// <returns>一个任务。</returns>
-        public async Task ClearAsync()
+        public override async Task ClearAsync()
         {
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation("准备清空所有路由配置。");
@@ -128,7 +94,43 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 _logger.LogInformation("路由配置清空完成。");
         }
 
-        #endregion Implementation of IServiceRouteManager
+        /// <summary>
+        /// 添加服务路由。
+        /// </summary>
+        /// <param name="routes">服务路由集合。</param>
+        /// <returns>一个任务。</returns>
+        protected override async Task AddRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
+        {
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("准备添加服务路由。");
+            await CreateSubdirectory(_configInfo.RoutePath);
+
+            var path = _configInfo.RoutePath;
+            if (!path.EndsWith("/"))
+                path += "/";
+            foreach (var serviceRoute in routes)
+            {
+                var nodePath = $"{path}{serviceRoute.ServiceDescriptor.Id}";
+                var nodeData = _serializer.Serialize(serviceRoute);
+                if (await _zooKeeper.existsAsync(nodePath) == null)
+                {
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.LogDebug($"节点：{nodePath}不存在将进行创建。");
+
+                    await _zooKeeper.createAsync(nodePath, nodeData, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                }
+                else
+                {
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.LogDebug($"将更新节点：{nodePath}的数据。");
+                    await _zooKeeper.setDataAsync(nodePath, nodeData);
+                }
+            }
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation("服务路由添加成功。");
+        }
+
+        #endregion Overrides of ServiceRouteManagerBase
 
         #region Private Method
 
@@ -172,7 +174,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             }
         }
 
-        private ServiceRoute GetRoute(byte[] data)
+        private async Task<ServiceRoute> GetRoute(byte[] data)
         {
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.LogDebug($"准备转换服务路由，配置内容：{Encoding.UTF8.GetString(data)}。");
@@ -180,13 +182,9 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             if (data == null)
                 return null;
 
-            var descriptor = _serializer.Deserialize<byte[], IpAddressDescriptor>(data);
+            var descriptor = _serializer.Deserialize<byte[], ServiceRouteDescriptor>(data);
 
-            return new ServiceRoute
-            {
-                Address = descriptor.Address,
-                ServiceDescriptor = descriptor.ServiceDescriptor
-            };
+            return (await _serviceRouteFactory.CreateServiceRoutesAsync(new[] { descriptor })).First();
         }
 
         private async Task<IEnumerable<ServiceRoute>> GetRoutes(IEnumerable<string> childrens)
@@ -204,12 +202,12 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                     _logger.LogDebug($"准备从节点：{children}中获取路由信息。");
 
                 var nodePath = $"{rootPath}{children}";
-                var watcher = new NodeMonitorWatcher(_zooKeeper, nodePath, newData =>
+                var watcher = new NodeMonitorWatcher(_zooKeeper, nodePath, async newData =>
                 {
                     if (_logger.IsEnabled(LogLevel.Information))
                         _logger.LogInformation(newData == null ? $"路由：{nodePath}被删除。" : $"节点：{nodePath}的数据发生了变更，将更新路由信息。");
 
-                    var route = GetRoute(newData);
+                    var route = await GetRoute(newData);
                     //删除旧路由。
                     _routes = _routes.Where(i => i.ServiceDescriptor.Id != route.ServiceDescriptor.Id);
                     //添加新路由。
@@ -218,7 +216,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                     _routes = _routes.ToArray();
                 });
                 var data = await _zooKeeper.getDataAsync(nodePath, watcher);
-                routes.Add(GetRoute(data.Data));
+                routes.Add(await GetRoute(data.Data));
             }
 
             return routes.ToArray();
@@ -473,17 +471,6 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             /// 根节点。
             /// </summary>
             public string ChRoot { get; set; }
-        }
-
-        protected class ConfigModel
-        {
-            public IpAddressDescriptor[] Routes { get; set; }
-        }
-
-        protected class IpAddressDescriptor
-        {
-            public List<IpAddressModel> Address { get; set; }
-            public ServiceDescriptor ServiceDescriptor { get; set; }
         }
 
         #endregion Help Class

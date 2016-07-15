@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
-using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Routing.Implementation
@@ -13,12 +13,13 @@ namespace Rabbit.Rpc.Routing.Implementation
     /// <summary>
     /// 基于共享文件的服务路由管理者。
     /// </summary>
-    public class SharedFileServiceRouteManager : IServiceRouteManager, IDisposable
+    public class SharedFileServiceRouteManager : ServiceRouteManagerBase, IDisposable
     {
         #region Field
 
         private readonly string _filePath;
         private readonly ISerializer<string> _serializer;
+        private readonly IServiceRouteFactory _serviceRouteFactory;
         private readonly ILogger<SharedFileServiceRouteManager> _logger;
         private IEnumerable<ServiceRoute> _routes;
         private readonly FileSystemWatcher _fileSystemWatcher;
@@ -27,10 +28,12 @@ namespace Rabbit.Rpc.Routing.Implementation
 
         #region Constructor
 
-        public SharedFileServiceRouteManager(string filePath, ISerializer<string> serializer, ILogger<SharedFileServiceRouteManager> logger)
+        public SharedFileServiceRouteManager(string filePath, ISerializer<string> serializer,
+            IServiceRouteFactory serviceRouteFactory, ILogger<SharedFileServiceRouteManager> logger) : base(serializer)
         {
             _filePath = filePath;
             _serializer = serializer;
+            _serviceRouteFactory = serviceRouteFactory;
             _logger = logger;
 
             var directoryName = Path.GetDirectoryName(filePath);
@@ -47,56 +50,14 @@ namespace Rabbit.Rpc.Routing.Implementation
 
         #endregion Constructor
 
-        #region Implementation of IServiceRouteManager
-
-        /// <summary>
-        /// 获取所有可用的服务路由信息。
-        /// </summary>
-        /// <returns>服务路由集合。</returns>
-        public Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
-        {
-            if (_routes == null)
-                EntryRoutes(_filePath);
-            return Task.FromResult(_routes);
-        }
-
-        /// <summary>
-        /// 添加服务路由。
-        /// </summary>
-        /// <param name="routes">服务路由集合。</param>
-        /// <returns>一个任务。</returns>
-        public async Task AddRoutesAsync(IEnumerable<ServiceRoute> routes)
-        {
-            await Task.Run(() =>
-            {
-                lock (this)
-                {
-                    File.WriteAllText(_filePath, _serializer.Serialize(routes), Encoding.UTF8);
-                }
-            });
-        }
-
-        /// <summary>
-        /// 清空所有的服务路由。
-        /// </summary>
-        /// <returns>一个任务。</returns>
-        public Task ClearAsync()
-        {
-            return Task.Run(() =>
-            {
-                if (File.Exists(_filePath))
-                    File.Delete(_filePath);
-            });
-        }
-
-        #endregion Implementation of IServiceRouteManager
-
         #region Private Method
 
-        private void EntryRoutes(string file)
+        private async Task EntryRoutes(string file)
         {
-            lock (this)
+            try
             {
+                Monitor.Enter(this);
+
                 if (File.Exists(file))
                 {
                     if (_logger.IsEnabled(LogLevel.Debug))
@@ -104,13 +65,14 @@ namespace Rabbit.Rpc.Routing.Implementation
                     var content = File.ReadAllText(file);
                     try
                     {
-                        _routes = _serializer.Deserialize<string, IpAddressDescriptor[]>(content).Select(i => new ServiceRoute
-                        {
-                            Address = i.Address,
-                            ServiceDescriptor = i.ServiceDescriptor
-                        }).ToArray();
+                        var serializer = _serializer;
+                        _routes =
+                            await
+                                _serviceRouteFactory.CreateServiceRoutesAsync(
+                                    serializer.Deserialize<string, ServiceRouteDescriptor[]>(content));
                         if (_logger.IsEnabled(LogLevel.Information))
-                            _logger.LogInformation($"成功获取到以下路由信息：{string.Join(",", _routes.Select(i => i.ServiceDescriptor.Id))}。");
+                            _logger.LogInformation(
+                                $"成功获取到以下路由信息：{string.Join(",", _routes.Select(i => i.ServiceDescriptor.Id))}。");
                     }
                     catch (Exception exception)
                     {
@@ -126,22 +88,64 @@ namespace Rabbit.Rpc.Routing.Implementation
                     _routes = Enumerable.Empty<ServiceRoute>();
                 }
             }
+            finally
+            {
+                Monitor.Exit(this);
+            }
         }
 
-        private void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        private async void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation($"文件{_filePath}发生了变更，将重新获取路由信息。");
-            EntryRoutes(_filePath);
+            await EntryRoutes(_filePath);
         }
 
         #endregion Private Method
 
-        protected class IpAddressDescriptor
+        #region Overrides of ServiceRouteManagerBase
+
+        /// <summary>
+        /// 获取所有可用的服务路由信息。
+        /// </summary>
+        /// <returns>服务路由集合。</returns>
+        public override async Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
         {
-            public List<IpAddressModel> Address { get; set; }
-            public ServiceDescriptor ServiceDescriptor { get; set; }
+            if (_routes == null)
+                await EntryRoutes(_filePath);
+            return _routes;
         }
+
+        /// <summary>
+        /// 清空所有的服务路由。
+        /// </summary>
+        /// <returns>一个任务。</returns>
+        public override Task ClearAsync()
+        {
+            return Task.Run(() =>
+            {
+                if (File.Exists(_filePath))
+                    File.Delete(_filePath);
+            });
+        }
+
+        /// <summary>
+        /// 添加服务路由。
+        /// </summary>
+        /// <param name="routes">服务路由集合。</param>
+        /// <returns>一个任务。</returns>
+        protected override async Task AddRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
+        {
+            await Task.Run(() =>
+            {
+                lock (this)
+                {
+                    File.WriteAllText(_filePath, _serializer.Serialize(routes), Encoding.UTF8);
+                }
+            });
+        }
+
+        #endregion Overrides of ServiceRouteManagerBase
 
         #region Implementation of IDisposable
 

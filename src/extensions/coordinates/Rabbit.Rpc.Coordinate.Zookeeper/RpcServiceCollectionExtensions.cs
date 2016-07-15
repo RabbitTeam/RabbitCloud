@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Serialization;
 
 namespace Rabbit.Rpc.Coordinate.Zookeeper
@@ -14,7 +15,13 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         /// <returns>Rpc服务构建者。</returns>
         public static IRpcBuilder UseZooKeeperRouteManager(this IRpcBuilder builder, ZooKeeperServiceRouteManager.ZookeeperConfigInfo configInfo)
         {
-            return builder.UseRouteManager(provider => new ZooKeeperServiceRouteManager(configInfo, provider.GetRequiredService<ISerializer<byte[]>>(), provider.GetRequiredService<ILogger<ZooKeeperServiceRouteManager>>()));
+            return builder.UseRouteManager(provider =>
+            new ZooKeeperServiceRouteManager(
+                configInfo,
+                provider.GetRequiredService<ISerializer<byte[]>>(),
+                provider.GetRequiredService<ISerializer<string>>(),
+                provider.GetRequiredService<IServiceRouteFactory>(),
+                provider.GetRequiredService<ILogger<ZooKeeperServiceRouteManager>>()));
         }
     }
 }
