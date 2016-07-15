@@ -148,9 +148,7 @@ namespace Rabbit.Rpc.Routing.Implementation
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-#if NET
             _fileSystemWatcher?.Dispose();
-#endif
         }
 
         #endregion Implementation of IDisposable
