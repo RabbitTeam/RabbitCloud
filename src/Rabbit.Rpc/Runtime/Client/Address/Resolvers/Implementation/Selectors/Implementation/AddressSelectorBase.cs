@@ -21,14 +21,14 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.I
         {
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
-            if (context.ServiceRoute == null)
-                throw new ArgumentNullException(nameof(context.ServiceRoute));
-            if (context.ServiceRoute.Address == null)
-                throw new ArgumentNullException(nameof(context.ServiceRoute.Address));
+            if (context.Descriptor == null)
+                throw new ArgumentNullException(nameof(context.Descriptor));
+            if (context.Address == null)
+                throw new ArgumentNullException(nameof(context.Address));
 
-            var address = context.ServiceRoute.Address.ToArray();
+            var address = context.Address.ToArray();
             if (!address.Any())
-                throw new ArgumentException("没有任何地址信息。", nameof(context.ServiceRoute.Address));
+                throw new ArgumentException("没有任何地址信息。", nameof(context.Address));
 
             return address.Length == 1 ? Task.FromResult(address[0]) : SelectAsync(context);
         }

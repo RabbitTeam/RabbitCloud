@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
-using Rabbit.Rpc.Address;
-using Rabbit.Rpc.Routing;
+﻿using Rabbit.Rpc.Address;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors
 {
@@ -10,9 +10,14 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors
     public class AddressSelectContext
     {
         /// <summary>
-        /// 服务路由。
+        /// 服务描述符。
         /// </summary>
-        public ServiceRoute ServiceRoute { get; set; }
+        public ServiceDescriptor Descriptor { get; set; }
+
+        /// <summary>
+        /// 服务可用地址。
+        /// </summary>
+        public IEnumerable<AddressModel> Address { get; set; }
     }
 
     /// <summary>

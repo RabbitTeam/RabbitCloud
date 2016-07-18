@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
+using Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,16 +19,18 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation
         private readonly IServiceRouteManager _serviceRouteManager;
         private readonly ILogger<DefaultAddressResolver> _logger;
         private readonly IAddressSelector _addressSelector;
+        private readonly IHealthCheckService _healthCheckService;
 
         #endregion Field
 
         #region Constructor
 
-        public DefaultAddressResolver(IServiceRouteManager serviceRouteManager, ILogger<DefaultAddressResolver> logger, IAddressSelector addressSelector)
+        public DefaultAddressResolver(IServiceRouteManager serviceRouteManager, ILogger<DefaultAddressResolver> logger, IAddressSelector addressSelector, IHealthCheckService healthCheckService)
         {
             _serviceRouteManager = serviceRouteManager;
             _logger = logger;
             _addressSelector = addressSelector;
+            _healthCheckService = healthCheckService;
         }
 
         #endregion Constructor
@@ -52,8 +56,18 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation
                 return null;
             }
 
-            var hasAddress = descriptor.Address?.Any();
-            if (!hasAddress.HasValue || !hasAddress.Value)
+            var address = new List<AddressModel>();
+            foreach (var addressModel in descriptor.Address)
+            {
+                await _healthCheckService.Monitor(addressModel);
+                if (!await _healthCheckService.IsHealth(addressModel))
+                    continue;
+
+                address.Add(addressModel);
+            }
+
+            var hasAddress = address.Any();
+            if (!hasAddress)
             {
                 if (_logger.IsEnabled(LogLevel.Warning))
                     _logger.LogWarning($"根据服务id：{serviceId}，找不到可用的地址。");
@@ -61,11 +75,12 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation
             }
 
             if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", descriptor.Address.Select(i => i.ToString()))}。");
+                _logger.LogInformation($"根据服务id：{serviceId}，找到以下可用地址：{string.Join(",", address.Select(i => i.ToString()))}。");
 
             return await _addressSelector.SelectAsync(new AddressSelectContext
             {
-                ServiceRoute = descriptor
+                Descriptor = descriptor.ServiceDescriptor,
+                Address = address
             });
         }
 

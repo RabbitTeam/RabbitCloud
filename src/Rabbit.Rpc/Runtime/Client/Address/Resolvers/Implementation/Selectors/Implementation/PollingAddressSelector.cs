@@ -23,11 +23,11 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.I
         /// <returns>地址模型。</returns>
         protected override Task<AddressModel> SelectAsync(AddressSelectContext context)
         {
-            var key = context.ServiceRoute.ServiceDescriptor.Id;
+            var key = context.Descriptor.Id;
             //根据服务id缓存服务地址。
-            var address = _concurrent.AddOrUpdate(key, k => new AddressEntry(context.ServiceRoute.Address), (k, currentEntry) =>
+            var address = _concurrent.AddOrUpdate(key, k => new AddressEntry(context.Address), (k, currentEntry) =>
               {
-                  var newAddress = context.ServiceRoute.Address.ToArray();
+                  var newAddress = context.Address.ToArray();
                   var currentAddress = currentEntry.Address;
                   var unionAddress = currentEntry.Address.Union(newAddress).ToArray();
 

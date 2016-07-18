@@ -50,7 +50,7 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.I
         /// <returns>地址模型。</returns>
         protected override Task<AddressModel> SelectAsync(AddressSelectContext context)
         {
-            var address = context.ServiceRoute.Address.ToArray();
+            var address = context.Address.ToArray();
             var length = address.Length;
 
             var index = _generate(0, length);

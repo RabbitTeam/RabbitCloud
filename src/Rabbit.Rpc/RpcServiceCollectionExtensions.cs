@@ -23,6 +23,8 @@ using Rabbit.Rpc.Transport.Codec;
 using Rabbit.Rpc.Transport.Codec.Implementation;
 using System;
 using System.Linq;
+using Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks;
+using Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks.Implementation;
 
 #if !NET
 
@@ -267,6 +269,7 @@ namespace Rabbit.Rpc
         {
             var services = builder.Services;
 
+            services.AddSingleton<IHealthCheckService, DefaultHealthCheckService>();
             services.AddSingleton<IAddressResolver, DefaultAddressResolver>();
             services.AddSingleton<IRemoteInvokeService, RemoteInvokeService>();
 
