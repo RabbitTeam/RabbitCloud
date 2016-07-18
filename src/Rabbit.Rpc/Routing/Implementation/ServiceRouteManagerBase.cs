@@ -7,11 +7,46 @@ using System.Threading.Tasks;
 namespace Rabbit.Rpc.Routing.Implementation
 {
     /// <summary>
+    /// 服务路由事件参数。
+    /// </summary>
+    public class ServiceRouteEventArgs
+    {
+        public ServiceRouteEventArgs(ServiceRoute route)
+        {
+            Route = route;
+        }
+
+        /// <summary>
+        /// 服务路由信息。
+        /// </summary>
+        public ServiceRoute Route { get; private set; }
+    }
+
+    /// <summary>
+    /// 服务路由变更事件参数。
+    /// </summary>
+    public class ServiceRouteChangedEventArgs : ServiceRouteEventArgs
+    {
+        public ServiceRouteChangedEventArgs(ServiceRoute route, ServiceRoute oldRoute) : base(route)
+        {
+            OldRoute = oldRoute;
+        }
+
+        /// <summary>
+        /// 旧的服务路由信息。
+        /// </summary>
+        public ServiceRoute OldRoute { get; set; }
+    }
+
+    /// <summary>
     /// 服务路由管理者基类。
     /// </summary>
     public abstract class ServiceRouteManagerBase : IServiceRouteManager
     {
         private readonly ISerializer<string> _serializer;
+        private EventHandler<ServiceRouteEventArgs> _created;
+        private EventHandler<ServiceRouteEventArgs> _removed;
+        private EventHandler<ServiceRouteChangedEventArgs> _changed;
 
         protected ServiceRouteManagerBase(ISerializer<string> serializer)
         {
@@ -21,17 +56,44 @@ namespace Rabbit.Rpc.Routing.Implementation
         #region Implementation of IServiceRouteManager
 
         /// <summary>
+        /// 服务路由被创建。
+        /// </summary>
+        public event EventHandler<ServiceRouteEventArgs> Created
+        {
+            add { _created += value; }
+            remove { _created -= value; }
+        }
+
+        /// <summary>
+        /// 服务路由被删除。
+        /// </summary>
+        public event EventHandler<ServiceRouteEventArgs> Removed
+        {
+            add { _removed += value; }
+            remove { _removed -= value; }
+        }
+
+        /// <summary>
+        /// 服务路由被修改。
+        /// </summary>
+        public event EventHandler<ServiceRouteChangedEventArgs> Changed
+        {
+            add { _changed += value; }
+            remove { _changed -= value; }
+        }
+
+        /// <summary>
         /// 获取所有可用的服务路由信息。
         /// </summary>
         /// <returns>服务路由集合。</returns>
         public abstract Task<IEnumerable<ServiceRoute>> GetRoutesAsync();
 
         /// <summary>
-        /// 添加服务路由。
+        /// 设置服务路由。
         /// </summary>
         /// <param name="routes">服务路由集合。</param>
         /// <returns>一个任务。</returns>
-        Task IServiceRouteManager.AddRoutesAsync(IEnumerable<ServiceRoute> routes)
+        Task IServiceRouteManager.SetRoutesAsync(IEnumerable<ServiceRoute> routes)
         {
             if (routes == null)
                 throw new ArgumentNullException(nameof(routes));
@@ -46,7 +108,7 @@ namespace Rabbit.Rpc.Routing.Implementation
                 ServiceDescriptor = route.ServiceDescriptor
             });
 
-            return AddRoutesAsync(descriptors);
+            return SetRoutesAsync(descriptors);
         }
 
         /// <summary>
@@ -58,10 +120,25 @@ namespace Rabbit.Rpc.Routing.Implementation
         #endregion Implementation of IServiceRouteManager
 
         /// <summary>
-        /// 添加服务路由。
+        /// 设置服务路由。
         /// </summary>
         /// <param name="routes">服务路由集合。</param>
         /// <returns>一个任务。</returns>
-        protected abstract Task AddRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes);
+        protected abstract Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes);
+
+        protected void OnCreated(ServiceRouteEventArgs args)
+        {
+            _created?.Invoke(this, args);
+        }
+
+        protected void OnChanged(ServiceRouteChangedEventArgs args)
+        {
+            _changed?.Invoke(this, args);
+        }
+
+        protected void OnRemoved(ServiceRouteEventArgs args)
+        {
+            _removed?.Invoke(this, args);
+        }
     }
 }

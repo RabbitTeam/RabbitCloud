@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Rabbit.Rpc
 {
@@ -69,5 +70,50 @@ namespace Rabbit.Rpc
 
             return (T)Metadatas[name];
         }
+
+        #region Equality members
+
+        /// <summary>Determines whether the specified object is equal to the current object.</summary>
+        /// <returns>true if the specified object  is equal to the current object; otherwise, false.</returns>
+        /// <param name="obj">The object to compare with the current object. </param>
+        public override bool Equals(object obj)
+        {
+            var model = obj as ServiceDescriptor;
+            if (model == null)
+                return false;
+
+            if (obj.GetType() != GetType())
+                return false;
+
+            if (model.Id != Id)
+                return false;
+
+            return model.Metadatas.Count == Metadatas.Count && model.Metadatas.All(metadata =>
+                   {
+                       object value;
+                       if (!Metadatas.TryGetValue(metadata.Key, out value))
+                           return false;
+                       return metadata.Value == value;
+                   });
+        }
+
+        /// <summary>Serves as the default hash function. </summary>
+        /// <returns>A hash code for the current object.</returns>
+        public override int GetHashCode()
+        {
+            return ToString().GetHashCode();
+        }
+
+        public static bool operator ==(ServiceDescriptor model1, ServiceDescriptor model2)
+        {
+            return Equals(model1, model2);
+        }
+
+        public static bool operator !=(ServiceDescriptor model1, ServiceDescriptor model2)
+        {
+            return !Equals(model1, model2);
+        }
+
+        #endregion Equality members
     }
 }

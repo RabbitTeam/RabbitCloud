@@ -95,11 +95,11 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         }
 
         /// <summary>
-        /// 添加服务路由。
+        /// 设置服务路由。
         /// </summary>
         /// <param name="routes">服务路由集合。</param>
         /// <returns>一个任务。</returns>
-        protected override async Task AddRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
+        protected override async Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
         {
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation("准备添加服务路由。");

@@ -8,6 +8,8 @@ using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Routing.Implementation;
 using Rabbit.Rpc.Runtime.Client;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers;
+using Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks;
+using Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks.Implementation;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
@@ -23,8 +25,6 @@ using Rabbit.Rpc.Transport.Codec;
 using Rabbit.Rpc.Transport.Codec.Implementation;
 using System;
 using System.Linq;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks.Implementation;
 
 #if !NET
 
