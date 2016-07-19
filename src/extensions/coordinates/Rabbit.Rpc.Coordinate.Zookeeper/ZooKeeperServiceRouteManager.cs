@@ -123,7 +123,10 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 {
                     if (_logger.IsEnabled(LogLevel.Debug))
                         _logger.LogDebug($"将更新节点：{nodePath}的数据。");
-                    await _zooKeeper.setDataAsync(nodePath, nodeData);
+
+                    var onlineData = (await _zooKeeper.getDataAsync(nodePath)).Data;
+                    if (!DataEquals(nodeData, onlineData))
+                        await _zooKeeper.setDataAsync(nodePath, nodeData);
                 }
             }
             if (_logger.IsEnabled(LogLevel.Information))
@@ -202,21 +205,45 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                     _logger.LogDebug($"准备从节点：{children}中获取路由信息。");
 
                 var nodePath = $"{rootPath}{children}";
-                var watcher = new NodeMonitorWatcher(_zooKeeper, nodePath, async newData =>
+                var watcher = new NodeMonitorWatcher(_zooKeeper, nodePath, async (oldData, newData) =>
                 {
                     if (_logger.IsEnabled(LogLevel.Information))
                         _logger.LogInformation(newData == null ? $"路由：{nodePath}被删除。" : $"节点：{nodePath}的数据发生了变更，将更新路由信息。");
 
-                    var route = await GetRoute(newData);
-                    //删除旧路由。
-                    _routes = _routes.Where(i => i.ServiceDescriptor.Id != route.ServiceDescriptor.Id);
-                    //添加新路由。
-                    if (route != null)
-                        _routes = _routes.Concat(new[] { route });
-                    _routes = _routes.ToArray();
+                    var newRoute = await GetRoute(newData);
+
+                    //添加新路由（路由信息被修改）。
+                    if (newRoute != null)
+                    {
+                        //得到旧的路由。
+                        var oldRoute = _routes.First(i => i.ServiceDescriptor.Id == newRoute.ServiceDescriptor.Id);
+
+                        //如果设置信息没有发生变更则忽略。
+                        if (oldRoute == newRoute)
+                            return;
+
+                        //删除旧路由，并添加上新的路由。
+                        _routes =
+                            _routes
+                                .Where(i => i.ServiceDescriptor.Id != newRoute.ServiceDescriptor.Id)
+                                .Concat(new[] { newRoute }).ToArray();
+                        //触发路由变更事件。
+                        OnChanged(new ServiceRouteChangedEventArgs(newRoute, oldRoute));
+                    }
+                    else //路由被删除
+                    {
+                        var oldRoute = await GetRoute(oldData);
+
+                        //删除旧路由。
+                        _routes = _routes.Where(i => i.ServiceDescriptor.Id != oldRoute.ServiceDescriptor.Id).ToArray();
+
+                        //触发路由删除事件。
+                        OnRemoved(new ServiceRouteEventArgs(oldRoute));
+                    }
                 });
-                var data = await _zooKeeper.getDataAsync(nodePath, watcher);
-                routes.Add(await GetRoute(data.Data));
+                var data = (await _zooKeeper.getDataAsync(nodePath, watcher)).Data;
+                watcher.SetCurrentData(data);
+                routes.Add(await GetRoute(data));
             }
 
             return routes.ToArray();
@@ -236,6 +263,11 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 {
                     if (_logger.IsEnabled(LogLevel.Warning))
                         _logger.LogWarning("没有任何路由节点，路由数据将被清空。");
+
+                    //触发删除事件。
+                    foreach (var route in _routes)
+                        OnRemoved(new ServiceRouteEventArgs(route));
+
                     _routes = Enumerable.Empty<ServiceRoute>();
                     return;
                 }
@@ -260,10 +292,22 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 if (_logger.IsEnabled(LogLevel.Information))
                     _logger.LogInformation($"需要被添加的路由节点：{string.Join(",", createdChildrens)}");
 
+                //需要删除的路由集合。
+                var deletedRoutes = _routes.Where(i => !deletedChildrens.Contains(i.ServiceDescriptor.Id));
+
+                //触发删除事件。
+                foreach (var route in deletedRoutes)
+                    OnRemoved(new ServiceRouteEventArgs(route));
+
                 //删除无效的节点路由。
                 _routes = _routes.Where(i => !deletedChildrens.Contains(i.ServiceDescriptor.Id));
                 //获取新增的路由信息。
-                var newRoutes = await GetRoutes(createdChildrens);
+                var newRoutes = (await GetRoutes(createdChildrens)).ToArray();
+
+                //触发路由被创建事件。
+                foreach (var route in newRoutes)
+                    OnCreated(new ServiceRouteEventArgs(route));
+
                 _routes = _routes.Concat(newRoutes);
 
                 _routes = _routes.ToArray();
@@ -282,6 +326,20 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                     _logger.LogWarning($"无法获取路由信息，因为节点：{_configInfo.RoutePath}，不存在。");
                 _routes = Enumerable.Empty<ServiceRoute>();
             }
+        }
+
+        private static bool DataEquals(IReadOnlyList<byte> data1, IReadOnlyList<byte> data2)
+        {
+            if (data1.Count != data2.Count)
+                return false;
+            for (var i = 0; i < data1.Count; i++)
+            {
+                var b1 = data1[i];
+                var b2 = data2[i];
+                if (b1 != b2)
+                    return false;
+            }
+            return true;
         }
 
         #endregion Private Method
@@ -346,12 +404,20 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
         protected class NodeMonitorWatcher : WatcherBase
         {
             private readonly ZooKeeper _zooKeeper;
-            private readonly Action<byte[]> _action;
+            private byte[] _currentData;
+            private readonly Action<byte[], byte[]> _action;
 
-            public NodeMonitorWatcher(ZooKeeper zooKeeper, string path, Action<byte[]> action) : base(path)
+            public NodeMonitorWatcher(ZooKeeper zooKeeper, string path, Action<byte[], byte[]> action) : base(path)
             {
                 _zooKeeper = zooKeeper;
                 _action = action;
+            }
+
+            public NodeMonitorWatcher SetCurrentData(byte[] currentData)
+            {
+                _currentData = currentData;
+
+                return this;
             }
 
             #region Overrides of WatcherBase
@@ -362,12 +428,16 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
                 switch (watchedEvent.get_Type())
                 {
                     case Event.EventType.NodeDataChanged:
-                        var data = await _zooKeeper.getDataAsync(path, new NodeMonitorWatcher(_zooKeeper, path, _action));
-                        _action(data.Data);
+                        var watcher = new NodeMonitorWatcher(_zooKeeper, path, _action);
+                        var data = await _zooKeeper.getDataAsync(path, watcher);
+                        var newData = data.Data;
+
+                        watcher.SetCurrentData(newData);
+                        _action(_currentData, newData);
                         break;
 
                     case Event.EventType.NodeDeleted:
-                        _action(null);
+                        _action(_currentData, null);
                         break;
                 }
             }

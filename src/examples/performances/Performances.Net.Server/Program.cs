@@ -85,7 +85,7 @@ namespace Performances.Net.Server
                 });
 
                 var serviceRouteManager = serviceProvider.GetRequiredService<IServiceRouteManager>();
-                serviceRouteManager.AddRoutesAsync(addressDescriptors).Wait();
+                serviceRouteManager.SetRoutesAsync(addressDescriptors).Wait();
             }
 
             var serviceHost = serviceProvider.GetRequiredService<IServiceHost>();
