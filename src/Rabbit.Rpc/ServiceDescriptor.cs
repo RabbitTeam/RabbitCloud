@@ -93,7 +93,13 @@ namespace Rabbit.Rpc
                        object value;
                        if (!Metadatas.TryGetValue(metadata.Key, out value))
                            return false;
-                       return metadata.Value == value;
+
+                       if (metadata.Value == null && value == null)
+                           return true;
+                       if (metadata.Value == null || value == null)
+                           return false;
+
+                       return metadata.Value.Equals(value);
                    });
         }
 
