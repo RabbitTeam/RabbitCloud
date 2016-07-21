@@ -6,6 +6,7 @@ using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Imple
 using Rabbit.Rpc.Serialization.Implementation;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -121,47 +122,85 @@ namespace Rabbit.Rpc.Tests.AddressSelectors
             }
         }
 
+        protected class AddressEntry
+        {
+            private readonly IList<int> _indexs;
+
+            #region Field
+
+            private int _index;
+            private int _lock;
+            private readonly int _maxIndex;
+            private readonly AddressModel[] _address;
+
+            #endregion Field
+
+            #region Constructor
+
+            public AddressEntry(IEnumerable<AddressModel> address, IList<int> indexs)
+            {
+                _indexs = indexs;
+                _address = address.ToArray();
+                _maxIndex = _address.Length - 1;
+            }
+
+            #endregion Constructor
+
+            #region Public Method
+
+            public AddressModel GetAddress()
+            {
+                while (true)
+                {
+                    //如果无法得到锁则等待
+                    if (Interlocked.Exchange(ref _lock, 1) != 0)
+                    {
+                        default(SpinWait).SpinOnce();
+                        continue;
+                    }
+
+                    _indexs.Add(_index);
+
+                    var address = _address[_index];
+
+                    //设置为下一个
+                    if (_maxIndex > _index)
+                        _index++;
+                    else
+                        _index = 0;
+
+                    //释放锁
+                    Interlocked.Exchange(ref _lock, 0);
+
+                    return address;
+                }
+            }
+
+            #endregion Public Method
+        }
+
         [Fact]
         public void PollingAddressAsyncTest()
         {
-            IAddressSelector selector = new PollingAddressSelector(_serviceRouteManager);
-
             var context = GetSelectContext();
+            var indexs = new List<int>();
+            var entry = new AddressEntry(context.Address, indexs);
 
-            var numbers = new List<int>();
-            var tasks = new List<Task>();
-            for (var i = 0; i < 10; i++)
+            var status = Parallel.For(0, 200, index =>
             {
-                var task = Task.Run(async () =>
-                  {
-                      for (var z = 0; z < 200; z++)
-                      {
-                          var address = (IpAddressModel)await selector.SelectAsync(context);
-                          numbers.Add(address.Port);
-                      }
-                  });
-                tasks.Add(task);
+                entry.GetAddress();
+            });
+            while (!status.IsCompleted)
+            {
+                Thread.Sleep(10);
             }
-
-            Task.WaitAll(tasks.ToArray());
-
-            var isOk = true;
-            for (var i = 0; i < numbers.Count; i++)
+            for (var i = 0; i < indexs.Count; i++)
             {
-                if (numbers.Count == i + 1)
+                if (indexs.Count == i + 1)
                     break;
-                var current = numbers[i];
-                var next = numbers[i + 1];
-                if (current == next - 1)
-                    continue;
-                isOk = false;
-                break;
-            }
-            if (isOk)
-                Assert.True(true);
-            else
-            {
-                Assert.False(false, string.Join("", numbers));
+                var current = indexs.ElementAt(i);
+                var next = indexs.ElementAt(i + 1);
+                Assert.True((next == 0 && current == 99) || current == next - 1);
             }
         }
 

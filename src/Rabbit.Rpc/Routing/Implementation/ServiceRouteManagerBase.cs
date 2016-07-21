@@ -126,19 +126,31 @@ namespace Rabbit.Rpc.Routing.Implementation
         /// <returns>一个任务。</returns>
         protected abstract Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes);
 
-        protected void OnCreated(ServiceRouteEventArgs args)
+        protected void OnCreated(params ServiceRouteEventArgs[] args)
         {
-            _created?.Invoke(this, args);
+            if (_created == null)
+                return;
+
+            foreach (var arg in args)
+                _created(this, arg);
         }
 
-        protected void OnChanged(ServiceRouteChangedEventArgs args)
+        protected void OnChanged(params ServiceRouteChangedEventArgs[] args)
         {
-            _changed?.Invoke(this, args);
+            if (_changed == null)
+                return;
+
+            foreach (var arg in args)
+                _changed(this, arg);
         }
 
-        protected void OnRemoved(ServiceRouteEventArgs args)
+        protected void OnRemoved(params ServiceRouteEventArgs[] args)
         {
-            _removed?.Invoke(this, args);
+            if (_removed == null)
+                return;
+
+            foreach (var arg in args)
+                _removed(this, arg);
         }
     }
 }

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation
@@ -64,7 +65,8 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.I
         {
             #region Field
 
-            private int _index = -1;
+            private int _index;
+            private int _lock;
             private readonly int _maxIndex;
             private readonly AddressModel[] _address;
 
@@ -84,13 +86,28 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.I
 
             public AddressModel GetAddress()
             {
-                //设置为下一个
-                if (_maxIndex > _index)
-                    _index++;
-                else
-                    _index = 0;
+                while (true)
+                {
+                    //如果无法得到锁则等待
+                    if (Interlocked.Exchange(ref _lock, 1) != 0)
+                    {
+                        default(SpinWait).SpinOnce();
+                        continue;
+                    }
 
-                return _address[_index];
+                    var address = _address[_index];
+
+                    //设置为下一个
+                    if (_maxIndex > _index)
+                        _index++;
+                    else
+                        _index = 0;
+
+                    //释放锁
+                    Interlocked.Exchange(ref _lock, 0);
+
+                    return address;
+                }
             }
 
             #endregion Public Method

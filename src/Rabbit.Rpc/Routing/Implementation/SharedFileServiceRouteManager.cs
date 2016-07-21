@@ -20,10 +20,8 @@ namespace Rabbit.Rpc.Routing.Implementation
         private readonly ISerializer<string> _serializer;
         private readonly IServiceRouteFactory _serviceRouteFactory;
         private readonly ILogger<SharedFileServiceRouteManager> _logger;
-        private IEnumerable<ServiceRoute> _routes;
+        private ServiceRoute[] _routes;
         private readonly FileSystemWatcher _fileSystemWatcher;
-
-        private DateTime _lastWriteTime;
 
         #endregion Field
 
@@ -51,6 +49,61 @@ namespace Rabbit.Rpc.Routing.Implementation
 
         #endregion Constructor
 
+        #region Implementation of IDisposable
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            _fileSystemWatcher?.Dispose();
+        }
+
+        #endregion Implementation of IDisposable
+
+        #region Overrides of ServiceRouteManagerBase
+
+        /// <summary>
+        ///     获取所有可用的服务路由信息。
+        /// </summary>
+        /// <returns>服务路由集合。</returns>
+        public override async Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
+        {
+            if (_routes == null)
+                await EntryRoutes(_filePath);
+            return _routes;
+        }
+
+        /// <summary>
+        ///     清空所有的服务路由。
+        /// </summary>
+        /// <returns>一个任务。</returns>
+        public override Task ClearAsync()
+        {
+            if (File.Exists(_filePath))
+                File.Delete(_filePath);
+            return Task.FromResult(0);
+        }
+
+        /// <summary>
+        ///     设置服务路由。
+        /// </summary>
+        /// <param name="routes">服务路由集合。</param>
+        /// <returns>一个任务。</returns>
+        protected override async Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
+        {
+            using (var fileStream = new FileStream(_filePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+            {
+                fileStream.SetLength(0);
+                using (var writer = new StreamWriter(fileStream, Encoding.UTF8))
+                {
+                    await writer.WriteAsync(_serializer.Serialize(routes));
+                }
+            }
+        }
+
+        #endregion Overrides of ServiceRouteManagerBase
+
         #region Private Method
 
         private async Task<IEnumerable<ServiceRoute>> GetRoutes(string file)
@@ -61,18 +114,29 @@ namespace Rabbit.Rpc.Routing.Implementation
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.LogDebug($"准备从文件：{file}中获取服务路由。");
                 string content;
-                using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                while (true)
                 {
-                    var reader = new StreamReader(fileStream, Encoding.UTF8);
-                    content = await reader.ReadToEndAsync();
+                    try
+                    {
+                        using (
+                            var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        {
+                            var reader = new StreamReader(fileStream, Encoding.UTF8);
+                            content = await reader.ReadToEndAsync();
+                        }
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                    }
                 }
                 try
                 {
                     var serializer = _serializer;
                     routes =
-                        (await
-                            _serviceRouteFactory.CreateServiceRoutesAsync(
-                                serializer.Deserialize<string, ServiceRouteDescriptor[]>(content))).ToArray();
+                    (await
+                        _serviceRouteFactory.CreateServiceRoutesAsync(
+                            serializer.Deserialize<string, ServiceRouteDescriptor[]>(content))).ToArray();
                     if (_logger.IsEnabled(LogLevel.Information))
                         _logger.LogInformation(
                             $"成功获取到以下路由信息：{string.Join(",", routes.Select(i => i.ServiceDescriptor.Id))}。");
@@ -97,9 +161,11 @@ namespace Rabbit.Rpc.Routing.Implementation
         {
             var oldRoutes = _routes?.ToArray();
             var newRoutes = (await GetRoutes(file)).ToArray();
+            _routes = newRoutes;
             if (oldRoutes == null)
             {
-                _routes = newRoutes;
+                //触发服务路由创建事件。
+                OnCreated(newRoutes.Select(route => new ServiceRouteEventArgs(route)).ToArray());
             }
             else
             {
@@ -116,94 +182,56 @@ namespace Rabbit.Rpc.Routing.Implementation
                 var mayModifyServiceIds = newServiceIds.Except(removeServiceIds).ToArray();
 
                 //触发服务路由创建事件。
-                foreach (var route in newRoutes.Where(i => addServiceIds.Contains(i.ServiceDescriptor.Id)))
-                    OnCreated(new ServiceRouteEventArgs(route));
+                OnCreated(
+                    newRoutes.Where(i => addServiceIds.Contains(i.ServiceDescriptor.Id))
+                        .Select(route => new ServiceRouteEventArgs(route))
+                        .ToArray());
 
                 //触发服务路由删除事件。
-                foreach (var route in oldRoutes.Where(i => removeServiceIds.Contains(i.ServiceDescriptor.Id)))
-                    OnRemoved(new ServiceRouteEventArgs(route));
+                OnRemoved(
+                    oldRoutes.Where(i => removeServiceIds.Contains(i.ServiceDescriptor.Id))
+                        .Select(route => new ServiceRouteEventArgs(route))
+                        .ToArray());
 
                 //触发服务路由变更事件。
-                var currentMayModifyRoutes = newRoutes.Where(i => mayModifyServiceIds.Contains(i.ServiceDescriptor.Id)).ToArray();
-                var oldMayModifyRoutes = oldRoutes.Where(i => mayModifyServiceIds.Contains(i.ServiceDescriptor.Id)).ToArray();
+                var currentMayModifyRoutes =
+                    newRoutes.Where(i => mayModifyServiceIds.Contains(i.ServiceDescriptor.Id)).ToArray();
+                var oldMayModifyRoutes =
+                    oldRoutes.Where(i => mayModifyServiceIds.Contains(i.ServiceDescriptor.Id)).ToArray();
 
-                foreach (var currentMayModifyRoute in currentMayModifyRoutes)
+                foreach (var oldMayModifyRoute in oldMayModifyRoutes)
                 {
-                    if (!oldMayModifyRoutes.Contains(currentMayModifyRoute))
-                        OnChanged(new ServiceRouteChangedEventArgs(currentMayModifyRoute, oldMayModifyRoutes.First(i => i.ServiceDescriptor.Id == currentMayModifyRoute.ServiceDescriptor.Id)));
+                    if (!currentMayModifyRoutes.Contains(oldMayModifyRoute))
+                        OnChanged(
+                            new ServiceRouteChangedEventArgs(
+                                currentMayModifyRoutes.First(
+                                    i => i.ServiceDescriptor.Id == oldMayModifyRoute.ServiceDescriptor.Id),
+                                oldMayModifyRoute));
                 }
             }
         }
 
         private async void _fileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-            var newTime = File.GetLastWriteTime(e.FullPath);
-
-            //防止事件重复执行。
-            if (newTime <= _lastWriteTime)
-                return;
-
-            _lastWriteTime = newTime;
-
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation($"文件{_filePath}发生了变更，将重新获取路由信息。");
+
+            if (e.ChangeType == WatcherChangeTypes.Changed)
+            {
+                var content = File.ReadAllText(_filePath, Encoding.UTF8);
+                if (!string.IsNullOrWhiteSpace(content))
+                {
+                    await EntryRoutes(_filePath);
+                }
+                else
+                {
+                    return;
+                }
+            }
+
             await EntryRoutes(_filePath);
         }
 
         #endregion Private Method
-
-        #region Overrides of ServiceRouteManagerBase
-
-        /// <summary>
-        /// 获取所有可用的服务路由信息。
-        /// </summary>
-        /// <returns>服务路由集合。</returns>
-        public override async Task<IEnumerable<ServiceRoute>> GetRoutesAsync()
-        {
-            if (_routes == null)
-                await EntryRoutes(_filePath);
-            return _routes;
-        }
-
-        /// <summary>
-        /// 清空所有的服务路由。
-        /// </summary>
-        /// <returns>一个任务。</returns>
-        public override Task ClearAsync()
-        {
-            return Task.Run(() =>
-            {
-                if (File.Exists(_filePath))
-                    File.Delete(_filePath);
-            });
-        }
-
-        /// <summary>
-        /// 设置服务路由。
-        /// </summary>
-        /// <param name="routes">服务路由集合。</param>
-        /// <returns>一个任务。</returns>
-        protected override async Task SetRoutesAsync(IEnumerable<ServiceRouteDescriptor> routes)
-        {
-            await Task.Run(() =>
-            {
-                lock (this)
-                {
-                    File.WriteAllText(_filePath, _serializer.Serialize(routes), Encoding.UTF8);
-                }
-            });
-        }
-
-        #endregion Overrides of ServiceRouteManagerBase
-
-        #region Implementation of IDisposable
-
-        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-        public void Dispose()
-        {
-            _fileSystemWatcher?.Dispose();
-        }
-
-        #endregion Implementation of IDisposable
     }
 }
