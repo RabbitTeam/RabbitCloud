@@ -218,7 +218,15 @@ namespace Rabbit.Rpc.Routing.Implementation
 
             if (e.ChangeType == WatcherChangeTypes.Changed)
             {
-                var content = File.ReadAllText(_filePath, Encoding.UTF8);
+                string content;
+                try
+                {
+                    content = File.ReadAllText(_filePath, Encoding.UTF8);
+                }
+                catch (IOException) //还没有操作完，忽略本次修改
+                {
+                    return;
+                }
                 if (!string.IsNullOrWhiteSpace(content))
                 {
                     await EntryRoutes(_filePath);
