@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
-using Rabbit.Rpc.Address;
+﻿using Rabbit.Rpc.Address;
+using System.Threading.Tasks;
 
-namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks
+namespace Rabbit.Rpc.Runtime.Client.HealthChecks
 {
     /// <summary>
     /// 一个抽象的健康检查服务。
@@ -21,5 +21,12 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks
         /// <param name="address">地址模型。</param>
         /// <returns>健康返回true，否则返回false。</returns>
         Task<bool> IsHealth(AddressModel address);
+
+        /// <summary>
+        /// 标记一个地址为失败的。
+        /// </summary>
+        /// <param name="address">地址模型。</param>
+        /// <returns>一个任务。</returns>
+        Task MarkFailure(AddressModel address);
     }
 }

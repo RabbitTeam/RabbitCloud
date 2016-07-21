@@ -2,6 +2,7 @@
 using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers;
+using Rabbit.Rpc.Runtime.Client.HealthChecks;
 using Rabbit.Rpc.Transport;
 using System;
 using System.Threading;
@@ -14,12 +15,14 @@ namespace Rabbit.Rpc.Runtime.Client.Implementation
         private readonly IAddressResolver _addressResolver;
         private readonly ITransportClientFactory _transportClientFactory;
         private readonly ILogger<RemoteInvokeService> _logger;
+        private readonly IHealthCheckService _healthCheckService;
 
-        public RemoteInvokeService(IAddressResolver addressResolver, ITransportClientFactory transportClientFactory, ILogger<RemoteInvokeService> logger)
+        public RemoteInvokeService(IAddressResolver addressResolver, ITransportClientFactory transportClientFactory, ILogger<RemoteInvokeService> logger, IHealthCheckService healthCheckService)
         {
             _addressResolver = addressResolver;
             _transportClientFactory = transportClientFactory;
             _logger = logger;
+            _healthCheckService = healthCheckService;
         }
 
         #region Implementation of IRemoteInvokeService
@@ -50,6 +53,11 @@ namespace Rabbit.Rpc.Runtime.Client.Implementation
             {
                 var client = _transportClientFactory.CreateClient(address.CreateEndPoint());
                 return await client.SendAsync(context.InvokeMessage);
+            }
+            catch (RpcCommunicationException)
+            {
+                await _healthCheckService.MarkFailure(address);
+                throw;
             }
             catch (Exception exception)
             {

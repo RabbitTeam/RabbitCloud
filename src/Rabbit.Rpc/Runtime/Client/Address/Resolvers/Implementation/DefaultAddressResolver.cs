@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.HealthChecks;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
+using Rabbit.Rpc.Runtime.Client.HealthChecks;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;

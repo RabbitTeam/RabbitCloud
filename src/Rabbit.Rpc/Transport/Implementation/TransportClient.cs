@@ -19,13 +19,16 @@ namespace Rabbit.Rpc.Transport.Implementation
         private readonly IMessageListener _messageListener;
         private readonly ILogger _logger;
         private readonly IServiceExecutor _serviceExecutor;
-        private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary = new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
+
+        private readonly ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>> _resultDictionary =
+            new ConcurrentDictionary<string, TaskCompletionSource<TransportMessage>>();
 
         #endregion Field
 
         #region Constructor
 
-        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger, IServiceExecutor serviceExecutor)
+        public TransportClient(IMessageSender messageSender, IMessageListener messageListener, ILogger logger,
+            IServiceExecutor serviceExecutor)
         {
             _messageSender = messageSender;
             _messageListener = messageListener;
@@ -55,8 +58,14 @@ namespace Rabbit.Rpc.Transport.Implementation
                 //注册结果回调
                 var callbackTask = RegisterResultCallbackAsync(transportMessage.Id);
 
-                //发送
-                await _messageSender.SendAndFlushAsync(transportMessage);
+                try
+                {//发送
+                    await _messageSender.SendAndFlushAsync(transportMessage);
+                }
+                catch (Exception exception)
+                {
+                    throw new RpcCommunicationException("与服务端通讯时发生了异常。", exception);
+                }
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.LogDebug("消息发送成功。");
