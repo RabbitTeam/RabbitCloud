@@ -2,8 +2,10 @@
 using Rabbit.Rpc.Messages;
 using Rabbit.Rpc.Transport;
 using Rabbit.Rpc.Transport.Codec;
+using Rabbit.Transport.Simple.Tcp;
 using Rabbit.Transport.Simple.Tcp.Client;
 using Rabbit.Transport.Simple.Tcp.Server;
+using System;
 using System.Threading.Tasks;
 
 namespace Rabbit.Transport.Simple
@@ -27,7 +29,28 @@ namespace Rabbit.Transport.Simple
 
     public class SimpleClientMessageSender : SimpleMessageSender, IMessageSender
     {
-        private readonly TcpSocketSaeaClient _client;
+        private readonly Func<TcpSocketSaeaClient> _clientFactory;
+        private TcpSocketSaeaClient _client;
+
+        private TcpSocketSaeaClient Client
+        {
+            get
+            {
+                if (_client != null && _client.State != TcpSocketConnectionState.Closed || _clientFactory == null)
+                    return _client;
+                lock (this)
+                {
+                    if (_client != null && _client.State != TcpSocketConnectionState.Closed || _clientFactory == null)
+                        return _client;
+                    return _client = _clientFactory();
+                }
+            }
+        }
+
+        public SimpleClientMessageSender(ITransportMessageEncoder transportMessageEncoder, Func<TcpSocketSaeaClient> clientFactory) : base(transportMessageEncoder)
+        {
+            _clientFactory = clientFactory;
+        }
 
         public SimpleClientMessageSender(ITransportMessageEncoder transportMessageEncoder, TcpSocketSaeaClient client) : base(transportMessageEncoder)
         {
@@ -44,7 +67,7 @@ namespace Rabbit.Transport.Simple
         public async Task SendAsync(TransportMessage message)
         {
             var data = GetByteBuffer(message);
-            await _client.SendAsync(data, 0, data.Length);
+            await Client.SendAsync(data, 0, data.Length);
         }
 
         /// <summary>
@@ -55,7 +78,7 @@ namespace Rabbit.Transport.Simple
         public async Task SendAndFlushAsync(TransportMessage message)
         {
             var data = GetByteBuffer(message);
-            await _client.SendAsync(data, 0, data.Length);
+            await Client.SendAsync(data, 0, data.Length);
         }
 
         #endregion Implementation of IMessageSender
