@@ -7,7 +7,6 @@ using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.ProxyGenerator;
 using Rabbit.Transport.Simple;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -18,10 +17,6 @@ using System.Text;
 #endif
 
 using System.Threading.Tasks;
-using Rabbit.Rpc.Address;
-using Rabbit.Rpc.Routing;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
-using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
 
 namespace Echo.Client
 {
@@ -29,7 +24,6 @@ namespace Echo.Client
     {
         public static void Main(string[] args)
         {
-
 #if !NET
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 #endif
@@ -47,34 +41,6 @@ namespace Echo.Client
                 .UseProtoBufferCodec();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
-
-
-            Task.Run(async () =>
-            {
-                var context = new AddressSelectContext
-                {
-                    Address = Enumerable.Range(1, 100).Select(i => new IpAddressModel("127.0.0.1", i)),
-                    Descriptor = new Rabbit.Rpc.ServiceDescriptor
-                    {
-                        Id = "service1"
-                    }
-                };
-                IAddressSelector s = new PollingAddressSelector(serviceProvider.GetRequiredService<IServiceRouteManager>());
-
-                for (var i = 0; i < 1000; i++)
-                {
-                    await s.SelectAsync(context);
-                }
-
-                var watch = Stopwatch.StartNew();
-                for (var i = 0; i < 1000; i++)
-                {
-                    await s.SelectAsync(context);
-                }
-                watch.Stop();
-                Console.WriteLine(watch.Elapsed.Milliseconds + "ms");
-            }).Wait();
-            return;
 
             serviceProvider.GetRequiredService<ILoggerFactory>()
                 .AddConsole((c, l) => (int)l >= 3);
