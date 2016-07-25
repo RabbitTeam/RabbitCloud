@@ -520,7 +520,7 @@ namespace Rabbit.Rpc.Coordinate.Zookeeper
             /// <param name="connectionString">连接字符串。</param>
             /// <param name="routePath">路由配置路径。</param>
             /// <param name="chRoot">根节点。</param>
-            public ZookeeperConfigInfo(string connectionString, string routePath = "/dotnet/serviceRoutes", string chRoot = null) : this(connectionString, TimeSpan.FromSeconds(60), routePath, chRoot)
+            public ZookeeperConfigInfo(string connectionString, string routePath = "/dotnet/serviceRoutes", string chRoot = null) : this(connectionString, TimeSpan.FromSeconds(20), routePath, chRoot)
             {
             }
 
