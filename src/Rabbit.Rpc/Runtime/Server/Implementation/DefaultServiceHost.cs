@@ -40,9 +40,12 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             if (_serverMessageListener != null)
                 return;
             _serverMessageListener = await _messageListenerFactory(endPoint);
-            _serverMessageListener.Received += (sender, message) =>
+            _serverMessageListener.Received += async (sender, message) =>
             {
-                MessageListener.OnReceived(sender, message);
+                await Task.Run(() =>
+                {
+                    MessageListener.OnReceived(sender, message);
+                });
             };
         }
 

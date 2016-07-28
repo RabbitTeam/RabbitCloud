@@ -59,7 +59,8 @@ namespace Rabbit.Rpc.Transport.Implementation
                 var callbackTask = RegisterResultCallbackAsync(transportMessage.Id);
 
                 try
-                {//发送
+                {
+                    //发送
                     await _messageSender.SendAndFlushAsync(transportMessage);
                 }
                 catch (Exception exception)
@@ -125,7 +126,7 @@ namespace Rabbit.Rpc.Transport.Implementation
             }
         }
 
-        private void MessageListener_Received(IMessageSender sender, TransportMessage message)
+        private async void MessageListener_Received(IMessageSender sender, TransportMessage message)
         {
             if (_logger.IsEnabled(LogLevel.Information))
                 _logger.LogInformation("接收到消息。");
@@ -146,8 +147,8 @@ namespace Rabbit.Rpc.Transport.Implementation
                     task.SetResult(message);
                 }
             }
-            if (message.IsInvokeMessage())
-                _serviceExecutor?.ExecuteAsync(sender, message);
+            if (_serviceExecutor != null && message.IsInvokeMessage())
+                await _serviceExecutor.ExecuteAsync(sender, message);
         }
 
         #endregion Private Method

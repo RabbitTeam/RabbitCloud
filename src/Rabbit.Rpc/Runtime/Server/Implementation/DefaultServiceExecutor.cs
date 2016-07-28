@@ -67,7 +67,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             var resultMessage = new RemoteInvokeResultMessage();
             try
             {
-                var result = entry.Func(remoteInvokeMessage.Parameters);
+                var result = await entry.Func(remoteInvokeMessage.Parameters);
                 var task = result as Task;
 
                 if (task == null)

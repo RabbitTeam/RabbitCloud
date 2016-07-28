@@ -11,6 +11,8 @@ using Rabbit.Rpc.Runtime.Client.Address.Resolvers;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
+using Rabbit.Rpc.Runtime.Client.HealthChecks;
+using Rabbit.Rpc.Runtime.Client.HealthChecks.Implementation;
 using Rabbit.Rpc.Runtime.Client.Implementation;
 using Rabbit.Rpc.Runtime.Server;
 using Rabbit.Rpc.Runtime.Server.Implementation;
@@ -23,8 +25,7 @@ using Rabbit.Rpc.Transport.Codec;
 using Rabbit.Rpc.Transport.Codec.Implementation;
 using System;
 using System.Linq;
-using Rabbit.Rpc.Runtime.Client.HealthChecks;
-using Rabbit.Rpc.Runtime.Client.HealthChecks.Implementation;
+
 #if !NET
 
 using Microsoft.Extensions.DependencyModel;
@@ -284,7 +285,7 @@ namespace Rabbit.Rpc
         {
             var services = builder.Services;
 
-            services.AddSingleton<IServiceInstanceFactory, DefaultServiceInstanceFactory>();
+            //            services.AddSingleton<IServiceInstanceFactory, DefaultServiceInstanceFactory>();
             services.AddSingleton<IClrServiceEntryFactory, ClrServiceEntryFactory>();
             services.AddSingleton<IServiceEntryProvider>(provider =>
             {
@@ -294,7 +295,7 @@ namespace Rabbit.Rpc
                 var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));
 #endif
 
-                var types = assemblys.SelectMany(i => i.ExportedTypes).ToArray();
+                var types = assemblys.Where(i => i.IsDynamic == false).SelectMany(i => i.ExportedTypes).ToArray();
 
                 return new AttributeServiceEntryProvider(types, provider.GetRequiredService<IClrServiceEntryFactory>(),
                     provider.GetRequiredService<ILogger<AttributeServiceEntryProvider>>());

@@ -81,13 +81,14 @@ namespace Echo.Common
             return Task.FromResult<IDictionary<string, string>>(new Dictionary<string, string> { { "key", "value" } });
         }
 
-        public Task Try()
+        public async Task Try()
         {
-#if NET
-            return Task.FromResult(1);
-#else
-            return Task.CompletedTask;
-#endif
+            await Task.Delay(5000);
+            /*#if NET
+                                    return Task.FromResult(1);
+                        #else
+                                    return Task.CompletedTask;
+                        #endif*/
         }
 
         public Task TryThrowException()

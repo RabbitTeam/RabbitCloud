@@ -52,9 +52,9 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
 
         #region Private Method
 
-        private void MessageListener_Received(IMessageSender sender, TransportMessage message)
+        private async void MessageListener_Received(IMessageSender sender, TransportMessage message)
         {
-            _serviceExecutor.ExecuteAsync(sender, message);
+            await _serviceExecutor.ExecuteAsync(sender, message);
         }
 
         #endregion Private Method

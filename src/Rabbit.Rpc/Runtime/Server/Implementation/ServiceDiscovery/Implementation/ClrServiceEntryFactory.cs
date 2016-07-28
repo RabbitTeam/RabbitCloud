@@ -1,9 +1,11 @@
+using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Ids;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementation
 {
@@ -14,7 +16,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
     {
         #region Field
 
-        private readonly IServiceInstanceFactory _serviceFactory;
+        private readonly IServiceProvider _serviceProvider;
         private readonly IServiceIdGenerator _serviceIdGenerator;
         private readonly ITypeConvertibleService _typeConvertibleService;
 
@@ -22,9 +24,9 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
 
         #region Constructor
 
-        public ClrServiceEntryFactory(IServiceInstanceFactory serviceFactory, IServiceIdGenerator serviceIdGenerator, ITypeConvertibleService typeConvertibleService)
+        public ClrServiceEntryFactory(IServiceProvider serviceProvider, IServiceIdGenerator serviceIdGenerator, ITypeConvertibleService typeConvertibleService)
         {
-            _serviceFactory = serviceFactory;
+            _serviceProvider = serviceProvider;
             _serviceIdGenerator = serviceIdGenerator;
             _typeConvertibleService = typeConvertibleService;
         }
@@ -44,7 +46,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
             foreach (var methodInfo in service.GetTypeInfo().GetMethods())
             {
                 var implementationMethodInfo = serviceImplementation.GetTypeInfo().GetMethod(methodInfo.Name, methodInfo.GetParameters().Select(p => p.ParameterType).ToArray());
-                yield return Create(_serviceIdGenerator.GenerateServiceId(methodInfo), implementationMethodInfo);
+                yield return Create(methodInfo, implementationMethodInfo);
             }
         }
 
@@ -52,9 +54,9 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
 
         #region Private Method
 
-        private ServiceEntry Create(string serviceId, MethodBase implementationMethod)
+        private ServiceEntry Create(MethodInfo method, MethodBase implementationMethod)
         {
-            var type = implementationMethod.DeclaringType;
+            var serviceId = _serviceIdGenerator.GenerateServiceId(method);
 
             return new ServiceEntry
             {
@@ -63,23 +65,27 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
                     Id = serviceId
                 },
                 Func = parameters =>
-                {
-                    var instance = _serviceFactory.Create(type);
+               {
+                   var serviceScopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+                   using (var scope = serviceScopeFactory.CreateScope())
+                   {
+                       var instance = scope.ServiceProvider.GetRequiredService(method.DeclaringType);
 
-                    var list = new List<object>();
-                    foreach (var parameterInfo in implementationMethod.GetParameters())
-                    {
-                        var value = parameters[parameterInfo.Name];
-                        var parameterType = parameterInfo.ParameterType;
+                       var list = new List<object>();
+                       foreach (var parameterInfo in implementationMethod.GetParameters())
+                       {
+                           var value = parameters[parameterInfo.Name];
+                           var parameterType = parameterInfo.ParameterType;
 
-                        var parameter = _typeConvertibleService.Convert(value, parameterType);
-                        list.Add(parameter);
-                    }
+                           var parameter = _typeConvertibleService.Convert(value, parameterType);
+                           list.Add(parameter);
+                       }
 
-                    var result = implementationMethod.Invoke(instance, list.ToArray());
+                       var result = implementationMethod.Invoke(instance, list.ToArray());
 
-                    return result;
-                }
+                       return Task.FromResult(result);
+                   }
+               }
             };
         }
 
