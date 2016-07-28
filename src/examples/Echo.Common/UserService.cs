@@ -16,7 +16,7 @@ namespace Echo.Common
         public int Age { get; set; }
     }
 
-    [RpcService]
+    [RpcServiceBundle]
     public interface IUserService
     {
         Task<string> GetUserName(int id);
@@ -33,6 +33,7 @@ namespace Echo.Common
 
         Task<IDictionary<string, string>> GetDictionary();
 
+        [RpcService(IsWaitReturn = false)]
         Task Try();
 
         Task TryThrowException();
@@ -83,12 +84,9 @@ namespace Echo.Common
 
         public async Task Try()
         {
+            Console.WriteLine("start");
             await Task.Delay(5000);
-            /*#if NET
-                                    return Task.FromResult(1);
-                        #else
-                                    return Task.CompletedTask;
-                        #endif*/
+            Console.WriteLine("end");
         }
 
         public Task TryThrowException()

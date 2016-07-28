@@ -5,12 +5,12 @@ using Rabbit.Rpc;
 using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Runtime.Server;
-using Rabbit.Transport.DotNetty;
 using Rabbit.Transport.Simple;
 using System;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Echo.Server
@@ -21,11 +21,13 @@ namespace Echo.Server
         {
             //因为没有引用Echo.Common中的任何类型
             //所以强制加载Echo.Common程序集以保证Echo.Common在AppDomain中被加载。
-            Assembly.Load("Echo.Common");
+            Assembly.Load(new AssemblyName("Echo.Common"));
         }
 
         public static void Main(string[] args)
         {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
             var serviceCollection = new ServiceCollection();
 
             serviceCollection
@@ -39,7 +41,7 @@ namespace Echo.Server
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             serviceProvider.GetRequiredService<ILoggerFactory>()
-                .AddConsole((c,l)=>true);
+                .AddConsole((c, l) => (int)l >= 3);
 
             //自动生成服务路由（这边的文件与Echo.Client为强制约束）
             {

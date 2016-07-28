@@ -42,11 +42,100 @@ namespace Rabbit.Rpc.Transport.Implementation
         #region Implementation of ITransportClient
 
         /// <summary>
+        /// 发送传输消息。
+        /// </summary>
+        /// <param name="message">传输消息。</param>
+        /// <returns>一个任务。</returns>
+        public async Task SendAsync(TransportMessage message)
+        {
+            try
+            {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug("准备发送消息。");
+
+                try
+                {
+                    //发送
+                    await _messageSender.SendAndFlushAsync(message);
+
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.LogDebug("消息发送成功。");
+                }
+                catch (Exception exception)
+                {
+                    throw new RpcCommunicationException("与服务端通讯时发生了异常。", exception);
+                }
+            }
+            catch (Exception exception)
+            {
+                if (_logger.IsEnabled(LogLevel.Error))
+                    _logger.LogError("消息发送失败。", exception);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 根据消息Id接收一个传输消息。
+        /// </summary>
+        /// <param name="messageId">消息Id。</param>
+        /// <returns>传输消息。</returns>
+        public async Task<TransportMessage> ReceiveAsync(string messageId)
+        {
+            var taskCompletionSource = _resultDictionary.GetOrAdd(messageId, k => new TaskCompletionSource<TransportMessage>());
+            try
+            {
+                return await taskCompletionSource.Task;
+            }
+            finally
+            {
+                //删除回调任务
+                TaskCompletionSource<TransportMessage> value;
+                _resultDictionary.TryRemove(messageId, out value);
+            }
+        }
+
+        /// <summary>
         /// 发送消息。
         /// </summary>
         /// <param name="message">远程调用消息模型。</param>
         /// <returns>远程调用消息的传输消息。</returns>
-        public async Task<RemoteInvokeResultMessage> SendAsync(RemoteInvokeMessage message)
+        public async Task<TransportMessage> SendAsync(RemoteInvokeMessage message)
+        {
+            try
+            {
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug("准备发送消息。");
+
+                var transportMessage = TransportMessage.CreateInvokeMessage(message);
+
+                try
+                {
+                    //发送
+                    await _messageSender.SendAndFlushAsync(transportMessage);
+
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                        _logger.LogDebug("消息发送成功。");
+                    return transportMessage;
+                }
+                catch (Exception exception)
+                {
+                    throw new RpcCommunicationException("与服务端通讯时发生了异常。", exception);
+                }
+            }
+            catch (Exception exception)
+            {
+                if (_logger.IsEnabled(LogLevel.Error))
+                    _logger.LogError("消息发送失败。", exception);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 发送消息。
+        /// </summary>
+        /// <param name="message">远程调用消息模型。</param>
+        /// <returns>远程调用结果消息的传输消息。</returns>
+        public async Task<RemoteInvokeResultMessage> SendAndWaitReturnAsync(RemoteInvokeMessage message)
         {
             try
             {
@@ -56,7 +145,7 @@ namespace Rabbit.Rpc.Transport.Implementation
                 var transportMessage = TransportMessage.CreateInvokeMessage(message);
 
                 //注册结果回调
-                var callbackTask = RegisterResultCallbackAsync(transportMessage.Id);
+                var callbackTask = ReceiveAsync(transportMessage.Id);
 
                 try
                 {
@@ -71,7 +160,8 @@ namespace Rabbit.Rpc.Transport.Implementation
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.LogDebug("消息发送成功。");
 
-                return await callbackTask;
+                var returnMessage = await callbackTask;
+                return returnMessage.GetContent<RemoteInvokeResultMessage>();
             }
             catch (Exception exception)
             {
@@ -100,31 +190,6 @@ namespace Rabbit.Rpc.Transport.Implementation
         #endregion Implementation of IDisposable
 
         #region Private Method
-
-        /// <summary>
-        /// 注册指定消息的回调任务。
-        /// </summary>
-        /// <param name="id">消息Id。</param>
-        /// <returns>远程调用结果消息模型。</returns>
-        private async Task<RemoteInvokeResultMessage> RegisterResultCallbackAsync(string id)
-        {
-            if (_logger.IsEnabled(LogLevel.Debug))
-                _logger.LogDebug($"准备获取Id为：{id}的响应内容。");
-
-            var task = new TaskCompletionSource<TransportMessage>();
-            _resultDictionary.TryAdd(id, task);
-            try
-            {
-                var result = await task.Task;
-                return result.GetContent<RemoteInvokeResultMessage>();
-            }
-            finally
-            {
-                //删除回调任务
-                TaskCompletionSource<TransportMessage> value;
-                _resultDictionary.TryRemove(id, out value);
-            }
-        }
 
         private async void MessageListener_Received(IMessageSender sender, TransportMessage message)
         {

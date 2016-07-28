@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Rpc.Convertibles;
 using Rabbit.Rpc.Ids;
+using Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -58,12 +59,20 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Implementati
         {
             var serviceId = _serviceIdGenerator.GenerateServiceId(method);
 
+            var serviceDescriptor = new ServiceDescriptor
+            {
+                Id = serviceId
+            };
+
+            var descriptorAttributes = method.GetCustomAttributes<RpcServiceDescriptorAttribute>();
+            foreach (var descriptorAttribute in descriptorAttributes)
+            {
+                descriptorAttribute.Apply(serviceDescriptor);
+            }
+
             return new ServiceEntry
             {
-                Descriptor = new ServiceDescriptor
-                {
-                    Id = serviceId
-                },
+                Descriptor = serviceDescriptor,
                 Func = parameters =>
                {
                    var serviceScopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();

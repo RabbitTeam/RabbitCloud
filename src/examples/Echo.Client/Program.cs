@@ -8,8 +8,8 @@ using Rabbit.Transport.Simple;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
-using WeChatDistribution.RpcAbstractions;
 
 namespace Echo.Client
 {
@@ -17,6 +17,8 @@ namespace Echo.Client
     {
         public static void Main(string[] args)
         {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
             var serviceCollection = new ServiceCollection();
 
             serviceCollection
@@ -28,55 +30,42 @@ namespace Echo.Client
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             serviceProvider.GetRequiredService<ILoggerFactory>()
-                .AddConsole((c, l) => true);
+                .AddConsole((c, l) => (int)l >= 3);
 
             var serviceProxyGenerater = serviceProvider.GetRequiredService<IServiceProxyGenerater>();
             var serviceProxyFactory = serviceProvider.GetRequiredService<IServiceProxyFactory>();
-            var services = serviceProxyGenerater.GenerateProxys(new[] { typeof(IUserService), typeof(IMessageHandler), typeof(IMessageStoreService) }).ToArray();
+            var services = serviceProxyGenerater.GenerateProxys(new[] { typeof(IUserService) }).ToArray();
 
             //创建IUserService的代理。
             var userService = serviceProxyFactory.CreateProxy<IUserService>(services.Single(typeof(IUserService).GetTypeInfo().IsAssignableFrom));
-            var messageHandler = serviceProxyFactory.CreateProxy<IMessageHandler>(services.Single(typeof(IMessageHandler).GetTypeInfo().IsAssignableFrom));
-            var messageStoreService = serviceProxyFactory.CreateProxy<IMessageStoreService>(services.Single(typeof(IMessageStoreService).GetTypeInfo().IsAssignableFrom));
 
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
             while (true)
             {
-                try
+                Task.Run(async () =>
                 {
-                    Task.Run(async () =>
+                    try
                     {
-                        Console.WriteLine("start");
-                        await userService.Exists(1);
-                        userService.Try();
-                        /*                        var model = new WeChatMessageModel
-                                                {
-                                                    Content = "test",
-                                                    Id = Guid.NewGuid().ToString(),
-                                                    ShellName = "xwyh"
-                                                };
-                                                await messageStoreService.StoreAsync(model);
-                                                userService.HandleAsync(model);*/
-                        Console.WriteLine("end");
-                    }).Wait();
-                    /*                        Console.WriteLine($"userService.GetUserName:{await userService.GetUserName(1)}");
-                                                                    Console.WriteLine($"userService.GetUserId:{await userService.GetUserId("rabbit")}");
-                                                                    Console.WriteLine(
-                                                                        $"userService.GetUserLastSignInTime:{await userService.GetUserLastSignInTime(1)}");
-                                                                    Console.WriteLine($"userService.Exists:{await userService.Exists(1)}");
-                                                                    var user = await userService.GetUser(1);
-                                                                    Console.WriteLine($"userService.GetUser:name={user.Name},age={user.Age}");
-                                                                    Console.WriteLine($"userService.Update:{await userService.Update(1, user)}");
-                                                                    Console.WriteLine($"userService.GetDictionary:{(await userService.GetDictionary())["key"]}");
-                                                                    await userService.TryThrowException();*/
-                }
-                catch (RpcRemoteException remoteException)
-                {
-                    logger.LogError(remoteException.Message);
-                }
-                catch
-                {
-                }
+                        Console.WriteLine($"userService.GetUserName:{await userService.GetUserName(1)}");
+                        Console.WriteLine($"userService.GetUserId:{await userService.GetUserId("rabbit")}");
+                        Console.WriteLine(
+                            $"userService.GetUserLastSignInTime:{await userService.GetUserLastSignInTime(1)}");
+                        Console.WriteLine($"userService.Exists:{await userService.Exists(1)}");
+                        var user = await userService.GetUser(1);
+                        Console.WriteLine($"userService.GetUser:name={user.Name},age={user.Age}");
+                        Console.WriteLine($"userService.Update:{await userService.Update(1, user)}");
+                        Console.WriteLine($"userService.GetDictionary:{(await userService.GetDictionary())["key"]}");
+                        await userService.Try();
+                        await userService.TryThrowException();
+                    }
+                    catch (RpcRemoteException remoteException)
+                    {
+                        logger.LogError(remoteException.Message);
+                    }
+                    catch
+                    {
+                    }
+                }).Wait();
                 Console.ReadLine();
             }
         }

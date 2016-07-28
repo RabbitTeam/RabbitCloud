@@ -14,7 +14,7 @@ namespace Rabbit.Rpc
         /// </summary>
         /// <param name="descriptor">服务描述符。</param>
         /// <returns>组名称。</returns>
-        public static string GetGroupName(this ServiceDescriptor descriptor)
+        public static string GroupName(this ServiceDescriptor descriptor)
         {
             return descriptor.GetMetadata<string>("groupName");
         }
@@ -25,11 +25,22 @@ namespace Rabbit.Rpc
         /// <param name="descriptor">服务描述符。</param>
         /// <param name="groupName">组名称。</param>
         /// <returns>服务描述符。</returns>
-        public static ServiceDescriptor SetGroupName(this ServiceDescriptor descriptor, string groupName)
+        public static ServiceDescriptor GroupName(this ServiceDescriptor descriptor, string groupName)
         {
             descriptor.Metadatas["groupName"] = groupName;
 
             return descriptor;
+        }
+
+        public static ServiceDescriptor WaitReturn(this ServiceDescriptor descriptor, bool waitReturn)
+        {
+            descriptor.Metadatas["waitReturn"] = waitReturn;
+            return descriptor;
+        }
+
+        public static bool WaitReturn(this ServiceDescriptor descriptor)
+        {
+            return descriptor.GetMetadata("waitReturn", true);
         }
     }
 

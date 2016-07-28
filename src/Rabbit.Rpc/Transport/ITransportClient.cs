@@ -9,10 +9,17 @@ namespace Rabbit.Rpc.Transport
     public interface ITransportClient
     {
         /// <summary>
-        /// 发送消息。
+        /// 发送传输消息。
         /// </summary>
-        /// <param name="message">远程调用消息模型。</param>
-        /// <returns>远程调用消息的传输消息。</returns>
-        Task<RemoteInvokeResultMessage> SendAsync(RemoteInvokeMessage message);
+        /// <param name="message">传输消息。</param>
+        /// <returns>一个任务。</returns>
+        Task SendAsync(TransportMessage message);
+
+        /// <summary>
+        /// 根据消息Id接收一个传输消息。
+        /// </summary>
+        /// <param name="messageId">消息Id。</param>
+        /// <returns>传输消息。</returns>
+        Task<TransportMessage> ReceiveAsync(string messageId);
     }
 }
