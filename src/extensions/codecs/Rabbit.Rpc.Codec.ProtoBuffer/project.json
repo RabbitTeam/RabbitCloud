@@ -1,5 +1,5 @@
 ﻿{
-  "version": "1.0.0-alpha1",
+  "version": "1.0.0-alpha1-*",
   "description": "基于ProtoBuffer的Rpc消息编解码器扩展。",
   "copyright": "© RabbitHub. All rights reserved.",
   "authors": [ "majian" ],

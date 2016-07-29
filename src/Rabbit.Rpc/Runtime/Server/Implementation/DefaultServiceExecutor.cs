@@ -78,8 +78,12 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             {
                 //通知客户端已接收到消息。
                 await SendRemoteInvokeResult(sender, message.Id, resultMessage);
-                //执行本地代码。
-                await LocalExecuteAsync(entry, remoteInvokeMessage, resultMessage);
+                //确保新起一个线程执行，不堵塞当前线程。
+                await Task.Factory.StartNew(async () =>
+                {
+                    //执行本地代码。
+                    await LocalExecuteAsync(entry, remoteInvokeMessage, resultMessage);
+                }, TaskCreationOptions.LongRunning);
             }
         }
 
