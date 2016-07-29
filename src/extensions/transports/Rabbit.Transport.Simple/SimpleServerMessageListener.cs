@@ -42,21 +42,28 @@ namespace Rabbit.Transport.Simple
         /// </summary>
         /// <param name="sender">消息发送者。</param>
         /// <param name="message">接收到的消息。</param>
-        public void OnReceived(IMessageSender sender, TransportMessage message)
+        /// <returns>一个任务。</returns>
+        public async Task OnReceived(IMessageSender sender, TransportMessage message)
         {
-            Received?.Invoke(sender, message);
+            if (Received == null)
+                return;
+            await Received(sender, message);
         }
 
         #endregion Implementation of IMessageListener
 
         public async Task StartAsync(EndPoint endPoint)
         {
-            var config = new TcpSocketSaeaServerConfiguration();
-            _server = new TcpSocketSaeaServer((IPEndPoint)endPoint, new SimpleMessageDispatcher((session, message) =>
+            _server = new TcpSocketSaeaServer((IPEndPoint)endPoint, async (session, data, offset, count) =>
             {
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("接收到数据包。");
+                var message = _transportMessageDecoder.Decode(data.Skip(offset).Take(count).ToArray());
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("接收到消息：" + message.Id);
                 var sender = new SimpleServerMessageSender(_transportMessageEncoder, session, _logger);
-                OnReceived(sender, message);
-            }, _transportMessageDecoder, _logger), config);
+                await OnReceived(sender, message);
+            });
             _server.Listen();
 
 #if NET
@@ -64,57 +71,6 @@ namespace Rabbit.Transport.Simple
 #else
             await Task.CompletedTask;
 #endif
-        }
-
-        private class SimpleMessageDispatcher : ITcpSocketSaeaServerMessageDispatcher
-        {
-            private readonly Action<TcpSocketSaeaSession, TransportMessage> _readAction;
-            private readonly ITransportMessageDecoder _transportMessageDecoder;
-            private readonly ILogger _logger;
-
-            public SimpleMessageDispatcher(Action<TcpSocketSaeaSession, TransportMessage> readAction, ITransportMessageDecoder transportMessageDecoder, ILogger logger)
-            {
-                _readAction = readAction;
-                _transportMessageDecoder = transportMessageDecoder;
-                _logger = logger;
-            }
-
-            #region Implementation of ITcpSocketSaeaServerMessageDispatcher
-
-            public Task OnSessionStarted(TcpSocketSaeaSession session)
-            {
-#if NET
-                return Task.FromResult(1);
-#else
-                return Task.CompletedTask;
-#endif
-            }
-
-            public Task OnSessionDataReceived(TcpSocketSaeaSession session, byte[] data, int offset, int count)
-            {
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.LogInformation("接收到数据包。");
-                var message = _transportMessageDecoder.Decode(data.Skip(offset).Take(count).ToArray());
-                if (_logger.IsEnabled(LogLevel.Information))
-                    _logger.LogInformation("接收到消息：" + message.Id);
-                _readAction(session, message);
-#if NET
-                return Task.FromResult(1);
-#else
-                return Task.CompletedTask;
-#endif
-            }
-
-            public Task OnSessionClosed(TcpSocketSaeaSession session)
-            {
-#if NET
-                return Task.FromResult(1);
-#else
-                return Task.CompletedTask;
-#endif
-            }
-
-            #endregion Implementation of ITcpSocketSaeaServerMessageDispatcher
         }
 
         #region Implementation of IDisposable

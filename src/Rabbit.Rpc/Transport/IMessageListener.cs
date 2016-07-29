@@ -1,4 +1,5 @@
 ﻿using Rabbit.Rpc.Messages;
+using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Transport
 {
@@ -7,7 +8,7 @@ namespace Rabbit.Rpc.Transport
     /// </summary>
     /// <param name="sender">消息发送者。</param>
     /// <param name="message">接收到的消息。</param>
-    public delegate void ReceivedDelegate(IMessageSender sender, TransportMessage message);
+    public delegate Task ReceivedDelegate(IMessageSender sender, TransportMessage message);
 
     /// <summary>
     /// 一个抽象的消息监听者。
@@ -24,6 +25,7 @@ namespace Rabbit.Rpc.Transport
         /// </summary>
         /// <param name="sender">消息发送者。</param>
         /// <param name="message">接收到的消息。</param>
-        void OnReceived(IMessageSender sender, TransportMessage message);
+        /// <returns>一个任务。</returns>
+        Task OnReceived(IMessageSender sender, TransportMessage message);
     }
 }

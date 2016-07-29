@@ -8,7 +8,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 
 namespace Rabbit.Transport.Simple
 {
@@ -39,15 +38,26 @@ namespace Rabbit.Transport.Simple
         /// <returns>传输客户端实例。</returns>
         public ITransportClient CreateClient(EndPoint endPoint)
         {
-            var config = new TcpSocketSaeaClientConfiguration();
             var key = endPoint.ToString();
             return _clients.GetOrAdd(key, k => new Lazy<ITransportClient>(() =>
             {
                 var messageListener = new MessageListener();
                 Func<TcpSocketSaeaClient> clientFactory = () =>
                 {
-                    var client = new TcpSocketSaeaClient((IPEndPoint)endPoint,
-                        new SimpleMessageDispatcher(messageListener, _transportMessageCodecFactory, _logger), config);
+                    var client = new TcpSocketSaeaClient((IPEndPoint)endPoint, async (c, data, offset, count) =>
+                     {
+                         if (_logger.IsEnabled(LogLevel.Information))
+                             _logger.LogInformation("接收到数据包。");
+
+                         var transportMessageDecoder = _transportMessageCodecFactory.GetDecoder();
+                         var transportMessageEncoder = _transportMessageCodecFactory.GetEncoder();
+                         var message = transportMessageDecoder.Decode(data.Skip(offset).Take(count).ToArray());
+
+                         if (_logger.IsEnabled(LogLevel.Information))
+                             _logger.LogInformation("接收到消息：" + message.Id);
+
+                         await messageListener.OnReceived(new SimpleClientMessageSender(transportMessageEncoder, c), message);
+                     });
                     client.Connect().Wait();
                     return client;
                 };
@@ -69,62 +79,5 @@ namespace Rabbit.Transport.Simple
         }
 
         #endregion Implementation of IDisposable
-    }
-
-    internal class SimpleMessageDispatcher : ITcpSocketSaeaClientMessageDispatcher
-    {
-        private readonly IMessageListener _messageListener;
-        private readonly ILogger _logger;
-        private readonly ITransportMessageEncoder _transportMessageEncoder;
-        private readonly ITransportMessageDecoder _transportMessageDecoder;
-
-        public SimpleMessageDispatcher(IMessageListener messageListener, ITransportMessageCodecFactory transportMessageCodecFactory, ILogger logger)
-        {
-            _messageListener = messageListener;
-            _logger = logger;
-            _transportMessageEncoder = transportMessageCodecFactory.GetEncoder();
-            _transportMessageDecoder = transportMessageCodecFactory.GetDecoder();
-        }
-
-        #region Implementation of ITcpSocketSaeaClientMessageDispatcher
-
-        public Task OnServerConnected(TcpSocketSaeaClient client)
-        {
-#if NET
-            return Task.FromResult(1);
-#else
-            return Task.CompletedTask;
-#endif
-        }
-
-        public async Task OnServerDataReceived(TcpSocketSaeaClient client, byte[] data, int offset, int count)
-        {
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation("接收到数据包。");
-
-            var message = _transportMessageDecoder.Decode(data.Skip(offset).Take(count).ToArray());
-
-            if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation("接收到消息：" + message.Id);
-
-            _messageListener.OnReceived(new SimpleClientMessageSender(_transportMessageEncoder, client), message);
-
-#if NET
-            await Task.FromResult(1);
-#else
-            await Task.CompletedTask;
-#endif
-        }
-
-        public Task OnServerDisconnected(TcpSocketSaeaClient client)
-        {
-#if NET
-            return Task.FromResult(1);
-#else
-            return Task.CompletedTask;
-#endif
-        }
-
-        #endregion Implementation of ITcpSocketSaeaClientMessageDispatcher
     }
 }

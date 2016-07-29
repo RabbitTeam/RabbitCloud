@@ -122,7 +122,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.LogDebug("准备发送响应消息。");
 
-                await sender.SendAsync(TransportMessage.CreateInvokeResultMessage(messageId, resultMessage));
+                await sender.SendAndFlushAsync(TransportMessage.CreateInvokeResultMessage(messageId, resultMessage));
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.LogDebug("响应消息发送成功。");
             }

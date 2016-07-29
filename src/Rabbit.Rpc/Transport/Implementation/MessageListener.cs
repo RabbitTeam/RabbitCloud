@@ -1,4 +1,5 @@
 ﻿using Rabbit.Rpc.Messages;
+using System.Threading.Tasks;
 
 namespace Rabbit.Rpc.Transport.Implementation
 {
@@ -19,9 +20,12 @@ namespace Rabbit.Rpc.Transport.Implementation
         /// </summary>
         /// <param name="sender">消息发送者。</param>
         /// <param name="message">接收到的消息。</param>
-        public void OnReceived(IMessageSender sender, TransportMessage message)
+        /// <returns>一个任务。</returns>
+        public async Task OnReceived(IMessageSender sender, TransportMessage message)
         {
-            Received?.Invoke(sender, message);
+            if (Received == null)
+                return;
+            await Received(sender, message);
         }
 
         #endregion Implementation of IMessageListener

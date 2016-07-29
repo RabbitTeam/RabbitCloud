@@ -44,9 +44,12 @@ namespace Rabbit.Transport.DotNetty
         /// </summary>
         /// <param name="sender">消息发送者。</param>
         /// <param name="message">接收到的消息。</param>
-        public void OnReceived(IMessageSender sender, TransportMessage message)
+        /// <returns>一个任务。</returns>
+        public async Task OnReceived(IMessageSender sender, TransportMessage message)
         {
-            Received?.Invoke(sender, message);
+            if (Received == null)
+                return;
+            await Received(sender, message);
         }
 
         #endregion Implementation of IMessageListener
@@ -69,10 +72,10 @@ namespace Rabbit.Transport.DotNetty
                     pipeline.AddLast(new LengthFieldPrepender(4));
                     pipeline.AddLast(new LengthFieldBasedFrameDecoder(int.MaxValue, 0, 4, 0, 4));
                     pipeline.AddLast(new TransportMessageChannelHandlerAdapter(_transportMessageDecoder));
-                    pipeline.AddLast(new ServerHandler((contenxt, message) =>
+                    pipeline.AddLast(new ServerHandler(async (contenxt, message) =>
                     {
                         var sender = new DotNettyServerMessageSender(_transportMessageEncoder, contenxt);
-                        OnReceived(sender, message);
+                        await OnReceived(sender, message);
                     }, _logger));
                 }));
             _channel = await bootstrap.BindAsync(endPoint);

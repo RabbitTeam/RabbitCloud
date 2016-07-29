@@ -52,7 +52,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
 
         #region Private Method
 
-        private async void MessageListener_Received(IMessageSender sender, TransportMessage message)
+        private async Task MessageListener_Received(IMessageSender sender, TransportMessage message)
         {
             await _serviceExecutor.ExecuteAsync(sender, message);
         }
