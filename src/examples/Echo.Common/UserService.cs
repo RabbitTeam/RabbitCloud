@@ -33,7 +33,7 @@ namespace Echo.Common
 
         Task<IDictionary<string, string>> GetDictionary();
 
-        [RpcService(IsWaitReturn = false)]
+        [RpcService(IsWaitExecution = false)]
         Task Try();
 
         Task TryThrowException();

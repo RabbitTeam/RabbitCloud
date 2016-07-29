@@ -13,13 +13,13 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Attributes
         /// </summary>
         public RpcServiceAttribute()
         {
-            IsWaitReturn = true;
+            IsWaitExecution = true;
         }
 
         /// <summary>
-        /// 是否需要等待返回结果。
+        /// 是否需要等待服务执行。
         /// </summary>
-        public bool IsWaitReturn { get; set; }
+        public bool IsWaitExecution { get; set; }
 
         #region Overrides of RpcServiceDescriptorAttribute
 
@@ -29,7 +29,7 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation.ServiceDiscovery.Attributes
         /// <param name="descriptor">服务描述符。</param>
         public override void Apply(ServiceDescriptor descriptor)
         {
-            descriptor.WaitReturn(IsWaitReturn);
+            descriptor.WaitExecution(IsWaitExecution);
         }
 
         #endregion Overrides of RpcServiceDescriptorAttribute

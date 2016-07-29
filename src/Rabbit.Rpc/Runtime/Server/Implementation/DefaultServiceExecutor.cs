@@ -65,6 +65,30 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
                 _logger.LogDebug("准备执行本地逻辑。");
 
             var resultMessage = new RemoteInvokeResultMessage();
+
+            //是否需要等待执行。
+            if (entry.Descriptor.WaitExecution())
+            {
+                //执行本地代码。
+                await LocalExecuteAsync(entry, remoteInvokeMessage, resultMessage);
+                //向客户端发送调用结果。
+                await SendRemoteInvokeResult(sender, message.Id, resultMessage);
+            }
+            else
+            {
+                //通知客户端已接收到消息。
+                await SendRemoteInvokeResult(sender, message.Id, resultMessage);
+                //执行本地代码。
+                await LocalExecuteAsync(entry, remoteInvokeMessage, resultMessage);
+            }
+        }
+
+        #endregion Implementation of IServiceExecutor
+
+        #region Private Method
+
+        private async Task LocalExecuteAsync(ServiceEntry entry, RemoteInvokeMessage remoteInvokeMessage, RemoteInvokeResultMessage resultMessage)
+        {
             try
             {
                 var result = await entry.Func(remoteInvokeMessage.Parameters);
@@ -89,13 +113,16 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
                     _logger.LogError("执行本地逻辑时候发生了错误。", exception);
                 resultMessage.ExceptionMessage = GetExceptionMessage(exception);
             }
+        }
 
+        private async Task SendRemoteInvokeResult(IMessageSender sender, string messageId, RemoteInvokeResultMessage resultMessage)
+        {
             try
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.LogDebug("准备发送响应消息。");
 
-                await sender.SendAsync(TransportMessage.CreateInvokeResultMessage(message.Id, resultMessage));
+                await sender.SendAsync(TransportMessage.CreateInvokeResultMessage(messageId, resultMessage));
                 if (_logger.IsEnabled(LogLevel.Debug))
                     _logger.LogDebug("响应消息发送成功。");
             }
@@ -105,10 +132,6 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
                     _logger.LogError("发送响应消息时候发生了异常。", exception);
             }
         }
-
-        #endregion Implementation of IServiceExecutor
-
-        #region Private Method
 
         private static string GetExceptionMessage(Exception exception)
         {

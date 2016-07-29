@@ -16,7 +16,7 @@ namespace Rabbit.Rpc
         /// <returns>组名称。</returns>
         public static string GroupName(this ServiceDescriptor descriptor)
         {
-            return descriptor.GetMetadata<string>("groupName");
+            return descriptor.GetMetadata<string>("GroupName");
         }
 
         /// <summary>
@@ -27,20 +27,31 @@ namespace Rabbit.Rpc
         /// <returns>服务描述符。</returns>
         public static ServiceDescriptor GroupName(this ServiceDescriptor descriptor, string groupName)
         {
-            descriptor.Metadatas["groupName"] = groupName;
+            descriptor.Metadatas["GroupName"] = groupName;
 
             return descriptor;
         }
 
-        public static ServiceDescriptor WaitReturn(this ServiceDescriptor descriptor, bool waitReturn)
+        /// <summary>
+        /// 设置是否等待执行。
+        /// </summary>
+        /// <param name="descriptor">服务描述符。</param>
+        /// <param name="waitExecution">如果需要等待执行则为true，否则为false，默认为true。</param>
+        /// <returns></returns>
+        public static ServiceDescriptor WaitExecution(this ServiceDescriptor descriptor, bool waitExecution)
         {
-            descriptor.Metadatas["waitReturn"] = waitReturn;
+            descriptor.Metadatas["WaitExecution"] = waitExecution;
             return descriptor;
         }
 
-        public static bool WaitReturn(this ServiceDescriptor descriptor)
+        /// <summary>
+        /// 获取释放等待执行的设置。
+        /// </summary>
+        /// <param name="descriptor">服务描述符。</param>
+        /// <returns>如果需要等待执行则为true，否则为false，默认为true。</returns>
+        public static bool WaitExecution(this ServiceDescriptor descriptor)
         {
-            return descriptor.GetMetadata("waitReturn", true);
+            return descriptor.GetMetadata("WaitExecution", true);
         }
     }
 

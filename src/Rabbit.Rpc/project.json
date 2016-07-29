@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-alpha1",
+  "version": "1.0.0-alpha1-*",
   "description": "一个轻量级跨平台的Rpc。",
   "copyright": "© RabbitHub. All rights reserved.",
   "authors": [ "majian" ],
