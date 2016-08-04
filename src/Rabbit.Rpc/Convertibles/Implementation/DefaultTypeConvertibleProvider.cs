@@ -25,6 +25,7 @@ namespace Rabbit.Rpc.Convertibles.Implementation
         /// <returns>类型转换器集合。</returns>
         public IEnumerable<TypeConvertDelegate> GetConverters()
         {
+            yield return EnumTypeConvert;
             yield return SimpleTypeConvert;
             yield return ComplexTypeConvert;
         }
@@ -33,12 +34,17 @@ namespace Rabbit.Rpc.Convertibles.Implementation
 
         #region Private Method
 
+        private static object EnumTypeConvert(object instance, Type conversionType)
+        {
+            if (instance == null || !conversionType.GetTypeInfo().IsEnum)
+                return null;
+            return Enum.Parse(conversionType, instance.ToString());
+        }
+
         private static object SimpleTypeConvert(object instance, Type conversionType)
         {
             if (instance is IConvertible && typeof(IConvertible).GetTypeInfo().IsAssignableFrom(conversionType))
-            {
                 return Convert.ChangeType(instance, conversionType);
-            }
             return null;
         }
 
