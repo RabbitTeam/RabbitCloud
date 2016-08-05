@@ -1,6 +1,7 @@
 ﻿using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Routing.Implementation;
+using Rabbit.Rpc.Runtime.Client.HealthChecks;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,11 +16,14 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.I
     /// </summary>
     public class PollingAddressSelector : AddressSelectorBase
     {
+        private readonly IHealthCheckService _healthCheckService;
+
         private readonly ConcurrentDictionary<string, Lazy<AddressEntry>> _concurrent =
             new ConcurrentDictionary<string, Lazy<AddressEntry>>();
 
-        public PollingAddressSelector(IServiceRouteManager serviceRouteManager)
+        public PollingAddressSelector(IServiceRouteManager serviceRouteManager, IHealthCheckService healthCheckService)
         {
+            _healthCheckService = healthCheckService;
             //路由发生变更时重建地址条目。
             serviceRouteManager.Changed += ServiceRouteManager_Removed;
             serviceRouteManager.Removed += ServiceRouteManager_Removed;
@@ -32,13 +36,18 @@ namespace Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.I
         /// </summary>
         /// <param name="context">地址选择上下文。</param>
         /// <returns>地址模型。</returns>
-        protected override Task<AddressModel> SelectAsync(AddressSelectContext context)
+        protected override async Task<AddressModel> SelectAsync(AddressSelectContext context)
         {
             var key = GetCacheKey(context.Descriptor);
             //根据服务id缓存服务地址。
-            var address = _concurrent.GetOrAdd(key, k => new Lazy<AddressEntry>(() => new AddressEntry(context.Address))).Value;
+            var addressEntry = _concurrent.GetOrAdd(key, k => new Lazy<AddressEntry>(() => new AddressEntry(context.Address))).Value;
 
-            return Task.FromResult(address.GetAddress());
+            AddressModel addressModel;
+            do
+            {
+                addressModel = addressEntry.GetAddress();
+            } while (await _healthCheckService.IsHealth(addressModel) == false);
+            return addressModel;
         }
 
         #endregion Overrides of AddressSelectorBase
