@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Rabbit.Rpc.Runtime.Server.Implementation
 {
@@ -20,7 +22,13 @@ namespace Rabbit.Rpc.Runtime.Server.Implementation
             var list = new List<ServiceEntry>();
             foreach (var provider in providers)
             {
-                list.AddRange(provider.GetEntries());
+                var entries = provider.GetEntries().ToArray();
+                foreach (var entry in entries)
+                {
+                    if (list.Any(i => i.Descriptor.Id == entry.Descriptor.Id))
+                        throw new InvalidOperationException($"本地包含多个Id为：{entry.Descriptor.Id} 的服务条目。");
+                }
+                list.AddRange(entries);
             }
             _serviceEntries = list.ToArray();
         }
