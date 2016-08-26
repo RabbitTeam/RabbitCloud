@@ -57,6 +57,7 @@ namespace Rabbit.Rpc.ProxyGenerator.Implementation
 #else
             var assemblys = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default).Select(z => Assembly.Load(new AssemblyName(z.Name))));
 #endif
+            assemblys = assemblys.Where(i => i.IsDynamic == false).ToArray();
             var trees = interfacTypes.Select(GenerateProxyTree).ToList();
             var stream = CompilationUtilitys.CompileClientProxy(trees,
                 assemblys
