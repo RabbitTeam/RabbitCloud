@@ -1,23 +1,18 @@
-﻿using RabbitCloud.Rpc.Default.Utils;
+﻿using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Default.Utils;
 
 namespace RabbitCloud.Rpc.Default.Service.Message
 {
     public class RequestMessage : RpcMessage
     {
-        public string MethodName { get; set; }
+        public Invocation Invocation { get; set; }
 
-        /// <summary>
-        /// 服务参数。
-        /// </summary>
-        public object[] Arguments { get; set; }
-
-        public static RequestMessage Create(string methodName, object[] arguments)
+        public static RequestMessage Create(Invocation invocation)
         {
             return new RequestMessage
             {
                 Id = MessageIdGenerator.GeneratorId(),
-                Arguments = arguments,
-                MethodName = methodName
+                Invocation = invocation
             };
         }
     }

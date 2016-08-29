@@ -107,13 +107,10 @@ namespace RabbitCloud.Rpc.Default.Service
 
                 server.Received += async request =>
                 {
-                    var invocation = new Invocation
-                    {
-                        MethodName = request.MethodName,
-                        Arguments = request.Arguments
-                    };
+                    var invocation = request.Invocation;
+
                     var result = await exporter.Invoker.Invoke(invocation);
-                    return ResponseMessage.Create(request, result.Value, result.Exception?.Message);
+                    return ResponseMessage.Create(request, result.Value, result.Exception);
                 };
 
                 return server;

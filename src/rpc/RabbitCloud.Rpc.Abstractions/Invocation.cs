@@ -11,7 +11,6 @@ namespace RabbitCloud.Rpc.Abstractions
     {
         string MethodName { get; }
         Type[] ParameterTypes { get; }
-
         object[] Arguments { get; }
     }
 

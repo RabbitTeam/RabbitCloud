@@ -3,7 +3,6 @@ using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Protocol;
 using RabbitCloud.Rpc.Default.Service;
 using RabbitCloud.Rpc.Default.Service.Message;
-using System;
 using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Default
@@ -21,9 +20,13 @@ namespace RabbitCloud.Rpc.Default
 
         protected override async Task<IResult> DoInvoke(IInvocation invocation)
         {
-            var responseMessage = await _clientEntry.Send(RequestMessage.Create(invocation.MethodName, invocation.Arguments));
+            var requestMessage = RequestMessage.Create((Invocation)invocation);
 
-            return !string.IsNullOrEmpty(responseMessage.ExceptionMessage) ? new Result(new Exception(responseMessage.ExceptionMessage)) : new Result(responseMessage.Result);
+            var responseMessage = await _clientEntry.Send(requestMessage);
+
+            return responseMessage.Exception == null
+                ? new Result(responseMessage.Result)
+                : new Result(responseMessage.Exception);
         }
 
         #endregion Overrides of ProtocolInvoker

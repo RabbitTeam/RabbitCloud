@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RabbitCloud.Abstractions.Feature
 {
@@ -57,6 +58,19 @@ namespace RabbitCloud.Abstractions.Feature
             var metadata = metadataFeature.Metadata;
 
             metadata[name] = value;
+        }
+
+        /// <summary>
+        /// 将 <paramref name="sourceMetadataFeature"/> 中的数据项添加至 <paramref name="metadataFeature"/>，如果 <paramref name="metadataFeature"/> 中已经存在则跳过。
+        /// </summary>
+        /// <param name="metadataFeature">目标元数据。</param>
+        /// <param name="sourceMetadataFeature">源元数据。</param>
+        public static void ComposeMetadata(this IMetadataFeature metadataFeature, IMetadataFeature sourceMetadataFeature)
+        {
+            foreach (var source in sourceMetadataFeature.Metadata.Where(i => !metadataFeature.Metadata.ContainsKey(i.Key)))
+            {
+                metadataFeature.SetMetadata(source.Key, source.Value);
+            }
         }
     }
 }
