@@ -6,11 +6,11 @@ using System.IO;
 
 namespace RabbitCloud.Rpc.Default.Service
 {
-    public class Codec : ICodec
+    public class DefaultCodec : ICodec
     {
         private readonly ISerializer _serializer;
 
-        public Codec(ISerializer serializer)
+        public DefaultCodec(ISerializer serializer)
         {
             _serializer = serializer;
         }
