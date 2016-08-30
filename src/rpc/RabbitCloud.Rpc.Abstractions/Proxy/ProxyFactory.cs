@@ -18,7 +18,7 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy
             return GetProxy<T>(invoker, new[] { typeof(T) });
         }
 
-        public abstract IInvoker GetInvoker(Func<object> getInstance, Id id);
+        public abstract IInvoker GetInvoker(Func<object> getInstance, Url url);
 
         #endregion Implementation of IProxyFactory
 

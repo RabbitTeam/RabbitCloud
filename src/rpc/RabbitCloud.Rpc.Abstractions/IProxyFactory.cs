@@ -13,6 +13,6 @@ namespace RabbitCloud.Rpc.Abstractions
         /// <returns>Invoker代理实例。</returns>
         T GetProxy<T>(IInvoker invoker);
 
-        IInvoker GetInvoker(Func<object> getInstance, Id id);
+        IInvoker GetInvoker(Func<object> getInstance, Url url);
     }
 }

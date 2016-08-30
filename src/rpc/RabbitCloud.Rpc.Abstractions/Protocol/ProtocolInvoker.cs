@@ -6,14 +6,14 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
 {
     public abstract class ProtocolInvoker : IInvoker
     {
-        protected ProtocolInvoker(Id id)
+        protected ProtocolInvoker(Url url)
         {
-            Id = id;
+            Url = url;
         }
 
         #region Implementation of IInvoker
 
-        public Id Id { get; }
+        public Url Url { get; }
 
         public async Task<IResult> Invoke(IInvocation invocation)
         {

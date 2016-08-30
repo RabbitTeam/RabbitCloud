@@ -40,7 +40,8 @@ namespace RabbitCloud.Rpc.Default.Service
                         {
                             invocation.MethodName,
                             Arguments = arguments,
-                            invocation.ParameterTypes
+                            invocation.ParameterTypes,
+                            invocation.Metadata
                         }
                     });
                 }

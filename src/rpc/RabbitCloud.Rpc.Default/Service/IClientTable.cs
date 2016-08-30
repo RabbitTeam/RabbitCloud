@@ -1,21 +1,23 @@
 ﻿using Cowboy.Sockets.Tcp;
 using Cowboy.Sockets.Tcp.Client;
-using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Default.Service.Message;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Id = RabbitCloud.Rpc.Default.Service.Message.Id;
 
 namespace RabbitCloud.Rpc.Default.Service
 {
-    public class ClientEntry
+    public class ClientEntry : IDisposable
     {
         private readonly IPEndPoint _ipEndPoint;
         private readonly ICodec _codec;
         private TcpSocketSaeaClient _client;
         private readonly ConcurrentDictionary<Id, TaskCompletionSource<ResponseMessage>> _callback;
+        private readonly Action _dispose;
 
         private TcpSocketSaeaClient Client
         {
@@ -28,11 +30,12 @@ namespace RabbitCloud.Rpc.Default.Service
         }
 
         public ClientEntry(IPEndPoint ipEndPoint, ICodec codec,
-            ConcurrentDictionary<Id, TaskCompletionSource<ResponseMessage>> callback)
+            ConcurrentDictionary<Id, TaskCompletionSource<ResponseMessage>> callback, Action dispose)
         {
             _ipEndPoint = ipEndPoint;
             _codec = codec;
             _callback = callback;
+            _dispose = dispose;
         }
 
         public async Task<ResponseMessage> Send(RequestMessage requestMessage)
@@ -69,6 +72,20 @@ namespace RabbitCloud.Rpc.Default.Service
             client.Connect().Wait();
             return client;
         }
+
+        #region Implementation of IDisposable
+
+        /// <summary>执行与释放或重置非托管资源关联的应用程序定义的任务。</summary>
+        public void Dispose()
+        {
+            Task.Run(async () =>
+            {
+                await _client.Close();
+            });
+            _dispose?.Invoke();
+        }
+
+        #endregion Implementation of IDisposable
     }
 
     public interface IClientTable
@@ -93,7 +110,14 @@ namespace RabbitCloud.Rpc.Default.Service
         {
             var ipEndPoint = (IPEndPoint)endPoint;
             var key = ipEndPoint.ToString();
-            return _clientEntries.GetOrAdd(key, new ClientEntry(ipEndPoint, _codec, _callbacks));
+            return _clientEntries.GetOrAdd(key, k =>
+            {
+                return new ClientEntry(ipEndPoint, _codec, _callbacks, () =>
+                {
+                    ClientEntry value;
+                    _clientEntries.TryRemove(k, out value);
+                });
+            });
         }
 
         #endregion Implementation of IClientTable

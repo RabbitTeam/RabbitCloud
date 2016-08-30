@@ -10,9 +10,9 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
 
         #region Overrides of ProxyFactory
 
-        public override IInvoker GetInvoker(Func<object> getInstance, Id id)
+        public override IInvoker GetInvoker(Func<object> getInstance, Url url)
         {
-            return new ClrProxyInvoker(id, getInstance);
+            return new ClrProxyInvoker(url, getInstance);
         }
 
         public override T GetProxy<T>(IInvoker invoker, Type[] types)

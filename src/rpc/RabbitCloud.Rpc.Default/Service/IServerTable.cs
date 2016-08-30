@@ -1,5 +1,7 @@
 ﻿using Cowboy.Sockets.Tcp.Server;
+using RabbitCloud.Abstractions.Feature;
 using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Utils;
 using RabbitCloud.Rpc.Default.Service.Message;
 using System;
 using System.Collections.Concurrent;
@@ -63,7 +65,7 @@ namespace RabbitCloud.Rpc.Default.Service
 
     public interface IServerTable : IDisposable
     {
-        ServerEntry OpenServer(EndPoint endPoint, IExporter exporter);
+        ServerEntry OpenServer(EndPoint endPoint, Func<string, IExporter> getExporter);
     }
 
     public class ServerTable : IServerTable
@@ -97,7 +99,7 @@ namespace RabbitCloud.Rpc.Default.Service
             _serverEntries.Clear();
         }
 
-        public ServerEntry OpenServer(EndPoint endPoint, IExporter exporter)
+        public ServerEntry OpenServer(EndPoint endPoint, Func<string, IExporter> getExporter)
         {
             var ipEndPoint = (IPEndPoint)endPoint;
             var serverKey = ipEndPoint.ToString();
@@ -109,6 +111,9 @@ namespace RabbitCloud.Rpc.Default.Service
                 {
                     var invocation = request.Invocation;
 
+                    var exporter =
+                        getExporter(ProtocolUtils.GetServiceKey(ipEndPoint.Port, invocation.GetMetadata<string>("path"),
+                            null, null));
                     var result = await exporter.Invoker.Invoke(invocation);
                     return ResponseMessage.Create(request, result.Value, result.Exception);
                 };

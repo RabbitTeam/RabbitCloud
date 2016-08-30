@@ -1,11 +1,15 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
+using System;
 
 namespace RabbitCloud.Rpc.Default
 {
     public class RabbitExporter : IExporter
     {
-        public RabbitExporter(IInvoker invoker)
+        private readonly Action<IExporter> _dispose;
+
+        public RabbitExporter(IInvoker invoker, Action<IExporter> dispose)
         {
+            _dispose = dispose;
             Invoker = invoker;
         }
 
@@ -14,6 +18,7 @@ namespace RabbitCloud.Rpc.Default
         /// <summary>执行与释放或重置非托管资源关联的应用程序定义的任务。</summary>
         public void Dispose()
         {
+            _dispose?.Invoke(this);
         }
 
         #endregion Implementation of IDisposable

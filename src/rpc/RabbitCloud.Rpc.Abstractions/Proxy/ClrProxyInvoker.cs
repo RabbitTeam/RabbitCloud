@@ -7,7 +7,7 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy
 {
     public class ClrProxyInvoker : ProxyInvoker
     {
-        public ClrProxyInvoker(Id id, Func<object> getInstance) : base(id, getInstance)
+        public ClrProxyInvoker(Url url, Func<object> getInstance) : base(url, getInstance)
         {
         }
 

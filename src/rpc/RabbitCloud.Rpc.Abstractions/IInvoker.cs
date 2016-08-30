@@ -5,7 +5,7 @@ namespace RabbitCloud.Rpc.Abstractions
 {
     public interface IInvoker
     {
-        Id Id { get; }
+        Url Url { get; }
 
         Task<IResult> Invoke(IInvocation invocation);
     }

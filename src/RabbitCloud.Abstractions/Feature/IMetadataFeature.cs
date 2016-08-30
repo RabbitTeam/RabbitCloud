@@ -36,10 +36,7 @@ namespace RabbitCloud.Abstractions.Feature
             var metadata = metadataFeature.Metadata;
             if (metadata == null)
                 return def;
-            if (!metadata.ContainsKey(name))
-                return def;
-
-            return (T)metadata[name];
+            return !metadata.ContainsKey(name) ? def : (T)metadata[name];
         }
 
         /// <summary>

@@ -9,15 +9,15 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy
     {
         private readonly Func<object> _getInstance;
 
-        protected ProxyInvoker(Id id, Func<object> getInstance)
+        protected ProxyInvoker(Url url, Func<object> getInstance)
         {
+            Url = url;
             _getInstance = getInstance;
-            Id = id;
         }
 
         #region Implementation of IInvoker
 
-        public Id Id { get; }
+        public Url Url { get; }
 
         public async Task<IResult> Invoke(IInvocation invocation)
         {

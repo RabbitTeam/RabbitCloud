@@ -5,7 +5,8 @@
     "NETStandard.Library": "1.6.0",
     "RabbitCloud.Abstractions": "1.0.0-*",
     "Castle.Core": "4.0.0-beta001",
-    "Newtonsoft.Json": "9.0.1"
+    "Newtonsoft.Json": "9.0.1",
+    "System.Net.NameResolution": "4.0.0"
   },
 
   "frameworks": {

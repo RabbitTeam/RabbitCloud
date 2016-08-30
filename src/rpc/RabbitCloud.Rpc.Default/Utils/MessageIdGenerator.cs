@@ -1,5 +1,5 @@
-﻿using RabbitCloud.Abstractions;
-using System.Threading;
+﻿using System.Threading;
+using Id = RabbitCloud.Rpc.Default.Service.Message.Id;
 
 namespace RabbitCloud.Rpc.Default.Utils
 {

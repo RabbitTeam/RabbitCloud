@@ -6,6 +6,6 @@ namespace RabbitCloud.Rpc.Abstractions
     {
         IExporter Export(IInvoker invoker);
 
-        IInvoker Refer(Id id);
+        IInvoker Refer(Url url);
     }
 }
