@@ -16,9 +16,11 @@ namespace RabbitCloud.Rpc.Abstractions
         public static byte[] EncodeToBytes(this ICodec codec, object message)
         {
             var memoryStream = new MemoryStream();
-            using (var writer = new StreamWriter(memoryStream, Encoding.Unicode))
+            using (var writer = new StreamWriter(memoryStream, Encoding.UTF8))
             {
                 codec.Encode(writer, message);
+                if (!writer.AutoFlush)
+                    writer.Flush();
                 return memoryStream.ToArray();
             }
         }
@@ -44,7 +46,7 @@ namespace RabbitCloud.Rpc.Abstractions
 
         public static object DecodeByBytes(this ICodec codec, byte[] data, Type type)
         {
-            using (var reader = new StreamReader(new MemoryStream(data)))
+            using (var reader = new StreamReader(new MemoryStream(data), Encoding.UTF8))
             {
                 return codec.Decode(reader, type);
             }

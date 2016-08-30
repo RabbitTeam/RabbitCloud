@@ -41,8 +41,8 @@ namespace RabbitCloud.Rpc.Abstractions
 
         #region Implementation of IResult
 
-        public object Value { get; }
-        public Exception Exception { get; }
+        public object Value { get; set; }
+        public Exception Exception { get; set; }
 
         #endregion Implementation of IResult
     }
