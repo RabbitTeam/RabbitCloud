@@ -5,6 +5,7 @@ using RabbitCloud.Rpc.Http.Service;
 using System;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Http;
 
 namespace RabbitCloud.Rpc.Http
 {
@@ -13,6 +14,12 @@ namespace RabbitCloud.Rpc.Http
         private readonly IServiceTable _serviceTable;
         private readonly ConcurrentDictionary<string, IExporter> _exporters = new ConcurrentDictionary<string, IExporter>();
         private readonly ICodec _codec;
+        private static readonly HttpClient HttpClient;
+
+        static HttpProtocol()
+        {
+            HttpClient = new HttpClient();
+        }
 
         public HttpProtocol(IServiceTable serviceTable, ICodec codec)
         {
@@ -47,7 +54,7 @@ namespace RabbitCloud.Rpc.Http
 
         public IInvoker Refer(Url url)
         {
-            return new HttpInvoker(url, _codec);
+            return new HttpInvoker(url, _codec, HttpClient);
         }
 
         #endregion Implementation of IProtocol
@@ -57,6 +64,7 @@ namespace RabbitCloud.Rpc.Http
         /// <summary>执行与释放或重置非托管资源关联的应用程序定义的任务。</summary>
         public void Dispose()
         {
+            HttpClient.Dispose();
             foreach (var exporter in _exporters.Values)
                 exporter.Dispose();
             _serviceTable.Dispose();
