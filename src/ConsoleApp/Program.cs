@@ -72,16 +72,26 @@ namespace ConsoleApp
                 services.AddTransient<IUserService, UserService>();
                 var provider = services.BuildServiceProvider();
                 var serializer = new JsonSerializer();
-                ICodec codec = new DefaultCodec(serializer);
                 var proxyFactory = new CastleProxyFactory();
 
+                IProtocol protocol;
+                Url url;
+                {
+                    ICodec codec = new DefaultCodec(serializer);
+                    url = Url.Create("rabbit://127.0.0.1:9981/test");
+                    protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
+                }
 
-                var url = Url.Create("rabbit://127.0.0.1:9981/test");
+                /*//http协议
+                {
+                    ICodec codec = new HttpCodec(serializer);
+                    url = Url.Create("http://127.0.0.1:9981/test");
+                    protocol = new HttpProtocol(new ServiceTable(codec), codec);
+                }*/
 
                 var localInvoker = proxyFactory.GetInvoker(() => provider.GetRequiredService<IUserService>(), url);
-                var protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
-                protocol.Export(localInvoker);
 
+                protocol.Export(localInvoker);
                 var remoteInvoker = protocol.Refer(url);
 
                 var userService = proxyFactory.GetProxy<IUserService>(remoteInvoker);
