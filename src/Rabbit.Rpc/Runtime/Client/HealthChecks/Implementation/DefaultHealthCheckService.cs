@@ -13,7 +13,9 @@ namespace Rabbit.Rpc.Runtime.Client.HealthChecks.Implementation
 {
     public class DefaultHealthCheckService : IHealthCheckService, IDisposable
     {
-        private readonly ConcurrentDictionary<string, MonitorEntry> _dictionary = new ConcurrentDictionary<string, MonitorEntry>();
+        private readonly ConcurrentDictionary<string, MonitorEntry> _dictionary =
+            new ConcurrentDictionary<string, MonitorEntry>();
+
         private readonly Timer _timer;
 
         public DefaultHealthCheckService(IServiceRouteManager serviceRouteManager)
@@ -113,8 +115,22 @@ namespace Rabbit.Rpc.Runtime.Client.HealthChecks.Implementation
         {
             foreach (var entry in entrys)
             {
+                using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                {
+                    try
+                    {
+                        socket.Connect(entry.EndPoint);
+                        entry.Health = true;
+                    }
+                    catch
+                    {
+                        entry.Health = false;
+                    }
+                }
+            }
+            /*foreach (var entry in entrys)
+            {
                 var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
                 var socketAsyncEventArgs = new SocketAsyncEventArgs
                 {
                     RemoteEndPoint = entry.EndPoint,
@@ -132,7 +148,7 @@ namespace Rabbit.Rpc.Runtime.Client.HealthChecks.Implementation
                 };
 
                 socket.ConnectAsync(socketAsyncEventArgs);
-            }
+            }*/
         }
 
         #endregion Private Method
