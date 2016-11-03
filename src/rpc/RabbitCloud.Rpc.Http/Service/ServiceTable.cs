@@ -102,7 +102,7 @@ namespace RabbitCloud.Rpc.Http.Service
 
                     using (var reader = new StreamReader(request.Body))
                     {
-                        var invocation = (Invocation)_codec.Decode(reader, typeof(Invocation));
+                        var invocation = (RpcInvocation)_codec.Decode(reader, typeof(RpcInvocation));
                         var serviceKey = ProtocolUtils.GetServiceKey(port, request.Path, request.Query["version"],
                             request.Query["group"]);
                         var exporter = getExporter(serviceKey);

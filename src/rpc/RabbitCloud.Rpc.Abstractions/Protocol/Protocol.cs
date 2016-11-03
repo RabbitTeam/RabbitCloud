@@ -48,7 +48,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         #region Implementation of IDisposable
 
         /// <summary>执行与释放或重置非托管资源关联的应用程序定义的任务。</summary>
-        public void Dispose()
+        public virtual void Dispose()
         {
             foreach (var invoker in Invokers)
             {

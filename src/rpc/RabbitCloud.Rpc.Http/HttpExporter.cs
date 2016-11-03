@@ -1,32 +1,29 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Protocol;
 using System;
 
 namespace RabbitCloud.Rpc.Http
 {
-    public class HttpExporter : IExporter
+    public class HttpExporter : ProtocolExporter
     {
         private readonly Action<IExporter> _dispose;
 
-        public HttpExporter(IInvoker invoker, Action<IExporter> dispose)
+        public HttpExporter(IInvoker invoker, Action<IExporter> dispose) : base(invoker)
         {
             _dispose = dispose;
-            Invoker = invoker;
         }
 
-        #region Implementation of IDisposable
+        #region Overrides of ProtocolExporter
 
-        /// <summary>执行与释放或重置非托管资源关联的应用程序定义的任务。</summary>
-        public void Dispose()
+        /// <summary>
+        /// 执行与释放或重置非托管资源关联的应用程序定义的任务。
+        /// </summary>
+        public override void Dispose()
         {
+            base.Dispose();
             _dispose?.Invoke(this);
         }
 
-        #endregion Implementation of IDisposable
-
-        #region Implementation of IExporter
-
-        public IInvoker Invoker { get; }
-
-        #endregion Implementation of IExporter
+        #endregion Overrides of ProtocolExporter
     }
 }
