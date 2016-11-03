@@ -10,9 +10,9 @@ namespace RabbitCloud.Rpc.Default
 {
     public class RabbitInvoker : ProtocolInvoker
     {
-        private readonly ClientEntry _clientEntry;
+        private readonly CowboyClient _clientEntry;
 
-        public RabbitInvoker(Url url, ClientEntry clientEntry) : base(url)
+        public RabbitInvoker(Url url, CowboyClient clientEntry) : base(url)
         {
             _clientEntry = clientEntry;
         }

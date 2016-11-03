@@ -35,7 +35,7 @@ namespace RabbitCloud.Rpc.Default
                     IExporter value;
                     Exporters.TryRemove(k, out value);
                 });
-                _serverTable.OpenServer(invoker.Url.GetIpEndPoint().Result, sk =>
+                _serverTable.OpenServer(invoker.Url, sk =>
                 {
                     IExporter value;
                     Exporters.TryGetValue(sk, out value);
@@ -52,7 +52,7 @@ namespace RabbitCloud.Rpc.Default
         /// <returns>调用者。</returns>
         public override IInvoker Refer(Url url)
         {
-            var client = _clientTable.OpenClient(url.GetIpEndPoint().Result);
+            var client = _clientTable.OpenClient(url);
             return new RabbitInvoker(url, client);
         }
 
