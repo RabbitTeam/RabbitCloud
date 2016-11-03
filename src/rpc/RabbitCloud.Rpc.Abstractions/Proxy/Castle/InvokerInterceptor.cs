@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
 {
+    /// <summary>
+    /// 调用者拦截器。
+    /// </summary>
     internal class InvokerInterceptor : IInterceptor
     {
         private readonly IInvoker _invoker;
@@ -22,7 +25,7 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
             var returnType = invocation.Method.ReturnType.GetTypeInfo();
             var isTask = typeof(Task).GetTypeInfo().IsAssignableFrom(returnType);
 
-            var invokeTask = isTask ? _invoker.Invoke(Invocation.Create(invocation.Method, invocation.Arguments)) : Task.Run(() => _invoker.Invoke(Invocation.Create(invocation.Method, invocation.Arguments)));
+            var invokeTask = isTask ? _invoker.Invoke(RpcInvocation.Create(invocation.Method, invocation.Arguments)) : Task.Run(() => _invoker.Invoke(RpcInvocation.Create(invocation.Method, invocation.Arguments)));
 
             if (!isTask)
             {

@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using RabbitCloud.Abstractions;
+using RabbitCloud.Abstractions.Feature;
+using System;
+using System.Text;
 
 namespace RabbitCloud.Rpc.Abstractions.Utils
 {
@@ -21,6 +24,12 @@ namespace RabbitCloud.Rpc.Abstractions.Utils
             builder.Append(":");
             builder.Append(port);
             return builder.ToString();
+        }
+
+        public static string GetServiceKey(Url url)
+        {
+            Func<string, string> getParameter = key => url.Parameters?.GetMetadata<string>(key) ?? string.Empty;
+            return GetServiceKey(url.Port, url.Path, getParameter(RpcConstants.Version), getParameter(RpcConstants.Group));
         }
     }
 }

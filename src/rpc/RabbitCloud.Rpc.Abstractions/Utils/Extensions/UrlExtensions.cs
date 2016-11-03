@@ -39,7 +39,7 @@ namespace RabbitCloud.Rpc.Abstractions.Utils.Extensions
 
         public static string GetServiceKey(this Url url)
         {
-            return ProtocolUtils.GetServiceKey(url.Port, url.Path, url.GetMetadata<string>("version"), url.GetMetadata<string>("group"));
+            return ProtocolUtils.GetServiceKey(url.Port, url.Path, url.Parameters.GetMetadata<string>("version"), url.Parameters.GetMetadata<string>("group"));
         }
     }
 }

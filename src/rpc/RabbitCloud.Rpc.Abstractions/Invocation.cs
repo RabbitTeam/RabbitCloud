@@ -1,46 +1,89 @@
 ﻿using RabbitCloud.Abstractions.Feature;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 namespace RabbitCloud.Rpc.Abstractions
 {
-    public interface IInvocation : IMetadataFeature
+    /// <summary>
+    /// 一个抽象的调用。
+    /// </summary>
+    public interface IInvocation
     {
+        /// <summary>
+        /// 方法名称。
+        /// </summary>
         string MethodName { get; }
+
+        /// <summary>
+        /// 参数类型。
+        /// </summary>
         Type[] ParameterTypes { get; }
+
+        /// <summary>
+        /// 方法参数。
+        /// </summary>
         object[] Arguments { get; }
+
+        /// <summary>
+        /// 调用者。
+        /// </summary>
+        IInvoker Invoker { get; }
+
+        /// <summary>
+        /// 属性。
+        /// </summary>
+        IMetadataFeature Attributes { get; }
     }
 
-    public class Invocation : IInvocation
+    /// <summary>
+    /// Rpc调用。
+    /// </summary>
+    public class RpcInvocation : IInvocation
     {
-        public static Invocation Create(MethodInfo method, object[] arguments)
+        #region Implementation of IInvocation
+
+        /// <summary>
+        /// 方法名称。
+        /// </summary>
+        public string MethodName { get; set; }
+
+        /// <summary>
+        /// 参数类型。
+        /// </summary>
+        public Type[] ParameterTypes { get; set; }
+
+        /// <summary>
+        /// 方法参数。
+        /// </summary>
+        public object[] Arguments { get; set; }
+
+        /// <summary>
+        /// 调用者。
+        /// </summary>
+        public IInvoker Invoker { get; set; }
+
+        /// <summary>
+        /// 属性。
+        /// </summary>
+        public IMetadataFeature Attributes { get; set; }
+
+        #endregion Implementation of IInvocation
+
+        #region Public Static Method
+
+        public static RpcInvocation Create(MethodInfo method, object[] arguments, IInvoker invoker = null)
         {
-            return new Invocation
+            return new RpcInvocation
             {
                 Arguments = arguments,
                 MethodName = method.Name,
-                ParameterTypes = method.GetParameters().Select(i => i.ParameterType).ToArray()
+                ParameterTypes = method.GetParameters().Select(i => i.ParameterType).ToArray(),
+                Invoker = invoker,
+                Attributes = new DefaultMetadataFeature()
             };
         }
 
-        #region Implementation of IMetadataFeature
-
-        /// <summary>
-        /// 元数据。
-        /// </summary>
-        public IDictionary<string, object> Metadata { get; } = new ConcurrentDictionary<string, object>();
-
-        #endregion Implementation of IMetadataFeature
-
-        #region Implementation of IInvocation
-
-        public string MethodName { get; set; }
-        public Type[] ParameterTypes { get; set; }
-        public object[] Arguments { get; set; }
-
-        #endregion Implementation of IInvocation
+        #endregion Public Static Method
     }
 }
