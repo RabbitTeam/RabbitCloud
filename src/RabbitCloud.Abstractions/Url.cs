@@ -7,14 +7,21 @@ using System.Text;
 
 namespace RabbitCloud.Abstractions
 {
-    public class Url : IMetadataFeature
+    public class Url
     {
+        #region Constructor
+
         public Url()
         {
-            Metadata = new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            Parameters = new DefaultMetadataFeature();
         }
 
         public Url(string scheme, string userName, string password, string host, int port, string path, IDictionary<string, object> parameters)
+            : this(scheme, userName, password, host, port, path, new DefaultMetadataFeature(parameters))
+        {
+        }
+
+        public Url(string scheme, string userName, string password, string host, int port, string path, IMetadataFeature parameters)
         {
             Scheme = scheme;
             UserName = userName;
@@ -22,8 +29,10 @@ namespace RabbitCloud.Abstractions
             Host = host;
             Port = port;
             Path = path;
-            Metadata = parameters ?? new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            Parameters = parameters;
         }
+
+        #endregion Constructor
 
         /// <summary>
         /// 格式、协议。
@@ -63,7 +72,7 @@ namespace RabbitCloud.Abstractions
         /// <returns></returns>
         public Url Clone()
         {
-            return new Url(Scheme, UserName, Password, Host, Port, Path, Metadata);
+            return new Url(Scheme, UserName, Password, Host, Port, Path, Parameters);
         }
 
         #endregion Public Method
@@ -76,10 +85,11 @@ namespace RabbitCloud.Abstractions
         {
             var extraValue = string.Empty;
 
-            if (Metadata.Any())
+            var parameters = Parameters.Metadata;
+            if (parameters.Any())
             {
                 var builder = new StringBuilder();
-                foreach (var parameter in Metadata)
+                foreach (var parameter in parameters)
                 {
                     if (string.IsNullOrEmpty(parameter.Key))
                         continue;
@@ -111,14 +121,7 @@ namespace RabbitCloud.Abstractions
 
         #endregion Overrides of Object
 
-        #region Implementation of IMetadataFeature<string>
-
-        /// <summary>
-        /// 元数据。
-        /// </summary>
-        public IDictionary<string, object> Metadata { get; }
-
-        #endregion Implementation of IMetadataFeature<string>
+        public IMetadataFeature Parameters { get; set; }
 
         #region Public Static Method
 

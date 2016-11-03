@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,6 +14,28 @@ namespace RabbitCloud.Abstractions.Feature
         /// 元数据。
         /// </summary>
         IDictionary<string, object> Metadata { get; }
+    }
+
+    public class DefaultMetadataFeature : IMetadataFeature
+    {
+        public DefaultMetadataFeature()
+        {
+            Metadata = new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        public DefaultMetadataFeature(IDictionary<string, object> dictionary)
+        {
+            Metadata = new ConcurrentDictionary<string, object>(dictionary, StringComparer.OrdinalIgnoreCase);
+        }
+
+        #region Implementation of IMetadataFeature
+
+        /// <summary>
+        /// 元数据。
+        /// </summary>
+        public IDictionary<string, object> Metadata { get; }
+
+        #endregion Implementation of IMetadataFeature
     }
 
     /// <summary>
