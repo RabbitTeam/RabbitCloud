@@ -73,7 +73,7 @@ namespace ConsoleApp
                 IProtocol protocol;
                 Url url;
                 {
-                    ICodec codec = new DefaultCodec();
+                    ICodec codec = new RabbitCodec();
                     url = Url.Create("rabbit://127.0.0.1:9981/test");
                     protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec), logger);
                 }

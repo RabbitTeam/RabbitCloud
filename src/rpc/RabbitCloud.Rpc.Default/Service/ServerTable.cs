@@ -16,8 +16,8 @@ namespace RabbitCloud.Rpc.Default.Service
     {
         private readonly ICodec _codec;
 
-        private readonly ConcurrentDictionary<string, CowboyServer> _serverEntries =
-            new ConcurrentDictionary<string, CowboyServer>();
+        private readonly ConcurrentDictionary<string, Lazy<CowboyServer>> _serverEntries =
+            new ConcurrentDictionary<string, Lazy<CowboyServer>>();
 
         public ServerTable(ICodec codec)
         {
@@ -31,9 +31,11 @@ namespace RabbitCloud.Rpc.Default.Service
         {
             foreach (var entry in _serverEntries.Values)
             {
+                if (!entry.IsValueCreated)
+                    continue;
                 try
                 {
-                    entry.Dispose();
+                    entry.Value.Dispose();
                 }
                 catch (Exception)
                 {
@@ -45,22 +47,20 @@ namespace RabbitCloud.Rpc.Default.Service
 
         public CowboyServer OpenServer(Url url, Func<string, IExporter> getExporter)
         {
-            var serverKey = $"{url.Host}:{url.Port}";
-            return
+            var serverKey = $"{url.Host}:{url.Port}".ToLower();
 
-            _serverEntries.GetOrAdd(serverKey, k =>
+            return _serverEntries.GetOrAdd(serverKey, new Lazy<CowboyServer>(() =>
+            {
+                var server = new CowboyServer(url, _codec, async request =>
                 {
-                    var server = new CowboyServer(url, _codec, async request =>
-                     {
-                         var invocation = request.Invocation;
+                    var invocation = request.Invocation;
 
-                         var exporter = getExporter(ProtocolUtils.GetServiceKey(url));
-                         var result = await exporter.Invoker.Invoke(invocation);
-                         return ResponseMessage.Create(request, result.Value, result.Exception);
-                     });
-
-                    return server;
+                    var exporter = getExporter(ProtocolUtils.GetServiceKey(url));
+                    var result = await exporter.Invoker.Invoke(invocation);
+                    return ResponseMessage.Create(request, result.Value, result.Exception);
                 });
+                return server;
+            })).Value;
         }
 
         #endregion Implementation of IDisposable

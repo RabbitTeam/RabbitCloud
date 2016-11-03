@@ -9,7 +9,7 @@ using System.IO;
 
 namespace RabbitCloud.Rpc.Default.Service
 {
-    public class DefaultCodec : ICodec
+    public class RabbitCodec : ICodec
     {
         #region Implementation of ICodec
 
@@ -70,13 +70,14 @@ namespace RabbitCloud.Rpc.Default.Service
         public object Decode(TextReader reader, Type type)
         {
             var content = reader.ReadToEnd();
-            var obj = JObject.Parse(content);
 
             if (type == typeof(RequestMessage))
             {
+                var obj = JObject.Parse(content);
+                var id = obj.Property("Id").Value;
                 var message = new RequestMessage
                 {
-                    Id = obj.Value<string>("Id"),
+                    Id = id.Type == JTokenType.Integer ? (Id)id.Value<long>() : (Id)id.Value<string>(),
                     Invocation = new RpcInvocation
                     {
                         Arguments = obj.SelectToken("Invocation.Arguments").ToObject<object[]>(),
@@ -94,8 +95,12 @@ namespace RabbitCloud.Rpc.Default.Service
                 }
                 return message;
             }
+            if (type == typeof(ResponseMessage))
+            {
+                return JsonConvert.DeserializeObject<ResponseMessage>(content);
+            }
 
-            return obj;
+            throw new NotSupportedException($"不支持的类型: {type}");
         }
 
         #endregion Implementation of ICodec

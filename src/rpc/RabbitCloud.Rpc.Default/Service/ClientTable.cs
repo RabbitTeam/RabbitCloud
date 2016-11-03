@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
+using System;
 using System.Collections.Concurrent;
 
 namespace RabbitCloud.Rpc.Default.Service
@@ -12,7 +13,7 @@ namespace RabbitCloud.Rpc.Default.Service
     public class ClientTable : IClientTable
     {
         private readonly ICodec _codec;
-        private readonly ConcurrentDictionary<string, CowboyClient> _clientEntries = new ConcurrentDictionary<string, CowboyClient>();
+        private readonly ConcurrentDictionary<string, Lazy<CowboyClient>> _clientEntries = new ConcurrentDictionary<string, Lazy<CowboyClient>>();
 
         public ClientTable(ICodec codec)
         {
@@ -24,7 +25,8 @@ namespace RabbitCloud.Rpc.Default.Service
         public CowboyClient OpenClient(Url url)
         {
             var key = $"{url.Host}:{url.Port}".ToLower();
-            return _clientEntries.GetOrAdd(key, k => new CowboyClient(url, _codec));
+
+            return _clientEntries.GetOrAdd(key, k => new Lazy<CowboyClient>(() => new CowboyClient(url, _codec))).Value;
         }
 
         #endregion Implementation of IClientTable
