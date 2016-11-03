@@ -1,22 +1,23 @@
-﻿using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Serialization;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RabbitCloud.Abstractions.Feature;
+using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Default.Service.Message;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace RabbitCloud.Rpc.Default.Service
 {
     public class DefaultCodec : ICodec
     {
-        private readonly ISerializer _serializer;
-
-        public DefaultCodec(ISerializer serializer)
-        {
-            _serializer = serializer;
-        }
-
         #region Implementation of ICodec
 
+        /// <summary>
+        /// 编码。
+        /// </summary>
+        /// <param name="writer">写入器。</param>
+        /// <param name="message">消息。</param>
         public void Encode(TextWriter writer, object message)
         {
             var rpcMessage = message as RpcMessage;
@@ -33,7 +34,7 @@ namespace RabbitCloud.Rpc.Default.Service
                 {
                     var invocation = requestMessage.Invocation;
                     var arguments = invocation.Arguments;
-                    _serializer.Serialize(writer, new
+                    var content = JsonConvert.SerializeObject(new
                     {
                         Id = id,
                         Invocation = new
@@ -41,38 +42,57 @@ namespace RabbitCloud.Rpc.Default.Service
                             invocation.MethodName,
                             Arguments = arguments,
                             invocation.ParameterTypes,
-                            invocation.Metadata
+                            invocation.Attributes.Metadata
                         }
                     });
+                    writer.Write(content);
                 }
                 else if (responseMessage != null)
                 {
-                    _serializer.Serialize(writer, new
+                    var content = JsonConvert.SerializeObject(new
                     {
                         Id = id,
-                        responseMessage.Result,
-                        responseMessage.Metadata
+                        responseMessage.Result
                     });
+                    writer.Write(content);
                 }
             }
 
             writer.Flush();
         }
 
+        /// <summary>
+        /// 解码。
+        /// </summary>
+        /// <param name="reader">读取器。</param>
+        /// <param name="type">消息类型。</param>
+        /// <returns>消息实例。</returns>
         public object Decode(TextReader reader, Type type)
         {
-            var obj = _serializer.Deserialize(reader, type);
+            var content = reader.ReadToEnd();
+            var obj = JObject.Parse(content);
 
-            var requestMessage = obj as RequestMessage;
-            if (requestMessage != null)
+            if (type == typeof(RequestMessage))
             {
-                var invocation = requestMessage.Invocation;
+                var message = new RequestMessage
+                {
+                    Id = obj.Value<string>("Id"),
+                    Invocation = new RpcInvocation
+                    {
+                        Arguments = obj.SelectToken("Invocation.Arguments").ToObject<object[]>(),
+                        Attributes = new DefaultMetadataFeature(obj.SelectToken("Invocation.Metadata").ToObject<IDictionary<string, object>>()),
+                        MethodName = obj.SelectToken("Invocation.MethodName").Value<string>(),
+                        ParameterTypes = obj.SelectToken("Invocation.ParameterTypes").ToObject<Type[]>()
+                    }
+                };
+                var invocation = message.Invocation;
                 for (var i = 0; i < invocation.Arguments.Length; i++)
                 {
-                    var argument = invocation.Arguments[i];
+                    var argument = (JObject)invocation.Arguments[i];
                     var parameterType = invocation.ParameterTypes[i];
-                    invocation.Arguments[i] = _serializer.DeserializeByString(argument.ToString(), parameterType);
+                    invocation.Arguments[i] = argument.ToObject(parameterType);
                 }
+                return message;
             }
 
             return obj;

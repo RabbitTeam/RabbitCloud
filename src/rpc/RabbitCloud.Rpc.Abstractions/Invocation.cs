@@ -41,6 +41,11 @@ namespace RabbitCloud.Rpc.Abstractions
     /// </summary>
     public class RpcInvocation : IInvocation
     {
+        public RpcInvocation()
+        {
+            Attributes = new DefaultMetadataFeature();
+        }
+
         #region Implementation of IInvocation
 
         /// <summary>

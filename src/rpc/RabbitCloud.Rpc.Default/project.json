@@ -3,6 +3,7 @@
 
   "dependencies": {
     "NETStandard.Library": "1.6.0",
+    "Microsoft.Extensions.Logging.Abstractions": "1.0.0",
     "RabbitCloud.Abstractions": "1.0.0-*",
     "RabbitCloud.Rpc.Abstractions": "1.0.0-*"
   },

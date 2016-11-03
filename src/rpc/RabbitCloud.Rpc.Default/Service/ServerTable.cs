@@ -112,7 +112,7 @@ namespace RabbitCloud.Rpc.Default.Service
                     var invocation = request.Invocation;
 
                     var exporter =
-                        getExporter(ProtocolUtils.GetServiceKey(ipEndPoint.Port, invocation.GetMetadata<string>("path"),
+                        getExporter(ProtocolUtils.GetServiceKey(ipEndPoint.Port, invocation.Attributes.GetMetadata<string>("path"),
                             null, null));
                     var result = await exporter.Invoker.Invoke(invocation);
                     return ResponseMessage.Create(request, result.Value, result.Exception);

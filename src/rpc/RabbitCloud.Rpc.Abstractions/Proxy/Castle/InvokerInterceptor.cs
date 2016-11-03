@@ -25,7 +25,7 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
             var returnType = invocation.Method.ReturnType.GetTypeInfo();
             var isTask = typeof(Task).GetTypeInfo().IsAssignableFrom(returnType);
 
-            var invokeTask = isTask ? _invoker.Invoke(RpcInvocation.Create(invocation.Method, invocation.Arguments)) : Task.Run(() => _invoker.Invoke(RpcInvocation.Create(invocation.Method, invocation.Arguments)));
+            var invokeTask = isTask ? _invoker.Invoke(RpcInvocation.Create(invocation.Method, invocation.Arguments, _invoker)) : Task.Run(() => _invoker.Invoke(RpcInvocation.Create(invocation.Method, invocation.Arguments)));
 
             if (!isTask)
             {
@@ -46,25 +46,6 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
                     invocation.ReturnValue = Task.CompletedTask;
                 }
             }
-            /*var result = _invoker.Invoke(Invocation.Create(invocation.Method, invocation.Arguments)).Result;
-            var value = result.Recreate();
-
-            var returnType = invocation.Method.ReturnType.GetTypeInfo();
-            if (!typeof(Task).GetTypeInfo().IsAssignableFrom(returnType))
-                invocation.ReturnValue = value;
-            else
-            {
-                if (returnType.IsGenericType)
-                {
-                    var taskGenericType = returnType.GenericTypeArguments[0];
-                    var fromResult = typeof(Task).GetRuntimeMethods().First(i => i.Name == "FromResult");
-                    invocation.ReturnValue = fromResult.MakeGenericMethod(taskGenericType).Invoke(null, new[] { value });
-                }
-                else
-                {
-                    invocation.ReturnValue = Task.CompletedTask;
-                }
-            }*/
             try
             {
                 invocation.Proceed();

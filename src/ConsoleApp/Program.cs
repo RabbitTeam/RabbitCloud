@@ -1,12 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
-using RabbitCloud.Rpc.Abstractions.Serialization.Implementation;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -56,30 +55,27 @@ namespace ConsoleApp
 
     public class Program
     {
-        private async Task Run()
-        {
-            Parallel.For(0, 100, i =>
-            {
-                Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
-            });
-        }
-
         public static void Main(string[] args)
         {
             Task.Run(async () =>
             {
                 var services = new ServiceCollection();
                 services.AddTransient<IUserService, UserService>();
+                services.AddLogging();
                 var provider = services.BuildServiceProvider();
-                var serializer = new JsonSerializer();
+
+                var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
+                var logger = loggerFactory.CreateLogger<Program>();
+
+                //                var serializer = new JsonSerializer();
                 var proxyFactory = new CastleProxyFactory();
 
                 IProtocol protocol;
                 Url url;
                 {
-                    ICodec codec = new DefaultCodec(serializer);
+                    ICodec codec = new DefaultCodec();
                     url = Url.Create("rabbit://127.0.0.1:9981/test");
-                    protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
+                    protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec), logger);
                 }
 
                 /*//http协议

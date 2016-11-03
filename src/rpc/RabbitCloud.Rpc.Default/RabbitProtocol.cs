@@ -1,51 +1,61 @@
-﻿using RabbitCloud.Abstractions;
+﻿using Microsoft.Extensions.Logging;
+using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Protocol;
 using RabbitCloud.Rpc.Abstractions.Utils.Extensions;
 using RabbitCloud.Rpc.Default.Service;
-using System.Collections.Concurrent;
 
 namespace RabbitCloud.Rpc.Default
 {
-    public class RabbitProtocol : IProtocol
+    public class RabbitProtocol : Protocol
     {
         private readonly IServerTable _serverTable;
         private readonly IClientTable _clientTable;
-        private readonly ConcurrentDictionary<string, IExporter> _exporters = new ConcurrentDictionary<string, IExporter>();
 
-        public RabbitProtocol(IServerTable serverTable, IClientTable clientTable)
+        public RabbitProtocol(IServerTable serverTable, IClientTable clientTable, ILogger logger) : base(logger)
         {
             _serverTable = serverTable;
             _clientTable = clientTable;
         }
 
-        #region Implementation of IProtocol
+        #region Overrides of Protocol
 
-        public IExporter Export(IInvoker invoker)
+        /// <summary>
+        /// 导出一个调用者。
+        /// </summary>
+        /// <param name="invoker">调用者。</param>
+        /// <returns>导出者。</returns>
+        public override IExporter Export(IInvoker invoker)
         {
             var serviceKey = invoker.Url.GetServiceKey();
-            return _exporters.GetOrAdd(serviceKey, k =>
+            return Exporters.GetOrAdd(serviceKey, k =>
             {
                 var exporter = new RabbitExporter(invoker, e =>
                 {
                     IExporter value;
-                    _exporters.TryRemove(k, out value);
+                    Exporters.TryRemove(k, out value);
                 });
                 _serverTable.OpenServer(invoker.Url.GetIpEndPoint().Result, sk =>
                 {
                     IExporter value;
-                    _exporters.TryGetValue(sk, out value);
+                    Exporters.TryGetValue(sk, out value);
                     return value;
                 });
                 return exporter;
             });
         }
 
-        public IInvoker Refer(Url url)
+        /// <summary>
+        /// 引用一个调用者。
+        /// </summary>
+        /// <param name="url">调用者Url。</param>
+        /// <returns>调用者。</returns>
+        public override IInvoker Refer(Url url)
         {
             var client = _clientTable.OpenClient(url.GetIpEndPoint().Result);
             return new RabbitInvoker(url, client);
         }
 
-        #endregion Implementation of IProtocol
+        #endregion Overrides of Protocol
     }
 }
