@@ -1,6 +1,4 @@
-﻿using RabbitCloud.Abstractions.Feature;
-using System;
-using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,15 +11,15 @@ namespace RabbitCloud.Abstractions
 
         public Url()
         {
-            Parameters = new DefaultMetadataFeature();
+            Parameters = new AttributeDictionary();
         }
 
-        public Url(string scheme, string userName, string password, string host, int port, string path, IDictionary<string, object> parameters)
-            : this(scheme, userName, password, host, port, path, new DefaultMetadataFeature(parameters))
+
+        public Url(string scheme, string userName, string password, string host, int port, string path, IDictionary<string, string> parameters)
+            : this(scheme, userName, password, host, port, path, new AttributeDictionary(parameters))
         {
         }
-
-        public Url(string scheme, string userName, string password, string host, int port, string path, IMetadataFeature parameters)
+        public Url(string scheme, string userName, string password, string host, int port, string path, AttributeDictionary parameters)
         {
             Scheme = scheme;
             UserName = userName;
@@ -33,6 +31,8 @@ namespace RabbitCloud.Abstractions
         }
 
         #endregion Constructor
+
+        #region Property
 
         /// <summary>
         /// 格式、协议。
@@ -64,6 +64,13 @@ namespace RabbitCloud.Abstractions
         /// </summary>
         public string Path { get; set; }
 
+        /// <summary>
+        /// 参数。
+        /// </summary>
+        public AttributeDictionary Parameters { get; set; }
+
+        #endregion Property
+
         #region Public Method
 
         /// <summary>
@@ -85,11 +92,11 @@ namespace RabbitCloud.Abstractions
         {
             var extraValue = string.Empty;
 
-            var parameters = Parameters.Metadata;
-            if (parameters.Any())
+            var parameters = Parameters;
+            if (parameters.GetAttributes().Any())
             {
                 var builder = new StringBuilder();
-                foreach (var parameter in parameters)
+                foreach (var parameter in parameters.GetAttributes())
                 {
                     if (string.IsNullOrEmpty(parameter.Key))
                         continue;
@@ -121,8 +128,6 @@ namespace RabbitCloud.Abstractions
 
         #endregion Overrides of Object
 
-        public IMetadataFeature Parameters { get; set; }
-
         #region Public Static Method
 
         /// <summary>
@@ -152,7 +157,7 @@ namespace RabbitCloud.Abstractions
                 }
             }
 
-            var parameters = new ConcurrentDictionary<string, object>();
+            var parameters = new Dictionary<string, string>();
 
             var query = uri.Query;
 
@@ -166,11 +171,11 @@ namespace RabbitCloud.Abstractions
                     if (s.Contains("="))
                     {
                         var item = s.Split(new[] { '=' }, 2);
-                        parameters.TryAdd(item[0], item[1]);
+                        parameters[item[0]] = item[1];
                     }
                     else //a,b,c
                     {
-                        parameters.TryAdd(s, null);
+                        parameters[s] = string.Empty;
                     }
                 }
             }

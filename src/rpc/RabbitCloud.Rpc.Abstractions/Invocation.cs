@@ -1,4 +1,4 @@
-﻿using RabbitCloud.Abstractions.Feature;
+﻿using RabbitCloud.Abstractions;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -33,7 +33,7 @@ namespace RabbitCloud.Rpc.Abstractions
         /// <summary>
         /// 属性。
         /// </summary>
-        IMetadataFeature Attributes { get; }
+        AttributeDictionary Attributes { get; }
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ namespace RabbitCloud.Rpc.Abstractions
     {
         public RpcInvocation()
         {
-            Attributes = new DefaultMetadataFeature();
+            Attributes = new AttributeDictionary();
         }
 
         #region Implementation of IInvocation
@@ -71,7 +71,7 @@ namespace RabbitCloud.Rpc.Abstractions
         /// <summary>
         /// 属性。
         /// </summary>
-        public IMetadataFeature Attributes { get; set; }
+        public AttributeDictionary Attributes { get; set; }
 
         #endregion Implementation of IInvocation
 
@@ -85,7 +85,7 @@ namespace RabbitCloud.Rpc.Abstractions
                 MethodName = method.Name,
                 ParameterTypes = method.GetParameters().Select(i => i.ParameterType).ToArray(),
                 Invoker = invoker,
-                Attributes = new DefaultMetadataFeature()
+                Attributes = new AttributeDictionary()
             };
         }
 

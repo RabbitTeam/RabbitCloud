@@ -1,4 +1,4 @@
-﻿using RabbitCloud.Abstractions.Feature;
+﻿using RabbitCloud.Abstractions;
 using System;
 
 namespace RabbitCloud.Rpc.Abstractions
@@ -21,7 +21,7 @@ namespace RabbitCloud.Rpc.Abstractions
         /// <summary>
         /// 属性。
         /// </summary>
-        IMetadataFeature Attributes { get; set; }
+        AttributeDictionary Attributes { get; set; }
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ namespace RabbitCloud.Rpc.Abstractions
         /// <summary>
         /// 属性。
         /// </summary>
-        public IMetadataFeature Attributes { get; set; }
+        public AttributeDictionary Attributes { get; set; }
 
         #endregion Implementation of IResult
     }
