@@ -66,8 +66,7 @@ namespace ConsoleApp
 
                 var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
                 var logger = loggerFactory.CreateLogger<Program>();
-
-                //                var serializer = new JsonSerializer();
+                
                 var proxyFactory = new CastleProxyFactory();
 
                 IProtocol protocol;
