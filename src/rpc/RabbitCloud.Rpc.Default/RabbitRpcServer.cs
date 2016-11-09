@@ -1,6 +1,4 @@
 ﻿using Cowboy.Sockets.Tcp.Server;
-using Newtonsoft.Json.Linq;
-using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Features;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
@@ -8,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Default
@@ -16,7 +13,6 @@ namespace RabbitCloud.Rpc.Default
     public class RabbitRpcServer : IRpcServer
     {
         private readonly IList<TcpSocketSaeaServer> _tcpServers = new List<TcpSocketSaeaServer>();
-        private readonly ICodec _codec;
         private readonly IServerAddressesFeature _serverAddressesFeature;
 
         public RabbitRpcServer()
@@ -24,7 +20,6 @@ namespace RabbitCloud.Rpc.Default
             Features = new RpcFeatureCollection();
             _serverAddressesFeature = new ServerAddressesFeature();
             Features.Set(_serverAddressesFeature);
-            _codec = new JsonCodec();
         }
 
         #region Implementation of IRpcServer
@@ -121,14 +116,10 @@ namespace RabbitCloud.Rpc.Default
             //RpcRequestFeature
             {
                 var buffer = data.Skip(offset).Take(count).ToArray();
-                var jObj = JObject.Parse(Encoding.UTF8.GetString(buffer));
                 Features.Set<IRpcRequestFeature>(new RpcRequestFeature
                 {
-                    Body = _codec.Decode(jObj, typeof(Invocation)),
-                    Path = jObj.Value<string>("Path"),
-                    PathBase = "/",
-                    QueryString = jObj.Value<string>("QueryString"),
-                    Scheme = jObj.Value<string>("Scheme")
+                    Body = buffer,
+                    PathBase = "/"
                 });
             }
 

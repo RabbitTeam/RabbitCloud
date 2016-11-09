@@ -1,14 +1,16 @@
 ﻿using Cowboy.Sockets.Tcp.Client;
 using Microsoft.AspNetCore.Builder;
-using Newtonsoft.Json;
+using Microsoft.Extensions.DependencyInjection;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Extensions;
+using RabbitCloud.Rpc.Abstractions.Features;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
 using RabbitCloud.Rpc.Default;
+using RabbitCloud.Rpc.Default.Messages;
 using System;
+using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -68,7 +70,30 @@ namespace ConsoleApp
                 var serverAddressesFeature = server.Features.Get<IServerAddressesFeature>();
                 serverAddressesFeature.Addresses.Add($"{host}:{port}");
 
-                IRpcApplicationBuilder applicationBuilder = new RpcApplicationBuilder(null);
+                IServiceCollection services = new ServiceCollection();
+                services.AddSingleton<ICodec, RabbitCodec>();
+                var applicationServices = services.BuildServiceProvider();
+                IRpcApplicationBuilder applicationBuilder = new RpcApplicationBuilder(applicationServices);
+
+                applicationBuilder.Use(async (context, next) =>
+                {
+                    var scope = applicationBuilder.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
+                    var requestServices = context.RequestServices = scope.ServiceProvider;
+
+                    var codec = requestServices.GetRequiredService<ICodec>();
+
+                    var requestFeature = context.Features.Get<IRpcRequestFeature>();
+
+                    var invocation = (RabbitInvocation)codec.Decode(context.Request.Body, typeof(RabbitInvocation));
+                    requestFeature.Path = invocation.Path;
+                    requestFeature.Body = invocation.Arguments;
+                    requestFeature.Headers = invocation.Headers;
+                    requestFeature.QueryString = invocation.QueryString;
+                    requestFeature.Scheme = invocation.Scheme;
+
+                    await next.Invoke();
+                });
+
                 applicationBuilder.Use(async (context, next) =>
                 {
                     await next.Invoke();
@@ -76,29 +101,26 @@ namespace ConsoleApp
 
                 var rpcApplication = new RpcApplication(applicationBuilder.Build());
                 server.Start(rpcApplication);
-
-                TcpSocketSaeaClient client = new TcpSocketSaeaClient(IPAddress.Parse("127.0.0.1"), 9981,
-                    async (c, data, offset, count) =>
-                    {
-                    });
-                await client.Connect();
-                await client.SendAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
                 {
-                    Path = "/test/1",
-                    QueryString = "a=1&b=2",
-                    Scheme = "rabbit",
-                    Body = new
-                    {
-                        Arguments = new[]
+                    var codec = applicationServices.GetRequiredService<ICodec>();
+
+                    TcpSocketSaeaClient client = new TcpSocketSaeaClient(IPAddress.Parse("127.0.0.1"), 9981,
+                        async (c, data, offset, count) =>
                         {
-                            new
-                            {
-                                Type=typeof(string).AssemblyQualifiedName,
-                                Content="123"
-                            }
-                        }
-                    }
-                })));
+                        });
+                    await client.Connect();
+                    await client.SendAsync((byte[])codec.Encode(new RabbitInvocation
+                    {
+                        Arguments = new object[] { "1", "2", "3" },
+                        Headers = new Dictionary<string, string>
+                        {
+                            {"a","b" }
+                        },
+                        Path = "/a/b/c",
+                        QueryString = "a=1&b=2",
+                        Scheme = "rabbit"
+                    }));
+                }
                 await Task.CompletedTask;
             }).Wait();
             Console.ReadLine();
