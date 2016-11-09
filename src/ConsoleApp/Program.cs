@@ -1,5 +1,8 @@
 ﻿using Cowboy.Sockets.Tcp.Client;
+using Microsoft.AspNetCore.Builder;
 using Newtonsoft.Json;
+using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Extensions;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
 using RabbitCloud.Rpc.Default;
@@ -65,10 +68,14 @@ namespace ConsoleApp
                 var serverAddressesFeature = server.Features.Get<IServerAddressesFeature>();
                 serverAddressesFeature.Addresses.Add($"{host}:{port}");
 
-                server.Start(new RpcApplication(async context =>
+                IRpcApplicationBuilder applicationBuilder = new RpcApplicationBuilder(null);
+                applicationBuilder.Use(async (context, next) =>
                 {
-                    await Task.CompletedTask;
-                }));
+                    await next.Invoke();
+                });
+
+                var rpcApplication = new RpcApplication(applicationBuilder.Build());
+                server.Start(rpcApplication);
 
                 TcpSocketSaeaClient client = new TcpSocketSaeaClient(IPAddress.Parse("127.0.0.1"), 9981,
                     async (c, data, offset, count) =>
