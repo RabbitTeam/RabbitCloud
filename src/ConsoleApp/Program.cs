@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using RabbitCloud.Abstractions;
-using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
+﻿using Cowboy.Sockets.Tcp.Client;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using RabbitCloud.Rpc.Abstractions.Hosting.Server;
 using RabbitCloud.Rpc.Default;
-using RabbitCloud.Rpc.Default.Service;
 using System;
+using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -59,43 +59,38 @@ namespace ConsoleApp
         {
             Task.Run(async () =>
             {
-                var services = new ServiceCollection();
-                services.AddTransient<IUserService, UserService>();
-                services.AddLogging();
-                var provider = services.BuildServiceProvider();
+                var server = new RabbitRpcServer();
 
-                var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
-                var logger = loggerFactory.CreateLogger<Program>();
-                
-                var proxyFactory = new CastleProxyFactory();
-
-                IProtocol protocol;
-                Url url;
+                server.Start(new RpcApplication(async context =>
                 {
-                    ICodec codec = new RabbitCodec();
-                    url = Url.Create("rabbit://127.0.0.1:9981/test");
-                    protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec), logger);
-                }
+                    await Task.CompletedTask;
+                }));
 
-                /*//http协议
+                TcpSocketSaeaClient client = new TcpSocketSaeaClient(IPAddress.Parse("127.0.0.1"), 9981,
+                    async (c, data, offset, count) =>
+                    {
+                    });
+                await client.Connect();
+                await client.SendAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
                 {
-                    ICodec codec = new HttpCodec(serializer);
-                    url = Url.Create("http://127.0.0.1:9981/test");
-                    protocol = new HttpProtocol(new ServiceTable(codec), codec);
-                }*/
-
-                var localInvoker = proxyFactory.GetInvoker(() => provider.GetRequiredService<IUserService>(), url);
-
-                protocol.Export(localInvoker);
-                var remoteInvoker = protocol.Refer(url);
-
-                var userService = proxyFactory.GetProxy<IUserService>(remoteInvoker);
-
-                await userService.Test4(new UserModel
-                {
-                    Name = "aa"
-                });
+                    Path = "/test/1",
+                    QueryString = "a=1&b=2",
+                    Scheme = "rabbit",
+                    Body = new
+                    {
+                        Arguments = new[]
+                        {
+                            new
+                            {
+                                Type=typeof(string).AssemblyQualifiedName,
+                                Content="123"
+                            }
+                        }
+                    }
+                })));
+                await Task.CompletedTask;
             }).Wait();
+            Console.ReadLine();
         }
     }
 }

@@ -1,5 +1,7 @@
-﻿using System;
-using System.IO;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace RabbitCloud.Rpc.Abstractions
@@ -10,68 +12,88 @@ namespace RabbitCloud.Rpc.Abstractions
     public interface ICodec
     {
         /// <summary>
-        /// 编码。
+        /// 对消息进行编码。
         /// </summary>
-        /// <param name="writer">写入器。</param>
-        /// <param name="message">消息。</param>
-        void Encode(TextWriter writer, object message);
+        /// <param name="message">消息实例。</param>
+        /// <returns>编码后的内容。</returns>
+        object Encode(object message);
 
         /// <summary>
-        /// 解码。
+        /// 对消息进行解码。
         /// </summary>
-        /// <param name="reader">读取器。</param>
-        /// <param name="type">消息类型。</param>
-        /// <returns>消息实例。</returns>
-        object Decode(TextReader reader, Type type);
+        /// <param name="message">消息内容。</param>
+        /// <param name="type">内容类型。</param>
+        /// <returns>解码后的内容。</returns>
+        object Decode(object message, Type type);
     }
 
-    public static class CodecExtensions
+    public class JsonCodec : ICodec
     {
-        public static byte[] EncodeToBytes(this ICodec codec, object message)
+        #region Implementation of ICodec
+
+        /// <summary>
+        /// 对消息进行编码。
+        /// </summary>
+        /// <param name="message">消息实例。</param>
+        /// <returns>编码后的内容。</returns>
+        public object Encode(object message)
         {
-            var memoryStream = new MemoryStream();
-            using (var writer = new StreamWriter(memoryStream, Encoding.UTF8))
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// 对消息进行解码。
+        /// </summary>
+        /// <param name="message">消息内容。</param>
+        /// <param name="type">内容类型。</param>
+        /// <returns>解码后的内容。</returns>
+        public object Decode(object message, Type type)
+        {
+            if (type.IsInstanceOfType(message))
+                return message;
+
+            JObject obj;
+            if (message is JObject)
+                obj = (JObject)message;
+            else if (message is byte[])
+                obj = GetObjByBytes((byte[])message);
+            else if (message is string)
+                obj = GetObjByString((string)message);
+            else
+                throw new NotSupportedException($"not support type: {message.GetType().FullName}");
+
+            if (type == typeof(Invocation))
             {
-                codec.Encode(writer, message);
-                if (!writer.AutoFlush)
-                    writer.Flush();
-                return memoryStream.ToArray();
+                var array = (JArray)obj.SelectToken("Body.Arguments");
+                var arguments = array.Cast<JObject>().Select(i =>
+                  {
+                      var argumentTypeString = i.Value<string>("Type");
+                      var argumentType = Type.GetType(argumentTypeString);
+                      if (argumentType == null)
+                          throw new Exception($"解析参数类型时发生了错误，找不到类型: {argumentTypeString}");
+                      var argument = i.Property("Content").ToObject(argumentType);
+                      return argument;
+                  }).ToArray();
+                var invocation = new Invocation
+                {
+                    Arguments = arguments
+                };
+                return invocation;
             }
+
+            return null;
         }
 
-        public static string EncodeToString(this ICodec codec, object message)
+        #endregion Implementation of ICodec
+
+        private static JObject GetObjByBytes(byte[] buffer)
         {
-            using (var writer = new StringWriter())
-            {
-                codec.Encode(writer, message);
-                return writer.ToString();
-            }
+            return GetObjByString(Encoding.UTF8.GetString(buffer));
         }
 
-        public static T DecodeByBytes<T>(this ICodec codec, byte[] data)
+        private static JObject GetObjByString(string message)
         {
-            return (T)codec.DecodeByBytes(data, typeof(T));
-        }
-
-        public static T DecodeByString<T>(this ICodec codec, string content)
-        {
-            return (T)codec.DecodeByString(content, typeof(T));
-        }
-
-        public static object DecodeByBytes(this ICodec codec, byte[] data, Type type)
-        {
-            using (var reader = new StreamReader(new MemoryStream(data), Encoding.UTF8))
-            {
-                return codec.Decode(reader, type);
-            }
-        }
-
-        public static object DecodeByString(this ICodec codec, string content, Type type)
-        {
-            using (var reader = new StringReader(content))
-            {
-                return codec.Decode(reader, type);
-            }
+            return JObject.Parse(message);
         }
     }
 }
