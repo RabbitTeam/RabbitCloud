@@ -1,7 +1,7 @@
 ﻿using Cowboy.Sockets.Tcp.Client;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
+using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
 using RabbitCloud.Rpc.Default;
 using System;
 using System.Net;
@@ -60,6 +60,10 @@ namespace ConsoleApp
             Task.Run(async () =>
             {
                 var server = new RabbitRpcServer();
+                const string host = "localhost";
+                const int port = 9981;
+                var serverAddressesFeature = server.Features.Get<IServerAddressesFeature>();
+                serverAddressesFeature.Addresses.Add($"{host}:{port}");
 
                 server.Start(new RpcApplication(async context =>
                 {

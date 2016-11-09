@@ -3,20 +3,27 @@ using Newtonsoft.Json.Linq;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Features;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
+using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Default
 {
     public class RabbitRpcServer : IRpcServer
     {
-        private TcpSocketSaeaServer _tcpServer;
+        private readonly IList<TcpSocketSaeaServer> _tcpServers = new List<TcpSocketSaeaServer>();
         private readonly ICodec _codec;
+        private readonly IServerAddressesFeature _serverAddressesFeature;
 
         public RabbitRpcServer()
         {
             Features = new RpcFeatureCollection();
+            _serverAddressesFeature = new ServerAddressesFeature();
+            Features.Set(_serverAddressesFeature);
             _codec = new JsonCodec();
         }
 
@@ -34,40 +41,32 @@ namespace RabbitCloud.Rpc.Default
         /// <param name="application">应用程序实例。</param>
         public void Start<TContext>(IRpcApplication<TContext> application)
         {
-            _tcpServer = new TcpSocketSaeaServer(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9981), async (session, data, offset, count) =>
+            Task.Run(async () =>
             {
-                Features.Set<IRpcConnectionFeature>(new RpcConnectionFeature
+                foreach (var address in _serverAddressesFeature.Addresses)
                 {
-                    LocalIpAddress = session.LocalEndPoint.Address,
-                    LocalPort = session.LocalEndPoint.Port,
-                    RemoteIpAddress = session.RemoteEndPoint.Address,
-                    RemotePort = session.RemoteEndPoint.Port
-                });
-
-                {
-                    var buffer = data.Skip(offset).Take(count).ToArray();
-                    var jObj = JObject.Parse(Encoding.UTF8.GetString(buffer));
-                    Features.Set<IRpcRequestFeature>(new RpcRequestFeature
+                    var ipEndPoints = await GetIpEndPoints(address);
+                    if (ipEndPoints == null)
+                        continue;
+                    foreach (var ipEndPoint in ipEndPoints)
                     {
-                        Body = _codec.Decode(jObj, typeof(Invocation)),
-                        Path = jObj.Value<string>("Path"),
-                        PathBase = "/",
-                        QueryString = jObj.Value<string>("QueryString"),
-                        Scheme = jObj.Value<string>("Scheme")
-                    });
+                        var tcpServer = StartTcpServer(ipEndPoint, async (session, data, offset, count) =>
+                        {
+                            SetFeatures(session, data, offset, count);
+                            var context = application.CreateContext(Features);
+                            try
+                            {
+                                await application.ProcessRequestAsync(context);
+                            }
+                            finally
+                            {
+                                application.DisposeContext(context, null);
+                            }
+                        });
+                        _tcpServers.Add(tcpServer);
+                    }
                 }
-                Features.Set<IRpcResponseFeature>(new RpcResponseFeature());
-                var context = application.CreateContext(Features);
-                try
-                {
-                    await application.ProcessRequestAsync(context);
-                }
-                finally
-                {
-                    application.DisposeContext(context, null);
-                }
-            });
-            _tcpServer.Listen();
+            }).Wait();
         }
 
         #endregion Implementation of IRpcServer
@@ -77,9 +76,68 @@ namespace RabbitCloud.Rpc.Default
         /// <summary>执行与释放或重置非托管资源关联的应用程序定义的任务。</summary>
         public void Dispose()
         {
-            _tcpServer?.Dispose();
+            foreach (var server in _tcpServers)
+            {
+                server.Dispose();
+            }
+            _tcpServers.Clear();
         }
 
         #endregion Implementation of IDisposable
+
+        #region Private Method
+
+        private static TcpSocketSaeaServer StartTcpServer(IPEndPoint ipEndPoint, Func<TcpSocketSaeaSession, IEnumerable<byte>, int, int, Task> onSessionDataReceived)
+        {
+            var tcpServer = new TcpSocketSaeaServer(ipEndPoint, onSessionDataReceived);
+            tcpServer.Listen();
+            return tcpServer;
+        }
+
+        private static async Task<IEnumerable<IPEndPoint>> GetIpEndPoints(string address)
+        {
+            var temp = address.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+            var host = temp[0];
+            var port = 0;
+            if (temp.Length > 1)
+                int.TryParse(temp[1], out port);
+            var ipAddresses = await Dns.GetHostAddressesAsync(host);
+            return ipAddresses.Select(i => new IPEndPoint(i, port));
+        }
+
+        private void SetFeatures(TcpSocketSaeaSession session, IEnumerable<byte> data, int offset, int count)
+        {
+            //RpcConnectionFeature
+            {
+                Features.Set<IRpcConnectionFeature>(new RpcConnectionFeature
+                {
+                    LocalIpAddress = session.LocalEndPoint.Address,
+                    LocalPort = session.LocalEndPoint.Port,
+                    RemoteIpAddress = session.RemoteEndPoint.Address,
+                    RemotePort = session.RemoteEndPoint.Port
+                });
+            }
+
+            //RpcRequestFeature
+            {
+                var buffer = data.Skip(offset).Take(count).ToArray();
+                var jObj = JObject.Parse(Encoding.UTF8.GetString(buffer));
+                Features.Set<IRpcRequestFeature>(new RpcRequestFeature
+                {
+                    Body = _codec.Decode(jObj, typeof(Invocation)),
+                    Path = jObj.Value<string>("Path"),
+                    PathBase = "/",
+                    QueryString = jObj.Value<string>("QueryString"),
+                    Scheme = jObj.Value<string>("Scheme")
+                });
+            }
+
+            //RpcResponseFeature
+            {
+                Features.Set<IRpcResponseFeature>(new RpcResponseFeature());
+            }
+        }
+
+        #endregion Private Method
     }
 }
