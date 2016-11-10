@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using RabbitCloud.Rpc.Default.Extensions;
 
 namespace ConsoleApp
 {
@@ -75,24 +76,7 @@ namespace ConsoleApp
                 var applicationServices = services.BuildServiceProvider();
                 IRpcApplicationBuilder applicationBuilder = new RpcApplicationBuilder(applicationServices);
 
-                applicationBuilder.Use(async (context, next) =>
-                {
-                    var scope = applicationBuilder.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
-                    var requestServices = context.RequestServices = scope.ServiceProvider;
-
-                    var codec = requestServices.GetRequiredService<ICodec>();
-
-                    var requestFeature = context.Features.Get<IRpcRequestFeature>();
-
-                    var invocation = (RabbitInvocation)codec.Decode(context.Request.Body, typeof(RabbitInvocation));
-                    requestFeature.Path = invocation.Path;
-                    requestFeature.Body = invocation.Arguments;
-                    requestFeature.Headers = invocation.Headers;
-                    requestFeature.QueryString = invocation.QueryString;
-                    requestFeature.Scheme = invocation.Scheme;
-
-                    await next.Invoke();
-                });
+                applicationBuilder.UseCodec();
 
                 applicationBuilder.Use(async (context, next) =>
                 {
