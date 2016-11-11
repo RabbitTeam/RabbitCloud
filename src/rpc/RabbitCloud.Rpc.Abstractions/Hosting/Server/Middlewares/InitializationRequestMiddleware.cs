@@ -1,7 +1,7 @@
 ﻿using RabbitCloud.Rpc.Abstractions.Features;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Abstractions.Middlewares
+namespace RabbitCloud.Rpc.Abstractions.Hosting.Server.Middlewares
 {
     public class InitializationRequestMiddleware
     {

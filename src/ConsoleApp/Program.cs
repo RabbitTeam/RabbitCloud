@@ -6,7 +6,7 @@ using RabbitCloud.Rpc.Abstractions.Extensions;
 using RabbitCloud.Rpc.Abstractions.Features;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
-using RabbitCloud.Rpc.Abstractions.Middlewares;
+using RabbitCloud.Rpc.Abstractions.Hosting.Server.Middlewares;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Middlewares;
 using System;
@@ -65,34 +65,47 @@ namespace ConsoleApp
         {
             Task.Run(async () =>
             {
-                var server = new RabbitRpcServer();
-                const string host = "localhost";
-                const int port = 9981;
-                var serverAddressesFeature = server.Features.Get<IServerAddressesFeature>();
-                serverAddressesFeature.Addresses.Add($"{host}:{port}");
-
-                IServiceCollection services = new ServiceCollection();
-                var applicationServices = services.BuildServiceProvider();
-                IRpcApplicationBuilder applicationBuilder = new RpcApplicationBuilder(applicationServices);
-
-                applicationBuilder.UseCodec(new RabbitCodec());
-                applicationBuilder.UseMiddleware<InitializationRequestMiddleware>();
-
-                applicationBuilder.UseWhen(i => i.Request.ServiceId == "test", c =>
+                //server
                 {
-                    c.Use(async (context, next) =>
-                    {
-                        context.Response.Body = DateTime.Now;
-                        await next();
-                    });
-                });
-                applicationBuilder.UseMiddleware<ResponseMiddleware>();
+                    var server = new RabbitRpcServer();
+                    const string host = "localhost";
+                    const int port = 9981;
+                    var serverAddressesFeature = server.Features.Get<IServerAddressesFeature>();
+                    serverAddressesFeature.Addresses.Add($"{host}:{port}");
 
-                var rpcApplication = new RpcApplication(applicationBuilder.Build());
-                server.Start(rpcApplication);
+                    IServiceCollection services = new ServiceCollection();
+                    services.AddSingleton<IUserService, UserService>();
+                    var applicationServices = services.BuildServiceProvider();
+                    IRpcApplicationBuilder applicationBuilder = new RpcApplicationBuilder(applicationServices);
+
+                    applicationBuilder.UseCodec(new RabbitCodec());
+                    applicationBuilder.UseMiddleware<InitializationRequestMiddleware>();
+
+                    applicationBuilder.RegisterService("test", async ar =>
+                    {
+                        return await Task.FromResult(DateTime.Now);
+                    });
+
+                    applicationBuilder.RegisterService<IUserService>();
+
+                    applicationBuilder.UseMiddleware<ResponseMiddleware>();
+
+                    var rpcApplication = new RpcApplication(applicationBuilder.Build());
+                    server.Start(rpcApplication);
+                }
 
                 //client
                 {
+                    var services = new ServiceCollection();
+                    var applicationServices = services.BuildServiceProvider();
+                    var app = new RpcApplicationBuilder(applicationServices);
+
+                    app.UseWhen(context => context.Request.ServiceId == "test", c =>
+                    {
+                    });
+
+                    var application = new RpcApplication(app.Build());
+
                     var codec = new RabbitCodec();
 
                     TcpSocketSaeaClient client = new TcpSocketSaeaClient(IPAddress.Parse("127.0.0.1"), 9981,
@@ -104,8 +117,15 @@ namespace ConsoleApp
                     await client.Connect();
                     await client.SendAsync((byte[])codec.Encode(new RpcRequestFeature
                     {
-                        ServiceId = "test",
-                        Body = new[] { "1", "2", "3" }
+                        ServiceId = "ConsoleApp.IUserService.Test4_ConsoleApp.UserModel",
+                        Body = new[]
+                        {
+                            new UserModel
+                            {
+                                Id = 1,
+                                Name = "test"
+                            }
+                        }
                     }));
                 }
                 await Task.CompletedTask;
