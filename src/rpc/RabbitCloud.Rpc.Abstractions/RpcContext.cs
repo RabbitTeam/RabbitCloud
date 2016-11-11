@@ -15,34 +15,14 @@ namespace RabbitCloud.Rpc.Abstractions
         public abstract RpcContext RpcContext { get; }
 
         /// <summary>
-        /// 请求头。
+        /// 服务Id。
         /// </summary>
-        public abstract IDictionary<string, string> Headers { get; }
+        public abstract string ServiceId { get; set; }
 
         /// <summary>
         /// 请求主体。
         /// </summary>
         public abstract object Body { get; set; }
-
-        /// <summary>
-        /// 路径。
-        /// </summary>
-        public abstract string Path { get; set; }
-
-        /// <summary>
-        /// 基础路径。
-        /// </summary>
-        public abstract string PathBase { get; set; }
-
-        /// <summary>
-        /// 查询字符串。
-        /// </summary>
-        public abstract string QueryString { get; set; }
-
-        /// <summary>
-        /// 格式、协议。
-        /// </summary>
-        public abstract string Scheme { get; set; }
     }
 
     /// <summary>
@@ -54,11 +34,6 @@ namespace RabbitCloud.Rpc.Abstractions
         /// Rpc上下文。
         /// </summary>
         public abstract RpcContext RpcContext { get; }
-
-        /// <summary>
-        /// 响应头。
-        /// </summary>
-        public abstract IDictionary<string, string> Headers { get; }
 
         /// <summary>
         /// 响应主体。
@@ -121,9 +96,13 @@ namespace RabbitCloud.Rpc.Abstractions
         public override RpcContext RpcContext { get; }
 
         /// <summary>
-        /// 请求头。
+        /// 路径。
         /// </summary>
-        public override IDictionary<string, string> Headers => _requestFeature.Headers;
+        public override string ServiceId
+        {
+            get { return _requestFeature.ServiceId; }
+            set { _requestFeature.ServiceId = value; }
+        }
 
         /// <summary>
         /// 请求主体。
@@ -132,42 +111,6 @@ namespace RabbitCloud.Rpc.Abstractions
         {
             get { return _requestFeature.Body; }
             set { _requestFeature.Body = value; }
-        }
-
-        /// <summary>
-        /// 路径。
-        /// </summary>
-        public override string Path
-        {
-            get { return _requestFeature.Path; }
-            set { _requestFeature.Path = value; }
-        }
-
-        /// <summary>
-        /// 基础路径。
-        /// </summary>
-        public override string PathBase
-        {
-            get { return _requestFeature.PathBase; }
-            set { _requestFeature.PathBase = value; }
-        }
-
-        /// <summary>
-        /// 查询字符串。
-        /// </summary>
-        public override string QueryString
-        {
-            get { return _requestFeature.QueryString; }
-            set { _requestFeature.QueryString = value; }
-        }
-
-        /// <summary>
-        /// 格式、协议。
-        /// </summary>
-        public override string Scheme
-        {
-            get { return _requestFeature.Scheme; }
-            set { _requestFeature.Scheme = value; }
         }
 
         #endregion Overrides of RpcRequest
@@ -189,11 +132,6 @@ namespace RabbitCloud.Rpc.Abstractions
         /// Rpc上下文。
         /// </summary>
         public override RpcContext RpcContext { get; }
-
-        /// <summary>
-        /// 响应头。
-        /// </summary>
-        public override IDictionary<string, string> Headers => _responseFeature.Headers;
 
         /// <summary>
         /// 响应主体。

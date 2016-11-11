@@ -7,12 +7,12 @@ using RabbitCloud.Rpc.Abstractions.Features;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
 using RabbitCloud.Rpc.Default;
-using RabbitCloud.Rpc.Default.Messages;
+using RabbitCloud.Rpc.Default.Extensions;
+using RabbitCloud.Rpc.Default.Features;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using RabbitCloud.Rpc.Default.Extensions;
 
 namespace ConsoleApp
 {
@@ -72,37 +72,57 @@ namespace ConsoleApp
                 serverAddressesFeature.Addresses.Add($"{host}:{port}");
 
                 IServiceCollection services = new ServiceCollection();
-                services.AddSingleton<ICodec, RabbitCodec>();
                 var applicationServices = services.BuildServiceProvider();
                 IRpcApplicationBuilder applicationBuilder = new RpcApplicationBuilder(applicationServices);
 
+                applicationBuilder.Use(async (context, next) =>
+                {
+                    context.Features.Set<ICodecFeature>(new CodecFeature
+                    {
+                        Codec = new RabbitCodec()
+                    });
+                    await next();
+                });
                 applicationBuilder.UseCodec();
 
                 applicationBuilder.Use(async (context, next) =>
                 {
                     await next.Invoke();
                 });
+                applicationBuilder.MapServiceId("test", async (context, next) =>
+                {
+                    var sessionFeature = context.Features.Get<ISessionFeature>();
+                    var codec = context.Features.Get<ICodecFeature>().Codec;
+
+                    context.Response.Body = DateTime.Now;
+
+                    var data = (byte[])codec.Encode(context.Features.Get<IRpcResponseFeature>());
+                    await sessionFeature.Session.SendAsync(data);
+                    await next();
+                });
+                applicationBuilder.MapServiceId("a", async (c, n) =>
+                {
+                    await n();
+                });
 
                 var rpcApplication = new RpcApplication(applicationBuilder.Build());
                 server.Start(rpcApplication);
+
+                //client
                 {
-                    var codec = applicationServices.GetRequiredService<ICodec>();
+                    var codec = new RabbitCodec();
 
                     TcpSocketSaeaClient client = new TcpSocketSaeaClient(IPAddress.Parse("127.0.0.1"), 9981,
                         async (c, data, offset, count) =>
                         {
+                            var b = data.Skip(offset).Take(count).ToArray();
+                            var response = codec.Decode(b, typeof(IRpcResponseFeature));
                         });
                     await client.Connect();
-                    await client.SendAsync((byte[])codec.Encode(new RabbitInvocation
+                    await client.SendAsync((byte[])codec.Encode(new RpcRequestFeature
                     {
-                        Arguments = new object[] { "1", "2", "3" },
-                        Headers = new Dictionary<string, string>
-                        {
-                            {"a","b" }
-                        },
-                        Path = "/a/b/c",
-                        QueryString = "a=1&b=2",
-                        Scheme = "rabbit"
+                        ServiceId = "test",
+                        Body = new[] { "1", "2", "3" }
                     }));
                 }
                 await Task.CompletedTask;

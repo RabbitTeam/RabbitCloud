@@ -2,6 +2,7 @@
 using RabbitCloud.Rpc.Abstractions.Features;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
+using RabbitCloud.Rpc.Default.Features;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -118,14 +119,21 @@ namespace RabbitCloud.Rpc.Default
                 var buffer = data.Skip(offset).Take(count).ToArray();
                 Features.Set<IRpcRequestFeature>(new RpcRequestFeature
                 {
-                    Body = buffer,
-                    PathBase = "/"
+                    Body = buffer
                 });
             }
 
             //RpcResponseFeature
             {
                 Features.Set<IRpcResponseFeature>(new RpcResponseFeature());
+            }
+
+            //SessionFeature
+            {
+                Features.Set<ISessionFeature>(new SessionFeature
+                {
+                    Session = session
+                });
             }
         }
 

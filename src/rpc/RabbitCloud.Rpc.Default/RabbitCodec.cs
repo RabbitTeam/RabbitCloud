@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Default.Messages;
+using RabbitCloud.Rpc.Abstractions.Features;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,17 +21,20 @@ namespace RabbitCloud.Rpc.Default
         /// <returns>编码后的内容。</returns>
         public object Encode(object message)
         {
-            if (message is RabbitInvocation)
+            if (message is IRpcRequestFeature)
             {
-                var invocation = (RabbitInvocation)message;
+                var invocation = (IRpcRequestFeature)message;
                 return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
                 {
-                    invocation.Headers,
-                    invocation.Path,
-                    invocation.QueryString,
-                    invocation.Scheme,
-                    Arguments = invocation.Arguments.Select(GetTypeParameter)
+                    invocation.ServiceId,
+                    Arguments = ((IEnumerable<object>)invocation.Body).Select(GetTypeParameter)
                 }));
+            }
+            if (message is IRpcResponseFeature)
+            {
+                var responseFeature = (IRpcResponseFeature)message;
+                var json = JsonConvert.SerializeObject(GetTypeParameter(responseFeature.Body));
+                return Encoding.UTF8.GetBytes(json);
             }
             return null;
         }
@@ -57,18 +60,22 @@ namespace RabbitCloud.Rpc.Default
             else
                 throw new NotSupportedException($"not support type: {message.GetType().FullName}");
 
-            if (type == typeof(RabbitInvocation))
+            if (type == typeof(IRpcRequestFeature))
             {
                 var arguments = ((JArray)obj.SelectToken("Arguments")).Select(GetArgument).ToArray();
-                var invocation = new RabbitInvocation
+                var invocation = new RpcRequestFeature
                 {
-                    Arguments = arguments,
-                    Path = obj.Value<string>("Path"),
-                    QueryString = obj.Value<string>("QueryString"),
-                    Scheme = obj.Value<string>("Scheme"),
-                    Headers = obj["Headers"].ToObject<IDictionary<string, string>>()
+                    ServiceId = obj.Value<string>("ServiceId"),
+                    Body = arguments
                 };
                 return invocation;
+            }
+            if (type == typeof(IRpcResponseFeature))
+            {
+                return new RpcResponseFeature
+                {
+                    Body = GetArgument(obj)
+                };
             }
 
             return null;
