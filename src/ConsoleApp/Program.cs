@@ -78,15 +78,15 @@ namespace ConsoleApp
                 applicationBuilder.UseCodec(new RabbitCodec());
                 applicationBuilder.UseMiddleware<InitializationRequestMiddleware>();
 
-                applicationBuilder.MapWhen(i => i.Request.ServiceId == "test", c =>
+                applicationBuilder.UseWhen(i => i.Request.ServiceId == "test", c =>
                 {
                     c.Use(async (context, next) =>
                     {
                         context.Response.Body = DateTime.Now;
                         await next();
                     });
-                    c.UseMiddleware<ResponseMiddleware>();
                 });
+                applicationBuilder.UseMiddleware<ResponseMiddleware>();
 
                 var rpcApplication = new RpcApplication(applicationBuilder.Build());
                 server.Start(rpcApplication);
