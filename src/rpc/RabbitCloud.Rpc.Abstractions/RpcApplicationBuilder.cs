@@ -120,13 +120,13 @@ namespace RabbitCloud.Rpc.Abstractions
         /// <returns>Rpc请求委托。</returns>
         public RpcRequestDelegate Build()
         {
-            RpcRequestDelegate app = null;
+            RpcRequestDelegate app = context => Task.CompletedTask;
 
             foreach (var component in _components.Reverse())
             {
                 app = component(app);
             }
-            return app ?? (context => Task.CompletedTask);
+            return app;
         }
 
         #endregion Implementation of IRpcApplicationBuilder

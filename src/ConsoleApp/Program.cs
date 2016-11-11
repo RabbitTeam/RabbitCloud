@@ -6,9 +6,9 @@ using RabbitCloud.Rpc.Abstractions.Extensions;
 using RabbitCloud.Rpc.Abstractions.Features;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server;
 using RabbitCloud.Rpc.Abstractions.Hosting.Server.Features;
+using RabbitCloud.Rpc.Abstractions.Middlewares;
 using RabbitCloud.Rpc.Default;
-using RabbitCloud.Rpc.Default.Extensions;
-using RabbitCloud.Rpc.Default.Features;
+using RabbitCloud.Rpc.Default.Middlewares;
 using System;
 using System.Linq;
 using System.Net;
@@ -75,34 +75,17 @@ namespace ConsoleApp
                 var applicationServices = services.BuildServiceProvider();
                 IRpcApplicationBuilder applicationBuilder = new RpcApplicationBuilder(applicationServices);
 
-                applicationBuilder.Use(async (context, next) =>
+                applicationBuilder.UseCodec(new RabbitCodec());
+                applicationBuilder.UseMiddleware<InitializationRequestMiddleware>();
+
+                applicationBuilder.MapWhen(i => i.Request.ServiceId == "test", c =>
                 {
-                    context.Features.Set<ICodecFeature>(new CodecFeature
+                    c.Use(async (context, next) =>
                     {
-                        Codec = new RabbitCodec()
+                        context.Response.Body = DateTime.Now;
+                        await next();
                     });
-                    await next();
-                });
-                applicationBuilder.UseCodec();
-
-                applicationBuilder.Use(async (context, next) =>
-                {
-                    await next.Invoke();
-                });
-                applicationBuilder.MapServiceId("test", async (context, next) =>
-                {
-                    var sessionFeature = context.Features.Get<ISessionFeature>();
-                    var codec = context.Features.Get<ICodecFeature>().Codec;
-
-                    context.Response.Body = DateTime.Now;
-
-                    var data = (byte[])codec.Encode(context.Features.Get<IRpcResponseFeature>());
-                    await sessionFeature.Session.SendAsync(data);
-                    await next();
-                });
-                applicationBuilder.MapServiceId("a", async (c, n) =>
-                {
-                    await n();
+                    c.UseMiddleware<ResponseMiddleware>();
                 });
 
                 var rpcApplication = new RpcApplication(applicationBuilder.Build());
