@@ -32,19 +32,11 @@ namespace RabbitCloud.Rpc.Abstractions.Extensions
                 app.RegisterService(GetServiceId(method), async args =>
                 {
                     var result = method.Invoke(service, args);
-                    if (result is Task)
-                    {
-                        var task = (Task)result;
-                        await task;
-
-                        if (task.GetType().GenericTypeArguments.Any())
-                        {
-                            return task.GetType().GetProperty("Result").GetValue(task);
-                        }
-
-                        return null;
-                    }
-                    return result;
+                    var resultTask = result as Task;
+                    if (resultTask == null)
+                        return result;
+                    await resultTask;
+                    return resultTask.GetType().GetProperty("Result").GetValue(resultTask);
                 });
             }
             return app;

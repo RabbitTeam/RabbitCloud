@@ -81,10 +81,7 @@ namespace ConsoleApp
                     applicationBuilder.UseCodec(new RabbitCodec());
                     applicationBuilder.UseMiddleware<InitializationRequestMiddleware>();
 
-                    applicationBuilder.RegisterService("test", async ar =>
-                    {
-                        return await Task.FromResult(DateTime.Now);
-                    });
+                    applicationBuilder.RegisterService("test", async ar => await Task.FromResult(DateTime.Now));
 
                     applicationBuilder.RegisterService<IUserService>();
 
@@ -96,36 +93,19 @@ namespace ConsoleApp
 
                 //client
                 {
-                    var services = new ServiceCollection();
-                    var applicationServices = services.BuildServiceProvider();
-                    var app = new RpcApplicationBuilder(applicationServices);
-
-                    app.UseWhen(context => context.Request.ServiceId == "test", c =>
-                    {
-                    });
-
-                    var application = new RpcApplication(app.Build());
-
                     var codec = new RabbitCodec();
-
-                    TcpSocketSaeaClient client = new TcpSocketSaeaClient(IPAddress.Parse("127.0.0.1"), 9981,
+                    var client = new TcpSocketSaeaClient(IPAddress.Parse("127.0.0.1"), 9981,
                         async (c, data, offset, count) =>
                         {
                             var b = data.Skip(offset).Take(count).ToArray();
                             var response = codec.Decode(b, typeof(IRpcResponseFeature));
+                            await Task.CompletedTask;
                         });
                     await client.Connect();
                     await client.SendAsync((byte[])codec.Encode(new RpcRequestFeature
                     {
-                        ServiceId = "ConsoleApp.IUserService.Test4_ConsoleApp.UserModel",
-                        Body = new[]
-                        {
-                            new UserModel
-                            {
-                                Id = 1,
-                                Name = "test"
-                            }
-                        }
+                        ServiceId = "ConsoleApp.IUserService.Test3",
+                        Body = new object[0]
                     }));
                 }
                 await Task.CompletedTask;
