@@ -6,9 +6,7 @@ using RabbitCloud.Rpc.Abstractions.Proxy;
 using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
-using RabbitCloud.Rpc.Default.Utils;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -71,19 +69,8 @@ namespace ConsoleApp
 
                 IProxyFactory factory = new CastleProxyFactory();
 
-                var userService = factory.GetProxy<IUserService>(async (proxy, method, ag) =>
-                {
-                    var response = await referer.Call(new DefaultRequest
-                    {
-                        Arguments = ag,
-                        InterfaceName = "",
-                        MethodName = method.Name,
-                        ParamtersType = method.GetParameters().Select(i => i.ParameterType.FullName).ToArray(),
-                        RequestId = MessageIdGenerator.GeneratorId()
-                    });
-
-                    return response.Result;
-                });
+                var invocationHandler = new RefererInvocationHandler(referer);
+                var userService = factory.GetProxy<IUserService>(invocationHandler.Invoke);
 
                 userService.Test();
                 await userService.Test2();
