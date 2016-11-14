@@ -1,15 +1,13 @@
-﻿using System;
-
-namespace RabbitCloud.Rpc.Abstractions
+﻿namespace RabbitCloud.Rpc.Abstractions
 {
     /// <summary>
-    /// 一个抽象的导出者。
+    /// 一个抽象的RPC导出者。
     /// </summary>
-    public interface IExporter : IDisposable
+    public interface IExporter : INode
     {
         /// <summary>
-        /// 调用者。
+        /// 调用提供程序。
         /// </summary>
-        IInvoker Invoker { get; }
+        IProvider Provider { get; }
     }
 }

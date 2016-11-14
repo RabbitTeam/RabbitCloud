@@ -1,5 +1,4 @@
 ﻿using Castle.DynamicProxy;
-using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -11,30 +10,31 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
     /// </summary>
     internal class InvokerInterceptor : IInterceptor
     {
-        private readonly IInvoker _invoker;
+        private readonly InvocationDelegate _invocationHandler;
 
-        public InvokerInterceptor(IInvoker invoker)
+        public InvokerInterceptor(InvocationDelegate invocationHandler)
         {
-            _invoker = invoker;
+            _invocationHandler = invocationHandler;
         }
 
         #region Implementation of IInterceptor
 
-        public void Intercept(global::Castle.DynamicProxy.IInvocation invocation)
+        public void Intercept(IInvocation invocation)
         {
             var returnType = invocation.Method.ReturnType.GetTypeInfo();
             var isTask = typeof(Task).GetTypeInfo().IsAssignableFrom(returnType);
 
-            var invokeTask = isTask ? _invoker.Invoke(RpcInvocation.Create(invocation.Method, invocation.Arguments, _invoker)) : Task.Run(() => _invoker.Invoke(RpcInvocation.Create(invocation.Method, invocation.Arguments)));
+            var invokeTask = _invocationHandler(invocation.Proxy, invocation.Method, invocation.Arguments);
+
+            var result = invokeTask.GetAwaiter().GetResult();
 
             if (!isTask)
             {
-                invocation.ReturnValue = invokeTask.Result;
+                invocation.ReturnValue = result;
             }
             else
             {
-                var result = invokeTask.GetAwaiter().GetResult();
-                var value = result.Recreate();
+                var value = result;
                 if (returnType.IsGenericType)
                 {
                     var taskGenericType = returnType.GenericTypeArguments[0];
@@ -45,13 +45,6 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
                 {
                     invocation.ReturnValue = Task.CompletedTask;
                 }
-            }
-            try
-            {
-                invocation.Proceed();
-            }
-            catch (NotImplementedException)
-            {
             }
         }
 

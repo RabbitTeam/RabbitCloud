@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using RabbitCloud.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Utils;
+﻿using RabbitCloud.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Utils.Extensions;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace RabbitCloud.Rpc.Abstractions.Protocol
 {
@@ -12,106 +11,72 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
     /// </summary>
     public abstract class Protocol : IProtocol
     {
-        #region Property
-
-        protected ConcurrentDictionary<string, IExporter> Exporters { get; } =
-            new ConcurrentDictionary<string, IExporter>(StringComparer.OrdinalIgnoreCase);
-
-        protected HashSet<IInvoker> Invokers { get; } = new HashSet<IInvoker>();
-        protected ILogger Logger { get; }
-
-        #endregion Property
-
-        protected Protocol(ILogger logger)
-        {
-            Logger = logger;
-        }
+        /// <summary>
+        /// 导出者字典表。
+        /// </summary>
+        protected ConcurrentDictionary<string, Lazy<IExporter>> Exporters { get; } = new ConcurrentDictionary<string, Lazy<IExporter>>(StringComparer.OrdinalIgnoreCase);
 
         #region Implementation of IProtocol
 
         /// <summary>
-        /// 导出一个调用者。
+        /// 导出一个RPC提供程序。
         /// </summary>
-        /// <param name="invoker">调用者。</param>
-        /// <returns>导出者。</returns>
-        public abstract IExporter Export(IInvoker invoker);
+        /// <param name="provider">RPC提供程序。</param>
+        /// <param name="url">导出的Url。</param>
+        /// <returns>一个导出者。</returns>
+        public IExporter Export(IProvider provider, Url url)
+        {
+            var protocolKey = url.GetProtocolKey();
+            return Exporters.GetOrAdd(protocolKey, new Lazy<IExporter>(() => CreateExporter(provider, url))).Value;
+        }
 
         /// <summary>
-        /// 引用一个调用者。
+        /// 引用一个RPC服务。
         /// </summary>
-        /// <param name="url">调用者Url。</param>
-        /// <returns>调用者。</returns>
-        public abstract IInvoker Refer(Url url);
+        /// <param name="type">本地服务类型。</param>
+        /// <param name="serviceUrl">服务Url。</param>
+        /// <returns>一个引用者。</returns>
+        public IReferer Refer(Type type, Url serviceUrl)
+        {
+            return CreateReferer(type, serviceUrl);
+        }
 
         #endregion Implementation of IProtocol
 
         #region Implementation of IDisposable
 
-        /// <summary>执行与释放或重置非托管资源关联的应用程序定义的任务。</summary>
+        /// <summary>
+        /// 执行与释放或重置非托管资源关联的应用程序定义的任务。
+        /// </summary>
         public virtual void Dispose()
         {
-            foreach (var invoker in Invokers)
+            foreach (var exporter in Exporters.Values.Where(i => i.IsValueCreated).Select(i => i.Value))
             {
-                if (invoker == null)
-                    continue;
-                try
-                {
-                    if (Logger.IsEnabled(LogLevel.Information))
-                        Logger.LogInformation($"销毁引用: {invoker.Url}");
-                    invoker.Dispose();
-                }
-                catch (Exception exception)
-                {
-                    Logger.LogWarning(default(EventId), exception, exception.Message);
-                }
-            }
-            Invokers.Clear();
-
-            foreach (var exporter in Exporters.Values)
-            {
-                if (exporter == null)
-                    continue;
-                try
-                {
-                    if (Logger.IsEnabled(LogLevel.Information))
-                        Logger.LogInformation($"取消导出服务: {exporter.Invoker.Url}");
-                    exporter.Dispose();
-                }
-                catch (Exception exception)
-                {
-                    Logger.LogWarning(default(EventId), exception, exception.Message);
-                }
+                exporter.Dispose();
             }
             Exporters.Clear();
         }
 
         #endregion Implementation of IDisposable
 
-        #region Protected Method
+        #region Public Method
 
         /// <summary>
-        /// 根据服务Url获取服务Key。
+        /// 创建一个导出者。
         /// </summary>
-        /// <param name="url">服务Url。</param>
-        /// <returns>服务Key。</returns>
-        protected static string GetServiceKey(Url url)
-        {
-            return ProtocolUtils.GetServiceKey(url);
-        }
+        /// <param name="provider">RPC提供程序。</param>
+        /// <param name="url">导出的Url。</param>
+        /// <returns>服务导出者。</returns>
+        protected abstract IExporter CreateExporter(IProvider provider, Url url);
 
         /// <summary>
-        /// 获取服务Key。
+        /// 创建一个引用者。
         /// </summary>
-        /// <param name="port">端口。</param>
-        /// <param name="serviceName">服务名称。</param>
-        /// <param name="serviceVersion">服务版本。</param>
-        /// <param name="serviceGroup">服务组。</param>
-        /// <returns>服务Key。</returns>
-        protected static string GetServiceKey(int port, string serviceName, string serviceVersion, string serviceGroup)
-        {
-            return ProtocolUtils.GetServiceKey(port, serviceName, serviceVersion, serviceGroup);
-        }
+        /// <param name="type">类型。</param>
+        /// <param name="serviceUrl">服务Url。</param>
+        /// <returns>服务引用者。</returns>
+        protected abstract IReferer CreateReferer(Type type, Url serviceUrl);
 
-        #endregion Protected Method
+        #endregion Public Method
     }
 }

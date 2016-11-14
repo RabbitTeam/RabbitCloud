@@ -1,188 +1,54 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace RabbitCloud.Abstractions
 {
-    public class Url
+    public class Url : Uri
     {
-        #region Constructor
-
-        public Url()
-        {
-            Parameters = new AttributeDictionary();
-        }
-
-
-        public Url(string scheme, string userName, string password, string host, int port, string path, IDictionary<string, string> parameters)
-            : this(scheme, userName, password, host, port, path, new AttributeDictionary(parameters))
+        /// <summary>用指定的 URI 初始化 <see cref="T:System.Uri" /> 类的新实例。</summary>
+        /// <param name="uriString">一个 URI。</param>
+        /// <exception cref="T:System.ArgumentNullException">
+        /// <paramref name="uriString" /> 为 null。</exception>
+        /// <exception cref="T:System.UriFormatException">在 .NET for Windows Store apps 或 可移植类库, ，捕获该基类异常， <see cref="T:System.FormatException" />, 、 相反。<paramref name="uriString" /> 为空。- 或 - <paramref name="uriString" /> 中指定的方案形式不正确。请参阅 <see cref="M:System.Uri.CheckSchemeName(System.String)" />。- 或 - <paramref name="uriString" /> 包含太多斜杠。- 或 - <paramref name="uriString" /> 中指定的密码无效。- 或 - <paramref name="uriString" /> 中指定的主机名无效。- 或 - <paramref name="uriString" /> 中指定的文件名无效。- 或 - <paramref name="uriString" /> 中指定的用户名无效。- 或 - <paramref name="uriString" /> 中指定的主机名或证书颁发机构名不能以反斜杠结尾。- 或 - <paramref name="uriString" /> 中指定的端口号无效或无法分析。- 或 - 长度 <paramref name="uriString" /> 超过 65519 个字符。- 或 - <paramref name="uriString" /> 中指定的方案的长度超过 1023 个字符。- 或 - <paramref name="uriString" /> 中存在无效的字符序列。- 或 - <paramref name="uriString" /> 中指定的 MS-DOS 路径必须以 c:\\ 开头。</exception>
+        public Url(string uriString) : base(uriString)
         {
         }
-        public Url(string scheme, string userName, string password, string host, int port, string path, AttributeDictionary parameters)
+
+        /// <summary>用指定的 URI 初始化 <see cref="T:System.Uri" /> 类的新实例。此构造函数允许指定 URI 字符串是相对 URI、绝对 URI 还是不确定。</summary>
+        /// <param name="uriString">标识将由 <see cref="T:System.Uri" /> 实例表示的资源的字符串。</param>
+        /// <param name="uriKind">指定 URI 字符串是相对 URI、绝对 URI 还是不确定。</param>
+        /// <exception cref="T:System.ArgumentException">
+        /// <paramref name="uriKind" /> 无效。</exception>
+        /// <exception cref="T:System.ArgumentNullException">
+        /// <paramref name="uriString" /> 为 null。</exception>
+        /// <exception cref="T:System.UriFormatException">在 .NET for Windows Store apps 或 可移植类库, ，捕获该基类异常， <see cref="T:System.FormatException" />, 、 相反。<paramref name="uriString" /> 包含相对 URI，而 <paramref name="uriKind" /> 为 <see cref="F:System.UriKind.Absolute" />。或<paramref name="uriString" /> 包含绝对 URI，而 <paramref name="uriKind" /> 为 <see cref="F:System.UriKind.Relative" />。或<paramref name="uriString" /> 为空。- 或 - <paramref name="uriString" /> 中指定的方案形式不正确。请参阅 <see cref="M:System.Uri.CheckSchemeName(System.String)" />。- 或 - <paramref name="uriString" /> 包含太多斜杠。- 或 - <paramref name="uriString" /> 中指定的密码无效。- 或 - <paramref name="uriString" /> 中指定的主机名无效。- 或 - <paramref name="uriString" /> 中指定的文件名无效。- 或 - <paramref name="uriString" /> 中指定的用户名无效。- 或 - <paramref name="uriString" /> 中指定的主机名或证书颁发机构名不能以反斜杠结尾。- 或 - <paramref name="uriString" /> 中指定的端口号无效或无法分析。- 或 - 长度 <paramref name="uriString" /> 超过 65519 个字符。- 或 - <paramref name="uriString" /> 中指定的方案的长度超过 1023 个字符。- 或 - <paramref name="uriString" /> 中存在无效的字符序列。- 或 - <paramref name="uriString" /> 中指定的 MS-DOS 路径必须以 c:\\ 开头。</exception>
+        public Url(string uriString, UriKind uriKind) : base(uriString, uriKind)
         {
-            Scheme = scheme;
-            UserName = userName;
-            Password = password;
-            Host = host;
-            Port = port;
-            Path = path;
-            Parameters = parameters;
         }
 
-        #endregion Constructor
-
-        #region Property
-
-        /// <summary>
-        /// 格式、协议。
-        /// </summary>
-        public string Scheme { get; set; }
-
-        /// <summary>
-        /// 用户名。
-        /// </summary>
-        public string UserName { get; set; }
-
-        /// <summary>
-        /// 密码。
-        /// </summary>
-        public string Password { get; set; }
-
-        /// <summary>
-        /// 主机。
-        /// </summary>
-        public string Host { get; set; }
-
-        /// <summary>
-        /// 端口。
-        /// </summary>
-        public int Port { get; set; }
-
-        /// <summary>
-        /// 路径。
-        /// </summary>
-        public string Path { get; set; }
-
-        /// <summary>
-        /// 参数。
-        /// </summary>
-        public AttributeDictionary Parameters { get; set; }
-
-        #endregion Property
-
-        #region Public Method
-
-        /// <summary>
-        /// 克隆出一个新的Url实例。
-        /// </summary>
-        /// <returns></returns>
-        public Url Clone()
+        /// <summary>根据指定的基 URI 和相对 URI 字符串，初始化 <see cref="T:System.Uri" /> 类的新实例。</summary>
+        /// <param name="baseUri">基 URI。</param>
+        /// <param name="relativeUri">要添加到基 URI 的相对 URI。</param>
+        /// <exception cref="T:System.ArgumentNullException">
+        /// <paramref name="baseUri" /> 为 null。</exception>
+        /// <exception cref="T:System.ArgumentOutOfRangeException">
+        /// <paramref name="baseUri" /> 不是绝对的 <see cref="T:System.Uri" /> 实例。</exception>
+        /// <exception cref="T:System.UriFormatException">在 .NET for Windows Store apps 或 可移植类库, ，捕获该基类异常， <see cref="T:System.FormatException" />, 、 相反。<paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 是空的或只包含空格。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的方案无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合所形成的 URI 包含太多的斜杠。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的密码无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的主机名无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的文件名无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的用户名无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的主机名或证书颁发机构名不能以反斜杠结尾。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的端口号无效或无法分析。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 的长度超过 65519 个字符。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的方案的长度超过 1023 个字符。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中存在无效的字符序列。- 或 - <paramref name="uriString" /> 中指定的 MS-DOS 路径必须以 c:\\ 开头。</exception>
+        public Url(Uri baseUri, string relativeUri) : base(baseUri, relativeUri)
         {
-            return new Url(Scheme, UserName, Password, Host, Port, Path, Parameters);
         }
 
-        #endregion Public Method
-
-        #region Overrides of Object
-
-        /// <summary>返回表示当前对象的字符串。</summary>
-        /// <returns>表示当前对象的字符串。</returns>
-        public override string ToString()
+        /// <summary>根据指定的基 <see cref="T:System.Uri" /> 实例和相对 <see cref="T:System.Uri" /> 实例的组合，初始化 <see cref="T:System.Uri" /> 类的新实例。</summary>
+        /// <param name="baseUri">作为新 <see cref="T:System.Uri" /> 实例的基的绝对 <see cref="T:System.Uri" />。</param>
+        /// <param name="relativeUri">与 <see cref="T:System.Uri" /> 组合的相对 <paramref name="baseUri" /> 实例。</param>
+        /// <exception cref="T:System.ArgumentException">
+        /// <paramref name="baseUri" /> 不是绝对的 <see cref="T:System.Uri" /> 实例。</exception>
+        /// <exception cref="T:System.ArgumentNullException">
+        /// <paramref name="baseUri" /> 为 null。</exception>
+        /// <exception cref="T:System.ArgumentOutOfRangeException">
+        /// <paramref name="baseUri" /> 不是绝对的 <see cref="T:System.Uri" /> 实例。</exception>
+        /// <exception cref="T:System.UriFormatException">在 .NET for Windows Store apps 或 可移植类库, ，捕获该基类异常， <see cref="T:System.FormatException" />, 、 相反。<paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 是空的或只包含空格。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的方案无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合所形成的 URI 包含太多的斜杠。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的密码无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的主机名无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的文件名无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的用户名无效。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的主机名或证书颁发机构名不能以反斜杠结尾。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的端口号无效或无法分析。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 的长度超过 65519 个字符。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中指定的方案的长度超过 1023 个字符。- 或 - <paramref name="baseUri" /> 和 <paramref name="relativeUri" /> 组合形成的 URI 中存在无效的字符序列。- 或 - <paramref name="uriString" /> 中指定的 MS-DOS 路径必须以 c:\\ 开头。</exception>
+        public Url(Uri baseUri, Uri relativeUri) : base(baseUri, relativeUri)
         {
-            var extraValue = string.Empty;
-
-            var parameters = Parameters;
-            if (parameters.GetAttributes().Any())
-            {
-                var builder = new StringBuilder();
-                foreach (var parameter in parameters.GetAttributes())
-                {
-                    if (string.IsNullOrEmpty(parameter.Key))
-                        continue;
-                    builder
-                        .Append("&")
-                        .Append(parameter.Key)
-                        .Append("=")
-                        .Append(parameter.Value ?? string.Empty);
-                }
-                if (builder.Length > 0)
-                {
-                    builder.Replace('&', '?', 0, 1);
-                    extraValue = builder.ToString();
-                }
-            }
-
-            if (string.IsNullOrEmpty(UserName))
-            {
-                Password = null;
-            }
-
-            var uriBuilder = new UriBuilder(Scheme, Host, Port, Path, extraValue)
-            {
-                UserName = UserName,
-                Password = Password
-            };
-            return uriBuilder.Uri.ToString();
         }
-
-        #endregion Overrides of Object
-
-        #region Public Static Method
-
-        /// <summary>
-        /// 根据一个字符串创建一个Url。
-        /// </summary>
-        /// <param name="url">url字符串。</param>
-        /// <returns>Url实例。</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="url"/> 为null。</exception>
-        /// <exception cref="UriFormatException"><paramref name="url"/> 格式不正确。</exception>
-        public static Url Create(string url)
-        {
-            var uri = new Uri(url, UriKind.RelativeOrAbsolute);
-
-            var userInfo = uri.UserInfo;
-            string userName = string.Empty, userPassword = string.Empty;
-            if (!string.IsNullOrEmpty(userInfo))
-            {
-                if (userInfo.Contains(":"))
-                {
-                    var temp = userInfo.Split(new[] { ':' }, 2);
-                    userName = temp[0];
-                    userPassword = temp[1];
-                }
-                else
-                {
-                    userName = userInfo;
-                }
-            }
-
-            var parameters = new Dictionary<string, string>();
-
-            var query = uri.Query;
-
-            if (!string.IsNullOrEmpty(query))
-            {
-                query = query.TrimStart('?');
-                var temp = query.Split('&');
-                foreach (var s in temp)
-                {
-                    //a=1,b=1,c=1
-                    if (s.Contains("="))
-                    {
-                        var item = s.Split(new[] { '=' }, 2);
-                        parameters[item[0]] = item[1];
-                    }
-                    else //a,b,c
-                    {
-                        parameters[s] = string.Empty;
-                    }
-                }
-            }
-
-            return new Url(uri.Scheme, userName, userPassword, uri.Host, uri.Port, uri.AbsolutePath, parameters);
-        }
-
-        #endregion Public Static Method
     }
 }

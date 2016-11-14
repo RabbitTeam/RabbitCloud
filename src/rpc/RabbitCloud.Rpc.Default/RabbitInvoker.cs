@@ -1,44 +1,35 @@
 ﻿using RabbitCloud.Abstractions;
-using RabbitCloud.Abstractions.Feature;
 using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Protocol;
+using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Default.Service;
-using RabbitCloud.Rpc.Default.Service.Message;
+using System;
 using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Default
 {
-    public class RabbitInvoker : ProtocolInvoker
+    public class RabbitInvoker : Referer
     {
-        private readonly CowboyClient _clientEntry;
+        private readonly IClientTable _clientTable;
 
-        public RabbitInvoker(Url url, CowboyClient clientEntry) : base(url)
+        public RabbitInvoker(IClientTable clientTable, Type type, Url serviceUrl) : base(type, serviceUrl)
         {
-            _clientEntry = clientEntry;
+            _clientTable = clientTable;
         }
 
-        #region Overrides of ProtocolInvoker
-
-        protected override async Task<IResult> DoInvoke(IInvocation invocation)
-        {
-            invocation.Attributes.SetMetadata("path", Url.Path);
-            var requestMessage = RequestMessage.Create((RpcInvocation)invocation);
-
-            var responseMessage = await _clientEntry.Send(requestMessage);
-
-            return responseMessage.Exception == null
-                ? new RpcResult(responseMessage.Result)
-                : new RpcResult(responseMessage.Exception);
-        }
+        #region Overrides of Referer
 
         /// <summary>
-        /// 执行与释放或重置非托管资源关联的应用程序定义的任务。
+        /// 执行调用。
         /// </summary>
-        public override void Dispose()
+        /// <param name="request">RPC请求。</param>
+        /// <returns>RPC响应。</returns>
+        protected override async Task<IResponse> DoCall(IRequest request)
         {
-            _clientEntry.Dispose();
+            var client = _clientTable.OpenClient(ServiceUrl);
+            var response = await client.Send(request);
+            return response;
         }
 
-        #endregion Overrides of ProtocolInvoker
+        #endregion Overrides of Referer
     }
 }

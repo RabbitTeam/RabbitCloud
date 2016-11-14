@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using RabbitCloud.Abstractions;
+﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Protocol;
-using RabbitCloud.Rpc.Abstractions.Utils.Extensions;
 using RabbitCloud.Rpc.Default.Service;
+using System;
 
 namespace RabbitCloud.Rpc.Default
 {
@@ -12,7 +11,7 @@ namespace RabbitCloud.Rpc.Default
         private readonly IServerTable _serverTable;
         private readonly IClientTable _clientTable;
 
-        public RabbitProtocol(IServerTable serverTable, IClientTable clientTable, ILogger logger) : base(logger)
+        public RabbitProtocol(IServerTable serverTable, IClientTable clientTable)
         {
             _serverTable = serverTable;
             _clientTable = clientTable;
@@ -21,39 +20,26 @@ namespace RabbitCloud.Rpc.Default
         #region Overrides of Protocol
 
         /// <summary>
-        /// 导出一个调用者。
+        /// 创建一个导出者。
         /// </summary>
-        /// <param name="invoker">调用者。</param>
-        /// <returns>导出者。</returns>
-        public override IExporter Export(IInvoker invoker)
+        /// <param name="provider">RPC提供程序。</param>
+        /// <param name="url">导出的Url。</param>
+        /// <returns>服务导出者。</returns>
+        protected override IExporter CreateExporter(IProvider provider, Url url)
         {
-            var serviceKey = invoker.Url.GetServiceKey();
-            return Exporters.GetOrAdd(serviceKey, k =>
-            {
-                var exporter = new RabbitExporter(invoker, e =>
-                {
-                    IExporter value;
-                    Exporters.TryRemove(k, out value);
-                });
-                _serverTable.OpenServer(invoker.Url, sk =>
-                {
-                    IExporter value;
-                    Exporters.TryGetValue(sk, out value);
-                    return value;
-                });
-                return exporter;
-            });
+            _serverTable.OpenServer(url, key => Exporters[key].Value);
+            return new RabbitExporter(provider, url);
         }
 
         /// <summary>
-        /// 引用一个调用者。
+        /// 创建一个引用者。
         /// </summary>
-        /// <param name="url">调用者Url。</param>
-        /// <returns>调用者。</returns>
-        public override IInvoker Refer(Url url)
+        /// <param name="type">类型。</param>
+        /// <param name="serviceUrl">服务Url。</param>
+        /// <returns>服务引用者。</returns>
+        protected override IReferer CreateReferer(Type type, Url serviceUrl)
         {
-            var client = _clientTable.OpenClient(url);
-            return new RabbitInvoker(url, client);
+            return new RabbitInvoker(_clientTable, type, serviceUrl);
         }
 
         #endregion Overrides of Protocol

@@ -1,5 +1,5 @@
 ﻿using RabbitCloud.Abstractions;
-using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Codec;
 using System;
 using System.Collections.Concurrent;
 

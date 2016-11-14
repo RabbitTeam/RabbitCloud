@@ -1,11 +1,12 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using RabbitCloud.Abstractions.Feature;
 using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Default.Service.Message;
+using RabbitCloud.Rpc.Abstractions.Codec;
+using RabbitCloud.Rpc.Abstractions.Internal;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace RabbitCloud.Rpc.Default.Service
 {
@@ -14,95 +15,107 @@ namespace RabbitCloud.Rpc.Default.Service
         #region Implementation of ICodec
 
         /// <summary>
-        /// 编码。
+        /// 对内容进行编码。
         /// </summary>
-        /// <param name="writer">写入器。</param>
-        /// <param name="message">消息。</param>
-        public void Encode(TextWriter writer, object message)
+        /// <param name="content">内容。</param>
+        /// <returns>编码后的结果。</returns>
+        public object Encode(object content)
         {
-            var rpcMessage = message as RpcMessage;
-            if (rpcMessage != null)
+            var request = content as IRequest;
+            if (request != null)
             {
-                var requestMessage = message as RequestMessage;
-                var responseMessage = message as ResponseMessage;
-                object id;
-                if (rpcMessage.Id.IsInteger)
-                    id = (long)rpcMessage.Id;
-                else
-                    id = rpcMessage.Id.ToString();
-                if (requestMessage != null)
+                var json = JsonConvert.SerializeObject(new
                 {
-                    var invocation = requestMessage.Invocation;
-                    var arguments = invocation.Arguments;
-                    var content = JsonConvert.SerializeObject(new
-                    {
-                        Id = id,
-                        Invocation = new
-                        {
-                            invocation.MethodName,
-                            Arguments = arguments,
-                            invocation.ParameterTypes,
-                            invocation.Attributes.Metadata
-                        }
-                    });
-                    writer.Write(content);
-                }
-                else if (responseMessage != null)
-                {
-                    var content = JsonConvert.SerializeObject(new
-                    {
-                        Id = id,
-                        responseMessage.Result
-                    });
-                    writer.Write(content);
-                }
+                    Arguments = request.Arguments?.Select(GetTypedValue),
+                    request.InterfaceName,
+                    request.MethodName,
+                    request.ParamtersType,
+                    request.RequestId,
+                    Parameters = request.GetParameters()
+                });
+                return Encoding.UTF8.GetBytes(json);
             }
-
-            writer.Flush();
+            var response = content as IResponse;
+            if (response != null)
+            {
+                var json = JsonConvert.SerializeObject(new
+                {
+                    response.Exception,
+                    response.RequestId,
+                    Result = GetTypedValue(response.Result),
+                    Parameters = response.GetParameters()
+                });
+                return Encoding.UTF8.GetBytes(json);
+            }
+            throw new NotSupportedException(content.GetType().FullName);
         }
 
         /// <summary>
-        /// 解码。
+        /// 对内容进行解码。
         /// </summary>
-        /// <param name="reader">读取器。</param>
-        /// <param name="type">消息类型。</param>
-        /// <returns>消息实例。</returns>
-        public object Decode(TextReader reader, Type type)
+        /// <param name="content">内容。</param>
+        /// <param name="type">内容类型。</param>
+        /// <returns>解码后的结果。</returns>
+        public object Decode(object content, Type type)
         {
-            var content = reader.ReadToEnd();
+            JObject obj = null;
 
-            if (type == typeof(RequestMessage))
+            if (content is IEnumerable<byte>)
+                content = Encoding.UTF8.GetString((byte[])content);
+            if (content is string)
+                obj = JObject.Parse(content.ToString());
+
+            if (obj == null)
+                throw new NotSupportedException(content.GetType().FullName);
+
+            if (type == typeof(IRequest))
             {
-                var obj = JObject.Parse(content);
-                var id = obj.Property("Id").Value;
-                var message = new RequestMessage
+                return new DefaultRequest
                 {
-                    Id = id.Type == JTokenType.Integer ? (Id)id.Value<long>() : (Id)id.Value<string>(),
-                    Invocation = new RpcInvocation
-                    {
-                        Arguments = obj.SelectToken("Invocation.Arguments").ToObject<object[]>(),
-                        Attributes = new DefaultMetadataFeature(obj.SelectToken("Invocation.Metadata").ToObject<IDictionary<string, object>>()),
-                        MethodName = obj.SelectToken("Invocation.MethodName").Value<string>(),
-                        ParameterTypes = obj.SelectToken("Invocation.ParameterTypes").ToObject<Type[]>()
-                    }
+                    Arguments = ((JArray)obj["Arguments"]).Select(GetTypedValue).ToArray(),
+                    InterfaceName = obj["InterfaceName"].Value<string>(),
+                    MethodName = obj["MethodName"].Value<string>(),
+                    ParamtersType = obj["ParamtersType"].ToObject<string[]>(),
+                    RequestId = obj["RequestId"].Value<long>()
                 };
-                var invocation = message.Invocation;
-                for (var i = 0; i < invocation.Arguments.Length; i++)
-                {
-                    var argument = (JObject)invocation.Arguments[i];
-                    var parameterType = invocation.ParameterTypes[i];
-                    invocation.Arguments[i] = argument.ToObject(parameterType);
-                }
-                return message;
             }
-            if (type == typeof(ResponseMessage))
+            if (type == typeof(IResponse))
             {
-                return JsonConvert.DeserializeObject<ResponseMessage>(content);
+                return new DefaultResponse
+                {
+                    Exception = obj["Exception"].ToObject<Exception>(),
+                    RequestId = obj["RequestId"].ToObject<long>(),
+                    Result = GetTypedValue(obj["Result"])
+                };
             }
-
-            throw new NotSupportedException($"不支持的类型: {type}");
+            throw new NotSupportedException(type.FullName);
         }
 
         #endregion Implementation of ICodec
+
+        #region Private Method
+
+        private static object GetTypedValue(object value)
+        {
+            return value == null ? null : new { Type = value.GetType().AssemblyQualifiedName, Value = value };
+        }
+
+        private static object GetTypedValue(JToken token)
+        {
+            if (token == null)
+                return null;
+
+            var typeToken = token.SelectToken("Type");
+            var valueToken = token.SelectToken("Value");
+
+            if (valueToken == null)
+                return null;
+
+            var typeString = typeToken.Value<string>();
+            var type = Type.GetType(typeString);
+            return valueToken.ToObject(type);
+        }
+
+        #endregion Private Method
     }
 }

@@ -1,45 +1,28 @@
 ﻿using Castle.DynamicProxy;
-using RabbitCloud.Abstractions;
-using System;
 
 namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
 {
-    /// <summary>
-    /// 基于Castle动态代理的代理工厂。
-    /// </summary>
-    public class CastleProxyFactory : ProxyFactory
+    public class CastleProxyFactory : IProxyFactory
     {
         /// <summary>
         /// 代理生成器。
         /// </summary>
         private static readonly ProxyGenerator ProxyGenerator = new ProxyGenerator();
 
-        #region Overrides of ProxyFactory
+        #region Implementation of IProxyFactory
 
         /// <summary>
-        /// 获取一个调用者。
+        /// 获取一个类型的代理。
         /// </summary>
-        /// <param name="getInstance">对象实例工厂。</param>
-        /// <param name="url">调用者url。</param>
-        /// <returns>调用者。</returns>
-        public override IInvoker GetInvoker(Func<object> getInstance, Url url)
+        /// <typeparam name="T">类型。</typeparam>
+        /// <param name="invocationHandler">调用处理程序。</param>
+        /// <returns>代理实例。</returns>
+        public T GetProxy<T>(InvocationDelegate invocationHandler)
         {
-            return new ClrProxyInvoker(url, getInstance);
-        }
-
-        /// <summary>
-        /// 获取一个Invoker的代理实例。
-        /// </summary>
-        /// <typeparam name="T">代理类型。</typeparam>
-        /// <param name="invoker">调用者。</param>
-        /// <param name="types"></param>
-        /// <returns>Invoker代理实例。</returns>
-        protected override T GetProxy<T>(IInvoker invoker, Type[] types)
-        {
-            var instance = ProxyGenerator.CreateInterfaceProxyWithoutTarget(typeof(T), types, new InvokerInterceptor(invoker));
+            var instance = ProxyGenerator.CreateInterfaceProxyWithoutTarget(typeof(T), new[] { typeof(T) }, new InvokerInterceptor(invocationHandler));
             return (T)instance;
         }
 
-        #endregion Overrides of ProxyFactory
+        #endregion Implementation of IProxyFactory
     }
 }

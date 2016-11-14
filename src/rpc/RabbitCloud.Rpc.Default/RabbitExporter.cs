@@ -1,29 +1,13 @@
-﻿using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Protocol;
-using System;
+﻿using RabbitCloud.Abstractions;
+using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Internal;
 
 namespace RabbitCloud.Rpc.Default
 {
-    public class RabbitExporter : ProtocolExporter
+    public class RabbitExporter : Exporter
     {
-        private readonly Action<IExporter> _dispose;
-
-        public RabbitExporter(IInvoker invoker, Action<IExporter> dispose) : base(invoker)
+        public RabbitExporter(IProvider provider, Url url) : base(provider, url)
         {
-            _dispose = dispose;
         }
-
-        #region Overrides of ProtocolExporter
-
-        /// <summary>
-        /// 执行与释放或重置非托管资源关联的应用程序定义的任务。
-        /// </summary>
-        public override void Dispose()
-        {
-            base.Dispose();
-            _dispose?.Invoke(this);
-        }
-
-        #endregion Overrides of ProtocolExporter
     }
 }

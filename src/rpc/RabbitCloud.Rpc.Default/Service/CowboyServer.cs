@@ -1,7 +1,8 @@
 ﻿using Cowboy.Sockets.Tcp.Server;
 using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Default.Service.Message;
+using RabbitCloud.Rpc.Abstractions.Codec;
+using RabbitCloud.Rpc.Abstractions.Internal;
 using System;
 using System.Linq;
 using System.Net;
@@ -11,12 +12,12 @@ namespace RabbitCloud.Rpc.Default.Service
 {
     public class CowboyServer : IDisposable
     {
-        private readonly Func<RequestMessage, Task<ResponseMessage>> _onReceived;
+        private readonly Func<IRequest, Task<IResponse>> _onReceived;
         private readonly ICodec _codec;
         private TcpSocketSaeaServer _server;
         protected Url Url { get; set; }
 
-        public CowboyServer(Url url, ICodec codec, Func<RequestMessage, Task<ResponseMessage>> onReceived)
+        public CowboyServer(Url url, ICodec codec, Func<IRequest, Task<IResponse>> onReceived)
         {
             Url = url;
             _codec = codec;
@@ -35,10 +36,11 @@ namespace RabbitCloud.Rpc.Default.Service
                 {
                     var buffer = data.Skip(offset).Take(count).ToArray();
 
-                    var requestMessage = _codec.DecodeByBytes<RequestMessage>(buffer);
-                    var response = await _onReceived(requestMessage);
+                    var requestMessage = (IRequest)_codec.Decode(buffer, typeof(IRequest));
+                    var response = (DefaultResponse)(await _onReceived(requestMessage));
+                    response.RequestId = requestMessage.RequestId;
 
-                    var sendData = _codec.EncodeToBytes(response);
+                    var sendData = (byte[])_codec.Encode(response);
 
                     await session.SendAsync(sendData);
                 });

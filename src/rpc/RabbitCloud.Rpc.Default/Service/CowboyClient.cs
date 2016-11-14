@@ -1,7 +1,7 @@
 ﻿using Cowboy.Sockets.Tcp.Client;
 using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Default.Service.Message;
+using RabbitCloud.Rpc.Abstractions.Codec;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -12,7 +12,7 @@ namespace RabbitCloud.Rpc.Default.Service
 {
     public class CowboyClient : IDisposable
     {
-        private readonly ConcurrentDictionary<Id, TaskCompletionSource<ResponseMessage>> _callback = new ConcurrentDictionary<Id, TaskCompletionSource<ResponseMessage>>();
+        private readonly ConcurrentDictionary<long, TaskCompletionSource<IResponse>> _callback = new ConcurrentDictionary<long, TaskCompletionSource<IResponse>>();
         private readonly ICodec _codec;
         protected Url Url { get; set; }
         private TcpSocketSaeaClient _client;
@@ -25,21 +25,21 @@ namespace RabbitCloud.Rpc.Default.Service
             Task.Run(DoOpen).Wait();
         }
 
-        public async Task<ResponseMessage> Send(RequestMessage requestMessage)
+        public async Task<IResponse> Send(IRequest requestMessage)
         {
-            var source = new TaskCompletionSource<ResponseMessage>();
-            _callback.TryAdd(requestMessage.Id, source);
+            var source = new TaskCompletionSource<IResponse>();
+            _callback.TryAdd(requestMessage.RequestId, source);
 
             try
             {
-                var data = _codec.EncodeToBytes(requestMessage);
+                var data = (byte[])_codec.Encode(requestMessage);
 
                 await _client.SendAsync(data);
             }
             catch
             {
-                TaskCompletionSource<ResponseMessage> value;
-                _callback.TryRemove(requestMessage.Id, out value);
+                TaskCompletionSource<IResponse> value;
+                _callback.TryRemove(requestMessage.RequestId, out value);
             }
 
             return await source.Task;
@@ -51,9 +51,9 @@ namespace RabbitCloud.Rpc.Default.Service
             var ipEndPoint = new IPEndPoint(address.First(), Url.Port);
             _client = new TcpSocketSaeaClient(ipEndPoint, (c, data, offset, count) =>
              {
-                 var responseMessage = _codec.DecodeByBytes<ResponseMessage>(data.Skip(offset).Take(count).ToArray());
-                 TaskCompletionSource<ResponseMessage> source;
-                 _callback.TryRemove(responseMessage.Id, out source);
+                 var responseMessage = (IResponse)_codec.Decode(data.Skip(offset).Take(count).ToArray(), typeof(IResponse));
+                 TaskCompletionSource<IResponse> source;
+                 _callback.TryRemove(responseMessage.RequestId, out source);
                  source.TrySetResult(responseMessage);
 
                  return Task.CompletedTask;

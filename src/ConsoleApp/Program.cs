@@ -1,11 +1,14 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using RabbitCloud.Abstractions;
-using RabbitCloud.Rpc.Abstractions;
+﻿using RabbitCloud.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Codec;
+using RabbitCloud.Rpc.Abstractions.Internal;
+using RabbitCloud.Rpc.Abstractions.Protocol;
+using RabbitCloud.Rpc.Abstractions.Proxy;
 using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
+using RabbitCloud.Rpc.Default.Utils;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -57,44 +60,41 @@ namespace ConsoleApp
     {
         public static void Main(string[] args)
         {
+            var url = new Url("rabbitrpc://127.0.0.1:9981/test/a?a=1&b=2");
             Task.Run(async () =>
             {
-                var services = new ServiceCollection();
-                services.AddTransient<IUserService, UserService>();
-                services.AddLogging();
-                var provider = services.BuildServiceProvider();
+                ICodec codec = new RabbitCodec();
+                IProtocol protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
 
-                var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
-                var logger = loggerFactory.CreateLogger<Program>();
-                
-                var proxyFactory = new CastleProxyFactory();
+                protocol.Export(new DefaultProvider(() => new UserService(), url, typeof(IUserService)), url);
+                var referer = protocol.Refer(typeof(IUserService), url);
 
-                IProtocol protocol;
-                Url url;
+                IProxyFactory factory = new CastleProxyFactory();
+
+                var userService = factory.GetProxy<IUserService>(async (proxy, method, ag) =>
                 {
-                    ICodec codec = new RabbitCodec();
-                    url = Url.Create("rabbit://127.0.0.1:9981/test");
-                    protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec), logger);
-                }
+                    var response = await referer.Call(new DefaultRequest
+                    {
+                        Arguments = ag,
+                        InterfaceName = "",
+                        MethodName = method.Name,
+                        ParamtersType = method.GetParameters().Select(i => i.ParameterType.FullName).ToArray(),
+                        RequestId = MessageIdGenerator.GeneratorId()
+                    });
 
-                /*//http协议
-                {
-                    ICodec codec = new HttpCodec(serializer);
-                    url = Url.Create("http://127.0.0.1:9981/test");
-                    protocol = new HttpProtocol(new ServiceTable(codec), codec);
-                }*/
+                    return response.Result;
+                });
 
-                var localInvoker = proxyFactory.GetInvoker(() => provider.GetRequiredService<IUserService>(), url);
-
-                protocol.Export(localInvoker);
-                var remoteInvoker = protocol.Refer(url);
-
-                var userService = proxyFactory.GetProxy<IUserService>(remoteInvoker);
-
+                userService.Test();
+                await userService.Test2();
+                Console.WriteLine(await userService.Test3());
                 await userService.Test4(new UserModel
                 {
-                    Name = "aa"
+                    Id = 1,
+                    Name = "test"
                 });
+
+                await Task.CompletedTask;
             }).Wait();
         }
     }

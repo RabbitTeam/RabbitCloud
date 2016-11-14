@@ -1,7 +1,7 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Utils;
-using RabbitCloud.Rpc.Default.Service.Message;
+using RabbitCloud.Rpc.Abstractions.Codec;
+using RabbitCloud.Rpc.Abstractions.Utils.Extensions;
 using System;
 using System.Collections.Concurrent;
 
@@ -53,11 +53,15 @@ namespace RabbitCloud.Rpc.Default.Service
             {
                 var server = new CowboyServer(url, _codec, async request =>
                 {
-                    var invocation = request.Invocation;
+                    var protocolKey = url.GetProtocolKey();
+                    var exporter = getExporter(protocolKey);
+                    var response = await exporter.Provider.Call(request);
+                    return response;
+                    /*var invocation = request.Invocation;
 
                     var exporter = getExporter(ProtocolUtils.GetServiceKey(url));
                     var result = await exporter.Invoker.Invoke(invocation);
-                    return ResponseMessage.Create(request, result.Value, result.Exception);
+                    return ResponseMessage.Create(request, result.Value, result.Exception);*/
                 });
                 return server;
             })).Value;
