@@ -81,8 +81,7 @@ namespace ConsoleApp
 
                 protocol.Export(new DefaultProvider(() => new UserService(), url, typeof(IUserService)), url);
 
-                var zookeeper = new ZooKeeper("172.18.20.132:2181", (int)TimeSpan.FromMinutes(5).TotalMilliseconds, new MyClass());
-                var registry = new ZookeeperRegistry(zookeeper);
+                var registry = new ZookeeperRegistryFactory().GetRegistry(new Url("zookeeper://172.18.20.132:2181"));
 
                 await registry.Register(url);
                 foreach (var u in await registry.Discover(url))

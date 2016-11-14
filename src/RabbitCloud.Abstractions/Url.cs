@@ -1,9 +1,32 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace RabbitCloud.Abstractions
 {
     public class Url : Uri
     {
+        private IDictionary<string, string> _parameters;
+
+        public IDictionary<string, string> Parameters
+        {
+            get
+            {
+                if (_parameters != null)
+                    return _parameters;
+                _parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                var temp = Query.Split('&');
+                foreach (var item in temp)
+                {
+                    if (string.IsNullOrEmpty(item))
+                        continue;
+                    var values = item.Split('=');
+                    _parameters[values[0]] = values.Length == 1 ? string.Empty : values[1];
+                }
+                return _parameters;
+            }
+        }
+
         /// <summary>用指定的 URI 初始化 <see cref="T:System.Uri" /> 类的新实例。</summary>
         /// <param name="uriString">一个 URI。</param>
         /// <exception cref="T:System.ArgumentNullException">
