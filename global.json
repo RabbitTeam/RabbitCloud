@@ -1,5 +1,5 @@
 {
-  "projects": [ "src", "test", "src/rpc", "src/rpc/cluster" ],
+  "projects": [ "src", "test", "src/rpc", "src/rpc/cluster", "src/registry" ],
   "sdk": {
     "version": "1.0.0-preview2-003121"
   }

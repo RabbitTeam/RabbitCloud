@@ -24,6 +24,12 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RabbitCloud.Rpc.Abstraction
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RabbitCloud.Rpc.Default", "src\rpc\RabbitCloud.Rpc.Default\RabbitCloud.Rpc.Default.xproj", "{4A17B1E5-5785-4FAB-B011-1E9424BC427A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "registry", "registry", "{E4689FEF-B424-46C2-8A12-314D11D72992}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RabbitCloud.Registry.Abstractions", "src\registry\RabbitCloud.Registry.Abstractions\RabbitCloud.Registry.Abstractions.xproj", "{36AB27A2-96CC-48AF-8B93-6BAB991C9473}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RabbitCloud.Registry.ZooKeeper", "src\registry\RabbitCloud.Registry.ZooKeeper\RabbitCloud.Registry.ZooKeeper.xproj", "{6DAE944C-741D-49C3-90CA-69C51210DF81}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,6 +56,14 @@ Global
 		{4A17B1E5-5785-4FAB-B011-1E9424BC427A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A17B1E5-5785-4FAB-B011-1E9424BC427A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A17B1E5-5785-4FAB-B011-1E9424BC427A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36AB27A2-96CC-48AF-8B93-6BAB991C9473}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36AB27A2-96CC-48AF-8B93-6BAB991C9473}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36AB27A2-96CC-48AF-8B93-6BAB991C9473}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36AB27A2-96CC-48AF-8B93-6BAB991C9473}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DAE944C-741D-49C3-90CA-69C51210DF81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DAE944C-741D-49C3-90CA-69C51210DF81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DAE944C-741D-49C3-90CA-69C51210DF81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DAE944C-741D-49C3-90CA-69C51210DF81}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -61,5 +75,8 @@ Global
 		{51BCFAE0-950F-429D-8FFD-1E99555756F0} = {F87EFE7D-BD20-49C6-A6F2-C5D298F7D598}
 		{E15C015C-F0D8-4BEC-ACA5-16E44DD13A2A} = {51BCFAE0-950F-429D-8FFD-1E99555756F0}
 		{4A17B1E5-5785-4FAB-B011-1E9424BC427A} = {51BCFAE0-950F-429D-8FFD-1E99555756F0}
+		{E4689FEF-B424-46C2-8A12-314D11D72992} = {F87EFE7D-BD20-49C6-A6F2-C5D298F7D598}
+		{36AB27A2-96CC-48AF-8B93-6BAB991C9473} = {E4689FEF-B424-46C2-8A12-314D11D72992}
+		{6DAE944C-741D-49C3-90CA-69C51210DF81} = {E4689FEF-B424-46C2-8A12-314D11D72992}
 	EndGlobalSection
 EndGlobal

@@ -1,9 +1,9 @@
-﻿using RabbitCloud.Abstractions;
+﻿using org.apache.zookeeper;
+using RabbitCloud.Abstractions;
+using RabbitCloud.Registry.ZooKeeper;
 using RabbitCloud.Rpc.Abstractions.Codec;
 using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Abstractions.Protocol;
-using RabbitCloud.Rpc.Abstractions.Proxy;
-using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
@@ -54,6 +54,21 @@ namespace ConsoleApp
         }
     }
 
+    internal class MyClass : Watcher
+    {
+        #region Overrides of Watcher
+
+        /// <summary>Processes the specified event.</summary>
+        /// <param name="event">The event.</param>
+        /// <returns></returns>
+        public override Task process(WatchedEvent @event)
+        {
+            return Task.CompletedTask;
+        }
+
+        #endregion Overrides of Watcher
+    }
+
     public class Program
     {
         public static void Main(string[] args)
@@ -65,21 +80,31 @@ namespace ConsoleApp
                 IProtocol protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
 
                 protocol.Export(new DefaultProvider(() => new UserService(), url, typeof(IUserService)), url);
-                var referer = protocol.Refer(typeof(IUserService), url);
 
-                IProxyFactory factory = new CastleProxyFactory();
+                var zookeeper = new ZooKeeper("172.18.20.132:2181", (int)TimeSpan.FromMinutes(5).TotalMilliseconds, new MyClass());
+                var registry = new ZookeeperRegistry(zookeeper);
 
-                var invocationHandler = new RefererInvocationHandler(referer);
-                var userService = factory.GetProxy<IUserService>(invocationHandler.Invoke);
-
-                userService.Test();
-                await userService.Test2();
-                Console.WriteLine(await userService.Test3());
-                await userService.Test4(new UserModel
+                await registry.Register(url);
+                foreach (var u in await registry.Discover(url))
                 {
-                    Id = 1,
-                    Name = "test"
-                });
+                    Console.WriteLine(u);
+                }
+
+                /*                var referer = protocol.Refer(typeof(IUserService), url);
+
+                                IProxyFactory factory = new CastleProxyFactory();
+
+                                var invocationHandler = new RefererInvocationHandler(referer);
+                                var userService = factory.GetProxy<IUserService>(invocationHandler.Invoke);
+
+                                userService.Test();
+                                await userService.Test2();
+                                Console.WriteLine(await userService.Test3());
+                                await userService.Test4(new UserModel
+                                {
+                                    Id = 1,
+                                    Name = "test"
+                                });*/
 
                 await Task.CompletedTask;
             }).Wait();
