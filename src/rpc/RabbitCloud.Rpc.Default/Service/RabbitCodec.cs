@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Codec;
+using RabbitCloud.Rpc.Abstractions.Exceptions;
 using RabbitCloud.Rpc.Abstractions.Internal;
 using System;
 using System.Collections.Generic;
@@ -40,7 +41,7 @@ namespace RabbitCloud.Rpc.Default.Service
             {
                 var json = JsonConvert.SerializeObject(new
                 {
-                    response.Exception,
+                    Exception = response.Exception?.Message,
                     response.RequestId,
                     Result = GetTypedValue(response.Result),
                     Parameters = response.GetParameters()
@@ -81,9 +82,10 @@ namespace RabbitCloud.Rpc.Default.Service
             }
             if (type == typeof(IResponse))
             {
+                var exceptionMessage = obj.Value<string>("Exception");
                 return new DefaultResponse
                 {
-                    Exception = obj["Exception"].ToObject<Exception>(),
+                    Exception = exceptionMessage == null ? null : new RpcException(exceptionMessage),
                     RequestId = obj["RequestId"].ToObject<long>(),
                     Result = GetTypedValue(obj["Result"])
                 };
@@ -97,7 +99,12 @@ namespace RabbitCloud.Rpc.Default.Service
 
         private static object GetTypedValue(object value)
         {
-            return value == null ? null : new { Type = value.GetType().AssemblyQualifiedName, Value = value };
+            return value == null ? null : GetTypedValue(value.GetType().AssemblyQualifiedName, value);
+        }
+
+        private static object GetTypedValue(string type, object value)
+        {
+            return new { Type = type, Value = value };
         }
 
         private static object GetTypedValue(JToken token)

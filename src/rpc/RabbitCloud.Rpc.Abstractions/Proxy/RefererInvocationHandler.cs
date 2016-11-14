@@ -28,6 +28,9 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy
                 RequestId = MessageIdGenerator.GeneratorId()
             });
 
+            if (response.Exception != null)
+                throw response.Exception;
+
             return response.Result;
         }
 

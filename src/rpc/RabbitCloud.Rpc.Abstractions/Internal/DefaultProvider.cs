@@ -39,7 +39,7 @@ namespace RabbitCloud.Rpc.Abstractions.Internal
             }
             catch (Exception exception)
             {
-                response.Exception = exception;
+                response.Exception = exception.InnerException ?? exception;
             }
             return response;
         }
