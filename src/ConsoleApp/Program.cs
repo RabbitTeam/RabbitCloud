@@ -1,6 +1,6 @@
 ﻿using org.apache.zookeeper;
 using RabbitCloud.Abstractions;
-using RabbitCloud.Registry.ZooKeeper;
+using RabbitCloud.Registry.Redis;
 using RabbitCloud.Rpc.Abstractions.Codec;
 using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Abstractions.Protocol;
@@ -73,21 +73,35 @@ namespace ConsoleApp
     {
         public static void Main(string[] args)
         {
-            var url = new Url("rabbitrpc://127.0.0.1:9981/test/a?a=1&b=2");
+            var url1 = new Url("rabbitrpc://127.0.0.1:9981/test/a?a=1&b=2");
+            var url2 = new Url("rabbitrpc://127.0.0.1:9982/test/a?a=1");
             Task.Run(async () =>
             {
                 ICodec codec = new RabbitCodec();
                 IProtocol protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
 
-                protocol.Export(new DefaultProvider(() => new UserService(), url, typeof(IUserService)), url);
+                protocol.Export(new DefaultProvider(() => new UserService(), url1, typeof(IUserService)), url1);
+                protocol.Export(new DefaultProvider(() => new UserService(), url1, typeof(IUserService)), url2);
 
-                var registry = new ZookeeperRegistryFactory().GetRegistry(new Url("zookeeper://172.18.20.132:2181"));
+                //                                var registry = new ZookeeperRegistryFactory().GetRegistry(new Url("zookeeper://172.18.20.132:2181"));
 
-                await registry.Register(url);
-                foreach (var u in await registry.Discover(url))
+                var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?connectionString=127.0.0.1:6379&database=-1&application=test"));
+
+                await registry.Subscribe(url1, async (url, urls) =>
                 {
-                    Console.WriteLine(u);
-                }
+                    foreach (var url3 in urls)
+                    {
+                        Console.WriteLine(url3);
+                    }
+                    await Task.CompletedTask;
+                });
+
+                await registry.Register(url1);
+                await registry.Register(url2);
+                /*                foreach (var u in await registry.Discover(url1))
+                                {
+                                    Console.WriteLine(u);
+                                }*/
 
                 /*                var referer = protocol.Refer(typeof(IUserService), url);
 
@@ -107,6 +121,7 @@ namespace ConsoleApp
 
                 await Task.CompletedTask;
             }).Wait();
+            Console.ReadLine();
         }
     }
 }

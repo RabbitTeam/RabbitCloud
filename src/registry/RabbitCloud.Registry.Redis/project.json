@@ -5,8 +5,8 @@
     "NETStandard.Library": "1.6.0",
     "RabbitCloud.Abstractions": "1.0.0-*",
     "RabbitCloud.Registry.Abstractions": "1.0.0-*",
-    "ZooKeeperNetEx.Recipes": "3.4.9.1",
-    "Newtonsoft.Json": "9.0.1"
+    "RabbitCloud.Rpc.Abstractions": "1.0.0-*",
+    "StackExchange.Redis": "1.1.608"
   },
 
   "frameworks": {

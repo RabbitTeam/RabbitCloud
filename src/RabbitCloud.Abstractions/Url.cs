@@ -15,7 +15,7 @@ namespace RabbitCloud.Abstractions
                     return _parameters;
                 _parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-                var temp = Query.Split('&');
+                var temp = Query.Trim('?').Split('&');
                 foreach (var item in temp)
                 {
                     if (string.IsNullOrEmpty(item))

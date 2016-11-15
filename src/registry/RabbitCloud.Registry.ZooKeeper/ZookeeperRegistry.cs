@@ -58,9 +58,9 @@ namespace RabbitCloud.Registry.ZooKeeper
         #region Implementation of IDiscoveryService
 
         /// <summary>
-        /// 订阅一个注册中心。
+        /// 订阅一个服务。
         /// </summary>
-        /// <param name="url">注册中心url。</param>
+        /// <param name="url">服务Url。</param>
         /// <param name="listener">监听器。</param>
         /// <returns>一个任务。</returns>
         public Task Subscribe(Url url, NotifyListenerDelegate listener)
@@ -69,9 +69,9 @@ namespace RabbitCloud.Registry.ZooKeeper
         }
 
         /// <summary>
-        /// 取消订阅一个注册中心。
+        /// 取消订阅。
         /// </summary>
-        /// <param name="url">注册中心url。</param>
+        /// <param name="url">服务Url。</param>
         /// <param name="listener">监听器。</param>
         /// <returns>一个任务。</returns>
         public Task UnSubscribe(Url url, NotifyListenerDelegate listener)
@@ -80,10 +80,10 @@ namespace RabbitCloud.Registry.ZooKeeper
         }
 
         /// <summary>
-        /// 发现注册中心中的所有服务。
+        /// 发现注册中心中指定服务的所有节点。
         /// </summary>
-        /// <param name="url">注册执行Url。</param>
-        /// <returns>服务集合。</returns>
+        /// <param name="url">注册的服务Url。</param>
+        /// <returns>服务节点集合。</returns>
         public async Task<Url[]> Discover(Url url)
         {
             var parentPath = GetNodeTypePath(url, ZkNodeType.AvailableServer);
@@ -148,7 +148,7 @@ namespace RabbitCloud.Registry.ZooKeeper
             }
         }
 
-        private async Task RemoveNode(Url url, ZkNodeType type)
+        private async Task RemoveNode(Uri url, ZkNodeType type)
         {
             var nodeTypePath = GetNodePath(url, type);
             if (await _zooKeeper.existsAsync(nodeTypePath) != null)
