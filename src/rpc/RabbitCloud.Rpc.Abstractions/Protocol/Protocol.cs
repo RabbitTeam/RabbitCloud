@@ -22,10 +22,10 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// 导出一个RPC提供程序。
         /// </summary>
         /// <param name="provider">RPC提供程序。</param>
-        /// <param name="url">导出的Url。</param>
         /// <returns>一个导出者。</returns>
-        public IExporter Export(IProvider provider, Url url)
+        public IExporter Export(IProvider provider)
         {
+            var url = provider.Url;
             var protocolKey = url.GetProtocolKey();
             return Exporters.GetOrAdd(protocolKey, new Lazy<IExporter>(() => CreateExporter(provider, url))).Value;
         }
