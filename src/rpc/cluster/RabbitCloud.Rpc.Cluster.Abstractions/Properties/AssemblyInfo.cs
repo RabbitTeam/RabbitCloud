@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("RabbitCloud.Rpc.Cluster")]
+[assembly: AssemblyProduct("RabbitCloud.Rpc.Cluster.Abstractions")]
 [assembly: AssemblyTrademark("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
@@ -15,4 +15,4 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("e1592c4c-c7bb-418c-a41e-ffadfb937971")]
+[assembly: Guid("237b855d-711f-4d0d-8069-f64600c053f3")]

@@ -32,6 +32,10 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RabbitCloud.Registry.ZooKee
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RabbitCloud.Registry.Redis", "src\registry\RabbitCloud.Registry.Redis\RabbitCloud.Registry.Redis.xproj", "{248CC127-EAAC-47D3-A24E-9EE6CC167AC5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cluster", "cluster", "{74184980-2A4E-4F88-AA4D-B5836F981E11}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "RabbitCloud.Rpc.Cluster.Abstractions", "src\rpc\cluster\RabbitCloud.Rpc.Cluster.Abstractions\RabbitCloud.Rpc.Cluster.Abstractions.xproj", "{237B855D-711F-4D0D-8069-F64600C053F3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,6 +74,10 @@ Global
 		{248CC127-EAAC-47D3-A24E-9EE6CC167AC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{248CC127-EAAC-47D3-A24E-9EE6CC167AC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{248CC127-EAAC-47D3-A24E-9EE6CC167AC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{237B855D-711F-4D0D-8069-F64600C053F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{237B855D-711F-4D0D-8069-F64600C053F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{237B855D-711F-4D0D-8069-F64600C053F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{237B855D-711F-4D0D-8069-F64600C053F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -85,5 +93,7 @@ Global
 		{36AB27A2-96CC-48AF-8B93-6BAB991C9473} = {E4689FEF-B424-46C2-8A12-314D11D72992}
 		{6DAE944C-741D-49C3-90CA-69C51210DF81} = {E4689FEF-B424-46C2-8A12-314D11D72992}
 		{248CC127-EAAC-47D3-A24E-9EE6CC167AC5} = {E4689FEF-B424-46C2-8A12-314D11D72992}
+		{74184980-2A4E-4F88-AA4D-B5836F981E11} = {51BCFAE0-950F-429D-8FFD-1E99555756F0}
+		{237B855D-711F-4D0D-8069-F64600C053F3} = {74184980-2A4E-4F88-AA4D-B5836F981E11}
 	EndGlobalSection
 EndGlobal

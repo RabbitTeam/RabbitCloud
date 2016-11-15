@@ -1,9 +1,13 @@
 ﻿using org.apache.zookeeper;
 using RabbitCloud.Abstractions;
-using RabbitCloud.Registry.Redis;
 using RabbitCloud.Rpc.Abstractions.Codec;
 using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Abstractions.Protocol;
+using RabbitCloud.Rpc.Abstractions.Proxy;
+using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
+using RabbitCloud.Rpc.Cluster.Abstractions.HaStrategy;
+using RabbitCloud.Rpc.Cluster.Abstractions.Internal;
+using RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
@@ -85,39 +89,46 @@ namespace ConsoleApp
 
                 //                                var registry = new ZookeeperRegistryFactory().GetRegistry(new Url("zookeeper://172.18.20.132:2181"));
 
-                var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?connectionString=127.0.0.1:6379&database=-1&application=test"));
+                /*                var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?connectionString=127.0.0.1:6379&database=-1&application=test"));
 
-                await registry.Subscribe(url1, async (url, urls) =>
-                {
-                    foreach (var url3 in urls)
-                    {
-                        Console.WriteLine(url3);
-                    }
-                    await Task.CompletedTask;
-                });
+                                await registry.Subscribe(url1, async (url, urls) =>
+                                {
+                                    foreach (var url3 in urls)
+                                    {
+                                        Console.WriteLine(url3);
+                                    }
+                                    await Task.CompletedTask;
+                                });
 
-                await registry.Register(url1);
-                await registry.Register(url2);
+                                await registry.Register(url1);
+                                await registry.Register(url2);*/
                 /*                foreach (var u in await registry.Discover(url1))
                                 {
                                     Console.WriteLine(u);
                                 }*/
 
-                /*                var referer = protocol.Refer(typeof(IUserService), url);
+                var referer = protocol.Refer(typeof(IUserService), url1);
 
-                                IProxyFactory factory = new CastleProxyFactory();
+                var cluster = new DefaultCluster
+                {
+                    HaStrategy = new FailfastHaStrategy(),
+                    LoadBalance = new RoundRobinLoadBalance()
+                };
+                cluster.OnRefresh(new[] { referer });
 
-                                var invocationHandler = new RefererInvocationHandler(referer);
-                                var userService = factory.GetProxy<IUserService>(invocationHandler.Invoke);
+                IProxyFactory factory = new CastleProxyFactory();
 
-                                userService.Test();
-                                await userService.Test2();
-                                Console.WriteLine(await userService.Test3());
-                                await userService.Test4(new UserModel
-                                {
-                                    Id = 1,
-                                    Name = "test"
-                                });*/
+                var invocationHandler = new RefererInvocationHandler(cluster);
+                var userService = factory.GetProxy<IUserService>(invocationHandler.Invoke);
+
+                userService.Test();
+                await userService.Test2();
+                Console.WriteLine(await userService.Test3());
+                await userService.Test4(new UserModel
+                {
+                    Id = 1,
+                    Name = "test"
+                });
 
                 await Task.CompletedTask;
             }).Wait();

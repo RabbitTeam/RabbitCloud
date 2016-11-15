@@ -7,8 +7,8 @@
 
   <Import Project="$(VSToolsPath)\DotNet\Microsoft.DotNet.Props" Condition="'$(VSToolsPath)' != ''" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>e1592c4c-c7bb-418c-a41e-ffadfb937971</ProjectGuid>
-    <RootNamespace>RabbitCloud.Rpc.Cluster</RootNamespace>
+    <ProjectGuid>237b855d-711f-4d0d-8069-f64600c053f3</ProjectGuid>
+    <RootNamespace>RabbitCloud.Rpc.Cluster.Abstractions</RootNamespace>
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)'=='' ">.\obj</BaseIntermediateOutputPath>
     <OutputPath Condition="'$(OutputPath)'=='' ">.\bin\</OutputPath>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>

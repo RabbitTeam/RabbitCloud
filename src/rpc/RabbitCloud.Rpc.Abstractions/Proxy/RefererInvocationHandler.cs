@@ -8,18 +8,18 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy
 {
     public class RefererInvocationHandler : IInvocationHandler
     {
-        private readonly IReferer _referer;
+        private readonly ICaller _caller;
 
-        public RefererInvocationHandler(IReferer referer)
+        public RefererInvocationHandler(ICaller caller)
         {
-            _referer = referer;
+            _caller = caller;
         }
 
         #region Implementation of IInvocationHandler
 
         public async Task<object> Invoke(object proxy, MethodInfo method, object[] args)
         {
-            var response = await _referer.Call(new DefaultRequest
+            var response = await _caller.Call(new DefaultRequest
             {
                 Arguments = args,
                 InterfaceName = "",
