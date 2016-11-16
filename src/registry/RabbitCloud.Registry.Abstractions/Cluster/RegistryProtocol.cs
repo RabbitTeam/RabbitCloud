@@ -1,21 +1,23 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Protocol;
-using RabbitCloud.Rpc.Default.Service;
+using RabbitCloud.Rpc.Cluster.Abstractions;
 using System;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Default
+namespace RabbitCloud.Registry.Abstractions.Cluster
 {
-    public class RabbitProtocol : Protocol
+    public class RegistryProtocol : Protocol
     {
-        private readonly IServerTable _serverTable;
-        private readonly IClientTable _clientTable;
+        private readonly IRegistry _registry;
+        private readonly IProtocol _protocol;
+        private readonly ICluster _cluster;
 
-        public RabbitProtocol(IServerTable serverTable, IClientTable clientTable)
+        public RegistryProtocol(IRegistry registry, IProtocol protocol, ICluster cluster)
         {
-            _serverTable = serverTable;
-            _clientTable = clientTable;
+            _registry = registry;
+            _protocol = protocol;
+            _cluster = cluster;
         }
 
         #region Overrides of Protocol
@@ -26,10 +28,10 @@ namespace RabbitCloud.Rpc.Default
         /// <param name="provider">RPC提供程序。</param>
         /// <param name="url">导出的Url。</param>
         /// <returns>服务导出者。</returns>
-        protected override Task<IExporter> CreateExporter(ICaller provider, Url url)
+        protected override async Task<IExporter> CreateExporter(ICaller provider, Url url)
         {
-            _serverTable.OpenServer(url, key => Exporters[key].Value.Result);
-            return Task.FromResult<IExporter>(new RabbitExporter(provider, url));
+//            await _registry.Register(url);
+            return await _protocol.Export(provider);
         }
 
         /// <summary>
@@ -40,7 +42,8 @@ namespace RabbitCloud.Rpc.Default
         /// <returns>服务引用者。</returns>
         protected override Task<ICaller> CreateReferer(Type type, Url serviceUrl)
         {
-            return Task.FromResult<ICaller>(new RabbitReferer(_clientTable, type, serviceUrl));
+            var registryDirectory = new RegistryDirectory(_registry, _protocol, type, serviceUrl);
+            return Task.FromResult(_cluster.Join(registryDirectory));
         }
 
         #endregion Overrides of Protocol

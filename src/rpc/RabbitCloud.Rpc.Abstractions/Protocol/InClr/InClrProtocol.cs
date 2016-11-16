@@ -17,9 +17,9 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
         /// <param name="provider">RPC提供程序。</param>
         /// <param name="url">导出的Url。</param>
         /// <returns>服务导出者。</returns>
-        protected override IExporter CreateExporter(ICaller provider, Url url)
+        protected override Task<IExporter> CreateExporter(ICaller provider, Url url)
         {
-            return new InClrExporter(Exporters, provider, url);
+            return Task.FromResult<IExporter>(new InClrExporter(Exporters, provider, url));
         }
 
         /// <summary>
@@ -28,18 +28,18 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
         /// <param name="type">类型。</param>
         /// <param name="serviceUrl">服务Url。</param>
         /// <returns>服务引用者。</returns>
-        protected override ICaller CreateReferer(Type type, Url serviceUrl)
+        protected override Task<ICaller> CreateReferer(Type type, Url serviceUrl)
         {
-            return new InClrReferer(Exporters, type, serviceUrl);
+            return Task.FromResult<ICaller>(new InClrReferer(Exporters, type, serviceUrl));
         }
 
         #endregion Overrides of Protocol
 
         private class InClrExporter : Exporter
         {
-            private readonly IDictionary<string, Lazy<IExporter>> _exporters;
+            private readonly IDictionary<string, Lazy<Task<IExporter>>> _exporters;
 
-            public InClrExporter(IDictionary<string, Lazy<IExporter>> exporters, ICaller provider, Url url) : base(provider, url)
+            public InClrExporter(IDictionary<string, Lazy<Task<IExporter>>> exporters, ICaller provider, Url url) : base(provider, url)
             {
                 _exporters = exporters;
             }
@@ -50,11 +50,11 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
             public override void Dispose()
             {
                 var key = Url.GetProtocolKey();
-                Lazy<IExporter> exporter;
+                Lazy<Task<IExporter>> exporter;
                 if (!_exporters.TryGetValue(key, out exporter))
                     return;
                 if (exporter.IsValueCreated)
-                    exporter.Value.Dispose();
+                    exporter.Value.Result.Dispose();
                 _exporters.Remove(key);
             }
 
@@ -63,10 +63,10 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
 
         private class InClrReferer : Referer
         {
-            private readonly IDictionary<string, Lazy<IExporter>> _exporters;
-            private Lazy<IExporter> _exporter;
+            private readonly IDictionary<string, Lazy<Task<IExporter>>> _exporters;
+            private Lazy<Task<IExporter>> _exporter;
 
-            private IExporter Exporter
+            private Task<IExporter> Exporter
             {
                 get
                 {
@@ -78,7 +78,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
                 }
             }
 
-            public InClrReferer(IDictionary<string, Lazy<IExporter>> exporters, Type type, Url serviceUrl) : base(type, serviceUrl)
+            public InClrReferer(IDictionary<string, Lazy<Task<IExporter>>> exporters, Type type, Url serviceUrl) : base(type, serviceUrl)
             {
                 _exporters = exporters;
             }
@@ -90,9 +90,9 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
             /// </summary>
             /// <param name="request">RPC请求。</param>
             /// <returns>RPC响应。</returns>
-            protected override Task<IResponse> DoCall(IRequest request)
+            protected override async Task<IResponse> DoCall(IRequest request)
             {
-                return Exporter.Provider.Call(request);
+                return await (await Exporter).Provider.Call(request);
             }
 
             #endregion Overrides of Referer

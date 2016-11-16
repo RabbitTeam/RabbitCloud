@@ -3,6 +3,7 @@ using RabbitCloud.Rpc.Abstractions.Utils.Extensions;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Abstractions.Protocol
 {
@@ -14,7 +15,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <summary>
         /// 导出者字典表。
         /// </summary>
-        protected ConcurrentDictionary<string, Lazy<IExporter>> Exporters { get; } = new ConcurrentDictionary<string, Lazy<IExporter>>(StringComparer.OrdinalIgnoreCase);
+        protected ConcurrentDictionary<string, Lazy<Task<IExporter>>> Exporters { get; } = new ConcurrentDictionary<string, Lazy<Task<IExporter>>>(StringComparer.OrdinalIgnoreCase);
 
         #region Implementation of IProtocol
 
@@ -23,11 +24,11 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// </summary>
         /// <param name="provider">RPC提供程序。</param>
         /// <returns>一个导出者。</returns>
-        public IExporter Export(ICaller provider)
+        public async Task<IExporter> Export(ICaller provider)
         {
             var url = provider.Url;
             var protocolKey = url.GetProtocolKey();
-            return Exporters.GetOrAdd(protocolKey, new Lazy<IExporter>(() => CreateExporter(provider, url))).Value;
+            return await Exporters.GetOrAdd(protocolKey, new Lazy<Task<IExporter>>(() => CreateExporter(provider, url))).Value;
         }
 
         /// <summary>
@@ -36,9 +37,9 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <param name="type">本地服务类型。</param>
         /// <param name="serviceUrl">服务Url。</param>
         /// <returns>一个引用者。</returns>
-        public ICaller Refer(Type type, Url serviceUrl)
+        public async Task<ICaller> Refer(Type type, Url serviceUrl)
         {
-            return CreateReferer(type, serviceUrl);
+            return await CreateReferer(type, serviceUrl);
         }
 
         #endregion Implementation of IProtocol
@@ -52,7 +53,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         {
             foreach (var exporter in Exporters.Values.Where(i => i.IsValueCreated).Select(i => i.Value))
             {
-                exporter.Dispose();
+                exporter.Result.Dispose();
             }
             Exporters.Clear();
         }
@@ -67,7 +68,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <param name="provider">RPC提供程序。</param>
         /// <param name="url">导出的Url。</param>
         /// <returns>服务导出者。</returns>
-        protected abstract IExporter CreateExporter(ICaller provider, Url url);
+        protected abstract Task<IExporter> CreateExporter(ICaller provider, Url url);
 
         /// <summary>
         /// 创建一个引用者。
@@ -75,7 +76,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <param name="type">类型。</param>
         /// <param name="serviceUrl">服务Url。</param>
         /// <returns>服务引用者。</returns>
-        protected abstract ICaller CreateReferer(Type type, Url serviceUrl);
+        protected abstract Task<ICaller> CreateReferer(Type type, Url serviceUrl);
 
         #endregion Public Method
     }

@@ -1,9 +1,7 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Exceptions;
 using RabbitCloud.Rpc.Cluster.Abstractions;
-using System.Linq;
 
-namespace RabbitCloud.Rpc.Cluster.Internal
+namespace RabbitCloud.Rpc.Cluster.Internal.Available
 {
     /// <summary>
     /// 可用策略的集群实现。
@@ -19,13 +17,7 @@ namespace RabbitCloud.Rpc.Cluster.Internal
         /// <returns>最终调用者。</returns>
         public ICaller Join(IDirectory directory)
         {
-            return new DynamicClusterCaller(directory, async (cluster, request, callers, loadBalance) =>
-            {
-                var caller = callers.FirstOrDefault(i => i.IsAvailable);
-                if (caller == null)
-                    throw new RpcException("No provider available");
-                return await caller.Call(request);
-            });
+            return new AvailableClusterCaller(directory);
         }
 
         #endregion Implementation of ICluster

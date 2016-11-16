@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Abstractions;
 using System;
+using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Abstractions.Protocol
 {
@@ -13,7 +14,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// </summary>
         /// <param name="provider">RPC提供程序。</param>
         /// <returns>一个导出者。</returns>
-        IExporter Export(ICaller provider);
+        Task<IExporter> Export(ICaller provider);
 
         /// <summary>
         /// 引用一个RPC服务。
@@ -21,6 +22,6 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <param name="type">本地服务类型。</param>
         /// <param name="serviceUrl">服务Url。</param>
         /// <returns>一个引用者。</returns>
-        ICaller Refer(Type type, Url serviceUrl);
+        Task<ICaller> Refer(Type type, Url serviceUrl);
     }
 }

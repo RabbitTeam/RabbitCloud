@@ -83,6 +83,11 @@ namespace RabbitCloud.Rpc.Cluster
         /// <returns>RPC请求响应结果。</returns>
         protected abstract Task<IResponse> DoCall(IRequest request, IEnumerable<ICaller> callers, ILoadBalance loadBalance);
 
+        protected Task<ICaller> Select(ILoadBalance loadBalance, IRequest request, IEnumerable<ICaller> callers)
+        {
+            return loadBalance.Select(callers.Where(i => i.IsAvailable), request);
+        }
+
         protected async Task<IEnumerable<ICaller>> GetCallers(IRequest request)
         {
             return await Directory.GetCallers(request);
