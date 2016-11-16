@@ -39,7 +39,7 @@ namespace RabbitCloud.Rpc.Default
         /// <returns>服务引用者。</returns>
         protected override ICaller CreateReferer(Type type, Url serviceUrl)
         {
-            return new RabbitInvoker(_clientTable, type, serviceUrl);
+            return new RabbitReferer(_clientTable, type, serviceUrl);
         }
 
         #endregion Overrides of Protocol

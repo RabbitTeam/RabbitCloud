@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Default
 {
-    public class RabbitInvoker : Referer
+    public class RabbitReferer : Referer
     {
         private readonly IClientTable _clientTable;
 
-        public RabbitInvoker(IClientTable clientTable, Type type, Url serviceUrl) : base(type, serviceUrl)
+        public RabbitReferer(IClientTable clientTable, Type type, Url serviceUrl) : base(type, serviceUrl)
         {
             _clientTable = clientTable;
         }
