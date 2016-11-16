@@ -21,8 +21,12 @@ namespace RabbitCloud.Registry.Redis
         private readonly string _applicationId;
         private readonly string _subscriberChannel;
 
-        private readonly IList<Url> _registeredServiceUrls = new List<Url>();
-        private readonly ConcurrentDictionary<string, IList<NotifyListenerDelegate>> _notifyListeners = new ConcurrentDictionary<string, IList<NotifyListenerDelegate>>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, Lazy<Task<HashSet<Url>>>> _registeredServiceUrls = new ConcurrentDictionary<string, Lazy<Task<HashSet<Url>>>>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly ConcurrentDictionary<string, IList<NotifyListenerDelegate>> _notifyListeners =
+            new ConcurrentDictionary<string, IList<NotifyListenerDelegate>>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly string _registryId = Guid.NewGuid().ToString("N");
 
         #endregion Field
 
@@ -37,7 +41,10 @@ namespace RabbitCloud.Registry.Redis
 
             _subscriber.Subscribe(_subscriberChannel, async (channel, value) =>
             {
-                var url = new Url(value);
+                var message = JsonConvert.DeserializeObject<PublishMessage>(value);
+                if (message.Id == _registryId)
+                    return;
+                var url = new Url(message.Url);
                 var urls = await Discover(url);
 
                 await NotifyListener(url, urls);
@@ -57,7 +64,10 @@ namespace RabbitCloud.Registry.Redis
             await RemoveEntry(url, NodeType.UnavailableServer);
             await CreateEntry(url, NodeType.AvailableServer);
 
-            _registeredServiceUrls.Add(url);
+            //添加到本地缓存
+            var set = await GetUrlSet(url);
+            if (!set.Contains(url))
+                set.Add(url);
 
             await PublishListener(url);
         }
@@ -72,18 +82,11 @@ namespace RabbitCloud.Registry.Redis
             await RemoveEntry(url, NodeType.AvailableServer);
             await RemoveEntry(url, NodeType.UnavailableServer);
 
-            _registeredServiceUrls.Remove(url);
+            //从本地缓存中删除
+            var set = await GetUrlSet(url);
+            set.Remove(url);
 
             await PublishListener(url);
-        }
-
-        /// <summary>
-        /// 获取已经注册的所有服务Url。
-        /// </summary>
-        /// <returns>服务Url集合。</returns>
-        public Task<Url[]> GetRegisteredServiceUrls()
-        {
-            return Task.FromResult(_registeredServiceUrls.ToArray());
         }
 
         #endregion Implementation of IRegistryService
@@ -98,7 +101,7 @@ namespace RabbitCloud.Registry.Redis
         /// <returns>一个任务。</returns>
         public Task Subscribe(Url url, NotifyListenerDelegate listener)
         {
-            var key = GetNodeTypePath(url, NodeType.AvailableServer);
+            var key = GetServicePath(url);
 
             var listeners = _notifyListeners.GetOrAdd(key, new List<NotifyListenerDelegate>());
             if (!listeners.Contains(listener))
@@ -115,7 +118,7 @@ namespace RabbitCloud.Registry.Redis
         /// <returns>一个任务。</returns>
         public Task UnSubscribe(Url url, NotifyListenerDelegate listener)
         {
-            var key = GetNodeTypePath(url, NodeType.AvailableServer);
+            var key = GetServicePath(url);
 
             IList<NotifyListenerDelegate> listeners;
             if (!_notifyListeners.TryGetValue(key, out listeners))
@@ -126,6 +129,21 @@ namespace RabbitCloud.Registry.Redis
             return Task.CompletedTask;
         }
 
+        private async Task<HashSet<Url>> GetUrlSet(Uri url)
+        {
+            var key = GetServicePath(url);
+            return await _registeredServiceUrls.GetOrAdd(key, new Lazy<Task<HashSet<Url>>>(async () =>
+            {
+                var urls = await GetUrls(url, NodeType.AvailableServer);
+                var set = new HashSet<Url>();
+                foreach (var urlString in urls)
+                {
+                    set.Add(new Url(urlString));
+                }
+                return set;
+            })).Value;
+        }
+
         /// <summary>
         /// 发现注册中心中指定服务的所有节点。
         /// </summary>
@@ -133,8 +151,8 @@ namespace RabbitCloud.Registry.Redis
         /// <returns>服务节点集合。</returns>
         public async Task<Url[]> Discover(Url url)
         {
-            var urls = await GetUrls(url, NodeType.AvailableServer);
-            return urls.Select(i => new Url(i)).ToArray();
+            var set = await GetUrlSet(url);
+            return set.ToArray();
         }
 
         #endregion Implementation of IDiscoveryService
@@ -151,13 +169,25 @@ namespace RabbitCloud.Registry.Redis
 
         #region Private Method
 
+        internal struct PublishMessage
+        {
+            public PublishMessage(string id, Url url)
+            {
+                Id = id;
+                Url = url.ToString();
+            }
+
+            public string Id { get; set; }
+            public string Url { get; set; }
+        }
+
         /// <summary>
         /// 发布一个服务的监听事件。
         /// </summary>
-        private Task PublishListener(Url url)
+        private async Task PublishListener(Url url)
         {
-            _subscriber.Publish(_subscriberChannel, url.ToString());
-            return Task.CompletedTask;
+            await NotifyListener(url, await Discover(url));
+            _subscriber.Publish(_subscriberChannel, JsonConvert.SerializeObject(new PublishMessage(_registryId, url)));
         }
 
         private async Task NotifyListener(Url registryUrl, Url[] urls)

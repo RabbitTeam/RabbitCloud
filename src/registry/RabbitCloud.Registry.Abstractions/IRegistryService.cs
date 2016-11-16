@@ -21,11 +21,5 @@ namespace RabbitCloud.Registry.Abstractions
         /// <param name="url">服务Url。</param>
         /// <returns>一个任务。</returns>
         Task UnRegister(Url url);
-
-        /// <summary>
-        /// 获取已经注册的所有服务Url。
-        /// </summary>
-        /// <returns>服务Url集合。</returns>
-        Task<Url[]> GetRegisteredServiceUrls();
     }
 }
