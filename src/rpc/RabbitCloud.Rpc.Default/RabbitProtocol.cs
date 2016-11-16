@@ -25,7 +25,7 @@ namespace RabbitCloud.Rpc.Default
         /// <param name="provider">RPC提供程序。</param>
         /// <param name="url">导出的Url。</param>
         /// <returns>服务导出者。</returns>
-        protected override IExporter CreateExporter(IProvider provider, Url url)
+        protected override IExporter CreateExporter(ICaller provider, Url url)
         {
             _serverTable.OpenServer(url, key => Exporters[key].Value);
             return new RabbitExporter(provider, url);
@@ -37,7 +37,7 @@ namespace RabbitCloud.Rpc.Default
         /// <param name="type">类型。</param>
         /// <param name="serviceUrl">服务Url。</param>
         /// <returns>服务引用者。</returns>
-        protected override IReferer CreateReferer(Type type, Url serviceUrl)
+        protected override ICaller CreateReferer(Type type, Url serviceUrl)
         {
             return new RabbitInvoker(_clientTable, type, serviceUrl);
         }

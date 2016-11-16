@@ -25,7 +25,7 @@ namespace RabbitCloud.Rpc.Default
         /// <returns>RPC响应。</returns>
         protected override async Task<IResponse> DoCall(IRequest request)
         {
-            var client = _clientTable.OpenClient(ServiceUrl);
+            var client = _clientTable.OpenClient(Url);
             var response = await client.Send(request);
             return response;
         }

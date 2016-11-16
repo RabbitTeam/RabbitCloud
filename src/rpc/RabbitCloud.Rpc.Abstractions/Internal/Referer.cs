@@ -7,12 +7,11 @@ namespace RabbitCloud.Rpc.Abstractions.Internal
     /// <summary>
     /// RPC引用者抽象类。
     /// </summary>
-    public abstract class Referer : IReferer
+    public abstract class Referer : ICaller
     {
         protected Referer(Type type, Url serviceUrl)
         {
             InterfaceType = type;
-            ServiceUrl = serviceUrl;
             Url = serviceUrl;
         }
 
@@ -48,15 +47,6 @@ namespace RabbitCloud.Rpc.Abstractions.Internal
         }
 
         #endregion Implementation of ICaller
-
-        #region Implementation of IReferer
-
-        /// <summary>
-        /// 引用的服务Url。
-        /// </summary>
-        public Url ServiceUrl { get; }
-
-        #endregion Implementation of IReferer
 
         #region Implementation of IDisposable
 

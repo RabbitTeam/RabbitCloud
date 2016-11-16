@@ -11,7 +11,7 @@ namespace RabbitCloud.Rpc.Abstractions.Internal
     /// <summary>
     /// RPC提供程序抽象类。
     /// </summary>
-    public abstract class Provider : IProvider
+    public abstract class Provider : ICaller
     {
         protected readonly IDictionary<string, MethodInfo> MethodDictionary = new Dictionary<string, MethodInfo>();
 

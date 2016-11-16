@@ -5,9 +5,6 @@ using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Abstractions.Protocol;
 using RabbitCloud.Rpc.Abstractions.Proxy;
 using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
-using RabbitCloud.Rpc.Cluster.Abstractions.HaStrategy;
-using RabbitCloud.Rpc.Cluster.Abstractions.Internal;
-using RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
@@ -84,8 +81,8 @@ namespace ConsoleApp
                 ICodec codec = new RabbitCodec();
                 IProtocol protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
 
-                protocol.Export(new DefaultProvider(() => new UserService(), url1, typeof(IUserService)), url1);
-                protocol.Export(new DefaultProvider(() => new UserService(), url1, typeof(IUserService)), url2);
+                protocol.Export(new DefaultProvider(() => new UserService(), url1, typeof(IUserService)));
+                protocol.Export(new DefaultProvider(() => new UserService(), url1, typeof(IUserService)));
 
                 //                                var registry = new ZookeeperRegistryFactory().GetRegistry(new Url("zookeeper://172.18.20.132:2181"));
 
@@ -109,16 +106,16 @@ namespace ConsoleApp
 
                 var referer = protocol.Refer(typeof(IUserService), url1);
 
-                var cluster = new DefaultCluster
-                {
-                    HaStrategy = new FailfastHaStrategy(),
-                    LoadBalance = new RoundRobinLoadBalance()
-                };
-                cluster.OnRefresh(new[] { referer });
+                /*                var cluster = new DefaultCluster
+                                {
+                                    HaStrategy = new FailfastHaStrategy(),
+                                    LoadBalance = new RoundRobinLoadBalance()
+                                };
+                                cluster.OnRefresh(new[] { referer });*/
 
                 IProxyFactory factory = new CastleProxyFactory();
 
-                var invocationHandler = new RefererInvocationHandler(cluster);
+                var invocationHandler = new RefererInvocationHandler(referer);
                 var userService = factory.GetProxy<IUserService>(invocationHandler.Invoke);
 
                 userService.Test();

@@ -17,7 +17,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
         /// <param name="provider">RPC提供程序。</param>
         /// <param name="url">导出的Url。</param>
         /// <returns>服务导出者。</returns>
-        protected override IExporter CreateExporter(IProvider provider, Url url)
+        protected override IExporter CreateExporter(ICaller provider, Url url)
         {
             return new InClrExporter(Exporters, provider, url);
         }
@@ -28,7 +28,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
         /// <param name="type">类型。</param>
         /// <param name="serviceUrl">服务Url。</param>
         /// <returns>服务引用者。</returns>
-        protected override IReferer CreateReferer(Type type, Url serviceUrl)
+        protected override ICaller CreateReferer(Type type, Url serviceUrl)
         {
             return new InClrReferer(Exporters, type, serviceUrl);
         }
@@ -39,7 +39,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol.InClr
         {
             private readonly IDictionary<string, Lazy<IExporter>> _exporters;
 
-            public InClrExporter(IDictionary<string, Lazy<IExporter>> exporters, IProvider provider, Url url) : base(provider, url)
+            public InClrExporter(IDictionary<string, Lazy<IExporter>> exporters, ICaller provider, Url url) : base(provider, url)
             {
                 _exporters = exporters;
             }

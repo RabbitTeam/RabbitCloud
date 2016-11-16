@@ -7,7 +7,7 @@ namespace RabbitCloud.Rpc.Abstractions.Internal
     /// </summary>
     public abstract class Exporter : IExporter
     {
-        protected Exporter(IProvider provider, Url url)
+        protected Exporter(ICaller provider, Url url)
         {
             Provider = provider;
             Url = url;
@@ -32,7 +32,7 @@ namespace RabbitCloud.Rpc.Abstractions.Internal
         /// <summary>
         /// 调用提供程序。
         /// </summary>
-        public IProvider Provider { get; }
+        public ICaller Provider { get; }
 
         #endregion Implementation of IExporter
 

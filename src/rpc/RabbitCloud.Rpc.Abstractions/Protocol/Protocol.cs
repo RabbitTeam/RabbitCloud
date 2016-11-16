@@ -23,7 +23,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// </summary>
         /// <param name="provider">RPC提供程序。</param>
         /// <returns>一个导出者。</returns>
-        public IExporter Export(IProvider provider)
+        public IExporter Export(ICaller provider)
         {
             var url = provider.Url;
             var protocolKey = url.GetProtocolKey();
@@ -36,7 +36,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <param name="type">本地服务类型。</param>
         /// <param name="serviceUrl">服务Url。</param>
         /// <returns>一个引用者。</returns>
-        public IReferer Refer(Type type, Url serviceUrl)
+        public ICaller Refer(Type type, Url serviceUrl)
         {
             return CreateReferer(type, serviceUrl);
         }
@@ -67,7 +67,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <param name="provider">RPC提供程序。</param>
         /// <param name="url">导出的Url。</param>
         /// <returns>服务导出者。</returns>
-        protected abstract IExporter CreateExporter(IProvider provider, Url url);
+        protected abstract IExporter CreateExporter(ICaller provider, Url url);
 
         /// <summary>
         /// 创建一个引用者。
@@ -75,7 +75,7 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <param name="type">类型。</param>
         /// <param name="serviceUrl">服务Url。</param>
         /// <returns>服务引用者。</returns>
-        protected abstract IReferer CreateReferer(Type type, Url serviceUrl);
+        protected abstract ICaller CreateReferer(Type type, Url serviceUrl);
 
         #endregion Public Method
     }

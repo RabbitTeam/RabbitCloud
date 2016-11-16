@@ -8,6 +8,6 @@
         /// <summary>
         /// 调用提供程序。
         /// </summary>
-        IProvider Provider { get; }
+        ICaller Provider { get; }
     }
 }
