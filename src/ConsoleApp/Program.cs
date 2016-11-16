@@ -1,12 +1,14 @@
 ﻿using org.apache.zookeeper;
 using RabbitCloud.Abstractions;
+using RabbitCloud.Registry.Abstractions;
+using RabbitCloud.Registry.Abstractions.Cluster;
+using RabbitCloud.Registry.Redis;
 using RabbitCloud.Rpc.Abstractions.Codec;
 using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Abstractions.Protocol;
 using RabbitCloud.Rpc.Abstractions.Proxy;
 using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
-using RabbitCloud.Rpc.Cluster.Directory;
-using RabbitCloud.Rpc.Cluster.Internal;
+using RabbitCloud.Rpc.Cluster.Internal.Available;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
@@ -33,9 +35,16 @@ namespace ConsoleApp
 
     internal class UserService : IUserService
     {
+        private readonly string _name;
+
+        public UserService(string name)
+        {
+            _name = name;
+        }
+
         public void Test()
         {
-            Console.WriteLine("test");
+            Console.WriteLine(_name);
         }
 
         public Task Test2()
@@ -81,58 +90,34 @@ namespace ConsoleApp
             Task.Run(async () =>
             {
                 ICodec codec = new RabbitCodec();
-                IProtocol protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
+                IRegistry registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"));
+                var rabbitProtocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
+                IProtocol protocol = new RegistryProtocol(registry, rabbitProtocol, new AvailableCluster());
 
-                protocol.Export(new DefaultProvider(() => new UserService(), url1, typeof(IUserService)));
-                protocol.Export(new DefaultProvider(() => new UserService(), url1, typeof(IUserService)));
+                var exporter1=await protocol.Export(new DefaultProvider(() => new UserService("userService1"), url1, typeof(IUserService)));
+                var exporter2 = await protocol.Export(new DefaultProvider(() => new UserService("userService2"), url2, typeof(IUserService)));
 
-                //                                var registry = new ZookeeperRegistryFactory().GetRegistry(new Url("zookeeper://172.18.20.132:2181"));
+                var referer = await protocol.Refer(typeof(IUserService), url1);
 
-                /*                var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?connectionString=127.0.0.1:6379&database=-1&application=test"));
+                IProxyFactory proxyFactory = new CastleProxyFactory();
+                var userServiceProxy = proxyFactory.GetProxy<IUserService>(new RefererInvocationHandler(referer).Invoke);
+                userServiceProxy.Test();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
 
-                                await registry.Subscribe(url1, async (url, urls) =>
-                                {
-                                    foreach (var url3 in urls)
-                                    {
-                                        Console.WriteLine(url3);
-                                    }
-                                    await Task.CompletedTask;
-                                });
+                exporter2.Dispose();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
+                userServiceProxy.Test();
 
-                                await registry.Register(url1);
-                                await registry.Register(url2);*/
-                /*                foreach (var u in await registry.Discover(url1))
-                                {
-                                    Console.WriteLine(u);
-                                }*/
 
-                var referer = protocol.Refer(typeof(IUserService), url1);
-
-                var cluster = new AvailableCluster();
-                referer = cluster.Join(new StaticDirectory(url1, new[] { referer }));
-
-                /*                var cluster = new DefaultCluster
-                                {
-                                    HaStrategy = new FailfastHaStrategy(),
-                                    LoadBalance = new RoundRobinLoadBalance()
-                                };
-                                cluster.OnRefresh(new[] { referer });*/
-
-                IProxyFactory factory = new CastleProxyFactory();
-
-                var invocationHandler = new RefererInvocationHandler(referer);
-                var userService = factory.GetProxy<IUserService>(invocationHandler.Invoke);
-
-                userService.Test();
-                await userService.Test2();
-                Console.WriteLine(await userService.Test3());
-                await userService.Test4(new UserModel
-                {
-                    Id = 1,
-                    Name = "test"
-                });
-
-                await Task.CompletedTask;
+                Console.WriteLine(await userServiceProxy.Test3());
             }).Wait();
             Console.ReadLine();
         }

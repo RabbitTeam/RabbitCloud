@@ -154,9 +154,10 @@ namespace RabbitCloud.Registry.Redis
         /// <summary>
         /// 发布一个服务的监听事件。
         /// </summary>
-        private async Task PublishListener(Url url)
+        private Task PublishListener(Url url)
         {
-            await _subscriber.PublishAsync(_subscriberChannel, url.ToString());
+            _subscriber.Publish(_subscriberChannel, url.ToString());
+            return Task.CompletedTask;
         }
 
         private async Task NotifyListener(Url registryUrl, Url[] urls)
@@ -228,20 +229,20 @@ namespace RabbitCloud.Registry.Redis
 
             currentUrls = currentUrls.Where(i => GetNodePath(new Url(i), nodeType) != nodePah).ToArray();
 
-            await _database.HashSetAsync(hashKey, nodeTypePath, JsonConvert.SerializeObject(currentUrls));
+            _database.HashSet(hashKey, nodeTypePath, JsonConvert.SerializeObject(currentUrls));
         }
 
-        private async Task<string[]> GetUrls(Uri url, NodeType nodeType)
+        private Task<string[]> GetUrls(Uri url, NodeType nodeType)
         {
             var hashKey = _applicationId;
             var nodeTypePath = GetNodeTypePath(url, nodeType);
 
             //todo: HashGetAsync 会无限等待
-            var currentUrlContent = await Task.Run(() => _database.HashGet(hashKey, nodeTypePath));
+            var currentUrlContent = _database.HashGet(hashKey, nodeTypePath);
 
             //得到当前
             var currentUrls = currentUrlContent.HasValue ? JsonConvert.DeserializeObject<string[]>(currentUrlContent) : new string[0];
-            return currentUrls;
+            return Task.FromResult(currentUrls);
         }
 
         private async Task CreateEntry(Uri url, NodeType nodeType)
@@ -256,7 +257,7 @@ namespace RabbitCloud.Registry.Redis
             if (currentUrls.Contains(createUrl))
                 return;
 
-            await _database.HashSetAsync(hashKey, nodeTypePath, JsonConvert.SerializeObject(currentUrls.Concat(new[] { createUrl })));
+            _database.HashSet(hashKey, nodeTypePath, JsonConvert.SerializeObject(currentUrls.Concat(new[] { createUrl })));
         }
 
         #endregion Private Method

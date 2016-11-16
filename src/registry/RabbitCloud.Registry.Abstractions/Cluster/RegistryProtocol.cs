@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Abstractions.Protocol;
 using RabbitCloud.Rpc.Cluster.Abstractions;
 using System;
@@ -31,7 +32,7 @@ namespace RabbitCloud.Registry.Abstractions.Cluster
         protected override async Task<IExporter> CreateExporter(ICaller provider, Url url)
         {
             await _registry.Register(url);
-            return await _protocol.Export(provider);
+            return new RegistryExporter(await _protocol.Export(provider), _registry);
         }
 
         /// <summary>
@@ -47,5 +48,35 @@ namespace RabbitCloud.Registry.Abstractions.Cluster
         }
 
         #endregion Overrides of Protocol
+
+        #region Help Class
+
+        private class RegistryExporter : Exporter
+        {
+            private readonly IExporter _exporter;
+            private readonly IRegistry _registry;
+
+            public RegistryExporter(IExporter exporter, IRegistry registry) : base(exporter.Provider, exporter.Url)
+            {
+                _exporter = exporter;
+                _registry = registry;
+            }
+
+            #region Overrides of Exporter
+
+            /// <summary>
+            /// 执行与释放或重置非托管资源关联的应用程序定义的任务。
+            /// </summary>
+            public override void Dispose()
+            {
+                base.Dispose();
+                _exporter.Dispose();
+                _registry.UnRegister(Url).Wait();
+            }
+
+            #endregion Overrides of Exporter
+        }
+
+        #endregion Help Class
     }
 }
