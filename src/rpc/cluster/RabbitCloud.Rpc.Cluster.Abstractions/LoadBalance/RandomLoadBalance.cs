@@ -16,48 +16,26 @@ namespace RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance
         #region Overrides of LoadBalance
 
         /// <summary>
-        /// 根据RPC请求信息选择一个RPC引用。
+        /// 从调用者集合中选择一个用于调用的调用者。
         /// </summary>
-        /// <param name="request">RPC请求信息。</param>
-        /// <returns>RPC引用。</returns>
-        protected override Task<IReferer> DoSelect(IRequest request)
+        /// <param name="callers">调用者集合。</param>
+        /// <param name="request">RPC请求。</param>
+        /// <returns>调用者。</returns>
+        protected override Task<ICaller> DoSelect(IEnumerable<ICaller> callers, IRequest request)
         {
-            var referers = Referers;
+            var referers = callers.ToArray();
 
-            var idx = (int)(_random.NextDouble() * referers.Count);
-            for (var i = 0; i < referers.Count; i++)
+            var idx = (int)(_random.NextDouble() * referers.Length);
+            for (var i = 0; i < referers.Length; i++)
             {
-                var referer = referers[(i + idx) % referers.Count];
+                var referer = referers[(i + idx) % referers.Length];
                 if (referer.IsAvailable)
                 {
                     return Task.FromResult(referer);
                 }
             }
 
-            return Task.FromResult<IReferer>(null);
-        }
-
-        /// <summary>
-        /// 根据RPC请求信息选择一组服务引用。
-        /// </summary>
-        /// <param name="request">RPC请求。</param>
-        /// <param name="refersHolder">服务引用持有者。</param>
-        /// <returns>一个任务。</returns>
-        protected override Task DoSelectToHolder(IRequest request, IList<IReferer> refersHolder)
-        {
-            var referers = Referers;
-
-            var idx = (int)(_random.NextDouble() * referers.Count);
-            for (var i = 0; i < referers.Count; i++)
-            {
-                var referer = referers.ElementAt((i + idx) % referers.Count);
-                if (referer.IsAvailable)
-                {
-                    refersHolder.Add(referer);
-                }
-            }
-
-            return Task.CompletedTask;
+            return Task.FromResult<ICaller>(null);
         }
 
         #endregion Overrides of LoadBalance

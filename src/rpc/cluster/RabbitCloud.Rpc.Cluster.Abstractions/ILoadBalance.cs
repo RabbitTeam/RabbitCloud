@@ -10,24 +10,11 @@ namespace RabbitCloud.Rpc.Cluster.Abstractions
     public interface ILoadBalance
     {
         /// <summary>
-        /// 刷新服务引用。
+        /// 从调用者集合中选择一个用于调用的调用者。
         /// </summary>
-        /// <param name="referers">服务引用集合。</param>
-        void OnRefresh(IEnumerable<IReferer> referers);
-
-        /// <summary>
-        /// 根据RPC请求信息选择一个RPC引用。
-        /// </summary>
-        /// <param name="request">RPC请求信息。</param>
-        /// <returns>RPC引用。</returns>
-        Task<IReferer> Select(IRequest request);
-
-        /// <summary>
-        /// 根据RPC请求信息选择一组服务引用。
-        /// </summary>
+        /// <param name="callers">调用者集合。</param>
         /// <param name="request">RPC请求。</param>
-        /// <param name="refersHolder">服务引用持有者。</param>
-        /// <returns>一个任务。</returns>
-        Task SelectToHolder(IRequest request, IList<IReferer> refersHolder);
+        /// <returns>调用者。</returns>
+        Task<ICaller> Select(IEnumerable<ICaller> callers, IRequest request);
     }
 }

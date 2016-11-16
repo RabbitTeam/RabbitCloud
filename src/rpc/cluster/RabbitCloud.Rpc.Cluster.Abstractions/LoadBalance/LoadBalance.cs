@@ -1,95 +1,46 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance
 {
+    /// <summary>
+    /// 负载均衡抽象类。
+    /// </summary>
     public abstract class LoadBalance : ILoadBalance
     {
-        protected IList<IReferer> Referers { get; private set; }
-
         #region Implementation of ILoadBalance
 
         /// <summary>
-        /// 刷新服务引用。
+        /// 从调用者集合中选择一个用于调用的调用者。
         /// </summary>
-        /// <param name="referers">服务引用集合。</param>
-        public void OnRefresh(IEnumerable<IReferer> referers)
-        {
-            Referers = new List<IReferer>(referers);
-        }
-
-        /// <summary>
-        /// 根据RPC请求信息选择一个RPC引用。
-        /// </summary>
-        /// <param name="request">RPC请求信息。</param>
-        /// <returns>RPC引用。</returns>
-        public async Task<IReferer> Select(IRequest request)
-        {
-            var referers = Referers;
-
-            IReferer referer = null;
-            if (referers.Count > 1)
-            {
-                referer = await DoSelect(request);
-            }
-            else if (referers.Count == 1)
-            {
-                referer = referers.First();
-                if (!referer.IsAvailable)
-                    referer = null;
-            }
-
-            if (referer != null)
-            {
-                return referer;
-            }
-            throw new Exception("No available referers for call");
-        }
-
-        /// <summary>
-        /// 根据RPC请求信息选择一组服务引用。
-        /// </summary>
+        /// <param name="callers">调用者集合。</param>
         /// <param name="request">RPC请求。</param>
-        /// <param name="refersHolder">服务引用持有者。</param>
-        /// <returns>一个任务。</returns>
-        public async Task SelectToHolder(IRequest request, IList<IReferer> refersHolder)
+        /// <returns>调用者。</returns>
+        public async Task<ICaller> Select(IEnumerable<ICaller> callers, IRequest request)
         {
-            var referers = Referers;
+            if (callers == null)
+                return null;
+            callers = callers.ToArray();
+            if (callers.Count() <= 1)
+                return callers.FirstOrDefault();
 
-            if (referers.Count > 1)
-            {
-                await DoSelectToHolder(request, refersHolder);
-            }
-            else if (referers.Count == 1 && referers.First().IsAvailable)
-            {
-                refersHolder.Add(referers.First());
-            }
-            if (!refersHolder.Any())
-                throw new Exception("No available referers for call");
+            return await DoSelect(callers, request);
         }
 
         #endregion Implementation of ILoadBalance
 
-        #region Public Method
+        #region Protected  Method
 
         /// <summary>
-        /// 根据RPC请求信息选择一个RPC引用。
+        /// 从调用者集合中选择一个用于调用的调用者。
         /// </summary>
-        /// <param name="request">RPC请求信息。</param>
-        /// <returns>RPC引用。</returns>
-        protected abstract Task<IReferer> DoSelect(IRequest request);
-
-        /// <summary>
-        /// 根据RPC请求信息选择一组服务引用。
-        /// </summary>
+        /// <param name="callers">调用者集合。</param>
         /// <param name="request">RPC请求。</param>
-        /// <param name="refersHolder">服务引用持有者。</param>
-        /// <returns>一个任务。</returns>
-        protected abstract Task DoSelectToHolder(IRequest request, IList<IReferer> refersHolder);
+        /// <returns>调用者。</returns>
+        protected abstract Task<ICaller> DoSelect(IEnumerable<ICaller> callers, IRequest request);
 
-        #endregion Public Method
+        #endregion Protected  Method
     }
 }

@@ -5,6 +5,8 @@ using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Abstractions.Protocol;
 using RabbitCloud.Rpc.Abstractions.Proxy;
 using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
+using RabbitCloud.Rpc.Cluster.Abstractions.Directory;
+using RabbitCloud.Rpc.Cluster.Abstractions.Internal;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
@@ -105,6 +107,9 @@ namespace ConsoleApp
                                 }*/
 
                 var referer = protocol.Refer(typeof(IUserService), url1);
+
+                var cluster = new AvailableCluster();
+                referer = cluster.Join(new StaticDirectory(url1, new[] { referer }));
 
                 /*                var cluster = new DefaultCluster
                                 {

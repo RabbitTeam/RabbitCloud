@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,48 +16,33 @@ namespace RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance
         #region Overrides of LoadBalance
 
         /// <summary>
-        /// 根据RPC请求信息选择一个RPC引用。
+        /// 从调用者集合中选择一个用于调用的调用者。
         /// </summary>
-        /// <param name="request">RPC请求信息。</param>
-        /// <returns>RPC引用。</returns>
-        protected override Task<IReferer> DoSelect(IRequest request)
+        /// <param name="callers">调用者集合。</param>
+        /// <param name="request">RPC请求。</param>
+        /// <returns>调用者。</returns>
+        protected override Task<ICaller> DoSelect(IEnumerable<ICaller> callers, IRequest request)
         {
-            var referers = Referers;
+            var referers = callers.ToArray();
             var index = GetNextPositive();
-            for (var i = 0; i < referers.Count; i++)
+            for (var i = 0; i < referers.Length; i++)
             {
-                var referer = referers[(i + index) % referers.Count];
+                var referer = referers[(i + index) % referers.Length];
                 if (referer.IsAvailable)
                     return Task.FromResult(referer);
             }
-            return Task.FromResult<IReferer>(null);
-        }
-
-        /// <summary>
-        /// 根据RPC请求信息选择一组服务引用。
-        /// </summary>
-        /// <param name="request">RPC请求。</param>
-        /// <param name="refersHolder">服务引用持有者。</param>
-        /// <returns>一个任务。</returns>
-        protected override Task DoSelectToHolder(IRequest request, IList<IReferer> refersHolder)
-        {
-            var referers = Referers;
-            var index = GetNextPositive();
-            for (var i = 0; i < referers.Count; i++)
-            {
-                var referer = referers[(i + index) % referers.Count];
-                if (referer.IsAvailable)
-                    refersHolder.Add(referer);
-            }
-
-            return Task.CompletedTask;
+            return Task.FromResult<ICaller>(null);
         }
 
         #endregion Overrides of LoadBalance
+
+        #region Private Method
 
         private int GetNextPositive()
         {
             return Interlocked.Increment(ref _identity);
         }
+
+        #endregion Private Method
     }
 }

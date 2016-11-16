@@ -1,36 +1,17 @@
-﻿using RabbitCloud.Abstractions;
-using RabbitCloud.Rpc.Abstractions;
-using System.Collections.Generic;
+﻿using RabbitCloud.Rpc.Abstractions;
 
 namespace RabbitCloud.Rpc.Cluster.Abstractions
 {
     /// <summary>
     /// 一个抽象的集群调用者。
     /// </summary>
-    public interface ICluster : ICaller
+    public interface ICluster
     {
-        void SetUrl(Url url);
-
         /// <summary>
-        /// 集群所使用的负载均衡器。
+        /// 加入指定的调用者目录。
         /// </summary>
-        ILoadBalance LoadBalance { get; set; }
-
-        /// <summary>
-        /// 集群所使用的高可用策略。
-        /// </summary>
-        IHaStrategy HaStrategy { set; }
-
-        /// <summary>
-        /// 刷新服务引用。
-        /// </summary>
-        /// <param name="referers">服务引用集合。</param>
-        void OnRefresh(IEnumerable<IReferer> referers);
-
-        /// <summary>
-        /// 获取集群中所有的服务引用。
-        /// </summary>
-        /// <returns>服务引用集合。</returns>
-        IEnumerable<IReferer> GetReferers();
+        /// <param name="directory">调用者目录。</param>
+        /// <returns>最终调用者。</returns>
+        ICaller Join(IDirectory directory);
     }
 }
