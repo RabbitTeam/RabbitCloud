@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Cluster.Abstractions.Directory
+namespace RabbitCloud.Rpc.Cluster.Directory
 {
     /// <summary>
     /// 一个静态的调用者目录。
     /// </summary>
-    public class StaticDirectory : Directory
+    public class StaticDirectory : Cluster.Directory.Directory
     {
         private readonly ICollection<ICaller> _callers;
 

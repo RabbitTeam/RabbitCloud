@@ -1,11 +1,12 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Exceptions;
+using RabbitCloud.Rpc.Cluster.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Cluster.Abstractions.Directory
+namespace RabbitCloud.Rpc.Cluster.Directory
 {
     /// <summary>
     /// 调用者目录抽象类。

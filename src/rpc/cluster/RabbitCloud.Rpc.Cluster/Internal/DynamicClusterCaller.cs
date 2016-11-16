@@ -1,9 +1,10 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Cluster.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Cluster.Abstractions.Internal
+namespace RabbitCloud.Rpc.Cluster.Internal
 {
     public class DynamicClusterCaller : ClusterCaller
     {

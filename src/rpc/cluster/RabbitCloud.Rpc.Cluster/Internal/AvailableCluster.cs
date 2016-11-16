@@ -1,8 +1,9 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Exceptions;
+using RabbitCloud.Rpc.Cluster.Abstractions;
 using System.Linq;
 
-namespace RabbitCloud.Rpc.Cluster.Abstractions.Internal
+namespace RabbitCloud.Rpc.Cluster.Internal
 {
     /// <summary>
     /// 可用策略的集群实现。

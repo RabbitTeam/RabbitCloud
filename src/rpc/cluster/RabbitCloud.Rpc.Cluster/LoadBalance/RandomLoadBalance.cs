@@ -1,17 +1,17 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance
+namespace RabbitCloud.Rpc.Cluster.LoadBalance
 {
     /// <summary>
-    /// 轮询规则的负载均衡实现。
+    /// 随机规则的负载均衡实现。
     /// </summary>
-    public class RoundRobinLoadBalance : LoadBalance
+    public class RandomLoadBalance : LoadBalance
     {
-        private int _identity = -1;
+        private readonly Random _random = new Random();
 
         #region Overrides of LoadBalance
 
@@ -24,25 +24,20 @@ namespace RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance
         protected override Task<ICaller> DoSelect(IEnumerable<ICaller> callers, IRequest request)
         {
             var referers = callers.ToArray();
-            var index = GetNextPositive();
+
+            var idx = (int)(_random.NextDouble() * referers.Length);
             for (var i = 0; i < referers.Length; i++)
             {
-                var referer = referers[(i + index) % referers.Length];
+                var referer = referers[(i + idx) % referers.Length];
                 if (referer.IsAvailable)
+                {
                     return Task.FromResult(referer);
+                }
             }
+
             return Task.FromResult<ICaller>(null);
         }
 
         #endregion Overrides of LoadBalance
-
-        #region Private Method
-
-        private int GetNextPositive()
-        {
-            return Interlocked.Increment(ref _identity);
-        }
-
-        #endregion Private Method
     }
 }

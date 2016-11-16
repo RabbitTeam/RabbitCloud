@@ -1,13 +1,14 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Exceptions;
-using RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance;
+using RabbitCloud.Rpc.Cluster.Abstractions;
+using RabbitCloud.Rpc.Cluster.LoadBalance;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Cluster.Abstractions.Internal
+namespace RabbitCloud.Rpc.Cluster
 {
     public abstract class ClusterCaller : ICaller
     {

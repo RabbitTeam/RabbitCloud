@@ -1,9 +1,10 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Cluster.Abstractions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Cluster.Abstractions.LoadBalance
+namespace RabbitCloud.Rpc.Cluster.LoadBalance
 {
     /// <summary>
     /// 负载均衡抽象类。
