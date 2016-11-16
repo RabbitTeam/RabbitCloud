@@ -30,7 +30,7 @@ namespace RabbitCloud.Registry.Abstractions.Cluster
         /// <returns>服务导出者。</returns>
         protected override async Task<IExporter> CreateExporter(ICaller provider, Url url)
         {
-//            await _registry.Register(url);
+            await _registry.Register(url);
             return await _protocol.Export(provider);
         }
 

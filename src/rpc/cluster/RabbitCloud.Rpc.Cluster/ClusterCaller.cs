@@ -14,6 +14,7 @@ namespace RabbitCloud.Rpc.Cluster
     {
         protected IDirectory Directory { get; set; }
         private bool _isDisposable;
+        private readonly ILoadBalance _loadBalance = new RoundRobinLoadBalance();
 
         protected ClusterCaller(IDirectory directory)
         {
@@ -65,7 +66,7 @@ namespace RabbitCloud.Rpc.Cluster
         {
             CheckDispose();
             //暂时写死。
-            ILoadBalance loadBalance = new RandomLoadBalance();
+            ILoadBalance loadBalance = _loadBalance;
             var callers = await GetCallers(request);
             return await DoCall(request, callers, loadBalance);
         }

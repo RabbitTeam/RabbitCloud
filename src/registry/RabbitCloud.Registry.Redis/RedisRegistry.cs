@@ -133,14 +133,7 @@ namespace RabbitCloud.Registry.Redis
         /// <returns>服务节点集合。</returns>
         public async Task<Url[]> Discover(Url url)
         {
-            var hashKey = _applicationId;
-            var nodeTypePath = GetNodeTypePath(url, NodeType.AvailableServer);
-            var result = await _database.HashGetAsync(hashKey, nodeTypePath);
-
-            if (!result.HasValue)
-                return new Url[0];
-
-            var urls = JsonConvert.DeserializeObject<string[]>(result);
+            var urls = await GetUrls(url, NodeType.AvailableServer);
             return urls.Select(i => new Url(i)).ToArray();
         }
 
@@ -242,7 +235,9 @@ namespace RabbitCloud.Registry.Redis
         {
             var hashKey = _applicationId;
             var nodeTypePath = GetNodeTypePath(url, nodeType);
-            var currentUrlContent = await _database.HashGetAsync(hashKey, nodeTypePath);
+
+            //todo: HashGetAsync 会无限等待
+            var currentUrlContent = await Task.Run(() => _database.HashGet(hashKey, nodeTypePath));
 
             //得到当前
             var currentUrls = currentUrlContent.HasValue ? JsonConvert.DeserializeObject<string[]>(currentUrlContent) : new string[0];
