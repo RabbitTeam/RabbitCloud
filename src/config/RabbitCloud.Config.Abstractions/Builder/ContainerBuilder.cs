@@ -1,4 +1,5 @@
 ﻿using RabbitCloud.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Protocol;
 using System;
 
 namespace RabbitCloud.Config.Abstractions.Builder
@@ -10,6 +11,12 @@ namespace RabbitCloud.Config.Abstractions.Builder
         public ContainerBuilder UseAddress(Url url)
         {
             _model.Address = url;
+            return this;
+        }
+
+        public ContainerBuilder UseProtocol(IProtocol protocol)
+        {
+            _model.Protocol = protocol;
             return this;
         }
 

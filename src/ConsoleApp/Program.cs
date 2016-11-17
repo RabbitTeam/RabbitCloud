@@ -6,7 +6,6 @@ using RabbitCloud.Registry.Abstractions.Cluster;
 using RabbitCloud.Registry.Redis;
 using RabbitCloud.Rpc.Abstractions.Codec;
 using RabbitCloud.Rpc.Abstractions.Internal;
-using RabbitCloud.Rpc.Abstractions.Protocol;
 using RabbitCloud.Rpc.Abstractions.Proxy;
 using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
 using RabbitCloud.Rpc.Cluster.Internal.Available;
@@ -98,8 +97,6 @@ namespace ConsoleApp
             {
                 ICodec codec = new RabbitCodec();
                 var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"));
-                var rabbitProtocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
-                IProtocol protocol = new RegistryProtocol(registry, rabbitProtocol, new AvailableCluster(new RoundRobinLoadBalance()));
 
                 var containerConfig1 = new ContainerBuilder()
                     .UseAddress(new Url("rabbitcloud://127.0.0.1:9981"))
@@ -111,7 +108,9 @@ namespace ConsoleApp
                                 b
                                     .Factory<IUserService>(() => new UserService("userService1"));
                             });
-                    }).Build();
+                    })
+                    .UseProtocol(new RabbitProtocol(new ServerTable(codec), new ClientTable(codec)))
+                    .Build();
                 var containerConfig2 = new ContainerBuilder()
                     .UseAddress(new Url("rabbitcloud://127.0.0.1:9982"))
                     .ConfigurationServices(builder =>
@@ -122,11 +121,19 @@ namespace ConsoleApp
                                 b
                                     .Factory<IUserService>(() => new UserService("userService2"));
                             });
-                    }).Build();
+                    })
+                    .UseProtocol(new RabbitProtocol(new ServerTable(codec), new ClientTable(codec)))
+                    .Build();
 
-                await StartHost(containerConfig1, containerConfig2);
+                var applicationConfig = new ApplicationBuilder()
+                    .UseContainers(new[] { containerConfig1, containerConfig2 })
+                    .UseProxyFactory(new CastleProxyFactory())
+                    .UseRegistry(registry)
+                    .UseProtocol(new RabbitProtocol(new ServerTable(codec), new ClientTable(codec)))
+                    .Build();
+                await StartApplications(applicationConfig);
 
-                var userService = await GetService<IUserService>(protocol);
+                var userService = await GetService<IUserService>(applicationConfig);
                 Console.WriteLine(await userService.GetServiceName());
                 Console.WriteLine(await userService.GetServiceName());
                 Console.WriteLine(await userService.GetServiceName());
@@ -135,33 +142,33 @@ namespace ConsoleApp
             Console.ReadLine();
         }
 
-        private static async Task StartHost(params ContainerConfigModel[] containerConfigs)
+        private static async Task StartApplications(params ApplicationConfigModel[] applicationConfigs)
         {
-            foreach (var containerConfigModel in containerConfigs)
+            foreach (var applicationConfig in applicationConfigs)
             {
-                await StartContainer(containerConfigModel);
+                await StartApplication(applicationConfig);
             }
         }
 
-        private static async Task StartContainer(ContainerConfigModel containerConfig)
+        private static async Task StartApplication(ApplicationConfigModel applicationConfig)
         {
-            ICodec codec = new RabbitCodec();
-            var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"));
-            var rabbitProtocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
-            IProtocol protocol = new RegistryProtocol(registry, rabbitProtocol, new AvailableCluster(new RoundRobinLoadBalance()));
-
-            foreach (var serviceConfig in containerConfig.ServiceConfigModels)
+            foreach (var containerConfig in applicationConfig.Containers)
             {
-                var baseAddress = containerConfig.Address;
-                var url = new Url($"{baseAddress.Scheme}://{baseAddress.Host}:{baseAddress.Port}/{serviceConfig.ServiceKey}");
-                await protocol.Export(new DefaultProvider(() => serviceConfig.ServiceFactory(), url, serviceConfig.ServiceType));
+                var protocol = new RegistryProtocol(applicationConfig.Registry, containerConfig.Protocol, new AvailableCluster(new RoundRobinLoadBalance()));
+                foreach (var serviceConfig in containerConfig.ServiceConfigModels)
+                {
+                    var baseAddress = containerConfig.Address;
+                    var url = new Url($"{baseAddress.Scheme}://{baseAddress.Host}:{baseAddress.Port}/{serviceConfig.ServiceKey}");
+                    await protocol.Export(new DefaultProvider(() => serviceConfig.ServiceFactory(), url, serviceConfig.ServiceType));
+                }
             }
         }
 
-        private static async Task<T> GetService<T>(IProtocol protocol, string serviceName = null)
+        private static async Task<T> GetService<T>(ApplicationConfigModel applicationConfig, string serviceName = null)
         {
+            var protocol = new RegistryProtocol(applicationConfig.Registry, applicationConfig.Protocol, new AvailableCluster(new RoundRobinLoadBalance()));
+            var proxyFactory = applicationConfig.ProxyFactory;
             var caller = await protocol.Refer(typeof(T), new Url($"rabbitcloud://temp/{serviceName ?? typeof(T).Name}"));
-            IProxyFactory proxyFactory = new CastleProxyFactory();
             var userService = proxyFactory.GetProxy<T>(new RefererInvocationHandler(caller).Invoke);
             return userService;
         }

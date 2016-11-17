@@ -4,6 +4,7 @@
   "dependencies": {
     "NETStandard.Library": "1.6.0",
     "RabbitCloud.Abstractions": "1.0.0-*",
+    "RabbitCloud.Registry.Abstractions": "1.0.0-*",
     "RabbitCloud.Rpc.Cluster.Abstractions": "1.0.0-*"
   },
 
