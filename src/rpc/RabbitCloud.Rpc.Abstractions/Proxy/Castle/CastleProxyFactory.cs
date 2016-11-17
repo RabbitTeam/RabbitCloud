@@ -1,4 +1,5 @@
 ﻿using Castle.DynamicProxy;
+using System;
 
 namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
 {
@@ -14,13 +15,13 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy.Castle
         /// <summary>
         /// 获取一个类型的代理。
         /// </summary>
-        /// <typeparam name="T">类型。</typeparam>
+        /// <param name="type">类型。</param>
         /// <param name="invocationHandler">调用处理程序。</param>
         /// <returns>代理实例。</returns>
-        public T GetProxy<T>(InvocationDelegate invocationHandler)
+        public object GetProxy(Type type, InvocationDelegate invocationHandler)
         {
-            var instance = ProxyGenerator.CreateInterfaceProxyWithoutTarget(typeof(T), new[] { typeof(T) }, new InvokerInterceptor(invocationHandler));
-            return (T)instance;
+            var instance = ProxyGenerator.CreateInterfaceProxyWithoutTarget(type, new[] { type }, new InvokerInterceptor(invocationHandler));
+            return instance;
         }
 
         #endregion Implementation of IProxyFactory

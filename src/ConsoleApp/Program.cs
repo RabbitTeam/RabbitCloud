@@ -1,18 +1,19 @@
-﻿using org.apache.zookeeper;
+﻿using Microsoft.Extensions.DependencyInjection;
+using org.apache.zookeeper;
 using RabbitCloud.Abstractions;
 using RabbitCloud.Config.Abstractions;
-using RabbitCloud.Config.Abstractions.Builder;
-using RabbitCloud.Registry.Abstractions.Cluster;
+using RabbitCloud.Config.Abstractions.Config;
+using RabbitCloud.Config.Abstractions.Config.Internal;
+using RabbitCloud.Config.Abstractions.Internal;
+using RabbitCloud.Registry.Abstractions;
 using RabbitCloud.Registry.Redis;
-using RabbitCloud.Rpc.Abstractions.Codec;
-using RabbitCloud.Rpc.Abstractions.Internal;
+using RabbitCloud.Rpc.Abstractions.Protocol;
 using RabbitCloud.Rpc.Abstractions.Proxy;
 using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
-using RabbitCloud.Rpc.Cluster.Internal.Available;
-using RabbitCloud.Rpc.Cluster.LoadBalance;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -91,86 +92,90 @@ namespace ConsoleApp
 
     public class Program
     {
+        internal class ServiceLocator : IProtocolLocator, IRegistryLocator
+        {
+            private IProtocol _protocol;
+            private IRegistry _registry;
+
+            #region Implementation of IProtocolLocator
+
+            public Task<IProtocol> GetProtocol(string name)
+            {
+                if (_protocol != null)
+                    return Task.FromResult(_protocol);
+                var codec = new RabbitCodec();
+                _protocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
+                return Task.FromResult(_protocol);
+            }
+
+            #endregion Implementation of IProtocolLocator
+
+            #region Implementation of IRegistryLocator
+
+            public Task<IRegistry> GetRegistry(Url url)
+            {
+                if (_registry != null)
+                    return Task.FromResult(_registry);
+                _registry = new RedisRegistryFactory().GetRegistry(url);
+                return Task.FromResult(_registry);
+            }
+
+            #endregion Implementation of IRegistryLocator
+        }
+
         public static void Main(string[] args)
         {
             Task.Run(async () =>
             {
-                ICodec codec = new RabbitCodec();
-                var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"));
+                var services = new ServiceCollection();
+                services.AddSingleton<IProxyFactory, CastleProxyFactory>();
+                services.AddSingleton<IProtocolLocator, ServiceLocator>();
+                services.AddSingleton<IRegistryLocator, ServiceLocator>();
+                services.AddSingleton<IUserService>(new UserService("test"));
 
-                var containerConfig1 = new ContainerBuilder()
-                    .UseAddress(new Url("rabbitcloud://127.0.0.1:9981"))
-                    .ConfigurationServices(builder =>
+                var protocolConfig = new ProtocolConfig
+                {
+                    Name = "rabbit"
+                };
+                var registryConfig = new RegistryConfig
+                {
+                    Address = "redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"
+                };
+                var applicationConfig = new ApplicationConfig
+                {
+                    Name = "test",
+                    ServiceExportConfigs = new[]
                     {
-                        builder
-                            .AddService(b =>
+                        new ServiceExportConfig
+                        {
+                            ProtocolConfig=protocolConfig,
+                            RegistryConfig = registryConfig,
+                            ServiceConfig = new ServiceConfig
                             {
-                                b
-                                    .Factory<IUserService>(() => new UserService("userService1"));
-                            });
-                    })
-                    .UseProtocol(new RabbitProtocol(new ServerTable(codec), new ClientTable(codec)))
-                    .Build();
-                var containerConfig2 = new ContainerBuilder()
-                    .UseAddress(new Url("rabbitcloud://127.0.0.1:9982"))
-                    .ConfigurationServices(builder =>
+                                Type = typeof(IUserService).AssemblyQualifiedName
+                            }
+                        }
+                    },
+                    ReferenceConfigs = new[]
                     {
-                        builder
-                            .AddService(b =>
-                            {
-                                b
-                                    .Factory<IUserService>(() => new UserService("userService2"));
-                            });
-                    })
-                    .UseProtocol(new RabbitProtocol(new ServerTable(codec), new ClientTable(codec)))
-                    .Build();
+                        new ReferenceConfig
+                        {
+                            InterfaceType = typeof(IUserService).AssemblyQualifiedName,
+                            ProtocolConfig = protocolConfig,
+                            RegistryConfig = registryConfig
+                        }
+                    }
+                };
+                IApplicationBuilder applicationBuilder = new ApplicationBuilder(services.BuildServiceProvider(), applicationConfig);
+                var application = await applicationBuilder.Build();
 
-                var applicationConfig = new ApplicationBuilder()
-                    .UseContainers(new[] { containerConfig1, containerConfig2 })
-                    .UseProxyFactory(new CastleProxyFactory())
-                    .UseRegistry(registry)
-                    .UseProtocol(new RabbitProtocol(new ServerTable(codec), new ClientTable(codec)))
-                    .Build();
-                await StartApplications(applicationConfig);
-
-                var userService = await GetService<IUserService>(applicationConfig);
+                var userService = (IUserService)application.References.First().ServiceProxy;
                 Console.WriteLine(await userService.GetServiceName());
                 Console.WriteLine(await userService.GetServiceName());
                 Console.WriteLine(await userService.GetServiceName());
                 Console.WriteLine(await userService.GetServiceName());
             }).Wait();
             Console.ReadLine();
-        }
-
-        private static async Task StartApplications(params ApplicationConfigModel[] applicationConfigs)
-        {
-            foreach (var applicationConfig in applicationConfigs)
-            {
-                await StartApplication(applicationConfig);
-            }
-        }
-
-        private static async Task StartApplication(ApplicationConfigModel applicationConfig)
-        {
-            foreach (var containerConfig in applicationConfig.Containers)
-            {
-                var protocol = new RegistryProtocol(applicationConfig.Registry, containerConfig.Protocol, new AvailableCluster(new RoundRobinLoadBalance()));
-                foreach (var serviceConfig in containerConfig.ServiceConfigModels)
-                {
-                    var baseAddress = containerConfig.Address;
-                    var url = new Url($"{baseAddress.Scheme}://{baseAddress.Host}:{baseAddress.Port}/{serviceConfig.ServiceKey}");
-                    await protocol.Export(new DefaultProvider(() => serviceConfig.ServiceFactory(), url, serviceConfig.ServiceType));
-                }
-            }
-        }
-
-        private static async Task<T> GetService<T>(ApplicationConfigModel applicationConfig, string serviceName = null)
-        {
-            var protocol = new RegistryProtocol(applicationConfig.Registry, applicationConfig.Protocol, new AvailableCluster(new RoundRobinLoadBalance()));
-            var proxyFactory = applicationConfig.ProxyFactory;
-            var caller = await protocol.Refer(typeof(T), new Url($"rabbitcloud://temp/{serviceName ?? typeof(T).Name}"));
-            var userService = proxyFactory.GetProxy<T>(new RefererInvocationHandler(caller).Invoke);
-            return userService;
         }
     }
 }
