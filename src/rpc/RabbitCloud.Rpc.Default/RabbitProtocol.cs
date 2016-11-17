@@ -1,8 +1,10 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Protocol;
+using RabbitCloud.Rpc.Abstractions.Utils.Extensions;
 using RabbitCloud.Rpc.Default.Service;
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.Default
@@ -11,6 +13,7 @@ namespace RabbitCloud.Rpc.Default
     {
         private readonly IServerTable _serverTable;
         private readonly IClientTable _clientTable;
+        private readonly ConcurrentDictionary<string, string> _serviceKeyMappings = new ConcurrentDictionary<string, string>();
 
         public RabbitProtocol(IServerTable serverTable, IClientTable clientTable)
         {
@@ -28,7 +31,16 @@ namespace RabbitCloud.Rpc.Default
         /// <returns>服务导出者。</returns>
         protected override Task<IExporter> CreateExporter(ICaller provider, Url url)
         {
-            _serverTable.OpenServer(url, key => Exporters[key].Value.Result);
+            var serviceKey = url.GetServiceKey();
+            if (!_serviceKeyMappings.ContainsKey(serviceKey))
+                _serviceKeyMappings.TryAdd(serviceKey, url.GetProtocolKey());
+
+            _serverTable.OpenServer(url, (u, request) =>
+            {
+                string protocolKey;
+                _serviceKeyMappings.TryGetValue(request.GetServiceKey(), out protocolKey);
+                return Exporters[protocolKey].Value.Result;
+            });
             return Task.FromResult<IExporter>(new RabbitExporter(provider, url));
         }
 

@@ -8,5 +8,10 @@ namespace RabbitCloud.Rpc.Abstractions.Utils.Extensions
         {
             return $"{url.Scheme}://{url.Host}:{url.Port}{url.AbsolutePath}";
         }
+
+        public static string GetServiceKey(this Url url)
+        {
+            return ServiceKeyUtil.GetServiceKey(url.AbsolutePath);
+        }
     }
 }

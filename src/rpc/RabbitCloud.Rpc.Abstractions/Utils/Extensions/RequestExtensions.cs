@@ -6,5 +6,10 @@
         {
             return ReflectUtil.GetMethodSignature(request.MethodName, request.ParamtersType);
         }
+
+        public static string GetServiceKey(this IRequest request)
+        {
+            return ServiceKeyUtil.GetServiceKey(request.InterfaceName);
+        }
     }
 }

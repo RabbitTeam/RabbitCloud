@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Rpc.Abstractions.Internal;
 using RabbitCloud.Rpc.Abstractions.Utils;
+using RabbitCloud.Rpc.Abstractions.Utils.Extensions;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace RabbitCloud.Rpc.Abstractions.Proxy
             var response = await _caller.Call(new DefaultRequest
             {
                 Arguments = args,
-                InterfaceName = "",
+                InterfaceName = _caller.Url.GetServiceKey(),
                 MethodName = method.Name,
                 ParamtersType = method.GetParameters().Select(i => i.ParameterType.FullName).ToArray(),
                 RequestId = MessageIdGenerator.GeneratorId()

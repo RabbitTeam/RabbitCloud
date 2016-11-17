@@ -1,6 +1,6 @@
 ﻿using org.apache.zookeeper;
 using RabbitCloud.Abstractions;
-using RabbitCloud.Registry.Abstractions;
+using RabbitCloud.Config.Abstractions.Builder;
 using RabbitCloud.Registry.Abstractions.Cluster;
 using RabbitCloud.Registry.Redis;
 using RabbitCloud.Rpc.Abstractions.Codec;
@@ -31,6 +31,8 @@ namespace ConsoleApp
         Task<string> Test3();
 
         Task Test4(UserModel model);
+
+        Task<string> GetServiceName();
     }
 
     internal class UserService : IUserService
@@ -64,6 +66,11 @@ namespace ConsoleApp
             Console.WriteLine(model.Name);
             return Task.CompletedTask;
         }
+
+        public Task<string> GetServiceName()
+        {
+            return Task.FromResult(_name);
+        }
     }
 
     internal class MyClass : Watcher
@@ -85,41 +92,71 @@ namespace ConsoleApp
     {
         public static void Main(string[] args)
         {
-            var url1 = new Url("rabbitrpc://127.0.0.1:9981/test/a?a=1&b=2");
-            var url2 = new Url("rabbitrpc://127.0.0.1:9982/test/a?a=1");
             Task.Run(async () =>
             {
                 ICodec codec = new RabbitCodec();
-                IRegistry registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"));
+                var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"));
                 var rabbitProtocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
                 IProtocol protocol = new RegistryProtocol(registry, rabbitProtocol, new AvailableCluster());
 
-                var exporter1=await protocol.Export(new DefaultProvider(() => new UserService("userService1"), url1, typeof(IUserService)));
-                var exporter2 = await protocol.Export(new DefaultProvider(() => new UserService("userService2"), url2, typeof(IUserService)));
+                var hostBuilder = new HostBuilder();
 
-                var referer = await protocol.Refer(typeof(IUserService), url1);
+                hostBuilder
+                    .SetProtocol("rabbitcloud")
+                    .SetAddress("127.0.0.1", 9981)
+                    .AddService(serviceConfig =>
+                    {
+                        serviceConfig
+                            .Factory<IUserService>(() => new UserService("service1"))
+                            .Id("userService1");
+                    })
+                    .AddService(serviceConfig =>
+                    {
+                        serviceConfig
+                            .Factory<IUserService>(() => new UserService("service2"))
+                            .Id("userService2");
+                    });
 
-                IProxyFactory proxyFactory = new CastleProxyFactory();
-                var userServiceProxy = proxyFactory.GetProxy<IUserService>(new RefererInvocationHandler(referer).Invoke);
-                userServiceProxy.Test();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
+                await StartHost(protocol, hostBuilder);
+                /*                hostBuilder = new HostBuilder();
 
-                exporter2.Dispose();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
-                userServiceProxy.Test();
+                                hostBuilder
+                                    .SetProtocol("rabbitcloud")
+                                    .SetAddress("127.0.0.1", 9982)
+                                    .AddService(serviceConfig =>
+                                    {
+                                        serviceConfig
+                                            .Factory<IUserService>(() => new UserService("service2"));
+                                    });
 
+                                await StartHost(protocol, hostBuilder);*/
 
-                Console.WriteLine(await userServiceProxy.Test3());
+                var userService = await GetService<IUserService>(protocol, "userService1");
+                Console.WriteLine(await userService.GetServiceName());
+                Console.WriteLine(await userService.GetServiceName());
+                userService = await GetService<IUserService>(protocol, "userService2");
+                Console.WriteLine(await userService.GetServiceName());
+                Console.WriteLine(await userService.GetServiceName());
             }).Wait();
             Console.ReadLine();
+        }
+
+        private static async Task StartHost(IProtocol protocol, HostBuilder hostBuilder)
+        {
+            var hostConfig = hostBuilder.Build();
+            foreach (var serviceConfig in hostConfig.ServiceConfigModels)
+            {
+                var url = new Url($"{hostConfig.Protocol}://{hostConfig.Address}/{serviceConfig.ServiceId}");
+                await protocol.Export(new DefaultProvider(() => serviceConfig.ServiceFactory(), url, serviceConfig.ServiceType));
+            }
+        }
+
+        private static async Task<T> GetService<T>(IProtocol protocol, string serviceName)
+        {
+            var caller = await protocol.Refer(typeof(T), new Url($"rabbitcloud://temp/{serviceName}"));
+            IProxyFactory proxyFactory = new CastleProxyFactory();
+            var userService = proxyFactory.GetProxy<T>(new RefererInvocationHandler(caller).Invoke);
+            return userService;
         }
     }
 }
