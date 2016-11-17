@@ -1,33 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace RabbitCloud.Config.Abstractions.Builder
 {
     public class ServiceBuilder
     {
-        private readonly ServiceConfigModel _model = new ServiceConfigModel();
+        private readonly List<ServiceConfigModel> _services = new List<ServiceConfigModel>();
 
-        public ServiceBuilder Id(string id)
+        public ServiceBuilder AddServices(params ServiceConfigModel[] services)
         {
-            _model.ServiceId = id;
+            _services.AddRange(services);
             return this;
         }
 
-        public ServiceBuilder Factory<T>(Func<T> factory)
+        public ServiceBuilder AddService(Action<ServiceItemBuilder> config)
         {
-            _model.ServiceId = typeof(T).Name;
-            _model.ServiceType = typeof(T);
-            _model.ServiceFactory = () => factory();
-            return this;
+            var serviceBuilder = new ServiceItemBuilder();
+            config(serviceBuilder);
+            return AddServices(serviceBuilder.Build());
         }
 
-        public ServiceBuilder Factory<T>(T instance)
+        public IEnumerable<ServiceConfigModel> Build()
         {
-            return Factory(() => instance);
-        }
-
-        public ServiceConfigModel Build()
-        {
-            return _model;
+            return _services;
         }
     }
 }
