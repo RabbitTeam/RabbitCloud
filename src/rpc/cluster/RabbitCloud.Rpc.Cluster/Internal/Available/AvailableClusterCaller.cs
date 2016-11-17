@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Cluster.Abstractions;
+using RabbitCloud.Rpc.Cluster.Abstractions.Internal;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -7,7 +8,8 @@ namespace RabbitCloud.Rpc.Cluster.Internal.Available
 {
     public class AvailableClusterCaller : ClusterCaller
     {
-        public AvailableClusterCaller(IDirectory directory) : base(directory)
+        public AvailableClusterCaller(IDirectory directory, ILoadBalance loadBalance)
+            : base(directory, loadBalance)
         {
         }
 

@@ -8,6 +8,13 @@ namespace RabbitCloud.Rpc.Cluster.Internal.Available
     /// </summary>
     public class AvailableCluster : ICluster
     {
+        private readonly ILoadBalance _loadBalance;
+
+        public AvailableCluster(ILoadBalance loadBalance)
+        {
+            _loadBalance = loadBalance;
+        }
+
         #region Implementation of ICluster
 
         /// <summary>
@@ -17,7 +24,7 @@ namespace RabbitCloud.Rpc.Cluster.Internal.Available
         /// <returns>最终调用者。</returns>
         public ICaller Join(IDirectory directory)
         {
-            return new AvailableClusterCaller(directory);
+            return new AvailableClusterCaller(directory, _loadBalance);
         }
 
         #endregion Implementation of ICluster

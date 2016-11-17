@@ -1,25 +1,37 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Exceptions;
-using RabbitCloud.Rpc.Cluster.Abstractions;
-using RabbitCloud.Rpc.Cluster.LoadBalance;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Rpc.Cluster
+namespace RabbitCloud.Rpc.Cluster.Abstractions.Internal
 {
     public abstract class ClusterCaller : ICaller
     {
-        protected IDirectory Directory { get; set; }
-        private bool _isDisposable;
-        private readonly ILoadBalance _loadBalance = new RoundRobinLoadBalance();
+        #region Field
 
-        protected ClusterCaller(IDirectory directory)
+        private bool _isDisposable;
+
+        #endregion Field
+
+        #region Constructor
+
+        protected ClusterCaller(IDirectory directory, ILoadBalance loadBalance)
         {
             Directory = directory;
+            LoadBalance = loadBalance;
         }
+
+        #endregion Constructor
+
+        #region Property
+
+        protected IDirectory Directory { get; set; }
+        protected ILoadBalance LoadBalance { get; set; }
+
+        #endregion Property
 
         #region Implementation of IDisposable
 
@@ -65,8 +77,7 @@ namespace RabbitCloud.Rpc.Cluster
         public async Task<IResponse> Call(IRequest request)
         {
             CheckDispose();
-            //暂时写死。
-            ILoadBalance loadBalance = _loadBalance;
+            var loadBalance = LoadBalance;
             var callers = await GetCallers(request);
             return await DoCall(request, callers, loadBalance);
         }

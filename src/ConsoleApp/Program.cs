@@ -13,6 +13,7 @@ using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
 using System.Threading.Tasks;
+using RabbitCloud.Rpc.Cluster.LoadBalance;
 
 namespace ConsoleApp
 {
@@ -97,7 +98,7 @@ namespace ConsoleApp
                 ICodec codec = new RabbitCodec();
                 var registry = new RedisRegistryFactory().GetRegistry(new Url("redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"));
                 var rabbitProtocol = new RabbitProtocol(new ServerTable(codec), new ClientTable(codec));
-                IProtocol protocol = new RegistryProtocol(registry, rabbitProtocol, new AvailableCluster());
+                IProtocol protocol = new RegistryProtocol(registry, rabbitProtocol, new AvailableCluster(new RoundRobinLoadBalance()));
 
                 var hostBuilder = new HostBuilder();
 
