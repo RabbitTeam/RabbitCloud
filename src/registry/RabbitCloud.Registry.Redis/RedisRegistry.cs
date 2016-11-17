@@ -21,7 +21,7 @@ namespace RabbitCloud.Registry.Redis
         private readonly string _applicationId;
         private readonly string _subscriberChannel;
 
-        private readonly ConcurrentDictionary<string, Lazy<Task<HashSet<Url>>>> _registeredServiceUrls = new ConcurrentDictionary<string, Lazy<Task<HashSet<Url>>>>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, Lazy<Task<List<Url>>>> _registeredServiceUrls = new ConcurrentDictionary<string, Lazy<Task<List<Url>>>>(StringComparer.OrdinalIgnoreCase);
 
         private readonly ConcurrentDictionary<string, IList<NotifyListenerDelegate>> _notifyListeners =
             new ConcurrentDictionary<string, IList<NotifyListenerDelegate>>(StringComparer.OrdinalIgnoreCase);
@@ -65,9 +65,9 @@ namespace RabbitCloud.Registry.Redis
             await CreateEntry(url, NodeType.AvailableServer);
 
             //添加到本地缓存
-            var set = await GetUrlSet(url);
-            if (!set.Contains(url))
-                set.Add(url);
+            var list = await GetUrlList(url);
+            list.Remove(url);
+            list.Add(url);
 
             await PublishListener(url);
         }
@@ -83,8 +83,8 @@ namespace RabbitCloud.Registry.Redis
             await RemoveEntry(url, NodeType.UnavailableServer);
 
             //从本地缓存中删除
-            var set = await GetUrlSet(url);
-            set.Remove(url);
+            var list = await GetUrlList(url);
+            list.Remove(url);
 
             await PublishListener(url);
         }
@@ -129,18 +129,18 @@ namespace RabbitCloud.Registry.Redis
             return Task.CompletedTask;
         }
 
-        private async Task<HashSet<Url>> GetUrlSet(Uri url)
+        private async Task<List<Url>> GetUrlList(Uri url)
         {
             var key = GetServicePath(url);
-            return await _registeredServiceUrls.GetOrAdd(key, new Lazy<Task<HashSet<Url>>>(async () =>
+            return await _registeredServiceUrls.GetOrAdd(key, new Lazy<Task<List<Url>>>(async () =>
             {
                 var urls = await GetUrls(url, NodeType.AvailableServer);
-                var set = new HashSet<Url>();
+                var list = new List<Url>();
                 foreach (var urlString in urls)
                 {
-                    set.Add(new Url(urlString));
+                    list.Add(new Url(urlString));
                 }
-                return set;
+                return list;
             })).Value;
         }
 
@@ -151,8 +151,8 @@ namespace RabbitCloud.Registry.Redis
         /// <returns>服务节点集合。</returns>
         public async Task<Url[]> Discover(Url url)
         {
-            var set = await GetUrlSet(url);
-            return set.ToArray();
+            var list = await GetUrlList(url);
+            return list.ToArray();
         }
 
         #endregion Implementation of IDiscoveryService
