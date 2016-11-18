@@ -14,7 +14,6 @@
     "Microsoft.Extensions.DependencyInjection": "1.0.0",
     "RabbitCloud.Rpc.Abstractions": "1.0.0-*",
     "RabbitCloud.Rpc.Default": "1.0.0-*",
-    "RabbitCloud.Registry.ZooKeeper": "1.0.0-*",
     "RabbitCloud.Registry.Redis": "1.0.0-*",
     "RabbitCloud.Rpc.Cluster.Abstractions": "1.0.0-*",
     "RabbitCloud.Rpc.Cluster": "1.0.0-*",
