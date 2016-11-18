@@ -24,6 +24,11 @@ namespace RabbitCloud.Registry.Abstractions.Cluster
         #region Overrides of Protocol
 
         /// <summary>
+        /// 协议的默认端口。
+        /// </summary>
+        public override int DefaultPort => _protocol.DefaultPort;
+
+        /// <summary>
         /// 创建一个导出者。
         /// </summary>
         /// <param name="provider">RPC提供程序。</param>
@@ -31,8 +36,9 @@ namespace RabbitCloud.Registry.Abstractions.Cluster
         /// <returns>服务导出者。</returns>
         protected override async Task<IExporter> CreateExporter(ICaller provider, Url url)
         {
+            var exporter = await _protocol.Export(provider);
             await _registry.Register(url);
-            return new RegistryExporter(await _protocol.Export(provider), _registry);
+            return new RegistryExporter(exporter, _registry);
         }
 
         /// <summary>

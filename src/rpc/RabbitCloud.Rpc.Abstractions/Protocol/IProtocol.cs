@@ -10,6 +10,11 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
     public interface IProtocol : IDisposable
     {
         /// <summary>
+        /// 协议的默认端口。
+        /// </summary>
+        int DefaultPort { get; }
+
+        /// <summary>
         /// 导出一个RPC提供程序。
         /// </summary>
         /// <param name="provider">RPC提供程序。</param>

@@ -20,12 +20,19 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         #region Implementation of IProtocol
 
         /// <summary>
+        /// 协议的默认端口。
+        /// </summary>
+        public abstract int DefaultPort { get; }
+
+        /// <summary>
         /// 导出一个RPC提供程序。
         /// </summary>
         /// <param name="provider">RPC提供程序。</param>
         /// <returns>一个导出者。</returns>
         public async Task<IExporter> Export(ICaller provider)
         {
+            CheckUrl(provider.Url);
+
             var url = provider.Url;
             var protocolKey = url.GetProtocolKey();
             return await Exporters.GetOrAdd(protocolKey, new Lazy<Task<IExporter>>(() => CreateExporter(provider, url))).Value;
@@ -39,6 +46,8 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         /// <returns>一个引用者。</returns>
         public async Task<ICaller> Refer(Type type, Url serviceUrl)
         {
+            CheckUrl(serviceUrl);
+
             return await CreateReferer(type, serviceUrl);
         }
 
@@ -79,5 +88,15 @@ namespace RabbitCloud.Rpc.Abstractions.Protocol
         protected abstract Task<ICaller> CreateReferer(Type type, Url serviceUrl);
 
         #endregion Public Method
+
+        #region Private Method
+
+        private void CheckUrl(Url url)
+        {
+            if (url.Port == -1)
+                url.Port = DefaultPort;
+        }
+
+        #endregion Private Method
     }
 }

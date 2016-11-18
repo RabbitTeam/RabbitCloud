@@ -1,8 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using org.apache.zookeeper;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using RabbitCloud.Abstractions;
-using RabbitCloud.Config.Abstractions;
-using RabbitCloud.Config.Abstractions.Config;
 using RabbitCloud.Config.Abstractions.Config.Internal;
 using RabbitCloud.Config.Abstractions.Internal;
 using RabbitCloud.Registry.Abstractions;
@@ -13,7 +11,6 @@ using RabbitCloud.Rpc.Abstractions.Proxy.Castle;
 using RabbitCloud.Rpc.Default;
 using RabbitCloud.Rpc.Default.Service;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -75,21 +72,6 @@ namespace ConsoleApp
         }
     }
 
-    internal class MyClass : Watcher
-    {
-        #region Overrides of Watcher
-
-        /// <summary>Processes the specified event.</summary>
-        /// <param name="event">The event.</param>
-        /// <returns></returns>
-        public override Task process(WatchedEvent @event)
-        {
-            return Task.CompletedTask;
-        }
-
-        #endregion Overrides of Watcher
-    }
-
     public class Program
     {
         internal class ServiceLocator : IProtocolLocator, IRegistryLocator
@@ -132,46 +114,16 @@ namespace ConsoleApp
                 services.AddSingleton<IProtocolLocator, ServiceLocator>();
                 services.AddSingleton<IRegistryLocator, ServiceLocator>();
                 services.AddSingleton<IUserService>(new UserService("test"));
+                var serviceContainer = services.BuildServiceProvider();
+                var configuration = new ConfigurationBuilder()
+                    .AddJsonFile("rabbitcloud.json")
+                    .Build();
 
-                var protocolConfig = new ProtocolConfig
-                {
-                    Name = "rabbit"
-                };
-                var registryConfig = new RegistryConfig
-                {
-                    Address = "redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"
-                };
-                var applicationConfig = new ApplicationConfig
-                {
-                    Name = "test",
-                    ServiceExportConfigs = new[]
-                    {
-                        new ServiceExportConfig
-                        {
-                            ProtocolConfig=protocolConfig,
-                            RegistryConfig = registryConfig,
-                            ServiceConfig = new ServiceConfig
-                            {
-                                Type = typeof(IUserService).AssemblyQualifiedName
-                            }
-                        }
-                    },
-                    ReferenceConfigs = new[]
-                    {
-                        new ReferenceConfig
-                        {
-                            InterfaceType = typeof(IUserService).AssemblyQualifiedName,
-                            ProtocolConfig = protocolConfig,
-                            RegistryConfig = registryConfig
-                        }
-                    }
-                };
-                IApplicationBuilder applicationBuilder = new ApplicationBuilder(services.BuildServiceProvider(), applicationConfig);
+                var applicationBuilder = new ConfigurationApplicationBuilder(serviceContainer, configuration);
                 var application = await applicationBuilder.Build();
 
-                var userService = (IUserService)application.References.First().ServiceProxy;
-                Console.WriteLine(await userService.GetServiceName());
-                Console.WriteLine(await userService.GetServiceName());
+                var userService = application.GetReference<IUserService>();
+
                 Console.WriteLine(await userService.GetServiceName());
                 Console.WriteLine(await userService.GetServiceName());
             }).Wait();

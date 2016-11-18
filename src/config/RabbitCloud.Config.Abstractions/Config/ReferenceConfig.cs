@@ -5,5 +5,6 @@
         public RegistryConfig RegistryConfig { get; set; }
         public ProtocolConfig ProtocolConfig { get; set; }
         public string InterfaceType { get; set; }
+        public string Id { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using RabbitCloud.Registry.Abstractions;
+﻿using RabbitCloud.Config.Abstractions.Config;
+using RabbitCloud.Registry.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Protocol;
 
 namespace RabbitCloud.Config.Abstractions
@@ -8,5 +9,6 @@ namespace RabbitCloud.Config.Abstractions
         public IRegistry Registry { get; set; }
         public IProtocol Protocol { get; set; }
         public object ServiceProxy { get; set; }
+        public ReferenceConfig Config { get; set; }
     }
 }

@@ -1,7 +1,8 @@
 {
   "version": "1.0.0-*",
   "buildOptions": {
-    "emitEntryPoint": true
+    "emitEntryPoint": true,
+    "copyToOutput": [ "rabbitcloud.json" ]
   },
 
   "dependencies": {
@@ -17,7 +18,8 @@
     "RabbitCloud.Registry.Redis": "1.0.0-*",
     "RabbitCloud.Rpc.Cluster.Abstractions": "1.0.0-*",
     "RabbitCloud.Rpc.Cluster": "1.0.0-*",
-    "RabbitCloud.Config.Abstractions": "1.0.0-*"
+    "RabbitCloud.Config.Abstractions": "1.0.0-*",
+    "Microsoft.Extensions.Configuration.Json": "1.0.0"
   },
 
   "frameworks": {

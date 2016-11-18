@@ -1,4 +1,4 @@
-﻿using RabbitCloud.Rpc.Abstractions.Protocol;
+﻿/*using RabbitCloud.Rpc.Abstractions.Protocol;
 
 namespace RabbitCloud.Config.Abstractions.Builder
 {
@@ -17,4 +17,4 @@ namespace RabbitCloud.Config.Abstractions.Builder
             return _protocol;
         }
     }
-}
+}*/

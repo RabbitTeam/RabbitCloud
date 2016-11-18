@@ -38,32 +38,12 @@ namespace RabbitCloud.Config.Abstractions.Config.Internal
 
             foreach (var config in _applicationConfig.ServiceExportConfigs)
             {
-                var registry = await GetRegistry(config.RegistryConfig);
-                var protocol = await GetRegistryProtocol(registry, await GetProtocol(config.ProtocolConfig));
-                var serviceFactory = await GetServiceFactory(config.ServiceConfig);
-                var entry = new ServiceEntry
-                {
-                    Protocol = protocol,
-                    Registry = registry,
-                    ServiceType = Type.GetType(config.ServiceConfig.Type),
-                    ServiceFactory = serviceFactory
-                };
-
-                await protocol.Export(new DefaultProvider(entry.ServiceFactory, new Url($"{config.ProtocolConfig.Name}://127.0.0.1:9981/{entry.ServiceType.Name}"), entry.ServiceType));
+                var entry = await GetServiceEntry(config);
                 services.Add(entry);
             }
             foreach (var config in _applicationConfig.ReferenceConfigs)
             {
-                var registry = await GetRegistry(config.RegistryConfig);
-                var protocol = await GetRegistryProtocol(registry, await GetProtocol(config.ProtocolConfig));
-                var serviceType = Type.GetType(config.InterfaceType);
-                var serviceProxy = await GetServiceProxy(protocol, serviceType);
-                var entry = new ReferenceEntry
-                {
-                    Protocol = protocol,
-                    Registry = registry,
-                    ServiceProxy = serviceProxy
-                };
+                var entry = await GetReferenceEntry(config);
                 references.Add(entry);
             }
 
@@ -74,7 +54,42 @@ namespace RabbitCloud.Config.Abstractions.Config.Internal
 
         #endregion Implementation of IApplicationBuilder
 
-        private static Task<IProtocol> GetRegistryProtocol(IRegistry registry, IProtocol protocol)
+        protected async Task<ServiceEntry> GetServiceEntry(ServiceExportConfig config)
+        {
+            var registry = await GetRegistry(config.RegistryConfig);
+            var protocol = await GetRegistryProtocol(registry, await GetProtocol(config.ProtocolConfig));
+            var serviceFactory = await GetServiceFactory(config.ServiceConfig);
+            var entry = new ServiceEntry
+            {
+                Protocol = protocol,
+                Registry = registry,
+                ServiceType = Type.GetType(config.ServiceConfig.Type),
+                ServiceFactory = serviceFactory
+            };
+
+            await protocol.Export(new DefaultProvider(entry.ServiceFactory, new Url($"{config.ProtocolConfig.Name}://{config.ProtocolConfig.Host}:{config.ProtocolConfig.Port}/{entry.ServiceType.Name}"), entry.ServiceType));
+
+            return entry;
+        }
+
+        protected async Task<ReferenceEntry> GetReferenceEntry(ReferenceConfig config)
+        {
+            var registry = await GetRegistry(config.RegistryConfig);
+            var protocol = await GetRegistryProtocol(registry, await GetProtocol(config.ProtocolConfig));
+            var serviceType = Type.GetType(config.InterfaceType);
+            var serviceProxy = await GetServiceProxy(protocol, serviceType);
+            var entry = new ReferenceEntry
+            {
+                Protocol = protocol,
+                Registry = registry,
+                ServiceProxy = serviceProxy,
+                Config = config
+            };
+
+            return entry;
+        }
+
+        protected static Task<IProtocol> GetRegistryProtocol(IRegistry registry, IProtocol protocol)
         {
             return Task.FromResult<IProtocol>(new RegistryProtocol(registry, protocol, new AvailableCluster(new RoundRobinLoadBalance())));
         }

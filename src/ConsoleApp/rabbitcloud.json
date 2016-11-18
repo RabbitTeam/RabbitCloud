@@ -1,0 +1,21 @@
+﻿{
+  "Name": "Test",
+  "Default": {
+    "Protocol": {
+      "Name": "Rabbit"
+    },
+    "Registry": {
+      "Address": "redis://?ConnectionString=127.0.0.1:6379&database=-1&application=test"
+    }
+  },
+  "Exports": [
+    {
+      "Type": "ConsoleApp.IUserService,ConsoleApp"
+    }
+  ],
+  "References": [
+    {
+      "InterfaceType": "ConsoleApp.IUserService,ConsoleApp"
+    }
+  ]
+}

@@ -129,7 +129,7 @@ namespace RabbitCloud.Registry.Redis
             return Task.CompletedTask;
         }
 
-        private async Task<List<Url>> GetUrlList(Uri url)
+        private async Task<List<Url>> GetUrlList(Url url)
         {
             var key = GetServicePath(url);
             return await _registeredServiceUrls.GetOrAdd(key, new Lazy<Task<List<Url>>>(async () =>
@@ -206,7 +206,7 @@ namespace RabbitCloud.Registry.Redis
         /// <summary>
         /// 获取节点路径（/user/account/server/127.0.0.1:9981）
         /// </summary>
-        private static string GetNodePath(Uri url, NodeType nodeType)
+        private static string GetNodePath(Url url, NodeType nodeType)
         {
             return $"{GetNodeTypePath(url, nodeType)}/{url.Host}:{url.Port}";
         }
@@ -214,7 +214,7 @@ namespace RabbitCloud.Registry.Redis
         /// <summary>
         /// 获取节点类型路径（/user/account/server）
         /// </summary>
-        private static string GetNodeTypePath(Uri url, NodeType nodeType)
+        private static string GetNodeTypePath(Url url, NodeType nodeType)
         {
             string type;
             switch (nodeType)
@@ -240,15 +240,15 @@ namespace RabbitCloud.Registry.Redis
         /// <summary>
         /// 获取服务路径（例：rabbitcloud://127.0.0.1:9981/user/account?fast=true => /user/account）
         /// </summary>
-        private static string GetServicePath(Uri url)
+        private static string GetServicePath(Url url)
         {
-            var path = url.AbsolutePath;
+            var path = url.Path;
             if (!path.StartsWith("/"))
                 path = path.Insert(0, "/");
             return path;
         }
 
-        private async Task RemoveEntry(Uri url, NodeType nodeType)
+        private async Task RemoveEntry(Url url, NodeType nodeType)
         {
             var hashKey = _applicationId;
             var nodeTypePath = GetNodeTypePath(url, nodeType);
@@ -262,7 +262,7 @@ namespace RabbitCloud.Registry.Redis
             _database.HashSet(hashKey, nodeTypePath, JsonConvert.SerializeObject(currentUrls));
         }
 
-        private Task<string[]> GetUrls(Uri url, NodeType nodeType)
+        private Task<string[]> GetUrls(Url url, NodeType nodeType)
         {
             var hashKey = _applicationId;
             var nodeTypePath = GetNodeTypePath(url, nodeType);
@@ -275,7 +275,7 @@ namespace RabbitCloud.Registry.Redis
             return Task.FromResult(currentUrls);
         }
 
-        private async Task CreateEntry(Uri url, NodeType nodeType)
+        private async Task CreateEntry(Url url, NodeType nodeType)
         {
             var hashKey = _applicationId;
             var nodeTypePath = GetNodeTypePath(url, nodeType);

@@ -24,6 +24,11 @@ namespace RabbitCloud.Rpc.Default
         #region Overrides of Protocol
 
         /// <summary>
+        /// 协议的默认端口。
+        /// </summary>
+        public override int DefaultPort { get; } = 9981;
+
+        /// <summary>
         /// 创建一个导出者。
         /// </summary>
         /// <param name="provider">RPC提供程序。</param>

@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Registry.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Utils.Extensions;
 
 namespace RabbitCloud.Registry.Redis
 {
@@ -14,7 +15,7 @@ namespace RabbitCloud.Registry.Redis
         /// <returns>注册中心。</returns>
         public IRegistry GetRegistry(Url url)
         {
-            var parameters = url.Parameters;
+            var parameters = url.GetParameters();
             return new RedisRegistry(new RedisConnectionInfo
             {
                 ConnectionString = parameters["ConnectionString"],
