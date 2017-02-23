@@ -1,6 +1,7 @@
 ﻿using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Routing.Implementation;
+using Rabbit.Rpc.Runtime.Client.HealthChecks.Implementation;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors;
 using Rabbit.Rpc.Runtime.Client.Address.Resolvers.Implementation.Selectors.Implementation;
 using Rabbit.Rpc.Serialization.Implementation;
@@ -91,7 +92,7 @@ namespace Rabbit.Rpc.Tests.AddressSelectors
         [Fact]
         public async void PollingAddressSyncTest()
         {
-            IAddressSelector selector = new PollingAddressSelector(_serviceRouteManager);
+            IAddressSelector selector = new PollingAddressSelector(_serviceRouteManager, new DefaultHealthCheckService(_serviceRouteManager));
 
             var context = GetSelectContext();
 
@@ -207,7 +208,7 @@ namespace Rabbit.Rpc.Tests.AddressSelectors
         [Fact]
         public async void PollingAddressChangeTest()
         {
-            IAddressSelector selector = new PollingAddressSelector(_serviceRouteManager);
+            IAddressSelector selector = new PollingAddressSelector(_serviceRouteManager, new DefaultHealthCheckService(_serviceRouteManager));
 
             await selector.SelectAsync(GetSelectContext());
             await selector.SelectAsync(GetSelectContext());
