@@ -1,18 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>基于DotNetty的Rpc通信扩展。</Description>
+    <Description>基于ZooKeeper的Rpc服务协调扩展。</Description>
     <Copyright>© RabbitHub. All rights reserved.</Copyright>
     <VersionPrefix>1.0.0-alpha1</VersionPrefix>
     <Authors>majian</Authors>
-    <TargetFramework>net45</TargetFramework>
-    <AssemblyName>Rabbit.Transport.DotNetty</AssemblyName>
-    <PackageId>Rabbit.Transport.DotNetty</PackageId>
+    <TargetFrameworks>net45;net451;netstandard1.6</TargetFrameworks>
+    <AssemblyName>Rabbit.Rpc.Coordinate.Zookeeper</AssemblyName>
+    <PackageId>Rabbit.Rpc.Coordinate.Zookeeper</PackageId>
     <PackageTags>RabbitHub;RPC</PackageTags>
     <PackageIconUrl>http://www.rabbithub.com/icon.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/RabbitTeam/Rpc</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/RabbitTeam/Rpc/blob/master/LICENSE</PackageLicenseUrl>
     <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
+    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
@@ -23,12 +24,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DotNetty.Codecs-signed" Version="0.3.2" />
+    <PackageReference Include="ZooKeeperNetEx" Version="3.4.8.4" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <DefineConstants>$(DefineConstants);NET</DefineConstants>
+  </PropertyGroup>
 
 </Project>

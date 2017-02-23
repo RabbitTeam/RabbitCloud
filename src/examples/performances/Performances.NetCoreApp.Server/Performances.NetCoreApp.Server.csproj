@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <AssemblyName>Performances.NetCoreApp.Server</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>Performances.NetCoreApp.Server</PackageId>
+    <RuntimeFrameworkVersion>1.0.3</RuntimeFrameworkVersion>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Echo.Common\Echo.Common.csproj" />
+    <ProjectReference Include="..\..\..\Rabbit.Rpc\Rabbit.Rpc.csproj" />
+    <ProjectReference Include="..\..\..\extensions\codecs\Rabbit.Rpc.Codec.ProtoBuffer\Rabbit.Rpc.Codec.ProtoBuffer.csproj" />
+    <ProjectReference Include="..\..\..\extensions\coordinates\Rabbit.Rpc.Coordinate.Zookeeper\Rabbit.Rpc.Coordinate.Zookeeper.csproj" />
+    <ProjectReference Include="..\..\..\extensions\transports\Rabbit.Transport.Simple\Rabbit.Transport.Simple.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="1.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="1.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="1.0.1" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="4.0.1" />
+  </ItemGroup>
+
+</Project>

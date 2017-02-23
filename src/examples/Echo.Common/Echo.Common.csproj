@@ -1,17 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>基于ProtoBuffer的Rpc消息编解码器扩展。</Description>
-    <Copyright>© RabbitHub. All rights reserved.</Copyright>
-    <VersionPrefix>1.0.0-alpha1</VersionPrefix>
-    <Authors>majian</Authors>
     <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
-    <AssemblyName>Rabbit.Rpc.Codec.ProtoBuffer</AssemblyName>
-    <PackageId>Rabbit.Rpc.Codec.ProtoBuffer</PackageId>
-    <PackageTags>RabbitHub;RPC</PackageTags>
-    <PackageIconUrl>http://www.rabbithub.com/icon.png</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/RabbitTeam/Rpc</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/RabbitTeam/Rpc/blob/master/LICENSE</PackageLicenseUrl>
+    <AssemblyName>Echo.Common</AssemblyName>
+    <PackageId>Echo.Common</PackageId>
     <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
     <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -20,12 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Rabbit.Rpc\Rabbit.Rpc.csproj" />
+    <ProjectReference Include="..\..\Rabbit.Rpc\Rabbit.Rpc.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
     <PackageReference Include="protobuf-net" Version="2.0.0.668" />
-    <PackageReference Include="System.Xml.ReaderWriter" Version="4.0.11" />
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>

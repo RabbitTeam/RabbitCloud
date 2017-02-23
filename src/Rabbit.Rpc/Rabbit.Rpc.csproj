@@ -1,41 +1,46 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>基于ProtoBuffer的Rpc消息编解码器扩展。</Description>
+    <Description>一个轻量级跨平台的Rpc。</Description>
     <Copyright>© RabbitHub. All rights reserved.</Copyright>
     <VersionPrefix>1.0.0-alpha1</VersionPrefix>
     <Authors>majian</Authors>
-    <TargetFrameworks>net451;netstandard1.6</TargetFrameworks>
-    <AssemblyName>Rabbit.Rpc.Codec.ProtoBuffer</AssemblyName>
-    <PackageId>Rabbit.Rpc.Codec.ProtoBuffer</PackageId>
+    <TargetFrameworks>net45;net451;netstandard1.6</TargetFrameworks>
+    <AssemblyName>Rabbit.Rpc</AssemblyName>
+    <PackageId>Rabbit.Rpc</PackageId>
     <PackageTags>RabbitHub;RPC</PackageTags>
     <PackageIconUrl>http://www.rabbithub.com/icon.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/RabbitTeam/Rpc</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/RabbitTeam/Rpc/blob/master/LICENSE</PackageLicenseUrl>
     <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netstandard1.6' ">$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Rabbit.Rpc\Rabbit.Rpc.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="1.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="1.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
-    <PackageReference Include="protobuf-net" Version="2.0.0.668" />
-    <PackageReference Include="System.Xml.ReaderWriter" Version="4.0.11" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net451' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <DefineConstants>$(DefineConstants);NET</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <PackageReference Include="protobuf-net" Version="2.1.0-alpha-1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="1.0.1" />
   </ItemGroup>
 
 </Project>
