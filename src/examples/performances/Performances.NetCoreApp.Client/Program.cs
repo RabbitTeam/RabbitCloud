@@ -1,8 +1,8 @@
 ﻿using Echo.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Rabbit.Rpc;
 using Rabbit.Rpc.Codec.ProtoBuffer;
-using Rabbit.Rpc.Coordinate.Zookeeper;
 using Rabbit.Rpc.ProxyGenerator;
 using Rabbit.Transport.DotNetty;
 using System;
@@ -11,7 +11,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Rabbit.Rpc;
 
 namespace Performances.NetCoreApp.Client
 {

@@ -18,7 +18,6 @@
     <ProjectReference Include="..\..\..\extensions\codecs\Rabbit.Rpc.Codec.ProtoBuffer\Rabbit.Rpc.Codec.ProtoBuffer.csproj" />
     <ProjectReference Include="..\..\..\Rabbit.Rpc.ProxyGenerator\Rabbit.Rpc.ProxyGenerator.csproj" />
     <ProjectReference Include="..\..\..\extensions\transports\Rabbit.Transport.DotNetty\Rabbit.Transport.DotNetty.csproj" />
-    <ProjectReference Include="..\..\..\extensions\coordinates\Rabbit.Rpc.Coordinate.Zookeeper\Rabbit.Rpc.Coordinate.Zookeeper.csproj" />
   </ItemGroup>
 
   <ItemGroup>
