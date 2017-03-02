@@ -4,12 +4,12 @@ using Microsoft.Extensions.Logging;
 using Rabbit.Rpc;
 using Rabbit.Rpc.Exceptions;
 using Rabbit.Rpc.ProxyGenerator;
-using Rabbit.Transport.Simple;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Rabbit.Transport.DotNetty;
 
 namespace Echo.Client
 {
@@ -25,7 +25,7 @@ namespace Echo.Client
                 .AddLogging()
                 .AddClient()
                 .UseSharedFileRouteManager(@"d:\routes.txt")
-                .UseSimpleTransport();
+                .UseDotNettyTransport();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 

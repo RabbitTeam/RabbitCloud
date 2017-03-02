@@ -1,11 +1,10 @@
 ﻿using Echo.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Rabbit.Rpc;
 using Rabbit.Rpc.Codec.ProtoBuffer;
-using Rabbit.Rpc.Coordinate.Zookeeper;
 using Rabbit.Rpc.ProxyGenerator;
 using Rabbit.Transport.DotNetty;
-using Rabbit.Transport.Simple;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -24,7 +23,7 @@ namespace Performances.Net.Client
                 var builder = serviceCollection
                     .AddLogging()
                     .AddClient()
-                    .UseZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"));
+                    .UseSharedFileRouteManager("d:\\routes.txt");
 
                 IServiceProvider serviceProvider = null;
                 do
@@ -32,8 +31,6 @@ namespace Performances.Net.Client
                     Console.WriteLine("请选择测试组合：");
                     Console.WriteLine("1.JSON协议+DotNetty传输");
                     Console.WriteLine("2.ProtoBuffer协议+DotNetty传输");
-                    Console.WriteLine("3.JSON协议+Simple传输");
-                    Console.WriteLine("4.ProtoBuffer协议+Simple传输");
                     var codec = Console.ReadLine();
                     switch (codec)
                     {
@@ -44,16 +41,6 @@ namespace Performances.Net.Client
 
                         case "2":
                             builder.UseDotNettyTransport().UseProtoBufferCodec();
-                            serviceProvider = serviceCollection.BuildServiceProvider();
-                            break;
-
-                        case "3":
-                            builder.UseSimpleTransport();
-                            serviceProvider = serviceCollection.BuildServiceProvider();
-                            break;
-
-                        case "4":
-                            builder.UseSimpleTransport().UseProtoBufferCodec();
                             serviceProvider = serviceCollection.BuildServiceProvider();
                             break;
 

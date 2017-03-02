@@ -3,10 +3,9 @@ using Microsoft.Extensions.Logging;
 using Rabbit.Rpc;
 using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Codec.ProtoBuffer;
-using Rabbit.Rpc.Coordinate.Zookeeper;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Runtime.Server;
-using Rabbit.Transport.Simple;
+using Rabbit.Transport.DotNetty;
 using System;
 using System.Linq;
 using System.Net;
@@ -35,8 +34,8 @@ namespace Performances.NetCoreApp.Server
                 .AddLogging()
                 .AddRpcCore()
                 .AddServiceRuntime()
-                .UseZooKeeperRouteManager(new ZooKeeperServiceRouteManager.ZookeeperConfigInfo("172.18.20.132:2181"))
-                .UseSimpleTransport();
+                .UseSharedFileRouteManager("d:\\routes.txt")
+                .UseDotNettyTransport();
 
             IServiceProvider serviceProvider = null;
             do

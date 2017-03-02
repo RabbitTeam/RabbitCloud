@@ -13,10 +13,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Rabbit.Rpc\Rabbit.Rpc.csproj" />
+    <PackageReference Include="protobuf-net" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net451' ">
-    <PackageReference Include="protobuf-net" Version="2.0.0.668" />
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
@@ -24,9 +24,5 @@
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net451' ">
     <DefineConstants>$(DefineConstants);NET</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <PackageReference Include="protobuf-net" Version="2.1.0-alpha-1" />
-  </ItemGroup>
 
 </Project>

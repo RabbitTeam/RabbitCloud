@@ -5,13 +5,13 @@ using Rabbit.Rpc;
 using Rabbit.Rpc.Address;
 using Rabbit.Rpc.Routing;
 using Rabbit.Rpc.Runtime.Server;
-using Rabbit.Transport.Simple;
 using System;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Rabbit.Transport.DotNetty;
 
 namespace Echo.Server
 {
@@ -35,7 +35,7 @@ namespace Echo.Server
                 .AddRpcCore()
                 .AddServiceRuntime()
                 .UseSharedFileRouteManager("d:\\routes.txt")
-                .UseSimpleTransport();
+                .UseDotNettyTransport();
             serviceCollection.AddTransient<IUserService, UserService>();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
