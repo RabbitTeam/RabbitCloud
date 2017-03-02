@@ -114,9 +114,12 @@ namespace Rabbit.Transport.DotNetty
 
             public override void ChannelRead(IChannelHandlerContext context, object message)
             {
-                var transportMessage = (TransportMessage)message;
+                Task.Run(() =>
+               {
+                   var transportMessage = (TransportMessage)message;
 
-                _readAction(context, transportMessage);
+                   _readAction(context, transportMessage);
+               });
             }
 
             public override void ChannelReadComplete(IChannelHandlerContext context)
