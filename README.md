@@ -1,5 +1,5 @@
-# Rabbit Rpc
-A lightweight cross-platform Rpc.
+# Rabbit RPC
+A lightweight cross-platform RPC.
 ## Features
 1. Apache License 2.0 protocol open source
 2. Supports client load balancing (polling and random)
@@ -61,13 +61,28 @@ Windows 10 x64 | I7 3610QM | 16GB | SSD | 127.0.0.1 | no
 Ubuntu 16.04 x64 | I7 3610QM | 4GB | SSD | 127.0.0.1 | yes
 
 ### Windows10 + NETCoreApp1.0 + JSON protocol
-![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082114249-1409569407.png)
+loop 10,000  
+first&ensp;&ensp;&ensp;&ensp;2626ms  
+second&ensp;2597ms  
+third&ensp;&ensp;&ensp;2581ms
+
 ### Windows10 + NETCoreApp1.0 + ProtoBuffer protocol
-![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082117733-1064697075.png)
+loop 10,000  
+first&ensp;&ensp;&ensp;&ensp;2567ms  
+second&ensp;2617ms  
+third&ensp;&ensp;&ensp;2474ms
+
 ### Ubuntu16.04-x64 + NETCoreApp1.0 + JSON protocol
-![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082119405-1980756077.png)
-### Windows10 + NETCoreApp1.0 + JSON protocol
-![](http://images2015.cnblogs.com/blog/384997/201607/384997-20160708082123889-1516684603.png)
+loop 10,000  
+first&ensp;&ensp;&ensp;&ensp;3205ms  
+second&ensp;3252ms  
+third&ensp;&ensp;&ensp;2837ms
+
+### Ubuntu16.04-x64 + NETCoreApp1.0 + ProtoBuffer protocol
+loop 10,000  
+first&ensp;&ensp;&ensp;&ensp;3391ms  
+second&ensp;3391ms  
+third&ensp;&ensp;&ensp;3574ms
 
 ## related articles
 * [拥抱.NET Core，跨平台的轻量级RPC：Rabbit.Rpc](http://www.cnblogs.com/ants/p/5652132.html)
