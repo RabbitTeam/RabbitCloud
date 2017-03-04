@@ -36,6 +36,8 @@ namespace Performances.NetCoreApp.Server
                 .AddServiceRuntime()
                 .UseSharedFileRouteManager("d:\\routes.txt")
                 .UseDotNettyTransport();
+            
+            serviceCollection.AddTransient<IUserService, UserService>();
 
             IServiceProvider serviceProvider = null;
             do
