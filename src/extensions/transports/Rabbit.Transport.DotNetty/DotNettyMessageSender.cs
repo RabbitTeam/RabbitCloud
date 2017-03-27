@@ -34,9 +34,9 @@ namespace Rabbit.Transport.DotNetty
     /// </summary>
     public class DotNettyMessageClientSender : DotNettyMessageSender, IMessageSender, IDisposable
     {
-        private readonly Task<IChannel> _channel;
+        private readonly IChannel _channel;
 
-        public DotNettyMessageClientSender(ITransportMessageEncoder transportMessageEncoder, Task<IChannel> channel) : base(transportMessageEncoder)
+        public DotNettyMessageClientSender(ITransportMessageEncoder transportMessageEncoder, IChannel channel) : base(transportMessageEncoder)
         {
             _channel = channel;
         }
@@ -48,7 +48,7 @@ namespace Rabbit.Transport.DotNetty
         {
             Task.Run(async () =>
             {
-                await (await _channel).DisconnectAsync();
+                await _channel.DisconnectAsync();
             }).Wait();
         }
 
@@ -64,7 +64,7 @@ namespace Rabbit.Transport.DotNetty
         public async Task SendAsync(TransportMessage message)
         {
             var buffer = GetByteBuffer(message);
-            await (await _channel).WriteAsync(buffer);
+            await _channel.WriteAsync(buffer);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Rabbit.Transport.DotNetty
         public async Task SendAndFlushAsync(TransportMessage message)
         {
             var buffer = GetByteBuffer(message);
-            await (await _channel).WriteAndFlushAsync(buffer);
+            await _channel.WriteAndFlushAsync(buffer);
         }
 
         #endregion Implementation of IMessageSender
