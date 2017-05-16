@@ -1,13 +1,7 @@
 ﻿namespace RabbitCloud.Rpc.Abstractions
 {
-    /// <summary>
-    /// 一个抽象的RPC导出者。
-    /// </summary>
-    public interface IExporter : INode
+    public interface IExporter
     {
-        /// <summary>
-        /// 调用提供程序。
-        /// </summary>
-        ICaller Provider { get; }
+        ICaller Export();
     }
 }
