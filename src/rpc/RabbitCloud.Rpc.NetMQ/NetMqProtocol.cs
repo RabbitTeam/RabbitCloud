@@ -1,6 +1,7 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
 using RabbitCloud.Rpc.NetMQ.Internal;
+using System;
 using System.Collections.Concurrent;
 using System.Net;
 
@@ -8,7 +9,7 @@ namespace RabbitCloud.Rpc.NetMQ
 {
     public class NetMqProtocol : IProtocol
     {
-        private readonly ConcurrentDictionary<string, IExporter> _exporters = new ConcurrentDictionary<string, IExporter>();
+        private readonly ConcurrentDictionary<string, Lazy<IExporter>> _exporters = new ConcurrentDictionary<string, Lazy<IExporter>>();
         private readonly IResponseSocketFactory _responseSocketFactory;
         private readonly IRequestFormatter _requestFormatter;
         private readonly IResponseFormatter _responseFormatter;
@@ -26,8 +27,10 @@ namespace RabbitCloud.Rpc.NetMQ
 
         public IExporter Export(ExportContext context)
         {
-            return new NetMqExporter(context.Caller, (IPEndPoint)context.EndPoint, _responseSocketFactory,
-                _requestFormatter, _responseFormatter, _netMqPollerHolder);
+            var protocolKey = GetProtocolKey(context);
+            return _exporters.GetOrAdd(protocolKey, new Lazy<IExporter>(() => new NetMqExporter(context.Caller, (IPEndPoint)context.EndPoint, _responseSocketFactory,
+                    _requestFormatter, _responseFormatter, _netMqPollerHolder, () => _exporters.TryRemove(protocolKey, out Lazy<IExporter> _))))
+                .Value;
         }
 
         public ICaller Refer(ReferContext context)
@@ -36,5 +39,17 @@ namespace RabbitCloud.Rpc.NetMQ
         }
 
         #endregion Implementation of IProtocol
+
+        #region Private Method
+
+        private static string GetProtocolKey(ProtocolContext context)
+        {
+            var ipEndPoint = (IPEndPoint)context.EndPoint;
+            var serviceKey = context.ServiceKey.ToString();
+
+            return $"netmq://{ipEndPoint}/{serviceKey}";
+        }
+
+        #endregion Private Method
     }
 }

@@ -13,13 +13,15 @@ namespace RabbitCloud.Rpc.NetMQ
         private readonly ICaller _caller;
         private readonly IRequestFormatter _requestFormatter;
         private readonly IResponseFormatter _responseFormatter;
+        private readonly Action _disposable;
         private readonly ResponseSocket _responseSocket;
 
-        public NetMqExporter(ICaller caller, IPEndPoint endPoint, IResponseSocketFactory responseSocketFactory, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
+        public NetMqExporter(ICaller caller, IPEndPoint endPoint, IResponseSocketFactory responseSocketFactory, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder, Action disposable)
         {
             _caller = caller;
             _requestFormatter = requestFormatter;
             _responseFormatter = responseFormatter;
+            _disposable = disposable;
             _responseSocket = responseSocketFactory.GetResponseSocket(endPoint);
             _responseSocket.ReceiveReady += _responseSocket_ReceiveReady;
             netMqPollerHolder.GetPoller().Add(_responseSocket);
@@ -52,6 +54,7 @@ namespace RabbitCloud.Rpc.NetMQ
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
+            _disposable();
             _responseSocket?.Dispose();
         }
 
