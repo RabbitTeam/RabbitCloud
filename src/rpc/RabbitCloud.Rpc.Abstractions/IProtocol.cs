@@ -1,5 +1,4 @@
-﻿using RabbitCloud.Abstractions;
-using System.Net;
+﻿using System.Net;
 
 namespace RabbitCloud.Rpc.Abstractions
 {
@@ -12,7 +11,6 @@ namespace RabbitCloud.Rpc.Abstractions
 
     public abstract class ProtocolContext
     {
-        public ServiceKey Descriptor { get; set; }
         public EndPoint EndPoint { get; set; }
     }
 
@@ -22,5 +20,6 @@ namespace RabbitCloud.Rpc.Abstractions
 
     public class ExportContext : ProtocolContext
     {
+        public ICaller Caller { get; set; }
     }
 }

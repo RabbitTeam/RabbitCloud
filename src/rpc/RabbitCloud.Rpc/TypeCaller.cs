@@ -18,7 +18,7 @@ namespace RabbitCloud.Rpc
 
         #endregion Overrides of GroupCaller
 
-        private IEnumerable<INamedCaller> GetMethodCallers(object instance)
+        private static IEnumerable<INamedCaller> GetMethodCallers(object instance)
         {
             var callers = new List<INamedCaller>();
             foreach (var methodInfo in instance.GetType().GetRuntimeMethods())

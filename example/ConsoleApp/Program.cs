@@ -68,13 +68,20 @@ namespace ConsoleApp
                 IResponseSocketFactory responseSocketFactory = new ResponseSocketFactory();
                 var netMqPollerHolder = new NetMqPollerHolder();
 
-                var typeCaller = new TypeCaller(new UserService());
+                IProtocol protocol = new NetMqProtocol(responseSocketFactory, jsonRequestFormatter, jsonResponseFormatter, netMqPollerHolder);
+
                 var endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9999);
 
-                var exporter = new NetMqExporter(typeCaller, endPoint, responseSocketFactory, jsonRequestFormatter, jsonResponseFormatter, netMqPollerHolder);
-                exporter.Export();
+                protocol.Export(new ExportContext
+                {
+                    Caller = new TypeCaller(new UserService()),
+                    EndPoint = endPoint
+                });
 
-                ICaller caller = new NetMqCaller(endPoint, jsonRequestFormatter, jsonResponseFormatter, netMqPollerHolder);
+                var caller = protocol.Refer(new ReferContext
+                {
+                    EndPoint = endPoint
+                });
 
                 var userService = proxyFactory.GetProxy<IUserService>(caller);
 
