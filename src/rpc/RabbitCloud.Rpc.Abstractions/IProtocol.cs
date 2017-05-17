@@ -12,7 +12,7 @@ namespace RabbitCloud.Rpc.Abstractions
 
     public abstract class ProtocolContext
     {
-        public ServiceDescriptor Descriptor { get; set; }
+        public ServiceKey Descriptor { get; set; }
         public EndPoint EndPoint { get; set; }
     }
 
