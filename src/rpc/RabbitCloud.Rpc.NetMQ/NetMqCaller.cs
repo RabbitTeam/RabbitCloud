@@ -2,6 +2,7 @@
 using NetMQ.Sockets;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
+using RabbitCloud.Rpc.NetMQ.Internal;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Tasks;
@@ -16,17 +17,14 @@ namespace RabbitCloud.Rpc.NetMQ
         private readonly ConcurrentDictionary<long, TaskCompletionSource<IResponse>> _taskCompletionSources = new ConcurrentDictionary<long, TaskCompletionSource<IResponse>>();
         public static readonly NetMQPoller NetMqPoller = new NetMQPoller();
 
-        public NetMqCaller(EndPoint endPoint, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter)
+        public NetMqCaller(IPEndPoint ipEndPoint, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
         {
             _requestFormatter = requestFormatter;
             _responseFormatter = responseFormatter;
-            var ipEndPoint = endPoint as IPEndPoint;
             _requestSocket = new RequestSocket();
             _requestSocket.Connect($"tcp://{ipEndPoint.Address}:{ipEndPoint.Port}");
             _requestSocket.ReceiveReady += _requestSocket_ReceiveReady;
-
-            NetMqPoller.Add(_requestSocket);
-            NetMqPoller.RunAsync();
+            netMqPollerHolder.GetPoller().Add(_requestSocket);
         }
 
         private void _requestSocket_ReceiveReady(object sender, NetMQSocketEventArgs e)

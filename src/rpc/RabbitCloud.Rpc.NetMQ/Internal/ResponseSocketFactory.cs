@@ -5,7 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Net;
 
-namespace RabbitCloud.Rpc.NetMQ
+namespace RabbitCloud.Rpc.NetMQ.Internal
 {
     public interface IResponseSocketFactory : IDisposable
     {

@@ -46,7 +46,6 @@ namespace RabbitCloud.Rpc.Proxy
                 var request = GetRequest(invocation);
 
                 var returnType = invocation.Method.ReturnType;
-
                 var isTask = typeof(Task).IsAssignableFrom(returnType);
 
                 if (isTask)

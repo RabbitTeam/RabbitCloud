@@ -2,25 +2,27 @@
 using NetMQ.Sockets;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
+using RabbitCloud.Rpc.NetMQ.Internal;
+using System;
 using System.Net;
 
 namespace RabbitCloud.Rpc.NetMQ
 {
-    public class NetMqExporter : IExporter
+    public class NetMqExporter : IExporter, IDisposable
     {
         private readonly ICaller _caller;
         private readonly IRequestFormatter _requestFormatter;
         private readonly IResponseFormatter _responseFormatter;
-        private ResponseSocket _responseSocket;
+        private readonly ResponseSocket _responseSocket;
 
-        public NetMqExporter(ICaller caller, IPEndPoint endPoint, IResponseSocketFactory responseSocketFactory, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter)
+        public NetMqExporter(ICaller caller, IPEndPoint endPoint, IResponseSocketFactory responseSocketFactory, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
         {
             _caller = caller;
             _requestFormatter = requestFormatter;
             _responseFormatter = responseFormatter;
             _responseSocket = responseSocketFactory.GetResponseSocket(endPoint);
             _responseSocket.ReceiveReady += _responseSocket_ReceiveReady;
-            NetMqCaller.NetMqPoller.Add(_responseSocket);
+            netMqPollerHolder.GetPoller().Add(_responseSocket);
         }
 
         private async void _responseSocket_ReceiveReady(object sender, NetMQSocketEventArgs e)
@@ -44,5 +46,15 @@ namespace RabbitCloud.Rpc.NetMQ
         }
 
         #endregion Implementation of IExporter
+
+        #region IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            _responseSocket?.Dispose();
+        }
+
+        #endregion IDisposable
     }
 }

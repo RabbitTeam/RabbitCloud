@@ -2,6 +2,7 @@
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Formatters.Json;
 using RabbitCloud.Rpc.NetMQ;
+using RabbitCloud.Rpc.NetMQ.Internal;
 using RabbitCloud.Rpc.Proxy;
 using System;
 using System.Net;
@@ -55,51 +56,35 @@ namespace ConsoleApp
     {
         private static void Main(string[] args)
         {
-            /*            var data=formatter.OutputFormatter.Format(new Request(new Dictionary<string, string>
-                        {
-                            {"K","V" }
-                        })
-                        {
-                            RequestId = 123,
-                            Arguments = new object[] { "123", 1, DateTime.Now },
-                            Key = new ServiceKey("test")
-                        });
-                        var r = formatter.InputFormatter.Format(data);*/
-
-            /*
-                        data=ff.OutputFormatter.Format(new Response(r)
-                        {
-                            Value = DateTime.Now
-                        });
-
-                        var rrp = ff.InputFormatter.Format(data);*/
             Task.Run(async () =>
             {
                 var jsonRequestFormatter = new JsonRequestFormatter();
                 var jsonResponseFormatter = new JsonResponseFormatter();
-                IRequestIdGenerator requestIdGenerator=new DefaultRequestIdGenerator();
+
+                IRequestIdGenerator requestIdGenerator = new DefaultRequestIdGenerator();
+
+                var proxyFactory = new ProxyFactory(requestIdGenerator);
 
                 IResponseSocketFactory responseSocketFactory = new ResponseSocketFactory();
+                var netMqPollerHolder = new NetMqPollerHolder();
+
                 var typeCaller = new TypeCaller(new UserService());
                 var endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9999);
 
-                Task.Run(() =>
+                var exporter = new NetMqExporter(typeCaller, endPoint, responseSocketFactory, jsonRequestFormatter, jsonResponseFormatter, netMqPollerHolder);
+                exporter.Export();
+
+                ICaller caller = new NetMqCaller(endPoint, jsonRequestFormatter, jsonResponseFormatter, netMqPollerHolder);
+
+                var userService = proxyFactory.GetProxy<IUserService>(caller);
+
+                for (var i = 0; i < 10000; i++)
                 {
-                    var exporter = new NetMqExporter(typeCaller, endPoint,
-                        responseSocketFactory, jsonRequestFormatter, jsonResponseFormatter);
-                    exporter.Export();
-                }).Wait(TimeSpan.FromSeconds(2));
-
-                ICaller caller = new NetMqCaller(endPoint, jsonRequestFormatter, jsonResponseFormatter);
-
-                var userService = new ProxyFactory(requestIdGenerator).GetProxy<IUserService>(caller);
-
-                for (int i = 0; i < 1000; i++)
-                {
-                    userService.GetName(1);
+                    Console.WriteLine(userService.GetName(1));
+                    Console.WriteLine(i);
                 }
-                Console.WriteLine("ok");
-                Console.ReadLine();
+
+                await Task.CompletedTask;
             }).Wait();
         }
     }
