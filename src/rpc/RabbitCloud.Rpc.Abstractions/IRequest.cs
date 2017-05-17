@@ -1,5 +1,4 @@
-﻿using RabbitCloud.Abstractions;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace RabbitCloud.Rpc.Abstractions
 {
@@ -11,9 +10,9 @@ namespace RabbitCloud.Rpc.Abstractions
         long RequestId { get; }
 
         /// <summary>
-        /// 服务键。
+        /// 方法键。
         /// </summary>
-        ServiceKey Key { get; }
+        MethodKey MethodKey { get; set; }
 
         /// <summary>
         /// 请求参数。
@@ -51,9 +50,9 @@ namespace RabbitCloud.Rpc.Abstractions
         public long RequestId { get; set; }
 
         /// <summary>
-        /// 服务键。
+        /// 方法键。
         /// </summary>
-        public ServiceKey Key { get; set; }
+        public MethodKey MethodKey { get; set; }
 
         /// <summary>
         /// 请求参数。

@@ -1,4 +1,4 @@
-﻿using RabbitCloud.Rpc.Abstractions;
+﻿/*using RabbitCloud.Rpc.Abstractions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,4 +24,4 @@ namespace RabbitCloud.Rpc
 
         #endregion Implementation of IGroupCaller
     }
-}
+}*/

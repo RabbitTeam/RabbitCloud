@@ -1,5 +1,4 @@
 ﻿using Castle.DynamicProxy;
-using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Proxy;
 using System.Linq;
@@ -67,7 +66,7 @@ namespace RabbitCloud.Rpc.Proxy
                 return new Request
                 {
                     Arguments = invocation.Arguments,
-                    Key = new ServiceKey(invocation.Method.Name),
+                    MethodKey = new MethodKey(invocation.Method),
                     RequestId = _requestIdGenerator.GetRequestId()
                 };
             }

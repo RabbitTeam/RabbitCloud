@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿/*using System.Collections.Generic;
 
 namespace RabbitCloud.Rpc.Abstractions
 {
@@ -6,4 +6,4 @@ namespace RabbitCloud.Rpc.Abstractions
     {
         IEnumerable<INamedCaller> Callers { get; }
     }
-}
+}*/

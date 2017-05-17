@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
 using RabbitCloud.Rpc.Formatters.Json.Utilities;
@@ -34,15 +33,15 @@ namespace RabbitCloud.Rpc.Formatters.Json
                 var arguments = obj.SelectToken("Arguments")?.Select(StrongType.GetStrongType).ToArray();
 
                 var requestId = obj.SelectToken("RequestId")?.Value<long>();
-                var serviceKey = obj.SelectToken("Key")?.ToObject<ServiceKey>();
+                var methodKey = obj.SelectToken("MethodKey")?.ToObject<MethodKey>();
                 if (requestId == null)
                     throw new ArgumentException($"missing {nameof(requestId)}.");
-                if (serviceKey == null)
-                    throw new ArgumentException($"missing {nameof(serviceKey)}.");
+                if (methodKey == null)
+                    throw new ArgumentException($"missing {nameof(methodKey)}.");
 
                 var request = new Request(attachments)
                 {
-                    Key = serviceKey.Value,
+                    MethodKey = methodKey.Value,
                     Arguments = arguments,
                     RequestId = requestId.Value
                 };
@@ -75,7 +74,7 @@ namespace RabbitCloud.Rpc.Formatters.Json
             {
                 var model = new
                 {
-                    instance.Key,
+                    instance.MethodKey,
                     instance.RequestId,
                     instance.Attachments,
                     Arguments = instance.Arguments?.Select(StrongType.CreateStrongType)

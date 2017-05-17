@@ -1,4 +1,5 @@
-﻿using RabbitCloud.Rpc;
+﻿using RabbitCloud.Abstractions.Utilities;
+using RabbitCloud.Rpc;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Formatters.Json;
 using RabbitCloud.Rpc.NetMQ;
@@ -6,6 +7,7 @@ using RabbitCloud.Rpc.NetMQ.Internal;
 using RabbitCloud.Rpc.Proxy;
 using System;
 using System.Net;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
