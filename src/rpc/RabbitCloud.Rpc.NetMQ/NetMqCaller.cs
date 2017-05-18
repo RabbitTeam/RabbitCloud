@@ -11,41 +11,72 @@ namespace RabbitCloud.Rpc.NetMQ
 {
     public class NetMqCaller : ICaller
     {
+        #region Field
+
         private readonly IRequestFormatter _requestFormatter;
         private readonly IResponseFormatter _responseFormatter;
-        private readonly RequestSocket _requestSocket;
         private readonly ConcurrentDictionary<long, TaskCompletionSource<IResponse>> _taskCompletionSources = new ConcurrentDictionary<long, TaskCompletionSource<IResponse>>();
-        public static readonly NetMQPoller NetMqPoller = new NetMQPoller();
+        private readonly DealerSocket _dealerSocket;
+
+        #endregion Field
+
+        #region Constructor
 
         public NetMqCaller(IPEndPoint ipEndPoint, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
         {
             _requestFormatter = requestFormatter;
             _responseFormatter = responseFormatter;
-            _requestSocket = new RequestSocket();
-            _requestSocket.Connect($"tcp://{ipEndPoint.Address}:{ipEndPoint.Port}");
-            _requestSocket.ReceiveReady += _requestSocket_ReceiveReady;
-            netMqPollerHolder.GetPoller().Add(_requestSocket);
+            _dealerSocket = new DealerSocket();
+            _dealerSocket.Connect("tcp://" + ipEndPoint);
+            _dealerSocket.ReceiveReady += ReceiveReady;
+            netMqPollerHolder.GetPoller().Add(_dealerSocket);
         }
 
-        private void _requestSocket_ReceiveReady(object sender, NetMQSocketEventArgs e)
-        {
-            var data = e.Socket.ReceiveFrameBytes();
-            var response = _responseFormatter.InputFormatter.Format(data);
-            _taskCompletionSources.TryRemove(response.RequestId, out TaskCompletionSource<IResponse> source);
-            source.SetResult(response);
-        }
+        #endregion Constructor
 
         #region Implementation of ICaller
 
-        public Task<IResponse> CallAsync(IRequest request)
+        public async Task<IResponse> CallAsync(IRequest request)
         {
+            //格式化请求对象
             var data = _requestFormatter.OutputFormatter.Format(request);
-            _requestSocket.SendFrame(data);
+
+            //构建请求消息
+            var requestMessage = new NetMQMessage();
+            requestMessage.AppendEmptyFrame();
+            requestMessage.Append(data);
+
+            //等待器
             var taskCompletionSource = new TaskCompletionSource<IResponse>();
             _taskCompletionSources.TryAdd(request.RequestId, taskCompletionSource);
-            return taskCompletionSource.Task;
+
+            try
+            {
+                _dealerSocket.SendMultipartMessage(requestMessage);
+                return await taskCompletionSource.Task;
+            }
+            catch
+            {
+                //请求失败从队列中移除
+                _taskCompletionSources.TryRemove(request.RequestId, out taskCompletionSource);
+                throw;
+            }
         }
 
         #endregion Implementation of ICaller
+
+        #region Private Method
+
+        private void ReceiveReady(object sender, NetMQSocketEventArgs e)
+        {
+            var message = e.Socket.ReceiveMultipartMessage();
+            var data = message.Last.Buffer;
+
+            var response = _responseFormatter.InputFormatter.Format(data);
+            if (_taskCompletionSources.TryRemove(response.RequestId, out TaskCompletionSource<IResponse> source))
+                source.SetResult(response);
+        }
+
+        #endregion Private Method
     }
 }

@@ -10,12 +10,12 @@ namespace RabbitCloud.Rpc.NetMQ
     public class NetMqProtocol : IProtocol
     {
         private readonly ConcurrentDictionary<string, Lazy<IExporter>> _exporters = new ConcurrentDictionary<string, Lazy<IExporter>>();
-        private readonly IResponseSocketFactory _responseSocketFactory;
+        private readonly IRouterSocketFactory _responseSocketFactory;
         private readonly IRequestFormatter _requestFormatter;
         private readonly IResponseFormatter _responseFormatter;
         private readonly NetMqPollerHolder _netMqPollerHolder;
 
-        public NetMqProtocol(IResponseSocketFactory responseSocketFactory, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
+        public NetMqProtocol(IRouterSocketFactory responseSocketFactory, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
         {
             _responseSocketFactory = responseSocketFactory;
             _requestFormatter = requestFormatter;
@@ -29,7 +29,7 @@ namespace RabbitCloud.Rpc.NetMQ
         {
             var protocolKey = GetProtocolKey(context);
             return _exporters.GetOrAdd(protocolKey, new Lazy<IExporter>(() => new NetMqExporter(context.Caller, (IPEndPoint)context.EndPoint, _responseSocketFactory,
-                    _requestFormatter, _responseFormatter, _netMqPollerHolder, () => _exporters.TryRemove(protocolKey, out Lazy<IExporter> _))))
+                    _requestFormatter, _responseFormatter, () => _exporters.TryRemove(protocolKey, out Lazy<IExporter> _))))
                 .Value;
         }
 

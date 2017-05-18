@@ -1,5 +1,4 @@
-﻿using RabbitCloud.Abstractions.Utilities;
-using RabbitCloud.Rpc;
+﻿using RabbitCloud.Rpc;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Formatters.Json;
 using RabbitCloud.Rpc.NetMQ;
@@ -7,7 +6,6 @@ using RabbitCloud.Rpc.NetMQ.Internal;
 using RabbitCloud.Rpc.Proxy;
 using System;
 using System.Net;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -67,8 +65,8 @@ namespace ConsoleApp
 
                 var proxyFactory = new ProxyFactory(requestIdGenerator);
 
-                IResponseSocketFactory responseSocketFactory = new ResponseSocketFactory();
                 var netMqPollerHolder = new NetMqPollerHolder();
+                IRouterSocketFactory responseSocketFactory = new RouterSocketFactory(netMqPollerHolder);
 
                 IProtocol protocol = new NetMqProtocol(responseSocketFactory, jsonRequestFormatter, jsonResponseFormatter, netMqPollerHolder);
 
@@ -87,10 +85,16 @@ namespace ConsoleApp
 
                 var userService = proxyFactory.GetProxy<IUserService>(caller);
 
-                for (var i = 0; i < 10000; i++)
+                Console.WriteLine(userService.GetName(1));
+                Console.ReadLine();
+                while (true)
                 {
-                    Console.WriteLine(userService.GetName(1));
-                    Console.WriteLine(i);
+                    for (var i = 0; i < 10000; i++)
+                    {
+                        userService.GetName(1);
+                        Console.WriteLine(i);
+                    }
+                    Console.ReadLine();
                 }
 
                 await Task.CompletedTask;
