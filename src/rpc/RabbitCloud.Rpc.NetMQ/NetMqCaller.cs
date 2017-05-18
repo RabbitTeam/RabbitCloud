@@ -3,13 +3,14 @@ using NetMQ.Sockets;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
 using RabbitCloud.Rpc.NetMQ.Internal;
+using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.NetMQ
 {
-    public class NetMqCaller : ICaller
+    public class NetMqCaller : ICaller, IDisposable
     {
         #region Field
 
@@ -78,5 +79,18 @@ namespace RabbitCloud.Rpc.NetMQ
         }
 
         #endregion Private Method
+
+        #region IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            _dealerSocket?.Dispose();
+            foreach (var taskCompletionSource in _taskCompletionSources)
+                taskCompletionSource.Value.TrySetCanceled();
+            _taskCompletionSources.Clear();
+        }
+
+        #endregion IDisposable
     }
 }

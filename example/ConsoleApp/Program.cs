@@ -84,14 +84,26 @@ namespace ConsoleApp
                 });
 
                 var userService = proxyFactory.GetProxy<IUserService>(caller);
+                var caller2 = protocol.Refer(new ReferContext
+                {
+                    EndPoint = endPoint
+                });
 
-                Console.WriteLine(userService.GetName(1));
-                Console.ReadLine();
+                var userService2 = proxyFactory.GetProxy<IUserService>(caller2);
+
+                var random = new Random();
                 while (true)
                 {
                     for (var i = 0; i < 10000; i++)
                     {
-                        userService.GetName(1);
+                        if (random.Next(0, 2) == 0)
+                        {
+                            userService.GetName(1);
+                        }
+                        else
+                        {
+                            userService2.GetName(1);
+                        }
                         Console.WriteLine(i);
                     }
                     Console.ReadLine();

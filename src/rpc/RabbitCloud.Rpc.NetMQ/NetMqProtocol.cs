@@ -7,7 +7,7 @@ using System.Net;
 
 namespace RabbitCloud.Rpc.NetMQ
 {
-    public class NetMqProtocol : IProtocol
+    public class NetMqProtocol : IProtocol, IDisposable
     {
         private readonly ConcurrentDictionary<string, Lazy<IExporter>> _exporters = new ConcurrentDictionary<string, Lazy<IExporter>>();
         private readonly IRouterSocketFactory _responseSocketFactory;
@@ -51,5 +51,17 @@ namespace RabbitCloud.Rpc.NetMQ
         }
 
         #endregion Private Method
+
+        #region IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            _exporters.Clear();
+            _responseSocketFactory?.Dispose();
+            _netMqPollerHolder?.Dispose();
+        }
+
+        #endregion IDisposable
     }
 }

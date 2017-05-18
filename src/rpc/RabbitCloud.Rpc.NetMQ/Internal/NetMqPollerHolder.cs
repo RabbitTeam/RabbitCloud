@@ -1,8 +1,9 @@
 ﻿using NetMQ;
+using System;
 
 namespace RabbitCloud.Rpc.NetMQ.Internal
 {
-    public class NetMqPollerHolder
+    public class NetMqPollerHolder : IDisposable
     {
         private readonly NetMQPoller _poller = new NetMQPoller();
 
@@ -17,5 +18,15 @@ namespace RabbitCloud.Rpc.NetMQ.Internal
             }
             return _poller;
         }
+
+        #region IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            _poller?.Dispose();
+        }
+
+        #endregion IDisposable
     }
 }
