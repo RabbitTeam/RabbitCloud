@@ -7,9 +7,12 @@ namespace RabbitCloud.Rpc.Formatters.Json.Utilities
     {
         public static StrongType? CreateStrongType(object value)
         {
-            return value == null ? null : (StrongType?)new StrongType
+            if (value == null)
+                return null;
+            var valueType = value.GetType();
+            return new StrongType
             {
-                TypeName = value.GetType().FullName,
+                TypeName = Type.GetTypeCode(valueType) == TypeCode.Object ? valueType.AssemblyQualifiedName : valueType.FullName,
                 Data = value
             };
         }

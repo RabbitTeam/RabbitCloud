@@ -29,6 +29,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Rpc.NetMQ", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Rpc", "src\rpc\RabbitCloud.Rpc\RabbitCloud.Rpc.csproj", "{7F902807-EDD6-40D3-ABA2-03ACFD2ADAC5}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Abstractions.Test", "test\RabbitCloud.Abstractions.Test\RabbitCloud.Abstractions.Test.csproj", "{8A970197-A933-43D1-9E7F-817CB9DF8D02}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Rpc.Formatters.Json.Test", "test\RabbitCloud.Rpc.Formatters.Json.Test\RabbitCloud.Rpc.Formatters.Json.Test.csproj", "{E6CC8C54-D83C-4392-AC4D-173441371DB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +67,14 @@ Global
 		{7F902807-EDD6-40D3-ABA2-03ACFD2ADAC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7F902807-EDD6-40D3-ABA2-03ACFD2ADAC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7F902807-EDD6-40D3-ABA2-03ACFD2ADAC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A970197-A933-43D1-9E7F-817CB9DF8D02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A970197-A933-43D1-9E7F-817CB9DF8D02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A970197-A933-43D1-9E7F-817CB9DF8D02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A970197-A933-43D1-9E7F-817CB9DF8D02}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6CC8C54-D83C-4392-AC4D-173441371DB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6CC8C54-D83C-4392-AC4D-173441371DB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6CC8C54-D83C-4392-AC4D-173441371DB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6CC8C54-D83C-4392-AC4D-173441371DB7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -78,5 +90,7 @@ Global
 		{961B66AC-8847-4314-A8EF-3A49BDDD70E1} = {15610334-E598-4561-AC8B-EBEB28BE3B88}
 		{4B197BEE-EBCB-4D9E-91C0-AA15EC6E89B9} = {148C8C2B-FDD8-40AD-B5E0-AB727F92A7C1}
 		{7F902807-EDD6-40D3-ABA2-03ACFD2ADAC5} = {148C8C2B-FDD8-40AD-B5E0-AB727F92A7C1}
+		{8A970197-A933-43D1-9E7F-817CB9DF8D02} = {2D98E5EC-B005-4A40-AB87-93E097D63857}
+		{E6CC8C54-D83C-4392-AC4D-173441371DB7} = {2D98E5EC-B005-4A40-AB87-93E097D63857}
 	EndGlobalSection
 EndGlobal
