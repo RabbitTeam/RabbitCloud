@@ -33,8 +33,7 @@ namespace RabbitCloud.Rpc.NetMQ
             var protocolKey = GetProtocolKey(context);
             return _exporters.GetOrAdd(protocolKey, new Lazy<IExporter>(() =>
                 {
-                    var exporter = new NetMqExporter(context.Caller, _requestFormatter, _responseFormatter,
-                        () => _exporters.TryRemove(protocolKey, out Lazy<IExporter> _));
+                    var exporter = new NetMqExporter(context.Caller, () => _exporters.TryRemove(protocolKey, out Lazy<IExporter> _));
 
                     var ipEndPoint = (IPEndPoint)context.EndPoint;
                     _responseSocketFactory.OpenSocket<RouterSocket>("tcp", ipEndPoint, ReceiveReady);

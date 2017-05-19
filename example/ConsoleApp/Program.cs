@@ -1,13 +1,14 @@
-﻿using RabbitCloud.Rpc;
+﻿using RabbitCloud.Abstractions;
+using RabbitCloud.Rpc;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Formatters.Json;
 using RabbitCloud.Rpc.NetMQ;
 using RabbitCloud.Rpc.NetMQ.Internal;
 using RabbitCloud.Rpc.Proxy;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
-using RabbitCloud.Abstractions;
 
 namespace ConsoleApp
 {
@@ -94,34 +95,43 @@ namespace ConsoleApp
                 {
                     Caller = new TypeCaller(new UserService()),
                     EndPoint = endPoint,
-                    ServiceKey = new ServiceKey("a")
+                    ServiceKey = new ServiceKey("user")
                 });
 
                 var caller = protocol.Refer(new ReferContext
                 {
                     EndPoint = endPoint,
-                    ServiceKey = new ServiceKey("a")
+                    ServiceKey = new ServiceKey("user")
                 });
 
                 var userService = proxyFactory.GetProxy<IUserService>(caller);
 
                 Console.WriteLine(userService.GetName(1));
 
-/*                protocol.Export(new ExportContext
+                var watch = new Stopwatch();
+                watch.Start();
+                for (var i = 0; i < 10000; i++)
                 {
-                    Caller = new TypeCaller(new TestService()),
-                    EndPoint = endPoint,
-                    ServiceKey = new ServiceKey("ITestService")
-                });
+                    userService.GetName(1);
+                }
+                watch.Stop();
+                Console.WriteLine(watch.ElapsedMilliseconds + "ms");
 
-                var callerTest = protocol.Refer(new ReferContext
-                {
-                    EndPoint = endPoint,
-                    ServiceKey = new ServiceKey("ITestService")
-                });
+                /*                protocol.Export(new ExportContext
+                                {
+                                    Caller = new TypeCaller(new TestService()),
+                                    EndPoint = endPoint,
+                                    ServiceKey = new ServiceKey("ITestService")
+                                });
 
-                var testService = proxyFactory.GetProxy<ITestService>(callerTest);
-                Console.WriteLine(testService.Test());*/
+                                var callerTest = protocol.Refer(new ReferContext
+                                {
+                                    EndPoint = endPoint,
+                                    ServiceKey = new ServiceKey("ITestService")
+                                });
+
+                                var testService = proxyFactory.GetProxy<ITestService>(callerTest);
+                                Console.WriteLine(testService.Test());*/
 
                 await Task.CompletedTask;
             }).Wait();

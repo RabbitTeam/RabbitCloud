@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Abstractions.Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Rpc.Formatters.Json.Test", "test\RabbitCloud.Rpc.Formatters.Json.Test\RabbitCloud.Rpc.Formatters.Json.Test.csproj", "{E6CC8C54-D83C-4392-AC4D-173441371DB7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Rpc.Test", "test\RabbitCloud.Rpc.Test\RabbitCloud.Rpc.Test.csproj", "{9D875586-98C5-477F-8896-07D41EA6F735}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,10 @@ Global
 		{E6CC8C54-D83C-4392-AC4D-173441371DB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E6CC8C54-D83C-4392-AC4D-173441371DB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E6CC8C54-D83C-4392-AC4D-173441371DB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D875586-98C5-477F-8896-07D41EA6F735}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D875586-98C5-477F-8896-07D41EA6F735}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D875586-98C5-477F-8896-07D41EA6F735}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D875586-98C5-477F-8896-07D41EA6F735}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,5 +98,6 @@ Global
 		{7F902807-EDD6-40D3-ABA2-03ACFD2ADAC5} = {148C8C2B-FDD8-40AD-B5E0-AB727F92A7C1}
 		{8A970197-A933-43D1-9E7F-817CB9DF8D02} = {2D98E5EC-B005-4A40-AB87-93E097D63857}
 		{E6CC8C54-D83C-4392-AC4D-173441371DB7} = {2D98E5EC-B005-4A40-AB87-93E097D63857}
+		{9D875586-98C5-477F-8896-07D41EA6F735} = {2D98E5EC-B005-4A40-AB87-93E097D63857}
 	EndGlobalSection
 EndGlobal

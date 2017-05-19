@@ -1,5 +1,4 @@
 ﻿using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Formatter;
 using System;
 
 namespace RabbitCloud.Rpc.NetMQ
@@ -9,19 +8,15 @@ namespace RabbitCloud.Rpc.NetMQ
         #region Field
 
         private readonly ICaller _caller;
-        private readonly IRequestFormatter _requestFormatter;
-        private readonly IResponseFormatter _responseFormatter;
         private readonly Action _disposable;
 
         #endregion Field
 
         #region Constructor
 
-        public NetMqExporter(ICaller caller, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, Action disposable)
+        public NetMqExporter(ICaller caller, Action disposable)
         {
             _caller = caller;
-            _requestFormatter = requestFormatter;
-            _responseFormatter = responseFormatter;
             _disposable = disposable;
         }
 
