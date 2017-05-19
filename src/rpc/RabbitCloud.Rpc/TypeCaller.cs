@@ -4,6 +4,7 @@ using RabbitCloud.Abstractions.Utilities;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace RabbitCloud.Rpc
         private readonly Type _serviceType;
         private readonly Func<object> _factory;
         private readonly ILogger<TypeCaller> _logger;
+        private static readonly Dictionary<MethodDescriptor, MethodInfo> MethodCache = new Dictionary<MethodDescriptor, MethodInfo>();
 
         public TypeCaller(object instance, ILogger<TypeCaller> logger = null) : this(instance.GetType(), () => instance, logger)
         {
@@ -94,12 +96,18 @@ namespace RabbitCloud.Rpc
             }
         }
 
-        private MethodInfo Lookup(MethodDescriptor location)
+        private MethodInfo Lookup(MethodDescriptor methodDescriptor)
         {
-            //todo:考虑优化（cache之类）
-            return _serviceType.GetMethods()
+            if (MethodCache.TryGetValue(methodDescriptor, out MethodInfo methodInfo))
+                return methodInfo;
+
+            methodInfo = _serviceType.GetMethods()
                 .SingleOrDefault(method => ReflectUtil.GetMethodDesc(method) ==
-                                           ReflectUtil.GetMethodDesc(location.MethodName, location.ParamtersSignature));
+                                           ReflectUtil.GetMethodDesc(methodDescriptor.MethodName, methodDescriptor.ParamtersSignature));
+
+            MethodCache[methodDescriptor] = methodInfo;
+
+            return methodInfo;
         }
 
         #endregion Private Method
