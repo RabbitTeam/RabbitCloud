@@ -4,14 +4,13 @@ using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
 using RabbitCloud.Rpc.NetMQ.Internal;
-using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc.NetMQ
 {
-    public class NetMqCaller : ICaller, IDisposable
+    public class NetMqCaller : Caller
     {
         #region Field
 
@@ -38,9 +37,9 @@ namespace RabbitCloud.Rpc.NetMQ
 
         #endregion Constructor
 
-        #region Implementation of ICaller
+        #region Overrides of Caller
 
-        public async Task<IResponse> CallAsync(IRequest request)
+        public override async Task<IResponse> CallAsync(IRequest request)
         {
             request.SetServiceKey(_serviceKey);
             //格式化请求对象
@@ -68,7 +67,18 @@ namespace RabbitCloud.Rpc.NetMQ
             }
         }
 
-        #endregion Implementation of ICaller
+        /// <summary>
+        /// 释放资源。
+        /// </summary>
+        protected override void DoDispose()
+        {
+            _dealerSocket?.Dispose();
+            foreach (var taskCompletionSource in _taskCompletionSources)
+                taskCompletionSource.Value.TrySetCanceled();
+            _taskCompletionSources.Clear();
+        }
+
+        #endregion Overrides of Caller
 
         #region Private Method
 
@@ -83,18 +93,5 @@ namespace RabbitCloud.Rpc.NetMQ
         }
 
         #endregion Private Method
-
-        #region IDisposable
-
-        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-        public void Dispose()
-        {
-            _dealerSocket?.Dispose();
-            foreach (var taskCompletionSource in _taskCompletionSources)
-                taskCompletionSource.Value.TrySetCanceled();
-            _taskCompletionSources.Clear();
-        }
-
-        #endregion IDisposable
     }
 }

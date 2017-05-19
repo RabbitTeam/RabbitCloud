@@ -1,5 +1,9 @@
-﻿using RabbitCloud.Rpc.Abstractions;
+﻿using Microsoft.Extensions.Logging;
+using RabbitCloud.Abstractions.Exceptions;
+using RabbitCloud.Abstractions.Exceptions.Extensions;
+using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Cluster;
+using RabbitCloud.Rpc.Abstractions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,10 +14,12 @@ namespace RabbitCloud.Rpc.Cluster.HA
     public class FailoverHaStrategy : IHaStrategy
     {
         private readonly IEnumerable<ICaller> _callers;
+        private readonly ILogger<FailoverHaStrategy> _logger;
 
-        public FailoverHaStrategy(IEnumerable<ICaller> callers)
+        public FailoverHaStrategy(IEnumerable<ICaller> callers, ILogger<FailoverHaStrategy> logger)
         {
             _callers = callers;
+            _logger = logger ?? NullLogger<FailoverHaStrategy>.Instance;
         }
 
         #region Implementation of IHaStrategy
@@ -21,7 +27,13 @@ namespace RabbitCloud.Rpc.Cluster.HA
         public async Task<IResponse> CallAsync(IRequest request, ILoadBalance loadBalance)
         {
             var count = _callers.Count();
+
+            if (count == 0)
+                throw new RabbitServiceException($"FailoverHaStrategy No referers for request:{request}, loadbalance:{loadBalance}");
+
             Exception exception = null;
+
+            //todo:添加重试机制
             for (var i = 0; i < count; i++)
             {
                 var caller = loadBalance.Select(_callers, request);
@@ -31,13 +43,17 @@ namespace RabbitCloud.Rpc.Cluster.HA
                 }
                 catch (Exception e)
                 {
-                    exception = e;
+                    if (e.IsBusinessException())
+                        throw;
+
+                    _logger.LogError(0, e, $"FailoverHaStrategy Call false for request:{request} error={e.Message}");
                 }
             }
+
             if (exception != null)
                 throw exception;
 
-            return null;
+            throw new RabbitFrameworkException("FailoverHaStrategy.call should not come here!");
         }
 
         #endregion Implementation of IHaStrategy

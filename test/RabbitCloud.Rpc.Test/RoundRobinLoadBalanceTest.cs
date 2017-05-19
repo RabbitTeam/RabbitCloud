@@ -20,6 +20,8 @@ namespace RabbitCloud.Rpc.Test
 
         #region Implementation of ICaller
 
+        public bool IsAvailable { get; } = true;
+
         public Task<IResponse> CallAsync(IRequest request)
         {
             throw new NotImplementedException();

@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Abstractions.Utilities;
 using RabbitCloud.Rpc.Abstractions;
+using System.Linq;
 using System.Threading;
 
 namespace RabbitCloud.Rpc.Cluster.LoadBalance
@@ -14,22 +15,19 @@ namespace RabbitCloud.Rpc.Cluster.LoadBalance
         {
             var index = GetNextPositive();
 
-            for (var i = 0; i < callers.Length; i++)
-            {
-                var caller = callers[(i + index) % callers.Length];
-                if (caller != null)
-                    return caller;
-            }
-
-            return null;
+            return callers.Select((t, i) => callers[(i + index) % callers.Length]).FirstOrDefault(caller => caller.IsAvailable);
         }
 
         #endregion Overrides of LoadBalance
+
+        #region Private Method
 
         private int GetNextPositive()
         {
             var index = Interlocked.Increment(ref _index);
             return MathUtil.GetPositive(index);
         }
+
+        #endregion Private Method
     }
 }
