@@ -33,15 +33,15 @@ namespace RabbitCloud.Rpc.Formatters.Json
                 var arguments = obj.SelectToken("Arguments")?.Select(StrongType.GetStrongType).ToArray();
 
                 var requestId = obj.SelectToken("RequestId")?.Value<long>();
-                var methodKey = obj.SelectToken("MethodKey")?.ToObject<MethodKey>();
+                var methodDescriptor = obj.SelectToken("MethodDescriptor")?.ToObject<MethodDescriptor>();
                 if (requestId == null)
                     throw new ArgumentException($"missing {nameof(requestId)}.");
-                if (methodKey == null)
-                    throw new ArgumentException($"missing {nameof(methodKey)}.");
+                if (methodDescriptor == null)
+                    throw new ArgumentException($"missing {nameof(methodDescriptor)}.");
 
                 var request = new Request(attachments)
                 {
-                    MethodKey = methodKey.Value,
+                    MethodDescriptor = methodDescriptor.Value,
                     Arguments = arguments,
                     RequestId = requestId.Value
                 };
@@ -74,7 +74,7 @@ namespace RabbitCloud.Rpc.Formatters.Json
             {
                 var model = new
                 {
-                    instance.MethodKey,
+                    instance.MethodDescriptor,
                     instance.RequestId,
                     instance.Attachments,
                     Arguments = instance.Arguments?.Select(StrongType.CreateStrongType)

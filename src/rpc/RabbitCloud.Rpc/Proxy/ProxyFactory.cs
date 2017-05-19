@@ -66,7 +66,7 @@ namespace RabbitCloud.Rpc.Proxy
                 return new Request
                 {
                     Arguments = invocation.Arguments,
-                    MethodKey = new MethodKey(invocation.Method),
+                    MethodDescriptor = new MethodDescriptor(invocation.Method),
                     RequestId = _requestIdGenerator.GetRequestId()
                 };
             }

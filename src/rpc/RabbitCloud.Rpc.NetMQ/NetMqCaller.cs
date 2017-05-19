@@ -1,5 +1,6 @@
 ﻿using NetMQ;
 using NetMQ.Sockets;
+using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
 using RabbitCloud.Rpc.NetMQ.Internal;
@@ -14,6 +15,7 @@ namespace RabbitCloud.Rpc.NetMQ
     {
         #region Field
 
+        private readonly ServiceKey _serviceKey;
         private readonly IRequestFormatter _requestFormatter;
         private readonly IResponseFormatter _responseFormatter;
         private readonly ConcurrentDictionary<long, TaskCompletionSource<IResponse>> _taskCompletionSources = new ConcurrentDictionary<long, TaskCompletionSource<IResponse>>();
@@ -23,8 +25,9 @@ namespace RabbitCloud.Rpc.NetMQ
 
         #region Constructor
 
-        public NetMqCaller(IPEndPoint ipEndPoint, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
+        public NetMqCaller(ServiceKey serviceKey, IPEndPoint ipEndPoint, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
         {
+            _serviceKey = serviceKey;
             _requestFormatter = requestFormatter;
             _responseFormatter = responseFormatter;
             _dealerSocket = new DealerSocket();
@@ -39,6 +42,7 @@ namespace RabbitCloud.Rpc.NetMQ
 
         public async Task<IResponse> CallAsync(IRequest request)
         {
+            request.SetServiceKey(_serviceKey);
             //格式化请求对象
             var data = _requestFormatter.OutputFormatter.Format(request);
 

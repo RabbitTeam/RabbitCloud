@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using RabbitCloud.Abstractions;
+using System.Collections.Generic;
 
 namespace RabbitCloud.Rpc.Abstractions
 {
@@ -10,9 +11,9 @@ namespace RabbitCloud.Rpc.Abstractions
         long RequestId { get; }
 
         /// <summary>
-        /// 方法键。
+        /// 方法描述符。
         /// </summary>
-        MethodKey MethodKey { get; set; }
+        MethodDescriptor MethodDescriptor { get; }
 
         /// <summary>
         /// 请求参数。
@@ -50,9 +51,9 @@ namespace RabbitCloud.Rpc.Abstractions
         public long RequestId { get; set; }
 
         /// <summary>
-        /// 方法键。
+        /// 方法描述符。
         /// </summary>
-        public MethodKey MethodKey { get; set; }
+        public MethodDescriptor MethodDescriptor { get; set; }
 
         /// <summary>
         /// 请求参数。
@@ -84,6 +85,21 @@ namespace RabbitCloud.Rpc.Abstractions
         public static string GetAttachment(this IRequest request, string name)
         {
             return request.Attachments[name];
+        }
+
+        public static IRequest SetServiceKey(this IRequest request, ServiceKey serviceKey)
+        {
+            request.SetAttachment("group", serviceKey.Group);
+            request.SetAttachment("name", serviceKey.Name);
+            request.SetAttachment("version", serviceKey.Version);
+
+            return request;
+        }
+
+        public static ServiceKey GetServiceKey(this IRequest request)
+        {
+            return new ServiceKey(request.GetAttachment("group"), request.GetAttachment("name"),
+                request.GetAttachment("version"));
         }
     }
 }

@@ -7,6 +7,7 @@ using RabbitCloud.Rpc.Proxy;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using RabbitCloud.Abstractions;
 
 namespace ConsoleApp
 {
@@ -52,6 +53,23 @@ namespace ConsoleApp
         }
     }
 
+    public interface ITestService
+    {
+        string Test();
+    }
+
+    public class TestService : ITestService
+    {
+        #region Implementation of ITestService
+
+        public string Test()
+        {
+            return "test";
+        }
+
+        #endregion Implementation of ITestService
+    }
+
     internal class Program
     {
         private static void Main(string[] args)
@@ -75,39 +93,35 @@ namespace ConsoleApp
                 protocol.Export(new ExportContext
                 {
                     Caller = new TypeCaller(new UserService()),
-                    EndPoint = endPoint
+                    EndPoint = endPoint,
+                    ServiceKey = new ServiceKey("a")
                 });
 
                 var caller = protocol.Refer(new ReferContext
                 {
-                    EndPoint = endPoint
+                    EndPoint = endPoint,
+                    ServiceKey = new ServiceKey("a")
                 });
 
                 var userService = proxyFactory.GetProxy<IUserService>(caller);
-                var caller2 = protocol.Refer(new ReferContext
+
+                Console.WriteLine(userService.GetName(1));
+
+/*                protocol.Export(new ExportContext
                 {
-                    EndPoint = endPoint
+                    Caller = new TypeCaller(new TestService()),
+                    EndPoint = endPoint,
+                    ServiceKey = new ServiceKey("ITestService")
                 });
 
-                var userService2 = proxyFactory.GetProxy<IUserService>(caller2);
-
-                var random = new Random();
-                while (true)
+                var callerTest = protocol.Refer(new ReferContext
                 {
-                    for (var i = 0; i < 10000; i++)
-                    {
-                        if (random.Next(0, 2) == 0)
-                        {
-                            userService.GetName(1);
-                        }
-                        else
-                        {
-                            userService2.GetName(1);
-                        }
-                        Console.WriteLine(i);
-                    }
-                    Console.ReadLine();
-                }
+                    EndPoint = endPoint,
+                    ServiceKey = new ServiceKey("ITestService")
+                });
+
+                var testService = proxyFactory.GetProxy<ITestService>(callerTest);
+                Console.WriteLine(testService.Test());*/
 
                 await Task.CompletedTask;
             }).Wait();

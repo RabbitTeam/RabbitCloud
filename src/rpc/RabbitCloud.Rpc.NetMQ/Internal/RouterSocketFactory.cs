@@ -10,7 +10,7 @@ namespace RabbitCloud.Rpc.NetMQ.Internal
 {
     public interface IRouterSocketFactory : IDisposable
     {
-        RouterSocket OpenSocket(string protocol, IPEndPoint ipEndPoint, Action<NetMQSocket> handler);
+        RouterSocket OpenSocket<T>(string protocol, IPEndPoint ipEndPoint, Action<T> handler) where T : NetMQSocket;
     }
 
     public class RouterSocketFactory : IRouterSocketFactory
@@ -36,7 +36,7 @@ namespace RabbitCloud.Rpc.NetMQ.Internal
 
         #region Implementation of IResponseSocketFactory
 
-        public RouterSocket OpenSocket(string protocol, IPEndPoint ipEndPoint, Action<NetMQSocket> handler)
+        public RouterSocket OpenSocket<T>(string protocol, IPEndPoint ipEndPoint, Action<T> handler) where T : NetMQSocket
         {
             var address = $"{protocol}://{ipEndPoint.Address}:{ipEndPoint.Port}";
 
@@ -48,7 +48,7 @@ namespace RabbitCloud.Rpc.NetMQ.Internal
 
                     var routerSocket = new RouterSocket();
                     routerSocket.Bind(address);
-                    routerSocket.ReceiveReady += (sender, args) => handler(args.Socket);
+                    routerSocket.ReceiveReady += (sender, args) => handler(args.Socket as T);
                     _netMqPollerHolder.GetPoller().Add(routerSocket);
                     return routerSocket;
                 }))
@@ -80,12 +80,12 @@ namespace RabbitCloud.Rpc.NetMQ.Internal
 
     public static class RouterSocketFactoryExtensions
     {
-        public static RouterSocket OpenSocket(this IRouterSocketFactory factory, IPEndPoint ipEndPoint, Action<NetMQSocket> handler)
+        public static RouterSocket OpenSocket<T>(this IRouterSocketFactory factory, IPEndPoint ipEndPoint, Action<T> handler) where T : NetMQSocket
         {
             return factory.OpenSocket("tcp", ipEndPoint, handler);
         }
 
-        public static RouterSocket OpenSocket(this IRouterSocketFactory factory, string ip, int port, Action<NetMQSocket> handler)
+        public static RouterSocket OpenSocket<T>(this IRouterSocketFactory factory, string ip, int port, Action<T> handler) where T : NetMQSocket
         {
             return factory.OpenSocket("tcp", new IPEndPoint(IPAddress.Parse(ip), port), handler);
         }

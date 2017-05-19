@@ -25,10 +25,11 @@ namespace RabbitCloud.Rpc.Formatters.Json.Test
             })
             {
                 Arguments = new object[] { 1, 2f, DateTime.Now, new UserInfo { Name = "name" } },
-                MethodKey = new MethodKey
+                MethodDescriptor = new MethodDescriptor
                 {
-                    Name = "method",
-                    ParamtersDesc = "Int64[]"
+                    InterfaceName = "type",
+                    MethodName = "method",
+                    ParamtersSignature = "Int64[]"
                 },
                 RequestId = 300
             };
@@ -36,7 +37,7 @@ namespace RabbitCloud.Rpc.Formatters.Json.Test
 
             var formatterRequest = requestFormatter.InputFormatter.Format(data);
 
-            Assert.Equal(request.MethodKey, formatterRequest.MethodKey);
+            Assert.Equal(request.MethodDescriptor, formatterRequest.MethodDescriptor);
             Assert.Equal(request.RequestId, formatterRequest.RequestId);
             Assert.Equal(string.Join(",", request.Attachments.Keys), string.Join(",", formatterRequest.Attachments.Keys));
             Assert.Equal(string.Join(",", request.Attachments.Values), string.Join(",", formatterRequest.Attachments.Values));

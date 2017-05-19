@@ -4,20 +4,23 @@ namespace RabbitCloud.Abstractions
 {
     public struct ServiceKey
     {
-        public ServiceKey(string name)
+        public ServiceKey(string name) : this(null, name, null)
+        {
+        }
+
+        public ServiceKey(string group, string name, string version)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentNullException(nameof(name));
 
             Name = name;
-            Group = "default";
-            Version = "1.0.0";
+            Group = group ?? "unknown";
+            Version = version ?? "latest";
         }
 
-        public string Name { get; set; }
-        public string Group { get; set; }
-
-        public string Version { get; set; }
+        public string Name { get; }
+        public string Group { get; }
+        public string Version { get; }
 
         #region Overrides of Object
 
@@ -26,7 +29,7 @@ namespace RabbitCloud.Abstractions
 
         public override string ToString()
         {
-            return $"{Group ?? "default"}/{Name}/{Version ?? "1.0.0"}";
+            return $"{Group}/{Name}/{Version}";
         }
 
         #endregion Overrides of Object

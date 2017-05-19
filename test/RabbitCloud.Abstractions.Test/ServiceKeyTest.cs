@@ -29,11 +29,9 @@ namespace RabbitCloud.Abstractions.Test
         public void ToStringTest()
         {
             var key = new ServiceKey("test");
-            Assert.Equal("default/test/1.0.0", key.ToString());
+            Assert.Equal("unknown/test/latest", key.ToString());
 
-
-            key.Group = "group";
-            key.Version = "2.0";
+            key = new ServiceKey("group", "test", "2.0");
 
             Assert.Equal("group/test/2.0", key.ToString());
         }

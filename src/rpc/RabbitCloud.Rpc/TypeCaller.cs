@@ -27,7 +27,7 @@ namespace RabbitCloud.Rpc
 
         public async Task<IResponse> CallAsync(IRequest request)
         {
-            var method = MatchMethod(request.MethodKey);
+            var method = MatchMethod(request.MethodDescriptor);
             var response = new Response(request);
             try
             {
@@ -65,11 +65,12 @@ namespace RabbitCloud.Rpc
             return result;
         }
 
-        private MethodInfo MatchMethod(MethodKey key)
+        private MethodInfo MatchMethod(MethodDescriptor location)
         {
+            //todo:考虑优化（cache之类）
             return _serviceType.GetMethods()
                 .SingleOrDefault(method => ReflectUtil.GetMethodDesc(method) ==
-                                           ReflectUtil.GetMethodDesc(key.Name, key.ParamtersDesc));
+                                           ReflectUtil.GetMethodDesc(location.MethodName, location.ParamtersSignature));
         }
 
         #endregion Private Method
