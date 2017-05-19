@@ -39,7 +39,7 @@ namespace RabbitCloud.Rpc.NetMQ
 
         #region Overrides of Caller
 
-        public override async Task<IResponse> CallAsync(IRequest request)
+        protected override async Task<IResponse> DoCallAsync(IRequest request)
         {
             request.SetServiceKey(_serviceKey);
             //格式化请求对象

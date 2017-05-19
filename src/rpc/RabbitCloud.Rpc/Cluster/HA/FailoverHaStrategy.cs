@@ -16,7 +16,7 @@ namespace RabbitCloud.Rpc.Cluster.HA
         private readonly IEnumerable<ICaller> _callers;
         private readonly ILogger<FailoverHaStrategy> _logger;
 
-        public FailoverHaStrategy(IEnumerable<ICaller> callers, ILogger<FailoverHaStrategy> logger)
+        public FailoverHaStrategy(IEnumerable<ICaller> callers, ILogger<FailoverHaStrategy> logger = null)
         {
             _callers = callers;
             _logger = logger ?? NullLogger<FailoverHaStrategy>.Instance;

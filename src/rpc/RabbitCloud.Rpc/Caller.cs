@@ -16,9 +16,17 @@ namespace RabbitCloud.Rpc
 
         public bool IsAvailable { get; private set; } = true;
 
-        public abstract Task<IResponse> CallAsync(IRequest request);
+        public Task<IResponse> CallAsync(IRequest request)
+        {
+            if (_isDispose)
+                throw new ObjectDisposedException("caller is Dispose.");
+
+            return DoCallAsync(request);
+        }
 
         #endregion Implementation of ICaller
+
+        protected abstract Task<IResponse> DoCallAsync(IRequest request);
 
         /// <summary>
         /// 释放资源。

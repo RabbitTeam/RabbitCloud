@@ -1,6 +1,10 @@
 ﻿using RabbitCloud.Abstractions;
 using RabbitCloud.Rpc;
 using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Cluster;
+using RabbitCloud.Rpc.Cluster;
+using RabbitCloud.Rpc.Cluster.HA;
+using RabbitCloud.Rpc.Cluster.LoadBalance;
 using RabbitCloud.Rpc.Formatters.Json;
 using RabbitCloud.Rpc.NetMQ;
 using RabbitCloud.Rpc.NetMQ.Internal;
@@ -98,16 +102,38 @@ namespace ConsoleApp
                     ServiceKey = new ServiceKey("user")
                 });
 
+                protocol.Export(new ExportContext
+                {
+                    Caller = new TypeCaller(new UserService()),
+                    EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888),
+                    ServiceKey = new ServiceKey("user")
+                });
+
                 var caller = protocol.Refer(new ReferContext
                 {
                     EndPoint = endPoint,
                     ServiceKey = new ServiceKey("user")
                 });
 
-                var userService = proxyFactory.GetProxy<IUserService>(caller);
+                ICluster cluster = new DefaultCluster
+                {
+                    HaStrategy = new FailoverHaStrategy(new[]
+                    {
+                        caller,
+                        protocol.Refer(new ReferContext
+                        {
+                            EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888),
+                            ServiceKey = new ServiceKey("user")
+                        })
+                    }),
+                    LoadBalance = new RoundRobinLoadBalance()
+                };
+                var userService = proxyFactory.GetProxy<IUserService>(cluster);
 
                 Console.WriteLine(userService.GetName(1));
-
+                Console.WriteLine(userService.GetName(1));
+                Console.WriteLine(userService.GetName(1));
+                return;
                 var watch = new Stopwatch();
                 watch.Start();
                 for (var i = 0; i < 10000; i++)
