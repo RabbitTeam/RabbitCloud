@@ -1,16 +1,13 @@
 ﻿using RabbitCloud.Abstractions;
+using RabbitCloud.Registry.Abstractions;
+using RabbitCloud.Registry.Consul;
 using RabbitCloud.Rpc;
 using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Cluster;
-using RabbitCloud.Rpc.Cluster;
-using RabbitCloud.Rpc.Cluster.HA;
-using RabbitCloud.Rpc.Cluster.LoadBalance;
 using RabbitCloud.Rpc.Formatters.Json;
 using RabbitCloud.Rpc.NetMQ;
 using RabbitCloud.Rpc.NetMQ.Internal;
 using RabbitCloud.Rpc.Proxy;
 using System;
-using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -81,6 +78,16 @@ namespace ConsoleApp
         {
             Task.Run(async () =>
             {
+                /*using (var client = new ConsulClient())
+                {
+                    var c = await client.Catalog.Services();
+                    foreach (var service in (await client.Agent.Services()).Response)
+                    {
+                        Console.WriteLine(service.Key);
+                        Console.WriteLine(service.Value.Address);
+                    }
+                }*/
+
                 var jsonRequestFormatter = new JsonRequestFormatter();
                 var jsonResponseFormatter = new JsonResponseFormatter();
 
@@ -101,7 +108,6 @@ namespace ConsoleApp
                     EndPoint = endPoint,
                     ServiceKey = new ServiceKey("user")
                 });
-
                 protocol.Export(new ExportContext
                 {
                     Caller = new TypeCaller(new UserService()),
@@ -109,39 +115,66 @@ namespace ConsoleApp
                     ServiceKey = new ServiceKey("user")
                 });
 
-                var caller = protocol.Refer(new ReferContext
+                IRegistryTable registryTable = new ConsulRegistryTable(new Uri("http://localhost:8500"));
+
+                var s1 = new ServiceRegistryDescriptor
                 {
-                    EndPoint = endPoint,
+                    Host = "127.0.0.1",
+                    Port = 9999,
+                    Protocol = "netmq",
                     ServiceKey = new ServiceKey("user")
-                });
-
-                ICluster cluster = new DefaultCluster
-                {
-                    HaStrategy = new FailoverHaStrategy(new[]
-                    {
-                        caller,
-                        protocol.Refer(new ReferContext
-                        {
-                            EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888),
-                            ServiceKey = new ServiceKey("user")
-                        })
-                    }),
-                    LoadBalance = new RoundRobinLoadBalance()
                 };
-                var userService = proxyFactory.GetProxy<IUserService>(cluster);
-
-                Console.WriteLine(userService.GetName(1));
-                Console.WriteLine(userService.GetName(1));
-                Console.WriteLine(userService.GetName(1));
-                return;
-                var watch = new Stopwatch();
-                watch.Start();
-                for (var i = 0; i < 10000; i++)
+                var s2 = new ServiceRegistryDescriptor
                 {
-                    userService.GetName(1);
-                }
-                watch.Stop();
-                Console.WriteLine(watch.ElapsedMilliseconds + "ms");
+                    Host = "127.0.0.1",
+                    Port = 8888,
+                    Protocol = "netmq",
+                    ServiceKey = new ServiceKey("user")
+                };
+                /*await registryTable.UnRegisterAsync(s1);
+                await registryTable.UnRegisterAsync(s2);
+                await registryTable.RegisterAsync(s1);
+                await registryTable.RegisterAsync(s2);*/
+
+                var result = await registryTable.Discover(s1);
+                var i = 0;
+
+                /*
+
+                                var caller = protocol.Refer(new ReferContext
+                                {
+                                    EndPoint = endPoint,
+                                    ServiceKey = new ServiceKey("user")
+                                });
+
+                                ICluster cluster = new DefaultCluster
+                                {
+                                    HaStrategy = new FailoverHaStrategy(new[]
+                                    {
+                                        caller,
+                                        protocol.Refer(new ReferContext
+                                        {
+                                            EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888),
+                                            ServiceKey = new ServiceKey("user")
+                                        })
+                                    }),
+                                    LoadBalance = new RoundRobinLoadBalance()
+                                };
+                                var userService = proxyFactory.GetProxy<IUserService>(cluster);
+
+                                Console.WriteLine(userService.GetName(1));
+                                Console.WriteLine(userService.GetName(1));
+                                Console.WriteLine(userService.GetName(1));*/
+                Console.ReadLine();
+                return;
+                /*                var watch = new Stopwatch();
+                                watch.Start();
+                                for (var i = 0; i < 10000; i++)
+                                {
+                                    userService.GetName(1);
+                                }
+                                watch.Stop();
+                                Console.WriteLine(watch.ElapsedMilliseconds + "ms");*/
 
                 /*                protocol.Export(new ExportContext
                                 {
