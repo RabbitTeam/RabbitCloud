@@ -33,7 +33,8 @@ namespace RabbitCloud.Registry.Consul
                 Port = descriptor.Port,
                 Check = new AgentServiceCheck
                 {
-                    TCP = "10s"
+                    TCP = $"{descriptor.Host}:{descriptor.Port}",
+                    Interval = TimeSpan.FromSeconds(5)
                 },
                 Tags = new[]
                 {

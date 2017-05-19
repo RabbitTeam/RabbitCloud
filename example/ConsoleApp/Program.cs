@@ -78,16 +78,6 @@ namespace ConsoleApp
         {
             Task.Run(async () =>
             {
-                /*using (var client = new ConsulClient())
-                {
-                    var c = await client.Catalog.Services();
-                    foreach (var service in (await client.Agent.Services()).Response)
-                    {
-                        Console.WriteLine(service.Key);
-                        Console.WriteLine(service.Value.Address);
-                    }
-                }*/
-
                 var jsonRequestFormatter = new JsonRequestFormatter();
                 var jsonResponseFormatter = new JsonResponseFormatter();
 
@@ -100,7 +90,7 @@ namespace ConsoleApp
 
                 IProtocol protocol = new NetMqProtocol(responseSocketFactory, jsonRequestFormatter, jsonResponseFormatter, netMqPollerHolder);
 
-                var endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9999);
+                var endPoint = new IPEndPoint(IPAddress.Parse("192.168.1.100"), 9999);
 
                 protocol.Export(new ExportContext
                 {
@@ -111,7 +101,7 @@ namespace ConsoleApp
                 protocol.Export(new ExportContext
                 {
                     Caller = new TypeCaller(new UserService()),
-                    EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888),
+                    EndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.100"), 8888),
                     ServiceKey = new ServiceKey("user")
                 });
 
@@ -119,25 +109,24 @@ namespace ConsoleApp
 
                 var s1 = new ServiceRegistryDescriptor
                 {
-                    Host = "127.0.0.1",
+                    Host = "192.168.1.100",
                     Port = 9999,
                     Protocol = "netmq",
                     ServiceKey = new ServiceKey("user")
                 };
                 var s2 = new ServiceRegistryDescriptor
                 {
-                    Host = "127.0.0.1",
+                    Host = "192.168.1.100",
                     Port = 8888,
                     Protocol = "netmq",
                     ServiceKey = new ServiceKey("user")
                 };
-                /*await registryTable.UnRegisterAsync(s1);
+                await registryTable.UnRegisterAsync(s1);
                 await registryTable.UnRegisterAsync(s2);
                 await registryTable.RegisterAsync(s1);
-                await registryTable.RegisterAsync(s2);*/
+                await registryTable.RegisterAsync(s2);
 
                 var result = await registryTable.Discover(s1);
-                var i = 0;
 
                 /*
 
