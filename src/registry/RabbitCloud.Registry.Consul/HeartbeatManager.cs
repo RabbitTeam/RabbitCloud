@@ -10,7 +10,7 @@ namespace RabbitCloud.Registry.Consul
 {
     public class HeartbeatManager : IDisposable
     {
-        private readonly IList<string> _checkids = new List<string>();
+        private readonly ISet<string> _checkIds = new HashSet<string>();
         private readonly Timer _timer;
 
         public HeartbeatManager(IConsulClient consulClient, ILogger<HeartbeatManager> logger = null)
@@ -20,8 +20,8 @@ namespace RabbitCloud.Registry.Consul
             _timer = new Timer(async s =>
             {
                 string[] ids;
-                lock (_checkids)
-                    ids = _checkids.ToArray();
+                lock (_checkIds)
+                    ids = _checkIds.ToArray();
 
                 var ndoeName = await consulClient.Agent.GetNodeName();
                 foreach (var id in ids)
@@ -43,17 +43,17 @@ namespace RabbitCloud.Registry.Consul
 
         public void AddHeartbeat(string serviceId)
         {
-            lock (_checkids)
+            lock (_checkIds)
             {
-                _checkids.Add("service:" + serviceId);
+                _checkIds.Add("service:" + serviceId);
             }
         }
 
         public void RemoveHeartbeat(string serviceId)
         {
-            lock (_checkids)
+            lock (_checkIds)
             {
-                _checkids.Add("service:" + serviceId);
+                _checkIds.Add("service:" + serviceId);
             }
         }
 
