@@ -78,6 +78,8 @@ namespace ConsoleApp
         {
             Task.Run(async () =>
             {
+                #region init
+
                 var jsonRequestFormatter = new JsonRequestFormatter();
                 var jsonResponseFormatter = new JsonResponseFormatter();
 
@@ -90,7 +92,7 @@ namespace ConsoleApp
 
                 IProtocol protocol = new NetMqProtocol(responseSocketFactory, jsonRequestFormatter, jsonResponseFormatter, netMqPollerHolder);
 
-                var endPoint = new IPEndPoint(IPAddress.Parse("192.168.1.100"), 9999);
+                var endPoint = new IPEndPoint(IPAddress.Parse("192.168.5.26"), 9999);
 
                 protocol.Export(new ExportContext
                 {
@@ -101,88 +103,69 @@ namespace ConsoleApp
                 protocol.Export(new ExportContext
                 {
                     Caller = new TypeCaller(new UserService()),
-                    EndPoint = new IPEndPoint(IPAddress.Parse("192.168.1.100"), 8888),
+                    EndPoint = new IPEndPoint(IPAddress.Parse("192.168.5.26"), 8888),
                     ServiceKey = new ServiceKey("user")
                 });
 
-                IRegistryTable registryTable = new ConsulRegistryTable(new Uri("http://localhost:8500"));
+                var registryTable = new ConsulRegistryTable(new Uri("http://localhost:8500"));
+
+                #endregion init
 
                 var s1 = new ServiceRegistryDescriptor
                 {
-                    Host = "192.168.1.100",
+                    Host = "192.168.5.26",
                     Port = 9999,
                     Protocol = "netmq",
                     ServiceKey = new ServiceKey("user")
                 };
                 var s2 = new ServiceRegistryDescriptor
                 {
-                    Host = "192.168.1.100",
+                    Host = "192.168.5.26",
                     Port = 8888,
                     Protocol = "netmq",
                     ServiceKey = new ServiceKey("user")
                 };
-                await registryTable.UnRegisterAsync(s1);
-                await registryTable.UnRegisterAsync(s2);
-                await registryTable.RegisterAsync(s1);
-                await registryTable.RegisterAsync(s2);
 
-                var result = await registryTable.Discover(s1);
+                registryTable.Subscribe(s1, (s, descriptors) =>
+                {
+                    Console.WriteLine("s1 change");
+                    foreach (var descriptor in descriptors)
+                    {
+                        Console.WriteLine(descriptor.ServiceKey);
+                    }
+                });
+                registryTable.Subscribe(s2, (s, descriptors) =>
+                {
+                    Console.WriteLine("s2 change");
+                    foreach (var descriptor in descriptors)
+                    {
+                        Console.WriteLine(descriptor.ServiceKey);
+                    }
+                });
 
-                /*
+//                await registryTable.Discover(s1);
+//                await registryTable.Discover(s2);
 
-                                var caller = protocol.Refer(new ReferContext
-                                {
-                                    EndPoint = endPoint,
-                                    ServiceKey = new ServiceKey("user")
-                                });
-
-                                ICluster cluster = new DefaultCluster
-                                {
-                                    HaStrategy = new FailoverHaStrategy(new[]
-                                    {
-                                        caller,
-                                        protocol.Refer(new ReferContext
-                                        {
-                                            EndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8888),
-                                            ServiceKey = new ServiceKey("user")
-                                        })
-                                    }),
-                                    LoadBalance = new RoundRobinLoadBalance()
-                                };
-                                var userService = proxyFactory.GetProxy<IUserService>(cluster);
-
-                                Console.WriteLine(userService.GetName(1));
-                                Console.WriteLine(userService.GetName(1));
-                                Console.WriteLine(userService.GetName(1));*/
                 Console.ReadLine();
-                return;
-                /*                var watch = new Stopwatch();
-                                watch.Start();
-                                for (var i = 0; i < 10000; i++)
-                                {
-                                    userService.GetName(1);
-                                }
-                                watch.Stop();
-                                Console.WriteLine(watch.ElapsedMilliseconds + "ms");*/
-
-                /*                protocol.Export(new ExportContext
-                                {
-                                    Caller = new TypeCaller(new TestService()),
-                                    EndPoint = endPoint,
-                                    ServiceKey = new ServiceKey("ITestService")
-                                });
-
-                                var callerTest = protocol.Refer(new ReferContext
-                                {
-                                    EndPoint = endPoint,
-                                    ServiceKey = new ServiceKey("ITestService")
-                                });
-
-                                var testService = proxyFactory.GetProxy<ITestService>(callerTest);
-                                Console.WriteLine(testService.Test());*/
+                await registryTable.UnRegisterAsync(s1);
+                Console.WriteLine("UnRegisterAsync s1");
+                Console.ReadLine();
+                await registryTable.UnRegisterAsync(s2);
+                Console.WriteLine("UnRegisterAsync s2");
+                Console.ReadLine();
+                await registryTable.RegisterAsync(s1);
+                Console.WriteLine("RegisterAsync s1");
+                Console.ReadLine();
+                await registryTable.RegisterAsync(s2);
+                Console.WriteLine("RegisterAsync s2");
+                Console.ReadLine();
+                
+                await registryTable.SetUnAvailableAsync(s1);
+                Console.ReadLine();
 
                 await Task.CompletedTask;
             }).Wait();
+            Console.ReadLine();
         }
     }
 }
