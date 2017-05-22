@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NetMQ;
 using NetMQ.Sockets;
-using RabbitCloud.Rpc.Abstractions.Logging;
+using RabbitCloud.Abstractions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Net;

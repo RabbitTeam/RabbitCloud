@@ -1,7 +1,7 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using System;
 
-namespace RabbitCloud.Rpc.Abstractions.Logging
+namespace RabbitCloud.Abstractions.Logging
 {
     public class NullLogger<T> : ILogger<T>
     {

@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using RabbitCloud.Abstractions.Exceptions;
 using RabbitCloud.Abstractions.Exceptions.Extensions;
+using RabbitCloud.Abstractions.Logging;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Cluster;
-using RabbitCloud.Rpc.Abstractions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;

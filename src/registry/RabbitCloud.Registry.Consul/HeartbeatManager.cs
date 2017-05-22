@@ -1,6 +1,6 @@
 ﻿using Consul;
 using Microsoft.Extensions.Logging;
-using RabbitCloud.Rpc.Abstractions.Logging;
+using RabbitCloud.Abstractions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
