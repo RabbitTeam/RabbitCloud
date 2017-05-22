@@ -32,15 +32,11 @@ namespace RabbitCloud.Registry.Consul
 
         #region Constructor
 
-        public ConsulRegistryTable(Uri url, ILogger<ConsulRegistryTable> logger = null)
+        public ConsulRegistryTable(ConsulClient consulClient, HeartbeatManager heartbeatManager, ILogger<ConsulRegistryTable> logger = null)
         {
+            _heartbeatManager = heartbeatManager;
             _logger = logger ?? NullLogger<ConsulRegistryTable>.Instance;
-            _consulClient = new ConsulClient(config =>
-            {
-                config.Address = url;
-            });
-
-            _heartbeatManager = new HeartbeatManager(_consulClient);
+            _consulClient = consulClient;
         }
 
         #endregion Constructor
@@ -56,6 +52,10 @@ namespace RabbitCloud.Registry.Consul
 
             //添加到心跳管理
             _heartbeatManager.AddHeartbeat(registration.ID);
+
+            //todo:考虑是否需要立即发送或尝试其他方式
+            //立即发送一个心跳包
+            await SetAvailableAsync(descriptor);
 
             if (result.StatusCode != HttpStatusCode.OK && _logger.IsEnabled(LogLevel.Error))
                 _logger.LogError($"ServiceRegister is return code :{result.StatusCode}");
@@ -157,8 +157,9 @@ namespace RabbitCloud.Registry.Consul
 
         private async Task<IEnumerable<ServiceRegistryDescriptor>> DiscoverByConsul(ServiceRegistryDescriptor descriptor)
         {
+            var serviceName = ConsulUtils.GetConsulServiceName(descriptor);
             //获取服务信息
-            var result = await _consulClient.Health.Service(ConsulUtils.GetConsulServiceName(descriptor), null, false, _cancellationTokenSource.Token);
+            var result = await _consulClient.Health.Service(serviceName, null, false, _cancellationTokenSource.Token);
 
             await Task.Factory.StartNew(async () =>
             {
@@ -166,7 +167,7 @@ namespace RabbitCloud.Registry.Consul
                 while (!_cancellationTokenSource.IsCancellationRequested)
                 {
                     var waitIndex = result.LastIndex;
-                    result = await _consulClient.Health.Service(ConsulUtils.GetConsulServiceName(descriptor), null, false, new QueryOptions
+                    result = await _consulClient.Health.Service(serviceName, null, false, new QueryOptions
                     {
                         WaitIndex = waitIndex
                     }, _cancellationTokenSource.Token);
