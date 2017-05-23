@@ -41,6 +41,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{0F2946
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitCloud.Config.Abstractions", "src\config\RabbitCloud.Config.Abstractions\RabbitCloud.Config.Abstractions.csproj", "{20E7A0BD-865A-4C06-9DAD-D8A647082819}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Config", "src\config\RabbitCloud.Config\RabbitCloud.Config.csproj", "{00A36456-BE7C-4685-BC52-51FA9C04B09E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +97,10 @@ Global
 		{20E7A0BD-865A-4C06-9DAD-D8A647082819}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20E7A0BD-865A-4C06-9DAD-D8A647082819}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20E7A0BD-865A-4C06-9DAD-D8A647082819}.Release|Any CPU.Build.0 = Release|Any CPU
+		{00A36456-BE7C-4685-BC52-51FA9C04B09E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00A36456-BE7C-4685-BC52-51FA9C04B09E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00A36456-BE7C-4685-BC52-51FA9C04B09E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00A36456-BE7C-4685-BC52-51FA9C04B09E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -116,5 +122,6 @@ Global
 		{55454287-CCEF-4D34-B9B4-95026D346070} = {CC0DB431-526E-4D65-83D3-721F3240ED0C}
 		{0F2946AF-140D-4C56-88A9-119480C6A717} = {BABDC280-DA7D-4354-8713-B3954EAD4D5D}
 		{20E7A0BD-865A-4C06-9DAD-D8A647082819} = {0F2946AF-140D-4C56-88A9-119480C6A717}
+		{00A36456-BE7C-4685-BC52-51FA9C04B09E} = {0F2946AF-140D-4C56-88A9-119480C6A717}
 	EndGlobalSection
 EndGlobal

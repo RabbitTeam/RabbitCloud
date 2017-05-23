@@ -1,16 +1,19 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using RabbitCloud.Config;
 using RabbitCloud.Config.Abstractions;
-using RabbitCloud.Registry.Abstractions;
+using RabbitCloud.Config.Abstractions.Adapter;
+using RabbitCloud.Registry.Consul.Config;
 using RabbitCloud.Rpc;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
 using RabbitCloud.Rpc.Abstractions.Proxy;
 using RabbitCloud.Rpc.Formatters.Json;
+using RabbitCloud.Rpc.Formatters.Json.Config;
 using RabbitCloud.Rpc.NetMQ;
+using RabbitCloud.Rpc.NetMQ.Config;
 using RabbitCloud.Rpc.NetMQ.Internal;
 using RabbitCloud.Rpc.Proxy;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -39,19 +42,25 @@ namespace ConsoleApp
                     .AddSingleton<NetMqProtocol, NetMqProtocol>();
 
                 services
-                    .AddSingleton<ProtocolFactory, ProtocolFactory>()
-                    .AddSingleton<FormatterFactory, FormatterFactory>()
-                    .AddSingleton<RegistryTableFactory, RegistryTableFactory>();
-                
+                    .AddSingleton<IProtocolFactory, DefaultProtocolFactory>()
+                    .AddSingleton<IFormatterFactory, DefaultFormatterFactory>()
+                    .AddSingleton<IRegistryTableFactory, DefaultRegistryTableFactory>()
+                    .AddScoped<IApplicationFactory, DefaultApplicationFactory>();
 
-                var model = new CloudApplicationModel
+                services
+                    .AddSingleton<IRegistryTableProvider, ConsulRegistryTableProvider>()
+                    .AddSingleton<IProtocolProvider, NetMqProtocolProvider>()
+                    .AddSingleton<IFormatterProvider, JsonFormatterProvider>();
+
+                var descriptor = new ApplicationModelDescriptor
                 {
                     Protocols = new[]
                     {
                         new ProtocolConfig
                         {
                             Id = "netmq",
-                            Name = "netmq"
+                            Name = "netmq",
+                            Formatter = "json"
                         }
                     },
                     Registrys = new[]
@@ -87,28 +96,19 @@ namespace ConsoleApp
                         }
                     }
                 };
-                
-                services
-                    .AddSingleton<Class3, Class3>();
-                foreach (var serviceConfig in model.Services)
+
+                foreach (var serviceConfig in descriptor.Services)
                 {
                     services
                         .AddSingleton(Type.GetType(serviceConfig.Interface), Type.GetType(serviceConfig.Implement));
                 }
-                
 
                 var serviceProvider = services.BuildServiceProvider();
 
+                var applicationFactory = serviceProvider.GetRequiredService<IApplicationFactory>();
 
-                var class3 = serviceProvider.GetRequiredService<Class3>();
-
-                class3.GetRegistryTable(model.Registrys.FirstOrDefault());
-                class3.GetProtocol(model.Protocols.FirstOrDefault());
-                foreach (var serviceConfig in model.Services)
-                {
-                    await class3.Export(serviceConfig);
-                }
-                var userService = await class3.Referer<IUserService>(model.Referers.FirstOrDefault());
+                var applicationModel = await applicationFactory.CreateApplicationAsync(descriptor);
+                var userService = applicationModel.Referer<IUserService>("userService");
 
                 Console.WriteLine(userService.GetName(1));
                 await Task.CompletedTask;

@@ -7,9 +7,11 @@
   <ItemGroup>
     <PackageReference Include="Consul" Version="0.7.2.3" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="1.1.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\config\RabbitCloud.Config.Abstractions\RabbitCloud.Config.Abstractions.csproj" />
     <ProjectReference Include="..\RabbitCloud.Registry.Abstractions\RabbitCloud.Registry.Abstractions.csproj" />
   </ItemGroup>
 
