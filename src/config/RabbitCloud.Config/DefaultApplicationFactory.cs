@@ -34,74 +34,94 @@ namespace RabbitCloud.Config
 
         public async Task<ApplicationModel> CreateApplicationAsync(ApplicationModelDescriptor descriptor)
         {
-            var applicationModel = new ApplicationModel(_proxyFactory)
-            {
-                RegistryTables = descriptor.Registrys.ToDictionary(i => i, _registryTableFactory.GetRegistryTable).Select(
-                    i => new RegistryTableEntry
-                    {
-                        RegistryConfig = i.Key,
-                        RegistryTable = i.Value
-                    }).ToArray(),
-                Protocols = descriptor.Protocols.ToDictionary(i => i, _protocolFactory.GetProtocol).Select(
-                    i => new ProtocolEntry
-                    {
-                        ProtocolConfig = i.Key,
-                        Protocol = i.Value
-                    }).ToArray()
-            };
-            if (descriptor.Services != null)
-            {
-                var serviceCollection = new ServiceCollection();
+            var applicationModel = new ApplicationModel(_proxyFactory);
 
-                foreach (var serviceConfig in descriptor.Services)
-                {
-                    var serviceType = Type.GetType(serviceConfig.Interface);
-                    var implementType = Type.GetType(serviceConfig.Implement);
-
-                    serviceCollection.AddSingleton(serviceType, implementType);
-                }
-
-                var serviceContainer = serviceCollection.BuildServiceProvider();
-
-                var serviceEntries = new List<ServiceEntry>();
-                foreach (var serviceConfig in descriptor.Services)
-                {
-                    var export = await Export(serviceConfig, applicationModel, type => serviceContainer.GetService(type));
-                    serviceEntries.Add(new ServiceEntry
-                    {
-                        Exporter = export,
-                        ServiceConfig = serviceConfig,
-                        Protocol = applicationModel.GetProtocol(new Uri(serviceConfig.Export).Scheme).Protocol,
-                        RegistryTable = applicationModel.GetRegistryTable(serviceConfig.Registry).RegistryTable
-                    });
-                }
-                applicationModel.ServiceEntries = serviceEntries.ToArray();
-            }
-
-            if (descriptor.Referers != null)
-            {
-                var callerEntries = new List<CallerEntry>();
-                foreach (var refererConfig in descriptor.Referers)
-                {
-                    var caller = await Referer(refererConfig, applicationModel);
-                    callerEntries.Add(new CallerEntry
-                    {
-                        Caller = caller,
-                        Protocol = applicationModel.GetProtocol(refererConfig.Protocol).Protocol,
-                        RefererConfig = refererConfig,
-                        RegistryTable = applicationModel.GetRegistryTable(refererConfig.Registry).RegistryTable
-                    });
-                }
-
-                applicationModel.CallerEntries = callerEntries.ToArray();
-            }
+            HandleRegistryTableEntries(applicationModel, descriptor);
+            HandleProtocolEntries(applicationModel, descriptor);
+            await HandleServiceEntries(applicationModel, descriptor);
+            await HandleCallerEntries(applicationModel, descriptor);
 
             return applicationModel;
         }
 
         #endregion Implementation of IApplicationFactory
 
-        public async Task<IExporter> Export(ServiceConfig config, ApplicationModel applicationModel, Func<Type, object> instanceFactory)
+        #region Private Method
+
+        private void HandleRegistryTableEntries(ApplicationModel applicationModel, ApplicationModelDescriptor descriptor)
+        {
+            applicationModel.RegistryTables = descriptor.Registrys
+                .ToDictionary(i => i, _registryTableFactory.GetRegistryTable).Select(
+                    i => new RegistryTableEntry
+                    {
+                        RegistryConfig = i.Key,
+                        RegistryTable = i.Value
+                    }).ToArray();
+        }
+
+        private void HandleProtocolEntries(ApplicationModel applicationModel, ApplicationModelDescriptor descriptor)
+        {
+            applicationModel.Protocols = descriptor.Protocols.ToDictionary(i => i, _protocolFactory.GetProtocol).Select(
+                i => new ProtocolEntry
+                {
+                    ProtocolConfig = i.Key,
+                    Protocol = i.Value
+                }).ToArray();
+        }
+
+        private static async Task HandleServiceEntries(ApplicationModel applicationModel, ApplicationModelDescriptor descriptor)
+        {
+            if (descriptor.Services == null)
+                return;
+            var serviceCollection = new ServiceCollection();
+
+            foreach (var serviceConfig in descriptor.Services)
+            {
+                var serviceType = Type.GetType(serviceConfig.Interface);
+                var implementType = Type.GetType(serviceConfig.Implement);
+
+                serviceCollection.AddSingleton(serviceType, implementType);
+            }
+
+            var serviceContainer = serviceCollection.BuildServiceProvider();
+
+            var serviceEntries = new List<ServiceEntry>();
+            foreach (var serviceConfig in descriptor.Services)
+            {
+                var export = await Export(serviceConfig, applicationModel, type => serviceContainer.GetService(type));
+                serviceEntries.Add(new ServiceEntry
+                {
+                    Exporter = export,
+                    ServiceConfig = serviceConfig,
+                    Protocol = applicationModel.GetProtocol(new Uri(serviceConfig.Export).Scheme).Protocol,
+                    RegistryTable = applicationModel.GetRegistryTable(serviceConfig.Registry).RegistryTable
+                });
+            }
+            applicationModel.ServiceEntries = serviceEntries.ToArray();
+        }
+
+        private static async Task HandleCallerEntries(ApplicationModel applicationModel, ApplicationModelDescriptor descriptor)
+        {
+            if (descriptor.Referers == null)
+                return;
+
+            var callerEntries = new List<CallerEntry>();
+            foreach (var refererConfig in descriptor.Referers)
+            {
+                var caller = await Referer(refererConfig, applicationModel);
+                callerEntries.Add(new CallerEntry
+                {
+                    Caller = caller,
+                    Protocol = applicationModel.GetProtocol(refererConfig.Protocol).Protocol,
+                    RefererConfig = refererConfig,
+                    RegistryTable = applicationModel.GetRegistryTable(refererConfig.Registry).RegistryTable
+                });
+            }
+
+            applicationModel.CallerEntries = callerEntries.ToArray();
+        }
+
+        private static async Task<IExporter> Export(ServiceConfig config, ApplicationModel applicationModel, Func<Type, object> instanceFactory)
         {
             var uri = new Uri(config.Export);
             var protocolName = uri.Scheme;
@@ -133,7 +153,7 @@ namespace RabbitCloud.Config
             return export;
         }
 
-        public async Task<ICaller> Referer(RefererConfig config, ApplicationModel applicationModel)
+        private static async Task<ICaller> Referer(RefererConfig config, ApplicationModel applicationModel)
         {
             var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
             var protocolName = config.Protocol;
@@ -165,5 +185,7 @@ namespace RabbitCloud.Config
                 LoadBalance = new RoundRobinLoadBalance()
             };
         }
+
+        #endregion Private Method
     }
 }
