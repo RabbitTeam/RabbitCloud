@@ -72,6 +72,11 @@ namespace RabbitCloud.Config.Abstractions
         {
             return _proxyFactory.GetProxy<T>(GetCallerEntry(id).Caller);
         }
+
+        public T Referer<T>()
+        {
+            return Referer<T>(typeof(T).Name);
+        }
     }
 
     public class ApplicationModelDescriptor

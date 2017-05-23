@@ -19,17 +19,15 @@ namespace RabbitCloud.Config
 {
     public class DefaultApplicationFactory : IApplicationFactory
     {
-        private readonly IServiceProvider _container;
         private readonly IRegistryTableFactory _registryTableFactory;
         private readonly IProtocolFactory _protocolFactory;
         private readonly IProxyFactory _proxyFactory;
 
-        public DefaultApplicationFactory(IServiceProvider container)
+        public DefaultApplicationFactory(IRegistryTableFactory registryTableFactory, IProtocolFactory protocolFactory, IProxyFactory proxyFactory)
         {
-            _container = container;
-            _registryTableFactory = container.GetRequiredService<IRegistryTableFactory>();
-            _protocolFactory = container.GetRequiredService<IProtocolFactory>();
-            _proxyFactory = container.GetRequiredService<IProxyFactory>();
+            _registryTableFactory = registryTableFactory;
+            _protocolFactory = protocolFactory;
+            _proxyFactory = proxyFactory;
         }
 
         #region Implementation of IApplicationFactory
@@ -51,42 +49,59 @@ namespace RabbitCloud.Config
                         Protocol = i.Value
                     }).ToArray()
             };
-
-            var serviceEntries = new List<ServiceEntry>();
-            foreach (var serviceConfig in descriptor.Services)
+            if (descriptor.Services != null)
             {
-                var export = await Export(serviceConfig, applicationModel);
-                serviceEntries.Add(new ServiceEntry
+                var serviceCollection = new ServiceCollection();
+
+                foreach (var serviceConfig in descriptor.Services)
                 {
-                    Exporter = export,
-                    ServiceConfig = serviceConfig,
-                    Protocol = applicationModel.GetProtocol(new Uri(serviceConfig.Export).Scheme).Protocol,
-                    RegistryTable = applicationModel.GetRegistryTable(serviceConfig.Registry).RegistryTable
-                });
+                    var serviceType = Type.GetType(serviceConfig.Interface);
+                    var implementType = Type.GetType(serviceConfig.Implement);
+
+                    serviceCollection.AddSingleton(serviceType, implementType);
+                }
+
+                var serviceContainer = serviceCollection.BuildServiceProvider();
+
+                var serviceEntries = new List<ServiceEntry>();
+                foreach (var serviceConfig in descriptor.Services)
+                {
+                    var export = await Export(serviceConfig, applicationModel, type => serviceContainer.GetService(type));
+                    serviceEntries.Add(new ServiceEntry
+                    {
+                        Exporter = export,
+                        ServiceConfig = serviceConfig,
+                        Protocol = applicationModel.GetProtocol(new Uri(serviceConfig.Export).Scheme).Protocol,
+                        RegistryTable = applicationModel.GetRegistryTable(serviceConfig.Registry).RegistryTable
+                    });
+                }
+                applicationModel.ServiceEntries = serviceEntries.ToArray();
             }
 
-            var callerEntries = new List<CallerEntry>();
-            foreach (var refererConfig in descriptor.Referers)
+            if (descriptor.Referers != null)
             {
-                var caller = await Referer(refererConfig, applicationModel);
-                callerEntries.Add(new CallerEntry
+                var callerEntries = new List<CallerEntry>();
+                foreach (var refererConfig in descriptor.Referers)
                 {
-                    Caller = caller,
-                    Protocol = applicationModel.GetProtocol(refererConfig.Protocol).Protocol,
-                    RefererConfig = refererConfig,
-                    RegistryTable = applicationModel.GetRegistryTable(refererConfig.Registry).RegistryTable
-                });
-            }
+                    var caller = await Referer(refererConfig, applicationModel);
+                    callerEntries.Add(new CallerEntry
+                    {
+                        Caller = caller,
+                        Protocol = applicationModel.GetProtocol(refererConfig.Protocol).Protocol,
+                        RefererConfig = refererConfig,
+                        RegistryTable = applicationModel.GetRegistryTable(refererConfig.Registry).RegistryTable
+                    });
+                }
 
-            applicationModel.ServiceEntries = serviceEntries.ToArray();
-            applicationModel.CallerEntries = callerEntries.ToArray();
+                applicationModel.CallerEntries = callerEntries.ToArray();
+            }
 
             return applicationModel;
         }
 
         #endregion Implementation of IApplicationFactory
 
-        public async Task<IExporter> Export(ServiceConfig config, ApplicationModel applicationModel)
+        public async Task<IExporter> Export(ServiceConfig config, ApplicationModel applicationModel, Func<Type, object> instanceFactory)
         {
             var uri = new Uri(config.Export);
             var protocolName = uri.Scheme;
@@ -96,9 +111,13 @@ namespace RabbitCloud.Config
             var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
             var protocol = applicationModel.GetProtocol(protocolName).Protocol;
             var serviceType = Type.GetType(config.Interface);
+
+            if (string.IsNullOrEmpty(config.Id))
+                config.Id = serviceType.Name;
+
             var export = protocol.Export(new ExportContext
             {
-                Caller = new TypeCaller(serviceType, () => _container.GetRequiredService(serviceType)),
+                Caller = new TypeCaller(serviceType, () => instanceFactory(serviceType)),
                 EndPoint = new IPEndPoint(IPAddress.Parse(host), port),
                 ServiceKey = new ServiceKey(config.Group, config.Id, "1.0.0")
             });
@@ -119,6 +138,10 @@ namespace RabbitCloud.Config
             var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
             var protocolName = config.Protocol;
             var protocol = applicationModel.GetProtocol(protocolName).Protocol;
+
+            var serviceType = Type.GetType(config.Interface);
+            if (string.IsNullOrEmpty(config.Id))
+                config.Id = serviceType.Name;
 
             var descriptors = await registryTable.Discover(new ServiceRegistryDescriptor
             {

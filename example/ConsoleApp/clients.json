@@ -1,0 +1,27 @@
+﻿{
+  "Registrys": [
+    {
+      "Name": "default",
+      "Protocol": "Consul",
+      "Address": "http://localhost:8500/"
+    }
+  ],
+  "Protocols": [
+    {
+      "Id": "rabbit",
+      "Name": "NetMQ",
+      "Formatter": "JSON",
+      "Cluster": null,
+      "LoadBalance": null,
+      "HaStrategy": null
+    }
+  ],
+  "Referers": [
+    {
+      "Group": "user",
+      "Interface": "ConsoleApp.IUserService,ConsoleApp",
+      "Registry": "default",
+      "Protocol": "rabbit"
+    }
+  ]
+}
