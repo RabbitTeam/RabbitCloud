@@ -1,0 +1,38 @@
+﻿{
+  "Registrys": [
+    {
+      "Name": "default",
+      "Protocol": "Consul",
+      "Address": "http://localhost:8500/"
+    }
+  ],
+  "Protocols": [
+    {
+      "Id": "netmq",
+      "Name": "NetMQ",
+      "Formatter": "JSON",
+      "Cluster": null,
+      "LoadBalance": null,
+      "HaStrategy": null
+    }
+  ],
+  "Services": [
+    {
+      "Id": "userService",
+      "Group": "user",
+      "Export": "netmq://192.168.5.26:9999",
+      "Registry": "default",
+      "Interface": "ConsoleApp.IUserService,ConsoleApp",
+      "Implement": "ConsoleApp.UserService,ConsoleApp"
+    }
+  ],
+  "Referers": [
+    {
+      "Id": "userService",
+      "Group": "user",
+      "Interface": "ConsoleApp.IUserService,ConsoleApp",
+      "Registry": "default",
+      "Protocol": "netmq"
+    }
+  ]
+}

@@ -9,6 +9,8 @@
     <PackageReference Include="Consul" Version="0.7.2.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="1.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="1.1.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +21,12 @@
     <ProjectReference Include="..\..\src\rpc\RabbitCloud.Rpc.Abstractions\RabbitCloud.Rpc.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\rpc\RabbitCloud.Rpc.NetMQ\RabbitCloud.Rpc.NetMQ.csproj" />
     <ProjectReference Include="..\..\src\rpc\RabbitCloud.Rpc\RabbitCloud.Rpc.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="application.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

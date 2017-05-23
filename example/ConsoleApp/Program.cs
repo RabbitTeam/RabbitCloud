@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using RabbitCloud.Config;
 using RabbitCloud.Config.Abstractions;
 using RabbitCloud.Config.Abstractions.Adapter;
@@ -52,50 +53,11 @@ namespace ConsoleApp
                     .AddSingleton<IProtocolProvider, NetMqProtocolProvider>()
                     .AddSingleton<IFormatterProvider, JsonFormatterProvider>();
 
-                var descriptor = new ApplicationModelDescriptor
-                {
-                    Protocols = new[]
-                    {
-                        new ProtocolConfig
-                        {
-                            Id = "netmq",
-                            Name = "netmq",
-                            Formatter = "json"
-                        }
-                    },
-                    Registrys = new[]
-                    {
-                        new RegistryConfig
-                        {
-                            Address = "http://localhost:8500",
-                            Name = "consul",
-                            Protocol = "consul"
-                        }
-                    },
-                    Services = new[]
-                    {
-                        new ServiceConfig
-                        {
-                            Export = "netmq://192.168.5.26:9999",
-                            Id = "userService",
-                            Interface = typeof(IUserService).AssemblyQualifiedName,
-                            Implement = typeof(UserService).AssemblyQualifiedName,
-                            Registry = "consul",
-                            Group = "user"
-                        }
-                    },
-                    Referers = new[]
-                    {
-                        new RefererConfig
-                        {
-                            Id = "userService",
-                            Interface = typeof(IUserService).AssemblyQualifiedName,
-                            Protocol = "netmq",
-                            Registry = "consul",
-                            Group = "user"
-                        }
-                    }
-                };
+                var configuration = new ConfigurationBuilder()
+                    .AddJsonFile("application.json")
+                    .Build();
+                var descriptor = new ApplicationModelDescriptor();
+                configuration.Bind(descriptor);
 
                 foreach (var serviceConfig in descriptor.Services)
                 {

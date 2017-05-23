@@ -25,7 +25,7 @@ namespace RabbitCloud.Config.Abstractions.Adapter
 
         public IRegistryTable GetRegistryTable(RegistryConfig config)
         {
-            return _registryTables.GetOrAdd(config.Name, key => GetProvider(key).CreateRegistryTable(config));
+            return _registryTables.GetOrAdd(config.Name, key => GetProvider(config.Protocol).CreateRegistryTable(config));
         }
 
         #endregion Implementation of IRegistryTableFactory

@@ -55,7 +55,7 @@ namespace RabbitCloud.Config
             var serviceEntries = new List<ServiceEntry>();
             foreach (var serviceConfig in descriptor.Services)
             {
-                var export = await Export(serviceConfig);
+                var export = await Export(serviceConfig, applicationModel);
                 serviceEntries.Add(new ServiceEntry
                 {
                     Exporter = export,
@@ -68,7 +68,7 @@ namespace RabbitCloud.Config
             var callerEntries = new List<CallerEntry>();
             foreach (var refererConfig in descriptor.Referers)
             {
-                var caller = await Referer(refererConfig);
+                var caller = await Referer(refererConfig, applicationModel);
                 callerEntries.Add(new CallerEntry
                 {
                     Caller = caller,
@@ -86,21 +86,15 @@ namespace RabbitCloud.Config
 
         #endregion Implementation of IApplicationFactory
 
-        public async Task<IExporter> Export(ServiceConfig config)
+        public async Task<IExporter> Export(ServiceConfig config, ApplicationModel applicationModel)
         {
             var uri = new Uri(config.Export);
             var protocolName = uri.Scheme;
             var port = uri.Port;
             var host = uri.Host;
 
-            var registryTable = _registryTableFactory.GetRegistryTable(new RegistryConfig
-            {
-                Name = config.Registry
-            });
-            var protocol = _protocolFactory.GetProtocol(new ProtocolConfig
-            {
-                Name = protocolName
-            });
+            var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
+            var protocol = applicationModel.GetProtocol(protocolName).Protocol;
             var serviceType = Type.GetType(config.Interface);
             var export = protocol.Export(new ExportContext
             {
@@ -120,17 +114,11 @@ namespace RabbitCloud.Config
             return export;
         }
 
-        public async Task<ICaller> Referer(RefererConfig config)
+        public async Task<ICaller> Referer(RefererConfig config, ApplicationModel applicationModel)
         {
-            var registryTable = _registryTableFactory.GetRegistryTable(new RegistryConfig
-            {
-                Name = config.Registry
-            });
+            var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
             var protocolName = config.Protocol;
-            var protocol = _protocolFactory.GetProtocol(new ProtocolConfig
-            {
-                Name = protocolName
-            });
+            var protocol = applicationModel.GetProtocol(protocolName).Protocol;
 
             var descriptors = await registryTable.Discover(new ServiceRegistryDescriptor
             {
