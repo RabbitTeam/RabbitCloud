@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RabbitCloud.Abstractions;
 using RabbitCloud.Config.Abstractions;
-using RabbitCloud.Config.Abstractions.Adapter;
+using RabbitCloud.Config.Abstractions.Support;
 using RabbitCloud.Registry.Abstractions;
 using RabbitCloud.Rpc;
 using RabbitCloud.Rpc.Abstractions;
@@ -12,7 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Config
+namespace RabbitCloud.Config.Internal
 {
     public class DefaultApplicationFactory : IApplicationFactory
     {

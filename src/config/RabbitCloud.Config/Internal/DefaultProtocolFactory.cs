@@ -1,16 +1,14 @@
-﻿using RabbitCloud.Rpc.Abstractions;
+﻿using RabbitCloud.Config.Abstractions;
+using RabbitCloud.Config.Abstractions.Adapter;
+using RabbitCloud.Config.Abstractions.Support;
+using RabbitCloud.Rpc.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RabbitCloud.Config.Abstractions.Adapter
+namespace RabbitCloud.Config.Internal
 {
-    public interface IProtocolFactory
-    {
-        IProtocol GetProtocol(ProtocolConfig config);
-    }
-
     public class DefaultProtocolFactory : IProtocolFactory
     {
         private readonly IEnumerable<IProtocolProvider> _providers;

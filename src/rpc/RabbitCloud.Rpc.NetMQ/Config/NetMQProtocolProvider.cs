@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using RabbitCloud.Config.Abstractions;
 using RabbitCloud.Config.Abstractions.Adapter;
+using RabbitCloud.Config.Abstractions.Support;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.NetMQ.Internal;
 using System;

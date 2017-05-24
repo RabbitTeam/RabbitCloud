@@ -1,8 +1,8 @@
 ﻿using Consul;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RabbitCloud.Config;
 using RabbitCloud.Config.Abstractions;
-using RabbitCloud.Config.Abstractions.Adapter;
 using RabbitCloud.Registry.Abstractions;
 using System;
 using System.Collections.Concurrent;

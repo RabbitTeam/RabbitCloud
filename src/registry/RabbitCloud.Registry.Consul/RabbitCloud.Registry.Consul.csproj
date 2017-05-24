@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\config\RabbitCloud.Config.Abstractions\RabbitCloud.Config.Abstractions.csproj" />
+    <ProjectReference Include="..\..\config\RabbitCloud.Config\RabbitCloud.Config.csproj" />
     <ProjectReference Include="..\RabbitCloud.Registry.Abstractions\RabbitCloud.Registry.Abstractions.csproj" />
   </ItemGroup>
 

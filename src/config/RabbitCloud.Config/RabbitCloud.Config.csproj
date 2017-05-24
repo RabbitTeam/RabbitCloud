@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.5</TargetFramework>
+    <TargetFramework>netstandard1.4</TargetFramework>
   </PropertyGroup>
   
   <ItemGroup>
@@ -11,10 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\registry\RabbitCloud.Registry.Abstractions\RabbitCloud.Registry.Abstractions.csproj" />
-    <ProjectReference Include="..\..\registry\RabbitCloud.Registry.Consul\RabbitCloud.Registry.Consul.csproj" />
-    <ProjectReference Include="..\..\rpc\formatters\RabbitCloud.Rpc.Formatters.Json\RabbitCloud.Rpc.Formatters.Json.csproj" />
     <ProjectReference Include="..\..\rpc\RabbitCloud.Rpc.Abstractions\RabbitCloud.Rpc.Abstractions.csproj" />
-    <ProjectReference Include="..\..\rpc\RabbitCloud.Rpc.NetMQ\RabbitCloud.Rpc.NetMQ.csproj" />
     <ProjectReference Include="..\..\rpc\RabbitCloud.Rpc\RabbitCloud.Rpc.csproj" />
     <ProjectReference Include="..\RabbitCloud.Config.Abstractions\RabbitCloud.Config.Abstractions.csproj" />
   </ItemGroup>

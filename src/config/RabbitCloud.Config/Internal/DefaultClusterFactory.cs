@@ -1,4 +1,4 @@
-﻿using RabbitCloud.Config.Abstractions.Adapter;
+﻿using RabbitCloud.Config.Abstractions.Support;
 using RabbitCloud.Rpc.Abstractions.Cluster;
 using RabbitCloud.Rpc.Cluster;
 using RabbitCloud.Rpc.Cluster.HA;
@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RabbitCloud.Config
+namespace RabbitCloud.Config.Internal
 {
     public class DefaultClusterFactory : IClusterFactory
     {

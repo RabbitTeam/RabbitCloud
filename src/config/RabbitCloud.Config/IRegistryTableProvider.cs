@@ -1,6 +1,7 @@
-﻿using RabbitCloud.Registry.Abstractions;
+﻿using RabbitCloud.Config.Abstractions;
+using RabbitCloud.Registry.Abstractions;
 
-namespace RabbitCloud.Config.Abstractions.Adapter
+namespace RabbitCloud.Config
 {
     public interface IRegistryTableProvider
     {

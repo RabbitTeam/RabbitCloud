@@ -1,18 +1,13 @@
-﻿using RabbitCloud.Rpc.Abstractions.Formatter;
+﻿using RabbitCloud.Config.Abstractions.Adapter;
+using RabbitCloud.Config.Abstractions.Support;
+using RabbitCloud.Rpc.Abstractions.Formatter;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RabbitCloud.Config.Abstractions.Adapter
+namespace RabbitCloud.Config.Internal
 {
-    public interface IFormatterFactory
-    {
-        IRequestFormatter GetRequestFormatter(string name);
-
-        IResponseFormatter GetResponseFormatter(string name);
-    }
-
     public class DefaultFormatterFactory : IFormatterFactory
     {
         private readonly ConcurrentDictionary<string, IRequestFormatter> _requestFormatters = new ConcurrentDictionary<string, IRequestFormatter>();

@@ -1,16 +1,13 @@
-﻿using RabbitCloud.Registry.Abstractions;
+﻿using RabbitCloud.Config.Abstractions;
+using RabbitCloud.Config.Abstractions.Support;
+using RabbitCloud.Registry.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RabbitCloud.Config.Abstractions.Adapter
+namespace RabbitCloud.Config.Internal
 {
-    public interface IRegistryTableFactory
-    {
-        IRegistryTable GetRegistryTable(RegistryConfig config);
-    }
-
     public class DefaultRegistryTableFactory : IRegistryTableFactory
     {
         private readonly IEnumerable<IRegistryTableProvider> _providers;
