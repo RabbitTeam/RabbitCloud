@@ -18,5 +18,20 @@
         /// 注册中心。
         /// </summary>
         public string Registry { get; set; }
+
+        /// <summary>
+        /// 采用的集群策略。
+        /// </summary>
+        public string Cluster { get; set; }
+
+        /// <summary>
+        /// 采用的负载均衡策略。
+        /// </summary>
+        public string LoadBalance { get; set; }
+
+        /// <summary>
+        /// 采用的高可用策略。
+        /// </summary>
+        public string HaStrategy { get; set; }
     }
 }

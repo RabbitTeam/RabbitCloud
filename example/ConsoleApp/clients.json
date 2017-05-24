@@ -10,10 +10,7 @@
     {
       "Id": "rabbit",
       "Name": "NetMQ",
-      "Formatter": "JSON",
-      "Cluster": "Default",
-      "LoadBalance": "Random",
-      "HaStrategy": "Failover"
+      "Formatter": "JSON"
     }
   ],
   "Referers": [
@@ -21,7 +18,10 @@
       "Group": "user",
       "Interface": "ConsoleApp.IUserService,ConsoleApp",
       "Registry": "default",
-      "Protocol": "rabbit"
+      "Protocol": "rabbit",
+      "Cluster": "Default",
+      "LoadBalance": "Random",
+      "HaStrategy": "Failover"
     }
   ]
 }

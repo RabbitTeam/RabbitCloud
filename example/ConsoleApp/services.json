@@ -10,10 +10,7 @@
     {
       "Id": "rabbit",
       "Name": "NetMQ",
-      "Formatter": "JSON",
-      "Cluster": null,
-      "LoadBalance": null,
-      "HaStrategy": null
+      "Formatter": "JSON"
     }
   ],
   "Services": [

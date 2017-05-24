@@ -158,7 +158,6 @@ namespace RabbitCloud.Config
             var protocolName = config.Protocol;
             var protocolEntry = applicationModel.GetProtocol(protocolName);
             var protocol = protocolEntry.Protocol;
-            var protocolConfig = protocolEntry.ProtocolConfig;
 
             var serviceType = Type.GetType(config.Interface);
             if (string.IsNullOrEmpty(config.Id))
@@ -180,8 +179,7 @@ namespace RabbitCloud.Config
                 refers.Add(refer);
             }
 
-            var cluster = _clusterFactory.CreateCluster(protocolConfig.Cluster, protocolConfig.LoadBalance,
-                protocolConfig.HaStrategy);
+            var cluster = _clusterFactory.CreateCluster(config.Cluster, config.LoadBalance, config.HaStrategy);
             cluster.LoadBalance.Callers = refers;
 
             return cluster;
