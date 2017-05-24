@@ -87,12 +87,13 @@ namespace RabbitCloud.Config
             var serviceEntries = new List<ServiceEntry>();
             foreach (var serviceConfig in descriptor.Services)
             {
-                var export = await Export(serviceConfig, applicationModel, type => serviceContainer.GetService(type));
+                var exportItem = ResolveExport(serviceConfig.Export);
+                var export = await Export(serviceConfig, exportItem, applicationModel, type => serviceContainer.GetService(type));
                 serviceEntries.Add(new ServiceEntry
                 {
                     Exporter = export,
                     ServiceConfig = serviceConfig,
-                    Protocol = applicationModel.GetProtocol(new Uri(serviceConfig.Export).Scheme).Protocol,
+                    Protocol = applicationModel.GetProtocol(exportItem.protocol).Protocol,
                     RegistryTable = applicationModel.GetRegistryTable(serviceConfig.Registry).RegistryTable
                 });
             }
@@ -120,12 +121,11 @@ namespace RabbitCloud.Config
             applicationModel.CallerEntries = callerEntries.ToArray();
         }
 
-        private static async Task<IExporter> Export(ServiceConfig config, ApplicationModel applicationModel, Func<Type, object> instanceFactory)
+        private static async Task<IExporter> Export(ServiceConfig config, (string protocol, string host, int port) exportItem, ApplicationModel applicationModel, Func<Type, object> instanceFactory)
         {
-            var uri = new Uri(config.Export);
-            var protocolName = uri.Scheme;
-            var port = uri.Port;
-            var host = uri.Host;
+            var protocolName = exportItem.protocol;
+            var port = exportItem.port;
+            var host = exportItem.host;
 
             var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
             var protocol = applicationModel.GetProtocol(protocolName).Protocol;
@@ -183,6 +183,16 @@ namespace RabbitCloud.Config
             cluster.LoadBalance.Callers = refers;
 
             return cluster;
+        }
+
+        private static (string protocol, string host, int port) ResolveExport(string export)
+        {
+            if (Uri.TryCreate(export, UriKind.Absolute, out Uri uri))
+            {
+                return (uri.Scheme, uri.Host, uri.Port);
+            }
+            var temp = export.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+            return temp.Length != 3 ? (null, null, 0) : (temp[0], temp[1].TrimStart('/'), int.Parse(temp[2]));
         }
 
         #endregion Private Method
