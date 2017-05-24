@@ -1,4 +1,6 @@
-﻿using RabbitCloud.Rpc.Abstractions.Cluster;
+﻿using RabbitCloud.Rpc.Abstractions;
+using RabbitCloud.Rpc.Abstractions.Cluster;
+using System.Collections.Generic;
 
 namespace RabbitCloud.Config
 {
@@ -6,6 +8,6 @@ namespace RabbitCloud.Config
     {
         string Name { get; }
 
-        ICluster CreateCluster();
+        ICluster CreateCluster(IEnumerable<ICaller> callers, ILoadBalance loadBalance, IHaStrategy haStrategy);
     }
 }

@@ -11,7 +11,7 @@ namespace RabbitCloud.Rpc
         {
             return services
                 .AddSingleton<IRequestIdGenerator, DefaultRequestIdGenerator>()
-                .AddScoped<IProxyFactory, ProxyFactory>();
+                .AddSingleton<IProxyFactory, ProxyFactory>();
         }
     }
 }

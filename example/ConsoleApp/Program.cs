@@ -39,7 +39,9 @@ namespace ConsoleApp
 
         private static async Task RunServer()
         {
-            await CreateApplication("services.json");
+            var applicationModel = await CreateApplication("services.json");
+            Console.ReadLine();
+            applicationModel.Dispose();
         }
 
         private static async Task RunClient()
@@ -47,15 +49,16 @@ namespace ConsoleApp
             var applicationModel = await CreateApplication("clients.json");
             //从模型中引用 IUserService 服务
             var userService = applicationModel.Referer<IUserService>();
-            while (true)
+            do
             {
                 //执行调用
                 Console.WriteLine(userService.GetName(1));
-                Console.ReadLine();
-            }
+            } while (Console.ReadLine() != "exit");
+
+            applicationModel.Dispose();
         }
 
-        private static async Task<ApplicationModel> CreateApplication(string configFile)
+        private static async Task<IApplicationModel> CreateApplication(string configFile)
         {
             #region service registry
 

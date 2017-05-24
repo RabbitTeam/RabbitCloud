@@ -31,7 +31,7 @@ namespace RabbitCloud.Config.Internal
 
         #region Implementation of IApplicationFactory
 
-        public async Task<ApplicationModel> CreateApplicationAsync(ApplicationModelDescriptor descriptor)
+        public async Task<IApplicationModel> CreateApplicationAsync(ApplicationModelDescriptor descriptor)
         {
             var applicationModel = new ApplicationModel(_proxyFactory);
 
@@ -179,8 +179,7 @@ namespace RabbitCloud.Config.Internal
                 refers.Add(refer);
             }
 
-            var cluster = _clusterFactory.CreateCluster(config.Cluster, config.LoadBalance, config.HaStrategy);
-            cluster.LoadBalance.Callers = refers;
+            var cluster = _clusterFactory.CreateCluster(refers, config.Cluster, config.LoadBalance, config.HaStrategy);
 
             return cluster;
         }

@@ -1,81 +1,113 @@
 ﻿using RabbitCloud.Registry.Abstractions;
 using RabbitCloud.Rpc.Abstractions;
-using RabbitCloud.Rpc.Abstractions.Proxy;
 using System;
 using System.Linq;
 
 namespace RabbitCloud.Config.Abstractions
 {
-    public class CallerEntry
+    public class CallerEntry : IDisposable
     {
         public RefererConfig RefererConfig { get; set; }
         public IProtocol Protocol { get; set; }
         public IRegistryTable RegistryTable { get; set; }
         public ICaller Caller { get; set; }
+
+        #region IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            (Caller as IDisposable)?.Dispose();
+        }
+
+        #endregion IDisposable
     }
 
-    public class ServiceEntry
+    public class ServiceEntry : IDisposable
     {
         public ServiceConfig ServiceConfig { get; set; }
         public IProtocol Protocol { get; set; }
         public IRegistryTable RegistryTable { get; set; }
         public IExporter Exporter { get; set; }
+
+        #region IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            (Exporter as IDisposable)?.Dispose();
+        }
+
+        #endregion IDisposable
     }
 
-    public class ProtocolEntry
+    public class ProtocolEntry : IDisposable
     {
         public ProtocolConfig ProtocolConfig { get; set; }
         public IProtocol Protocol { get; set; }
+
+        #region IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            Protocol?.Dispose();
+        }
+
+        #endregion IDisposable
     }
 
-    public class RegistryTableEntry
+    public class RegistryTableEntry : IDisposable
     {
         public RegistryConfig RegistryConfig { get; set; }
         public IRegistryTable RegistryTable { get; set; }
+
+        #region IDisposable
+
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            (RegistryTable as IDisposable)?.Dispose();
+        }
+
+        #endregion IDisposable
     }
 
-    public class ApplicationModel
+    public interface IApplicationModel : IDisposable
     {
-        private readonly IProxyFactory _proxyFactory;
+        ProtocolEntry[] Protocols { get; }
+        RegistryTableEntry[] RegistryTables { get; }
+        CallerEntry[] CallerEntries { get; }
+        ServiceEntry[] ServiceEntries { get; }
 
-        public ApplicationModel(IProxyFactory proxyFactory)
+        T Referer<T>(string id);
+    }
+
+    public static class ApplicationModelExtensions
+    {
+        public static CallerEntry GetCallerEntry(this IApplicationModel model, string id)
         {
-            _proxyFactory = proxyFactory;
+            return model.CallerEntries.SingleOrDefault(i => string.Equals(i.RefererConfig.Id, id, StringComparison.OrdinalIgnoreCase));
         }
 
-        public ProtocolEntry[] Protocols { get; set; }
-        public RegistryTableEntry[] RegistryTables { get; set; }
-        public CallerEntry[] CallerEntries { get; set; }
-        public ServiceEntry[] ServiceEntries { get; set; }
-
-        public CallerEntry GetCallerEntry(string id)
+        public static ServiceEntry GetServiceEntry(this IApplicationModel model, string id)
         {
-            return CallerEntries.SingleOrDefault(i => string.Equals(i.RefererConfig.Id, id, StringComparison.OrdinalIgnoreCase));
+            return model.ServiceEntries.SingleOrDefault(i => string.Equals(i.ServiceConfig.Id, id, StringComparison.OrdinalIgnoreCase));
         }
 
-        public ServiceEntry GetServiceEntry(string id)
+        public static ProtocolEntry GetProtocol(this IApplicationModel model, string id)
         {
-            return ServiceEntries.SingleOrDefault(i => string.Equals(i.ServiceConfig.Id, id, StringComparison.OrdinalIgnoreCase));
+            return model.Protocols.SingleOrDefault(i => string.Equals(i.ProtocolConfig.Id, id, StringComparison.OrdinalIgnoreCase));
         }
 
-        public ProtocolEntry GetProtocol(string id)
+        public static RegistryTableEntry GetRegistryTable(this IApplicationModel model, string name)
         {
-            return Protocols.SingleOrDefault(i => string.Equals(i.ProtocolConfig.Id, id, StringComparison.OrdinalIgnoreCase));
+            return model.RegistryTables.SingleOrDefault(i => string.Equals(i.RegistryConfig.Name, name, StringComparison.OrdinalIgnoreCase));
         }
 
-        public RegistryTableEntry GetRegistryTable(string name)
+        public static T Referer<T>(this IApplicationModel model)
         {
-            return RegistryTables.SingleOrDefault(i => string.Equals(i.RegistryConfig.Name, name, StringComparison.OrdinalIgnoreCase));
-        }
-
-        public T Referer<T>(string id)
-        {
-            return _proxyFactory.GetProxy<T>(GetCallerEntry(id).Caller);
-        }
-
-        public T Referer<T>()
-        {
-            return Referer<T>(typeof(T).Name);
+            return model.Referer<T>(typeof(T).Name);
         }
     }
 

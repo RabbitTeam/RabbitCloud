@@ -1,9 +1,10 @@
 ﻿using RabbitCloud.Abstractions;
+using System;
 using System.Net;
 
 namespace RabbitCloud.Rpc.Abstractions
 {
-    public interface IProtocol
+    public interface IProtocol : IDisposable
     {
         IExporter Export(ExportContext context);
 

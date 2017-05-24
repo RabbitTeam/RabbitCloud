@@ -18,6 +18,8 @@ namespace RabbitCloud.Rpc.NetMQ
         private readonly IRequestFormatter _requestFormatter;
         private readonly IResponseFormatter _responseFormatter;
         private readonly ConcurrentDictionary<long, TaskCompletionSource<IResponse>> _taskCompletionSources = new ConcurrentDictionary<long, TaskCompletionSource<IResponse>>();
+
+        //由 NetMqPoller 进行释放
         private readonly DealerSocket _dealerSocket;
 
         #endregion Field
@@ -72,7 +74,6 @@ namespace RabbitCloud.Rpc.NetMQ
         /// </summary>
         protected override void DoDispose()
         {
-            _dealerSocket?.Dispose();
             foreach (var taskCompletionSource in _taskCompletionSources)
                 taskCompletionSource.Value.TrySetCanceled();
             _taskCompletionSources.Clear();

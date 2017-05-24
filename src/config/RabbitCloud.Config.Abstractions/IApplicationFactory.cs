@@ -4,6 +4,6 @@ namespace RabbitCloud.Config.Abstractions
 {
     public interface IApplicationFactory
     {
-        Task<ApplicationModel> CreateApplicationAsync(ApplicationModelDescriptor descriptor);
+        Task<IApplicationModel> CreateApplicationAsync(ApplicationModelDescriptor descriptor);
     }
 }

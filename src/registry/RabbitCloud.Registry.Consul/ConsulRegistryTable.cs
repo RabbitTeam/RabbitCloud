@@ -198,9 +198,9 @@ namespace RabbitCloud.Registry.Consul
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            _consulClient?.Dispose();
-            _heartbeatManager?.Dispose();
             _cancellationTokenSource?.Dispose();
+            _heartbeatManager?.Dispose();
+            _consulClient?.Dispose();
         }
 
         #endregion IDisposable

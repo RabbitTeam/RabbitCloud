@@ -1,4 +1,6 @@
-﻿using RabbitCloud.Config.Abstractions.Support;
+﻿using Microsoft.Extensions.Logging;
+using RabbitCloud.Config.Abstractions.Support;
+using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Cluster;
 using RabbitCloud.Rpc.Cluster;
 using RabbitCloud.Rpc.Cluster.HA;
@@ -24,7 +26,7 @@ namespace RabbitCloud.Config.Internal
 
         #region Implementation of IClusterFactory
 
-        public ICluster CreateCluster(string clusterName, string loadBalanceName, string haStrategyName)
+        public ICluster CreateCluster(IEnumerable<ICaller> callers, string clusterName, string loadBalanceName, string haStrategyName)
         {
             var clusterProvider =
                 _clusterProviders.SingleOrDefault(
@@ -36,9 +38,9 @@ namespace RabbitCloud.Config.Internal
                 _haStrategyProviders.SingleOrDefault(
                     i => string.Equals(i.Name, haStrategyName, StringComparison.OrdinalIgnoreCase));
 
-            var cluster = clusterProvider.CreateCluster();
-            cluster.LoadBalance = loadBalanceProvider.CreateLoadBalance();
-            cluster.HaStrategy = haStrategyProvider.CreateHaStrategy();
+            var loadBalance = loadBalanceProvider.CreateLoadBalance();
+            var haStrategy = haStrategyProvider.CreateHaStrategy();
+            var cluster = clusterProvider.CreateCluster(callers, loadBalance, haStrategy);
 
             return cluster;
         }
@@ -48,13 +50,20 @@ namespace RabbitCloud.Config.Internal
 
     public class DefaultClusterProvider : IClusterProvider
     {
+        private readonly ILogger<DefaultCluster> _logger;
+
+        public DefaultClusterProvider(ILogger<DefaultCluster> logger)
+        {
+            _logger = logger;
+        }
+
         #region Implementation of IClusterProvider
 
         public string Name { get; } = "Default";
 
-        public ICluster CreateCluster()
+        public ICluster CreateCluster(IEnumerable<ICaller> callers, ILoadBalance loadBalance, IHaStrategy haStrategy)
         {
-            return new DefaultCluster();
+            return new DefaultCluster(callers, loadBalance, haStrategy, _logger);
         }
 
         #endregion Implementation of IClusterProvider

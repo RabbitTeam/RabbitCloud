@@ -1,5 +1,4 @@
 ﻿using Consul;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RabbitCloud.Config;
 using RabbitCloud.Config.Abstractions;
@@ -11,12 +10,12 @@ namespace RabbitCloud.Registry.Consul.Config
 {
     public class ConsulRegistryTableProvider : IRegistryTableProvider
     {
-        private readonly IServiceProvider _container;
+        private readonly ILogger<ConsulRegistryTable> _consulRegistryTableLogger;
         private readonly ConcurrentDictionary<string, ConsulClient> _consulClients = new ConcurrentDictionary<string, ConsulClient>();
 
-        public ConsulRegistryTableProvider(IServiceProvider container)
+        public ConsulRegistryTableProvider(ILogger<ConsulRegistryTable> consulRegistryTableLogger)
         {
-            _container = container;
+            _consulRegistryTableLogger = consulRegistryTableLogger;
         }
 
         #region Implementation of IRegistryTableProvider
@@ -32,8 +31,8 @@ namespace RabbitCloud.Registry.Consul.Config
                     options.Address = new Uri(config.Address);
                 });
             });
-
-            return new ConsulRegistryTable(consulClient, new HeartbeatManager(consulClient), _container.GetRequiredService<ILogger<ConsulRegistryTable>>());
+            var heartbeatManager = new HeartbeatManager(consulClient);
+            return new ConsulRegistryTable(consulClient, heartbeatManager, _consulRegistryTableLogger);
         }
 
         #endregion Implementation of IRegistryTableProvider

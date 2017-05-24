@@ -8,7 +8,7 @@ using System.Net;
 
 namespace RabbitCloud.Rpc.NetMQ.Internal
 {
-    public interface IRouterSocketFactory : IDisposable
+    public interface IRouterSocketFactory
     {
         RouterSocket OpenSocket<T>(string protocol, IPEndPoint ipEndPoint, Action<T> handler) where T : NetMQSocket;
     }
@@ -56,26 +56,6 @@ namespace RabbitCloud.Rpc.NetMQ.Internal
         }
 
         #endregion Implementation of IResponseSocketFactory
-
-        #region IDisposable
-
-        public void Dispose()
-        {
-            foreach (var value in _routerSockets.Values)
-            {
-                try
-                {
-                    value.Value.Dispose();
-                }
-                catch (Exception exception)
-                {
-                    _logger.LogError(0, exception, $"Dispose '{value.Value.Options.LastEndpoint}' throw exception.");
-                }
-            }
-            _routerSockets.Clear();
-        }
-
-        #endregion IDisposable
     }
 
     public static class RouterSocketFactoryExtensions

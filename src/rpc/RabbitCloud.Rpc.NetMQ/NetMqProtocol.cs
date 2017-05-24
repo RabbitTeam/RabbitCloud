@@ -10,7 +10,7 @@ using System.Net;
 
 namespace RabbitCloud.Rpc.NetMQ
 {
-    public class NetMqProtocol : IProtocol, IDisposable
+    public class NetMqProtocol : IProtocol
     {
         private readonly ConcurrentDictionary<string, Lazy<IExporter>> _exporters = new ConcurrentDictionary<string, Lazy<IExporter>>();
         private readonly IRouterSocketFactory _responseSocketFactory;
@@ -52,8 +52,6 @@ namespace RabbitCloud.Rpc.NetMQ
 
         #region Private Method
 
-        #region Private Method
-
         private async void ReceiveReady(RouterSocket socket)
         {
             //读取来自客户端的消息
@@ -83,8 +81,6 @@ namespace RabbitCloud.Rpc.NetMQ
             //发送响应消息
             socket.SendMultipartMessage(responseMessage);
         }
-
-        #endregion Private Method
 
         private static string GetProtocolKey(ProtocolContext context)
         {
@@ -122,8 +118,9 @@ namespace RabbitCloud.Rpc.NetMQ
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            _exporters.Clear();
-            _responseSocketFactory?.Dispose();
+            foreach (var exporter in _exporters.Values)
+                (exporter.Value as IDisposable)?.Dispose();
+
             _netMqPollerHolder?.Dispose();
         }
 
