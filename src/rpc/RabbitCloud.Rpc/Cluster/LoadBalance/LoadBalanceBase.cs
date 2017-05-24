@@ -11,14 +11,16 @@ namespace RabbitCloud.Rpc.Cluster.LoadBalance
     {
         #region Implementation of ILoadBalance
 
-        public ICaller Select(IEnumerable<ICaller> callers, IRequest request)
+        public IEnumerable<ICaller> Callers { get; set; }
+
+        public ICaller Select(IRequest request)
         {
-            if (callers == null)
-                throw new ArgumentNullException(nameof(callers));
+            if (Callers == null)
+                throw new ArgumentNullException(nameof(Callers));
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var callerArray = callers.ToArray();
+            var callerArray = Callers.ToArray();
 
             var caller = callerArray.Length > 1 ? DoSelect(callerArray, request) : callerArray.FirstOrDefault(i => i.IsAvailable);
 

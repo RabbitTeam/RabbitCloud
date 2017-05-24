@@ -5,7 +5,6 @@ using RabbitCloud.Abstractions.Logging;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Cluster;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,12 +12,10 @@ namespace RabbitCloud.Rpc.Cluster.HA
 {
     public class FailoverHaStrategy : IHaStrategy
     {
-        private readonly IEnumerable<ICaller> _callers;
         private readonly ILogger<FailoverHaStrategy> _logger;
 
-        public FailoverHaStrategy(IEnumerable<ICaller> callers, ILogger<FailoverHaStrategy> logger = null)
+        public FailoverHaStrategy(ILogger<FailoverHaStrategy> logger = null)
         {
-            _callers = callers;
             _logger = logger ?? NullLogger<FailoverHaStrategy>.Instance;
         }
 
@@ -26,7 +23,7 @@ namespace RabbitCloud.Rpc.Cluster.HA
 
         public async Task<IResponse> CallAsync(IRequest request, ILoadBalance loadBalance)
         {
-            var count = _callers.Count();
+            var count = loadBalance.Callers.Count();
 
             if (count == 0)
                 throw new RabbitServiceException($"FailoverHaStrategy No referers for request:{request}, loadbalance:{loadBalance}");
@@ -36,7 +33,7 @@ namespace RabbitCloud.Rpc.Cluster.HA
             //todo:添加重试机制
             for (var i = 0; i < count; i++)
             {
-                var caller = loadBalance.Select(_callers, request);
+                var caller = loadBalance.Select(request);
                 try
                 {
                     return await caller.CallAsync(request);

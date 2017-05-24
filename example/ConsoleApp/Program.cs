@@ -95,6 +95,14 @@ namespace ConsoleApp
                 .AddSingleton<IProtocolProvider, NetMqProtocolProvider>()
                 .AddSingleton<IFormatterProvider, JsonFormatterProvider>();
 
+            services
+                .AddSingleton<IClusterFactory, DefaultClusterFactory>()
+                .AddSingleton<IClusterProvider, DefaultClusterProvider>()
+                .AddSingleton<ILoadBalanceProvider, RandomLoadBalanceProvider>()
+                .AddSingleton<ILoadBalanceProvider, RoundRobinLoadBalanceProvider>()
+                .AddSingleton<IHaStrategyProvider, FailfastHaStrategyProvider>()
+                .AddSingleton<IHaStrategyProvider, FailoverHaStrategyProvider>();
+
             var serviceProvider = services.BuildServiceProvider();
 
             #endregion service registry

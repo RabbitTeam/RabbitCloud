@@ -6,9 +6,6 @@ using RabbitCloud.Registry.Abstractions;
 using RabbitCloud.Rpc;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Proxy;
-using RabbitCloud.Rpc.Cluster;
-using RabbitCloud.Rpc.Cluster.HA;
-using RabbitCloud.Rpc.Cluster.LoadBalance;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,12 +19,14 @@ namespace RabbitCloud.Config
         private readonly IRegistryTableFactory _registryTableFactory;
         private readonly IProtocolFactory _protocolFactory;
         private readonly IProxyFactory _proxyFactory;
+        private readonly IClusterFactory _clusterFactory;
 
-        public DefaultApplicationFactory(IRegistryTableFactory registryTableFactory, IProtocolFactory protocolFactory, IProxyFactory proxyFactory)
+        public DefaultApplicationFactory(IRegistryTableFactory registryTableFactory, IProtocolFactory protocolFactory, IProxyFactory proxyFactory, IClusterFactory clusterFactory)
         {
             _registryTableFactory = registryTableFactory;
             _protocolFactory = protocolFactory;
             _proxyFactory = proxyFactory;
+            _clusterFactory = clusterFactory;
         }
 
         #region Implementation of IApplicationFactory
@@ -100,7 +99,7 @@ namespace RabbitCloud.Config
             applicationModel.ServiceEntries = serviceEntries.ToArray();
         }
 
-        private static async Task HandleCallerEntries(ApplicationModel applicationModel, ApplicationModelDescriptor descriptor)
+        private async Task HandleCallerEntries(ApplicationModel applicationModel, ApplicationModelDescriptor descriptor)
         {
             if (descriptor.Referers == null)
                 return;
@@ -153,11 +152,13 @@ namespace RabbitCloud.Config
             return export;
         }
 
-        private static async Task<ICaller> Referer(RefererConfig config, ApplicationModel applicationModel)
+        private async Task<ICaller> Referer(RefererConfig config, ApplicationModel applicationModel)
         {
             var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
             var protocolName = config.Protocol;
-            var protocol = applicationModel.GetProtocol(protocolName).Protocol;
+            var protocolEntry = applicationModel.GetProtocol(protocolName);
+            var protocol = protocolEntry.Protocol;
+            var protocolConfig = protocolEntry.ProtocolConfig;
 
             var serviceType = Type.GetType(config.Interface);
             if (string.IsNullOrEmpty(config.Id))
@@ -179,11 +180,11 @@ namespace RabbitCloud.Config
                 refers.Add(refer);
             }
 
-            return new DefaultCluster
-            {
-                HaStrategy = new FailfastHaStrategy(refers),
-                LoadBalance = new RoundRobinLoadBalance()
-            };
+            var cluster = _clusterFactory.CreateCluster(protocolConfig.Cluster, protocolConfig.LoadBalance,
+                protocolConfig.HaStrategy);
+            cluster.LoadBalance.Callers = refers;
+
+            return cluster;
         }
 
         #endregion Private Method
