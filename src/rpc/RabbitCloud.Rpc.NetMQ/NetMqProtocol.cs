@@ -1,6 +1,8 @@
-﻿using NetMQ;
+﻿using Microsoft.Extensions.Logging;
+using NetMQ;
 using NetMQ.Sockets;
 using RabbitCloud.Abstractions;
+using RabbitCloud.Abstractions.Exceptions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
 using RabbitCloud.Rpc.NetMQ.Internal;
@@ -17,13 +19,15 @@ namespace RabbitCloud.Rpc.NetMQ
         private readonly IRequestFormatter _requestFormatter;
         private readonly IResponseFormatter _responseFormatter;
         private readonly NetMqPollerHolder _netMqPollerHolder;
+        private readonly ILogger<NetMqProtocol> _logger;
 
-        public NetMqProtocol(IRouterSocketFactory responseSocketFactory, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder)
+        public NetMqProtocol(IRouterSocketFactory responseSocketFactory, IRequestFormatter requestFormatter, IResponseFormatter responseFormatter, NetMqPollerHolder netMqPollerHolder, ILogger<NetMqProtocol> logger)
         {
             _responseSocketFactory = responseSocketFactory;
             _requestFormatter = requestFormatter;
             _responseFormatter = responseFormatter;
             _netMqPollerHolder = netMqPollerHolder;
+            _logger = logger;
         }
 
         #region Implementation of IProtocol
@@ -55,31 +59,42 @@ namespace RabbitCloud.Rpc.NetMQ
         private async void ReceiveReady(RouterSocket socket)
         {
             //读取来自客户端的消息
-            var requestMessage = socket.ReceiveMultipartMessage();
+            var message = socket.ReceiveMultipartMessage();
 
             //得到客户端消息主题
-            var data = requestMessage.Last.Buffer;
+            var data = message.Last.Buffer;
             //得到客户端请求
             var request = _requestFormatter.InputFormatter.Format(data);
 
+            IResponse response;
             var protocolKey = GetProtocolKey(socket, request);
-            _exporters.TryGetValue(protocolKey, out Lazy<IExporter> exporterLazy);
-            var caller = exporterLazy.Value.Export();
-
-            //执行调用
-            var response = await caller.CallAsync(request);
+            if (!_exporters.TryGetValue(protocolKey, out Lazy<IExporter> exporterLazy))
+            {
+                response = new Response(request)
+                {
+                    Exception = new RabbitServiceException($"can not get exporter protocolKey: '{protocolKey}',requestId: {request.RequestId}")
+                };
+                _logger.LogError($"can not get exporter protocolKey: '{protocolKey}',requestId: {request.RequestId}");
+            }
+            else
+            {
+                var caller = exporterLazy.Value.Export();
+                //执行调用
+                response = await caller.CallAsync(request);
+            }
 
             //格式化响应消息
             data = _responseFormatter.OutputFormatter.Format(response);
 
+            var identity = message.First;
             //构建响应消息
-            var responseMessage = new NetMQMessage();
-            responseMessage.Append(requestMessage.First);
-            responseMessage.AppendEmptyFrame();
-            responseMessage.Append(data);
+            message.Clear();
+            message.Append(identity);
+            message.AppendEmptyFrame();
+            message.Append(data);
 
             //发送响应消息
-            socket.SendMultipartMessage(responseMessage);
+            socket.SendMultipartMessage(message);
         }
 
         private static string GetProtocolKey(ProtocolContext context)

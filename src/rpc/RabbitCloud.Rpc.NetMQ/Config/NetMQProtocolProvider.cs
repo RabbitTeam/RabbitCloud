@@ -11,11 +11,13 @@ namespace RabbitCloud.Rpc.NetMQ.Config
     {
         private readonly IFormatterFactory _formatterFactory;
         private readonly ILogger<RouterSocketFactory> _routerSocketFactoryLogger;
+        private readonly ILogger<NetMqProtocol> _netMqProtocolLogger;
 
-        public NetMqProtocolProvider(IFormatterFactory formatterFactory, ILogger<RouterSocketFactory> routerSocketFactoryLogger)
+        public NetMqProtocolProvider(IFormatterFactory formatterFactory, ILogger<RouterSocketFactory> routerSocketFactoryLogger, ILogger<NetMqProtocol> netMqProtocolLogger)
         {
             _formatterFactory = formatterFactory;
             _routerSocketFactoryLogger = routerSocketFactoryLogger;
+            _netMqProtocolLogger = netMqProtocolLogger;
         }
 
         #region Implementation of IProtocolProvider
@@ -30,7 +32,7 @@ namespace RabbitCloud.Rpc.NetMQ.Config
             var netMqPollerHolder = new NetMqPollerHolder();
             var routerSocketFactory = new RouterSocketFactory(netMqPollerHolder, _routerSocketFactoryLogger);
 
-            return new NetMqProtocol(routerSocketFactory, requestFormatter, responseFormatter, netMqPollerHolder);
+            return new NetMqProtocol(routerSocketFactory, requestFormatter, responseFormatter, netMqPollerHolder, _netMqProtocolLogger);
         }
 
         #endregion Implementation of IProtocolProvider

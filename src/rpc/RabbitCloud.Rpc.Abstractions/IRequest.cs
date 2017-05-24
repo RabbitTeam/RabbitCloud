@@ -1,5 +1,6 @@
 ﻿using RabbitCloud.Abstractions;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace RabbitCloud.Rpc.Abstractions
 {
@@ -36,7 +37,7 @@ namespace RabbitCloud.Rpc.Abstractions
 
     public class Request : IRequest
     {
-        private readonly Dictionary<string, string> _attachments;
+        private Dictionary<string, string> _attachments;
 
         public Request(Dictionary<string, string> attachments = null)
         {
@@ -63,7 +64,11 @@ namespace RabbitCloud.Rpc.Abstractions
         /// <summary>
         /// 请求选项。
         /// </summary>
-        public IReadOnlyDictionary<string, string> Attachments => _attachments;
+        public IReadOnlyDictionary<string, string> Attachments
+        {
+            get => _attachments;
+            set { _attachments = value.ToDictionary(i => i.Key, i => i.Value); }
+        }
 
         /// <summary>
         /// 设置选项。
