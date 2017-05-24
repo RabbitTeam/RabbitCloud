@@ -163,25 +163,28 @@ namespace RabbitCloud.Config.Internal
             if (string.IsNullOrEmpty(config.Id))
                 config.Id = serviceType.Name;
 
-            var descriptors = await registryTable.Discover(new ServiceRegistryDescriptor
+            var serviceKey = new ServiceKey(config.Group, config.Id, "1.0.0");
+            var descriptors = await registryTable.Discover(serviceKey);
+
+            var referers = GetCallers(protocol, descriptors);
+
+            var cluster = _clusterFactory.CreateCluster(referers, config.Cluster, config.LoadBalance, config.HaStrategy);
+
+            registryTable.Subscribe(serviceKey, (currentServiceKey, newDescriptors) =>
             {
-                ServiceKey = new ServiceKey(config.Group, config.Id, "1.0.0")
+                cluster.Callers = newDescriptors == null ? null : GetCallers(protocol, newDescriptors).ToArray();
             });
 
-            var refers = new List<ICaller>();
-            foreach (var descriptor in descriptors)
-            {
-                var refer = protocol.Refer(new ReferContext
-                {
-                    EndPoint = new IPEndPoint(IPAddress.Parse(descriptor.Host), descriptor.Port),
-                    ServiceKey = descriptor.ServiceKey
-                });
-                refers.Add(refer);
-            }
-
-            var cluster = _clusterFactory.CreateCluster(refers, config.Cluster, config.LoadBalance, config.HaStrategy);
-
             return cluster;
+        }
+
+        private static IEnumerable<ICaller> GetCallers(IProtocol protocol, IEnumerable<ServiceRegistryDescriptor> descriptors)
+        {
+            return descriptors.Select(descriptor => protocol.Refer(new ReferContext
+            {
+                EndPoint = new IPEndPoint(IPAddress.Parse(descriptor.Host), descriptor.Port),
+                ServiceKey = descriptor.ServiceKey
+            }));
         }
 
         private static (string protocol, string host, int port) ResolveExport(string export)

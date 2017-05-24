@@ -1,6 +1,9 @@
 ﻿using Castle.DynamicProxy;
+using RabbitCloud.Abstractions.Exceptions;
+using RabbitCloud.Abstractions.Exceptions.Extensions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Proxy;
+using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -75,7 +78,7 @@ namespace RabbitCloud.Rpc.Proxy
             {
                 var response = await _caller.CallAsync(request);
 
-                return (T)response.Value;
+                return (T)ReturnValue(response);
             }
 
             private object Handle(IRequest request)
@@ -83,8 +86,25 @@ namespace RabbitCloud.Rpc.Proxy
                 return Task.Run(async () =>
                 {
                     var response = await _caller.CallAsync(request);
-                    return response.Value;
+                    return ReturnValue(response);
                 }).Result;
+            }
+
+            private static object ReturnValue(IResponse response)
+            {
+                try
+                {
+                    return response.GetValue();
+                }
+                catch (Exception exception)
+                {
+                    if (!exception.IsBusinessException())
+                        throw;
+                    var e = exception.InnerException;
+                    if (e != null)
+                        throw e;
+                    throw new RabbitServiceException("biz exception cause is null");
+                }
             }
         }
     }

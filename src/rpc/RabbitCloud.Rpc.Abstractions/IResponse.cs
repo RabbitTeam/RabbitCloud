@@ -20,6 +20,18 @@ namespace RabbitCloud.Rpc.Abstractions
         Exception Exception { get; }
     }
 
+    public static class ResponseExtensions
+    {
+        public static object GetValue(this IResponse response)
+        {
+            var exception = response.Exception;
+            if (exception != null)
+                throw exception;
+
+            return response.Value;
+        }
+    }
+
     public class Response : IResponse
     {
         public Response(IRequest request)

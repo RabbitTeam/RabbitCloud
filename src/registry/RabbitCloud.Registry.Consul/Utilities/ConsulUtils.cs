@@ -30,7 +30,7 @@ namespace RabbitCloud.Registry.Consul.Utilities
                 Address = descriptor.Host,
                 ID = GetServiceId(descriptor),
                 Port = descriptor.Port,
-                Name = GetConsulServiceName(descriptor),
+                Name = GetConsulServiceName(descriptor.ServiceKey),
                 Tags = new[]
                 {
                     ProtocolPrefix+descriptor.Protocol
@@ -43,10 +43,10 @@ namespace RabbitCloud.Registry.Consul.Utilities
             };
         }
 
-        public static IEnumerable<ServiceRegistryDescriptor> GetServiceRegistryDescriptors(ServiceEntry[] serviceEntries)
+        public static IEnumerable<ServiceRegistryDescriptor> GetServiceRegistryDescriptors(IEnumerable<ServiceEntry> serviceEntries)
         {
-            return serviceEntries.Where(serviceEntry => serviceEntry.Checks.All(i => HealthStatus.Passing.Equals(i.Status)))
-                .Select(i => GetServiceRegistryDescriptor(i.Service));
+            return serviceEntries?.Where(
+                serviceEntry => serviceEntry.Checks.All(i => HealthStatus.Passing.Equals(i.Status))).Select(i => GetServiceRegistryDescriptor(i.Service));
         }
 
         public static ServiceRegistryDescriptor GetServiceRegistryDescriptor(AgentService agentService)
@@ -74,9 +74,9 @@ namespace RabbitCloud.Registry.Consul.Utilities
             };
         }
 
-        public static string GetConsulServiceName(ServiceRegistryDescriptor descriptor)
+        public static string GetConsulServiceName(ServiceKey serviceKey)
         {
-            return ServicePrefix + descriptor.ServiceKey.Group;
+            return ServicePrefix + serviceKey.Group;
         }
 
         public static string GetGroupName(string consulServiceName)

@@ -1,5 +1,6 @@
 ﻿using Consul;
 using Microsoft.Extensions.Logging;
+using RabbitCloud.Abstractions;
 using RabbitCloud.Abstractions.Logging;
 using RabbitCloud.Registry.Abstractions;
 using RabbitCloud.Registry.Consul.Utilities;
@@ -22,7 +23,7 @@ namespace RabbitCloud.Registry.Consul
         private readonly ConsulClient _consulClient;
         private readonly IList<ServiceRegistryDescriptor> _registeredServices = new List<ServiceRegistryDescriptor>();
 
-        private readonly ConcurrentDictionary<ServiceRegistryDescriptor, NotifyDelegate> _notifyDelegates = new ConcurrentDictionary<ServiceRegistryDescriptor, NotifyDelegate>();
+        private readonly ConcurrentDictionary<ServiceKey, NotifyDelegate> _notifyDelegates = new ConcurrentDictionary<ServiceKey, NotifyDelegate>();
         private readonly HeartbeatManager _heartbeatManager;
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
@@ -101,40 +102,40 @@ namespace RabbitCloud.Registry.Consul
 
         #region Implementation of IDiscoveryService
 
-        public void Subscribe(ServiceRegistryDescriptor descriptor, NotifyDelegate listener)
+        public void Subscribe(ServiceKey serviceKey, NotifyDelegate listener)
         {
-            Task.Run(async () => await Discover(descriptor)).Wait();
+            Task.Run(async () => await Discover(serviceKey)).Wait();
 
-            if (_notifyDelegates.TryGetValue(descriptor, out NotifyDelegate value))
+            if (_notifyDelegates.TryGetValue(serviceKey, out NotifyDelegate value))
                 listener = value + listener;
 
-            _notifyDelegates.AddOrUpdate(descriptor, listener, (s, ss) => listener);
+            _notifyDelegates.AddOrUpdate(serviceKey, listener, (s, ss) => listener);
         }
 
-        public void UnSubscribe(ServiceRegistryDescriptor descriptor, NotifyDelegate listener)
+        public void UnSubscribe(ServiceKey serviceKey, NotifyDelegate listener)
         {
-            if (_notifyDelegates.TryGetValue(descriptor, out NotifyDelegate value))
+            if (_notifyDelegates.TryGetValue(serviceKey, out NotifyDelegate value))
                 listener = value - listener;
 
-            _notifyDelegates.TryUpdate(descriptor, listener, value);
+            _notifyDelegates.TryUpdate(serviceKey, listener, value);
         }
 
-        public async Task<IReadOnlyCollection<ServiceRegistryDescriptor>> Discover(ServiceRegistryDescriptor descriptor)
+        public async Task<IReadOnlyCollection<ServiceRegistryDescriptor>> Discover(ServiceKey serviceKey)
         {
             //如果已经load过则直接返回
-            if (_serviceRegistryDescriptorDictionary.TryGetValue(descriptor.ServiceKey.Group, out IList<ServiceRegistryDescriptor> descriptors))
+            if (_serviceRegistryDescriptorDictionary.TryGetValue(serviceKey.Group, out IList<ServiceRegistryDescriptor> descriptors))
                 return descriptors.ToArray();
 
             //从consul中加载
-            descriptors = (await DiscoverByConsul(descriptor)).ToList();
+            descriptors = (await DiscoverByConsul(serviceKey)).ToList();
 
             //添加到本地
-            if (_serviceRegistryDescriptorDictionary.TryAdd(descriptor.ServiceKey.Group, descriptors))
+            if (_serviceRegistryDescriptorDictionary.TryAdd(serviceKey.Group, descriptors))
             {
                 //添加订阅事件用于更新本地服务信息
-                Subscribe(descriptor, (currentDescriptor, newDescriptors) =>
+                Subscribe(serviceKey, (currentServiceKey, newDescriptors) =>
                 {
-                    var serviceName = currentDescriptor.ServiceKey.Group;
+                    var serviceName = currentServiceKey.Group;
                     var newDescriptorList = newDescriptors.ToList();
                     _serviceRegistryDescriptorDictionary.AddOrUpdate(serviceName, newDescriptorList, (d, ds) => newDescriptorList);
                 });
@@ -147,17 +148,17 @@ namespace RabbitCloud.Registry.Consul
 
         #region Private Method
 
-        private void Notify(ServiceRegistryDescriptor registryDescriptor, IReadOnlyCollection<ServiceRegistryDescriptor> descriptors)
+        private void Notify(ServiceKey serviceKey, IReadOnlyCollection<ServiceRegistryDescriptor> descriptors)
         {
             foreach (var notifyDelegatesValue in _notifyDelegates.Values)
             {
-                notifyDelegatesValue(registryDescriptor, descriptors);
+                notifyDelegatesValue(serviceKey, descriptors);
             }
         }
 
-        private async Task<IEnumerable<ServiceRegistryDescriptor>> DiscoverByConsul(ServiceRegistryDescriptor descriptor)
+        private async Task<IEnumerable<ServiceRegistryDescriptor>> DiscoverByConsul(ServiceKey serviceKey)
         {
-            var serviceName = ConsulUtils.GetConsulServiceName(descriptor);
+            var serviceName = ConsulUtils.GetConsulServiceName(serviceKey);
             //获取服务信息
             var result = await _consulClient.Health.Service(serviceName, null, false, _cancellationTokenSource.Token);
 
@@ -173,8 +174,9 @@ namespace RabbitCloud.Registry.Consul
                     }, _cancellationTokenSource.Token);
 
                     //如果发生变更则处理通知
-                    if (result.LastIndex != waitIndex && waitIndex != 0)
-                        Notify(descriptor, ConsulUtils.GetServiceRegistryDescriptors(result.Response).ToArray());
+                    if (result.LastIndex == waitIndex || waitIndex == 0)
+                        continue;
+                    Notify(serviceKey, ConsulUtils.GetServiceRegistryDescriptors(result.Response).ToArray());
                 }
             }, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 

@@ -24,10 +24,9 @@ namespace RabbitCloud.Rpc.Cluster
 
         public DefaultCluster(IEnumerable<ICaller> callers, ILoadBalance loadBalance, IHaStrategy haStrategy, ILogger<DefaultCluster> logger)
         {
-            Callers = callers.ToArray();
-            loadBalance.Callers = Callers;
             LoadBalance = loadBalance;
             HaStrategy = haStrategy;
+            Callers = callers.ToArray();
             _logger = logger;
         }
 
@@ -55,7 +54,18 @@ namespace RabbitCloud.Rpc.Cluster
 
         #region Implementation of ICluster
 
-        public ICaller[] Callers { get; set; }
+        private ICaller[] _callers;
+
+        public ICaller[] Callers
+        {
+            get => _callers;
+            set
+            {
+                _callers = value;
+                LoadBalance.Callers = _callers;
+            }
+        }
+
         public ILoadBalance LoadBalance { get; set; }
         public IHaStrategy HaStrategy { get; set; }
 
@@ -93,6 +103,9 @@ namespace RabbitCloud.Rpc.Cluster
         private static Response CallFailure(IRequest request, Exception exception)
         {
             if (exception.IsBusinessException())
+                throw exception;
+
+            if (exception.IsRabbitException())
                 throw exception;
 
             return new Response(request)
