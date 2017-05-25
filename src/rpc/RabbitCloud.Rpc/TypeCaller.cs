@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace RabbitCloud.Rpc
 {
-    public class TypeCaller : INamedCaller
+    public class TypeCaller : ICaller
     {
         private readonly Type _serviceType;
         private readonly Func<object> _factory;
@@ -27,7 +27,6 @@ namespace RabbitCloud.Rpc
             _serviceType = serviceType;
             _factory = factory;
             _logger = logger ?? NullLogger<TypeCaller>.Instance;
-            Name = _serviceType.Name;
         }
 
         #region Implementation of ICaller
@@ -57,12 +56,6 @@ namespace RabbitCloud.Rpc
         }
 
         #endregion Implementation of ICaller
-
-        #region Implementation of INamedCaller
-
-        public string Name { get; }
-
-        #endregion Implementation of INamedCaller
 
         #region Private Method
 

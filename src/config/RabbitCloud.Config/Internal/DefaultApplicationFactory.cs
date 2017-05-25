@@ -93,8 +93,8 @@ namespace RabbitCloud.Config.Internal
                 {
                     Exporter = export,
                     ServiceConfig = serviceConfig,
-                    Protocol = applicationModel.GetProtocol(exportItem.protocol).Protocol,
-                    RegistryTable = applicationModel.GetRegistryTable(serviceConfig.Registry).RegistryTable
+                    Protocol = applicationModel.GetProtocolEntry(exportItem.protocol).Protocol,
+                    RegistryTable = applicationModel.GetRegistryTableEntry(serviceConfig.Registry).RegistryTable
                 });
             }
             applicationModel.ServiceEntries = serviceEntries.ToArray();
@@ -112,23 +112,24 @@ namespace RabbitCloud.Config.Internal
                 callerEntries.Add(new CallerEntry
                 {
                     Caller = caller,
-                    Protocol = applicationModel.GetProtocol(refererConfig.Protocol).Protocol,
+                    Protocol = applicationModel.GetProtocolEntry(refererConfig.Protocol).Protocol,
                     RefererConfig = refererConfig,
-                    RegistryTable = applicationModel.GetRegistryTable(refererConfig.Registry).RegistryTable
+                    RegistryTable = applicationModel.GetRegistryTableEntry(refererConfig.Registry).RegistryTable
                 });
             }
 
             applicationModel.CallerEntries = callerEntries.ToArray();
         }
 
-        private static async Task<IExporter> Export(ServiceConfig config, (string protocol, string host, int port) exportItem, ApplicationModel applicationModel, Func<Type, object> instanceFactory)
+        private static async Task<IExporter> Export(ServiceConfig config, (string protocol, string host, int? port) exportItem, ApplicationModel applicationModel, Func<Type, object> instanceFactory)
         {
-            var protocolName = exportItem.protocol;
+            var protocolId = exportItem.protocol;
             var port = exportItem.port;
             var host = exportItem.host;
 
-            var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
-            var protocol = applicationModel.GetProtocol(protocolName).Protocol;
+            var registryTable = applicationModel.GetRegistryTableEntry(config.Registry).RegistryTable;
+            var protocolEntry = applicationModel.GetProtocolEntry(protocolId);
+            var protocol = protocolEntry.Protocol;
             var serviceType = Type.GetType(config.Interface);
 
             if (string.IsNullOrEmpty(config.Id))
@@ -137,27 +138,24 @@ namespace RabbitCloud.Config.Internal
             var export = protocol.Export(new ExportContext
             {
                 Caller = new TypeCaller(serviceType, () => instanceFactory(serviceType)),
-                EndPoint = new IPEndPoint(IPAddress.Parse(host), port),
+                EndPoint = GetIpEndPoint(host, port),
                 ServiceKey = new ServiceKey(config.Group, config.Id, "1.0.0")
             });
 
             await registryTable.RegisterAsync(new ServiceRegistryDescriptor
             {
-                Host = host,
-                Port = port,
-                Protocol = protocolName,
+                Host = host ?? "127.0.0.1",
+                Port = port ?? 0,
+                Protocol = protocolEntry.ProtocolConfig.Name,
                 ServiceKey = new ServiceKey(config.Group, config.Id, "1.0.0")
             });
 
             return export;
         }
 
-        private async Task<ICaller> Referer(RefererConfig config, ApplicationModel applicationModel)
+        private async Task<ICaller> Referer(RefererConfig config, IApplicationModel applicationModel)
         {
-            var registryTable = applicationModel.GetRegistryTable(config.Registry).RegistryTable;
-            var protocolName = config.Protocol;
-            var protocolEntry = applicationModel.GetProtocol(protocolName);
-            var protocol = protocolEntry.Protocol;
+            var registryTable = applicationModel.GetRegistryTableEntry(config.Registry).RegistryTable;
 
             var serviceType = Type.GetType(config.Interface);
             if (string.IsNullOrEmpty(config.Id))
@@ -166,35 +164,67 @@ namespace RabbitCloud.Config.Internal
             var serviceKey = new ServiceKey(config.Group, config.Id, "1.0.0");
             var descriptors = await registryTable.Discover(serviceKey);
 
-            var referers = GetCallers(protocol, descriptors);
+            var referers = GetCallers(applicationModel, descriptors);
 
             var cluster = _clusterFactory.CreateCluster(referers, config.Cluster, config.LoadBalance, config.HaStrategy);
 
             registryTable.Subscribe(serviceKey, (currentServiceKey, newDescriptors) =>
             {
-                cluster.Callers = newDescriptors == null ? null : GetCallers(protocol, newDescriptors).ToArray();
+                cluster.Callers = newDescriptors == null ? null : GetCallers(applicationModel, newDescriptors).ToArray();
             });
 
             return cluster;
         }
 
-        private static IEnumerable<ICaller> GetCallers(IProtocol protocol, IEnumerable<ServiceRegistryDescriptor> descriptors)
+        private static IEnumerable<ICaller> GetCallers(IApplicationModel applicationModel, IEnumerable<ServiceRegistryDescriptor> descriptors)
         {
-            return descriptors.Select(descriptor => protocol.Refer(new ReferContext
+            return descriptors.Select(descriptor =>
             {
-                EndPoint = new IPEndPoint(IPAddress.Parse(descriptor.Host), descriptor.Port),
-                ServiceKey = descriptor.ServiceKey
-            }));
+                var protocol = applicationModel.GetProtocol(descriptor.Protocol);
+                return protocol.Refer(new ReferContext
+                {
+                    EndPoint = GetIpEndPoint(descriptor.Host, descriptor.Port),
+                    ServiceKey = descriptor.ServiceKey
+                });
+            });
         }
 
-        private static (string protocol, string host, int port) ResolveExport(string export)
+        private static (string protocol, string host, int? port) ResolveExport(string export)
         {
             if (Uri.TryCreate(export, UriKind.Absolute, out Uri uri))
             {
                 return (uri.Scheme, uri.Host, uri.Port);
             }
-            var temp = export.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
-            return temp.Length != 3 ? (null, null, 0) : (temp[0], temp[1].TrimStart('/'), int.Parse(temp[2]));
+            var temp = export.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries).Select(i => i.Trim('/')).ToArray();
+
+            if (!temp.Any())
+                return (null, null, null);
+
+            int? GetPort(string str)
+            {
+                return int.TryParse(str, out int value) ? (int?)value : null;
+            }
+
+            switch (temp.Length)
+            {
+                case 1:
+                    return (temp[0], null, null);
+
+                case 2:
+                    {
+                        var port = GetPort(temp[1]);
+                        var isPort = port.HasValue;
+                        return (temp[0], isPort ? null : temp[1], port);
+                    }
+
+                default:
+                    return (temp[0], temp[1], GetPort(temp[3]));
+            }
+        }
+
+        private static IPEndPoint GetIpEndPoint(string host, int? port)
+        {
+            return !IPAddress.TryParse(host, out IPAddress address) ? null : new IPEndPoint(address, port ?? 0);
         }
 
         #endregion Private Method

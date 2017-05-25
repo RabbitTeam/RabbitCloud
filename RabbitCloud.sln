@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitCloud.Config.Abstract
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCloud.Config", "src\config\RabbitCloud.Config\RabbitCloud.Config.csproj", "{00A36456-BE7C-4685-BC52-51FA9C04B09E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitCloud.Rpc.Memory", "src\rpc\RabbitCloud.Rpc.Memory\RabbitCloud.Rpc.Memory.csproj", "{D0854A30-C93C-4FA5-B9E9-4F456C39DC92}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,10 @@ Global
 		{00A36456-BE7C-4685-BC52-51FA9C04B09E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00A36456-BE7C-4685-BC52-51FA9C04B09E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{00A36456-BE7C-4685-BC52-51FA9C04B09E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0854A30-C93C-4FA5-B9E9-4F456C39DC92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0854A30-C93C-4FA5-B9E9-4F456C39DC92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0854A30-C93C-4FA5-B9E9-4F456C39DC92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0854A30-C93C-4FA5-B9E9-4F456C39DC92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -123,5 +129,6 @@ Global
 		{0F2946AF-140D-4C56-88A9-119480C6A717} = {BABDC280-DA7D-4354-8713-B3954EAD4D5D}
 		{20E7A0BD-865A-4C06-9DAD-D8A647082819} = {0F2946AF-140D-4C56-88A9-119480C6A717}
 		{00A36456-BE7C-4685-BC52-51FA9C04B09E} = {0F2946AF-140D-4C56-88A9-119480C6A717}
+		{D0854A30-C93C-4FA5-B9E9-4F456C39DC92} = {148C8C2B-FDD8-40AD-B5E0-AB727F92A7C1}
 	EndGlobalSection
 EndGlobal

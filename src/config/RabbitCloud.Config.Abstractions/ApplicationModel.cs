@@ -95,12 +95,17 @@ namespace RabbitCloud.Config.Abstractions
             return model.ServiceEntries.SingleOrDefault(i => string.Equals(i.ServiceConfig.Id, id, StringComparison.OrdinalIgnoreCase));
         }
 
-        public static ProtocolEntry GetProtocol(this IApplicationModel model, string id)
+        public static ProtocolEntry GetProtocolEntry(this IApplicationModel model, string id)
         {
             return model.Protocols.SingleOrDefault(i => string.Equals(i.ProtocolConfig.Id, id, StringComparison.OrdinalIgnoreCase));
         }
 
-        public static RegistryTableEntry GetRegistryTable(this IApplicationModel model, string name)
+        public static IProtocol GetProtocol(this IApplicationModel model, string name)
+        {
+            return model.Protocols.SingleOrDefault(i => string.Equals(i.ProtocolConfig.Name, name, StringComparison.OrdinalIgnoreCase))?.Protocol;
+        }
+
+        public static RegistryTableEntry GetRegistryTableEntry(this IApplicationModel model, string name)
         {
             return model.RegistryTables.SingleOrDefault(i => string.Equals(i.RegistryConfig.Name, name, StringComparison.OrdinalIgnoreCase));
         }

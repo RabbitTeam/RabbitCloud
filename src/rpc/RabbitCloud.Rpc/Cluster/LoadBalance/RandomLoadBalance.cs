@@ -15,7 +15,7 @@ namespace RabbitCloud.Rpc.Cluster.LoadBalance
         {
             var random = Random.Value;
 
-            var index = (int)random.NextDouble() * callers.Length;
+            var index = (int)(random.NextDouble() * callers.Length);
             return callers.Select((t, i) => callers[(i + index) % callers.Length]).FirstOrDefault(caller => caller.IsAvailable);
         }
 

@@ -33,7 +33,7 @@ namespace RabbitCloud.Registry.Consul.Utilities
                 Name = GetConsulServiceName(descriptor.ServiceKey),
                 Tags = new[]
                 {
-                    ProtocolPrefix+descriptor.Protocol
+                    ProtocolPrefix + descriptor.Protocol
                 },
                 Check = new AgentServiceCheck
                 {

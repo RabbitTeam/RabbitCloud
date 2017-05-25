@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.4</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\config\RabbitCloud.Config.Abstractions\RabbitCloud.Config.Abstractions.csproj" />
+    <ProjectReference Include="..\..\config\RabbitCloud.Config\RabbitCloud.Config.csproj" />
+    <ProjectReference Include="..\RabbitCloud.Rpc.Abstractions\RabbitCloud.Rpc.Abstractions.csproj" />
+    <ProjectReference Include="..\RabbitCloud.Rpc\RabbitCloud.Rpc.csproj" />
+  </ItemGroup>
+
+</Project>

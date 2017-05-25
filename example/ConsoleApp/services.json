@@ -8,7 +8,11 @@
   ],
   "Protocols": [
     {
-      "Id": "rabbit",
+      "Id": "local",
+      "Name": "Memory"
+    },
+    {
+      "Id": "remote",
       "Name": "NetMQ",
       "Formatter": "JSON"
     }
@@ -16,7 +20,14 @@
   "Services": [
     {
       "Group": "user",
-      "Export": "rabbit://192.168.5.26:9999",
+      "Export": "local",
+      "Registry": "default",
+      "Interface": "ConsoleApp.IUserService,ConsoleApp",
+      "Implement": "ConsoleApp.UserService,ConsoleApp"
+    },
+    {
+      "Group": "user",
+      "Export": "remote://192.168.5.26:9999",
       "Registry": "default",
       "Interface": "ConsoleApp.IUserService,ConsoleApp",
       "Implement": "ConsoleApp.UserService,ConsoleApp"
