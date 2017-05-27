@@ -44,9 +44,10 @@ namespace RabbitCloud.Rpc
                 return response;
             }
 
+            var requestOptions = request.GetRequestOptions();
             try
             {
-                response.Value = await ExecutionAsync(method, _factory(), request.Arguments);
+                response.Value = await ExecutionAsync(method, _factory(), request.Arguments, requestOptions.ThrowException);
             }
             catch (Exception exception)
             {
@@ -59,7 +60,7 @@ namespace RabbitCloud.Rpc
 
         #region Private Method
 
-        private async Task<object> ExecutionAsync(MethodBase method, object instance, object[] arguments)
+        private async Task<object> ExecutionAsync(MethodBase method, object instance, object[] arguments, bool throwDetailedException)
         {
             try
             {
@@ -81,11 +82,11 @@ namespace RabbitCloud.Rpc
             {
                 var exception = e.InnerException;
                 _logger.LogError(0, exception, "Exception caught when method invoke: " + exception);
-                throw new RabbitBusinessException("provider call process error", exception);
+                throw new RabbitBusinessException("provider call process error", throwDetailedException ? exception : null);
             }
             catch (Exception e)
             {
-                throw new RabbitBusinessException("provider call process error", e);
+                throw new RabbitBusinessException("provider call process error", throwDetailedException ? e : null);
             }
         }
 

@@ -30,20 +30,25 @@ namespace RabbitCloud.Rpc.Cluster.HA
 
             Exception exception = null;
 
-            //todo:添加重试机制
-            for (var i = 0; i < count; i++)
+            var tryCount = request.GetRequestOptions().Retries;
+            for (var i = 0; i <= tryCount; i++)
             {
-                var caller = loadBalance.Select(request);
-                try
+                for (var z = 0; z < count; z++)
                 {
-                    return await caller.CallAsync(request);
-                }
-                catch (Exception e)
-                {
-                    if (e.IsBusinessException())
-                        throw;
+                    var caller = loadBalance.Select(request);
+                    try
+                    {
+                        return await caller.CallAsync(request);
+                    }
+                    catch (Exception e)
+                    {
+                        if (e.IsBusinessException())
+                            throw;
 
-                    _logger.LogError(0, e, $"FailoverHaStrategy Call false for request:{request} error={e.Message}");
+                        exception = e;
+
+                        _logger.LogError(0, e, $"FailoverHaStrategy Call false for request:{request} error={e.Message}");
+                    }
                 }
             }
 

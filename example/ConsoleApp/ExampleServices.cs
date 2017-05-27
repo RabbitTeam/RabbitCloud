@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using RabbitCloud.Rpc.Abstractions;
 
 namespace ConsoleApp
 {
@@ -16,6 +18,7 @@ namespace ConsoleApp
         Task<string> Test2();
 
         void Test3();
+        string Test4(RequestOptions options);
     }
 
     public class UserService : IUserService
@@ -44,6 +47,12 @@ namespace ConsoleApp
         public void Test3()
         {
             Console.WriteLine("test3");
+        }
+
+        public string Test4(RequestOptions options)
+        {
+            Thread.Sleep(11*1000);
+            return "1";
         }
     }
 

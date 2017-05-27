@@ -26,16 +26,6 @@
       "Cluster": "Default",
       "LoadBalance": "Random",
       "HaStrategy": "Failover"
-    },
-    {
-      "Id": "Test",
-      "Group": "user",
-      "Interface": "ConsoleApp.IUserService,ConsoleApp",
-      "Registry": "default",
-      "Protocol": "local",
-      "Cluster": "Default",
-      "LoadBalance": "Random",
-      "HaStrategy": "Failover"
     }
   ]
 }

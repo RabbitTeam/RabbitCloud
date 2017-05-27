@@ -1,4 +1,5 @@
 ﻿using RabbitCloud.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -41,7 +42,7 @@ namespace RabbitCloud.Rpc.Abstractions
 
         public Request(Dictionary<string, string> attachments = null)
         {
-            _attachments = attachments ?? new Dictionary<string, string>();
+            _attachments = attachments ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         #region Implementation of IRequest
@@ -85,11 +86,23 @@ namespace RabbitCloud.Rpc.Abstractions
         #endregion Implementation of IRequest
     }
 
-    public static class RequestExtensions
+    public static partial class RequestExtensions
     {
         public static string GetAttachment(this IRequest request, string name)
         {
-            return request.Attachments[name];
+            return request.Attachments.TryGetValue(name, out string value) ? value : null;
+        }
+
+        public static T GetAttachment<T>(this IRequest request, string name, Func<string, (bool, T)> convert, T defaultValue)
+        {
+            var value = request.GetAttachment(name);
+
+            if (value == null)
+                return defaultValue;
+
+            (bool success, T result) = convert(value);
+
+            return success ? result : defaultValue;
         }
 
         public static IRequest SetServiceKey(this IRequest request, ServiceKey serviceKey)

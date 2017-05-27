@@ -66,12 +66,18 @@ namespace RabbitCloud.Rpc.Proxy
 
             private IRequest GetRequest(IInvocation invocation)
             {
-                return new Request
+                var request = new Request
                 {
                     Arguments = invocation.Arguments,
                     MethodDescriptor = new MethodDescriptor(invocation.Method),
                     RequestId = _requestIdGenerator.GetRequestId()
                 };
+                var requestOptions = invocation.Arguments.FirstOrDefault(i => i is RequestOptions);
+
+                if (requestOptions != null)
+                    request.SetRequestOptions((RequestOptions)requestOptions);
+
+                return request;
             }
 
             private async Task<T> HandleAsync<T>(IRequest request)

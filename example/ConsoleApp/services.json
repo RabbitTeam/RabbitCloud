@@ -20,13 +20,6 @@
   "Services": [
     {
       "Group": "user",
-      "Export": "local",
-      "Registry": "default",
-      "Interface": "ConsoleApp.IUserService,ConsoleApp",
-      "Implement": "ConsoleApp.UserService,ConsoleApp"
-    },
-    {
-      "Group": "user",
       "Export": "remote://192.168.5.26:9999",
       "Registry": "default",
       "Interface": "ConsoleApp.IUserService,ConsoleApp",

@@ -1,6 +1,7 @@
 ﻿using NetMQ;
 using NetMQ.Sockets;
 using RabbitCloud.Abstractions;
+using RabbitCloud.Abstractions.Exceptions;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
 using RabbitCloud.Rpc.NetMQ.Internal;
@@ -59,7 +60,19 @@ namespace RabbitCloud.Rpc.NetMQ
             try
             {
                 _dealerSocket.SendMultipartMessage(requestMessage);
-                return await taskCompletionSource.Task;
+                var task = taskCompletionSource.Task;
+
+                var options = request.GetRequestOptions();
+
+                var timeoutTask = Task.Delay(options.Timeout);
+                var resultTask = await Task.WhenAny(task, timeoutTask);
+
+                if (resultTask == timeoutTask)
+                {
+                    //请求超时
+                    throw new RabbitFrameworkException($"The request exceeds the allowable time of {options.Timeout.TotalSeconds} seconds");
+                }
+                return await task;
             }
             catch
             {
