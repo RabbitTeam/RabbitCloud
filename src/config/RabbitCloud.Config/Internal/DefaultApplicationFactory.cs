@@ -144,7 +144,7 @@ namespace RabbitCloud.Config.Internal
 
             await registryTable.RegisterAsync(new ServiceRegistryDescriptor
             {
-                Host = host ?? "127.0.0.1",
+                Host = host,
                 Port = port ?? 0,
                 Protocol = protocolEntry.ProtocolConfig.Name,
                 ServiceKey = new ServiceKey(config.Group, config.Id, "1.0.0")
@@ -208,13 +208,13 @@ namespace RabbitCloud.Config.Internal
             switch (temp.Length)
             {
                 case 1:
-                    return (temp[0], null, null);
+                    return (temp[0], IPAddress.Loopback.ToString(), null);
 
                 case 2:
                     {
                         var port = GetPort(temp[1]);
                         var isPort = port.HasValue;
-                        return (temp[0], isPort ? null : temp[1], port);
+                        return (temp[0], (isPort ? IPAddress.Loopback.ToString() : temp[1]), port);
                     }
 
                 default:

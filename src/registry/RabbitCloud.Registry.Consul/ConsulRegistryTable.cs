@@ -15,13 +15,12 @@ using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace RabbitCloud.Registry.Consul
 {
-    public class ConsulRegistryTable : IRegistryTable, IDisposable
+    public class ConsulRegistryTable : RegistryTable, IDisposable
     {
         #region Field
 
         private readonly ILogger<ConsulRegistryTable> _logger;
         private readonly ConsulClient _consulClient;
-        private readonly IList<ServiceRegistryDescriptor> _registeredServices = new List<ServiceRegistryDescriptor>();
 
         private readonly ConcurrentDictionary<ServiceKey, NotifyDelegate> _notifyDelegates = new ConcurrentDictionary<ServiceKey, NotifyDelegate>();
         private readonly HeartbeatManager _heartbeatManager;
@@ -42,9 +41,9 @@ namespace RabbitCloud.Registry.Consul
 
         #endregion Constructor
 
-        #region Implementation of IRegistryService
+        #region Overrides of RegistryTable
 
-        public async Task RegisterAsync(ServiceRegistryDescriptor descriptor)
+        protected override async Task DoRegisterAsync(ServiceRegistryDescriptor descriptor)
         {
             var registration = ConsulUtils.GetServiceRegistration(descriptor);
 
@@ -60,11 +59,9 @@ namespace RabbitCloud.Registry.Consul
 
             if (result.StatusCode != HttpStatusCode.OK && _logger.IsEnabled(LogLevel.Error))
                 _logger.LogError($"ServiceRegister is return code :{result.StatusCode}");
-
-            _registeredServices.Add(descriptor);
         }
 
-        public async Task UnRegisterAsync(ServiceRegistryDescriptor descriptor)
+        protected override async Task DoUnRegisterAsync(ServiceRegistryDescriptor descriptor)
         {
             var serviceId = ConsulUtils.GetServiceId(descriptor);
 
@@ -79,48 +76,7 @@ namespace RabbitCloud.Registry.Consul
                 _logger.LogError($"ServiceDeregister is return code :{result.StatusCode}");
         }
 
-        public async Task SetAvailableAsync(ServiceRegistryDescriptor descriptor)
-        {
-            var serviceId = ConsulUtils.GetServiceId(descriptor);
-            await _consulClient.Agent.PassTTL("service:" + serviceId, await _consulClient.Agent.GetNodeName(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
-            _heartbeatManager.RemoveHeartbeat(serviceId);
-        }
-
-        public async Task SetUnAvailableAsync(ServiceRegistryDescriptor descriptor)
-        {
-            var serviceId = ConsulUtils.GetServiceId(descriptor);
-            await _consulClient.Agent.FailTTL("service:" + serviceId, await _consulClient.Agent.GetNodeName(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
-            _heartbeatManager.RemoveHeartbeat(serviceId);
-        }
-
-        public IReadOnlyCollection<ServiceRegistryDescriptor> GetRegisteredServices()
-        {
-            return _registeredServices.ToArray();
-        }
-
-        #endregion Implementation of IRegistryService
-
-        #region Implementation of IDiscoveryService
-
-        public void Subscribe(ServiceKey serviceKey, NotifyDelegate listener)
-        {
-            Task.Run(async () => await Discover(serviceKey)).Wait();
-
-            if (_notifyDelegates.TryGetValue(serviceKey, out NotifyDelegate value))
-                listener = value + listener;
-
-            _notifyDelegates.AddOrUpdate(serviceKey, listener, (s, ss) => listener);
-        }
-
-        public void UnSubscribe(ServiceKey serviceKey, NotifyDelegate listener)
-        {
-            if (_notifyDelegates.TryGetValue(serviceKey, out NotifyDelegate value))
-                listener = value - listener;
-
-            _notifyDelegates.TryUpdate(serviceKey, listener, value);
-        }
-
-        public async Task<IReadOnlyCollection<ServiceRegistryDescriptor>> Discover(ServiceKey serviceKey)
+        protected override async Task<IEnumerable<ServiceRegistryDescriptor>> DoDiscover(ServiceKey serviceKey)
         {
             //如果已经load过则直接返回
             if (_serviceRegistryDescriptorDictionary.TryGetValue(serviceKey.Group, out IList<ServiceRegistryDescriptor> descriptors))
@@ -144,7 +100,21 @@ namespace RabbitCloud.Registry.Consul
             return descriptors.ToArray();
         }
 
-        #endregion Implementation of IDiscoveryService
+        public override async Task SetAvailableAsync(ServiceRegistryDescriptor descriptor)
+        {
+            var serviceId = ConsulUtils.GetServiceId(descriptor);
+            await _consulClient.Agent.PassTTL("service:" + serviceId, await _consulClient.Agent.GetNodeName(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
+            _heartbeatManager.RemoveHeartbeat(serviceId);
+        }
+
+        public override async Task SetUnAvailableAsync(ServiceRegistryDescriptor descriptor)
+        {
+            var serviceId = ConsulUtils.GetServiceId(descriptor);
+            await _consulClient.Agent.FailTTL("service:" + serviceId, await _consulClient.Agent.GetNodeName(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
+            _heartbeatManager.RemoveHeartbeat(serviceId);
+        }
+
+        #endregion Overrides of RegistryTable
 
         #region Private Method
 
@@ -181,16 +151,6 @@ namespace RabbitCloud.Registry.Consul
             }, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
             return ConsulUtils.GetServiceRegistryDescriptors(result.Response).ToList();
-        }
-
-        public bool IsAvailable(ServiceEntry serviceEntry)
-        {
-            return serviceEntry.Checks.All(IsAvailable);
-        }
-
-        public bool IsAvailable(HealthCheck healthCheck)
-        {
-            return HealthStatus.Passing.Equals(healthCheck.Status);
         }
 
         #endregion Private Method
