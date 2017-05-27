@@ -21,6 +21,8 @@ namespace RabbitCloud.Config.Internal
         private readonly IProxyFactory _proxyFactory;
         private readonly IClusterFactory _clusterFactory;
 
+        private const string DefaultVersion = "1.0.0";
+
         public DefaultApplicationFactory(IRegistryTableFactory registryTableFactory, IProtocolFactory protocolFactory, IProxyFactory proxyFactory, IClusterFactory clusterFactory)
         {
             _registryTableFactory = registryTableFactory;
@@ -114,7 +116,7 @@ namespace RabbitCloud.Config.Internal
                     Caller = caller,
                     Protocol = applicationModel.GetProtocolEntry(refererConfig.Protocol).Protocol,
                     RefererConfig = refererConfig,
-                    RegistryTable = applicationModel.GetRegistryTableEntry(refererConfig.Registry).RegistryTable
+                    RegistryTable = applicationModel.GetRegistryTableEntry(refererConfig.Registry)?.RegistryTable
                 });
             }
 
@@ -139,7 +141,7 @@ namespace RabbitCloud.Config.Internal
             {
                 Caller = new TypeCaller(serviceType, () => instanceFactory(serviceType)),
                 EndPoint = GetIpEndPoint(host, port),
-                ServiceKey = new ServiceKey(config.Group, config.Id, "1.0.0")
+                ServiceKey = new ServiceKey(config.Group, serviceType.Name, DefaultVersion)
             });
 
             await registryTable.RegisterAsync(new ServiceRegistryDescriptor
@@ -147,7 +149,7 @@ namespace RabbitCloud.Config.Internal
                 Host = host,
                 Port = port ?? 0,
                 Protocol = protocolEntry.ProtocolConfig.Name,
-                ServiceKey = new ServiceKey(config.Group, config.Id, "1.0.0")
+                ServiceKey = new ServiceKey(config.Group, serviceType.Name, DefaultVersion)
             });
 
             return export;
@@ -155,13 +157,25 @@ namespace RabbitCloud.Config.Internal
 
         private async Task<ICaller> Referer(RefererConfig config, IApplicationModel applicationModel)
         {
-            var registryTable = applicationModel.GetRegistryTableEntry(config.Registry).RegistryTable;
-
             var serviceType = Type.GetType(config.Interface);
             if (string.IsNullOrEmpty(config.Id))
                 config.Id = serviceType.Name;
 
-            var serviceKey = new ServiceKey(config.Group, config.Id, "1.0.0");
+            var serviceKey = new ServiceKey(config.Group, serviceType.Name, DefaultVersion);
+            if (string.IsNullOrEmpty(config.Registry))
+            {
+                var descriptor = new ServiceRegistryDescriptor
+                {
+                    Host = config.Host,
+                    Port = config.Port,
+                    Protocol = applicationModel.GetProtocolEntry(config.Protocol).ProtocolConfig.Name,
+                    ServiceKey = serviceKey
+                };
+                var referer = GetCaller(applicationModel, descriptor);
+                return referer;
+            }
+            var registryTable = applicationModel.GetRegistryTableEntry(config.Registry).RegistryTable;
+            //集群Caller
             var descriptors = await registryTable.Discover(serviceKey);
 
             var referers = GetCallers(applicationModel, descriptors);
@@ -178,14 +192,16 @@ namespace RabbitCloud.Config.Internal
 
         private static IEnumerable<ICaller> GetCallers(IApplicationModel applicationModel, IEnumerable<ServiceRegistryDescriptor> descriptors)
         {
-            return descriptors.Select(descriptor =>
+            return descriptors.Select(descriptor => GetCaller(applicationModel, descriptor));
+        }
+
+        private static ICaller GetCaller(IApplicationModel applicationModel, ServiceRegistryDescriptor descriptor)
+        {
+            var protocol = applicationModel.GetProtocol(descriptor.Protocol);
+            return protocol.Refer(new ReferContext
             {
-                var protocol = applicationModel.GetProtocol(descriptor.Protocol);
-                return protocol.Refer(new ReferContext
-                {
-                    EndPoint = GetIpEndPoint(descriptor.Host, descriptor.Port),
-                    ServiceKey = descriptor.ServiceKey
-                });
+                EndPoint = GetIpEndPoint(descriptor.Host, descriptor.Port),
+                ServiceKey = descriptor.ServiceKey
             });
         }
 
