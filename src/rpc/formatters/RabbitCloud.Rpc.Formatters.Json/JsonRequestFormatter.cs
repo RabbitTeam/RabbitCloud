@@ -63,11 +63,6 @@ namespace RabbitCloud.Rpc.Formatters.Json
                 };
             }
 
-            public JsonRequestOutputFormatter(JsonSerializerSettings jsonSerializerSettings)
-            {
-                _jsonSerializerSettings = jsonSerializerSettings;
-            }
-
             #region Implementation of IOutputFormatter<in IRequest>
 
             public byte[] Format(IRequest instance)
