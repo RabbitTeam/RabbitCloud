@@ -136,6 +136,8 @@ namespace RabbitCloud.Config.Internal
 
             if (string.IsNullOrEmpty(config.Id))
                 config.Id = serviceType.Name;
+            if (string.IsNullOrEmpty(config.Group))
+                config.Group = serviceType.Name;
 
             var export = protocol.Export(new ExportContext
             {
