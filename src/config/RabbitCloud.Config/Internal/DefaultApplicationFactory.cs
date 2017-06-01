@@ -162,6 +162,8 @@ namespace RabbitCloud.Config.Internal
             var serviceType = Type.GetType(config.Interface);
             if (string.IsNullOrEmpty(config.Id))
                 config.Id = serviceType.Name;
+            if (string.IsNullOrEmpty(config.Group))
+                config.Group = serviceType.Name;
 
             var serviceKey = new ServiceKey(config.Group, serviceType.Name, DefaultVersion);
             if (string.IsNullOrEmpty(config.Registry))
