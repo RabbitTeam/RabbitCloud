@@ -1,8 +1,7 @@
 @echo off
 set output="%~dp0%packages_publish"
 echo ���·����%output%
-set versionName=preview1
-set versionSuffix=%versionName%-%date:~0,4%%date:~5,2%%date:~8,2%%time:~0,2%%time:~3,2%
+set versionSuffix=%date:~0,4%%date:~5,2%%date:~8,2%%time:~0,2%%time:~3,2%
 echo  %versionSuffix%
 
 dotnet pack RabbitCloud.Abstractions --version-suffix %versionSuffix% -o %output%
