@@ -47,21 +47,11 @@ namespace RabbitCloud.Registry.Consul
         {
             var registration = ConsulUtils.GetServiceRegistration(descriptor);
 
-            try
-            {
-                //尝试注销服务
-                await _consulClient.Agent.ServiceDeregister(registration.ID);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning(0, e, $"Attempt to log out of service failed, will be directly registered service. serviceId:{registration.ID}");
-            }
-
             //注册服务
             var result = await _consulClient.Agent.ServiceRegister(registration, _cancellationTokenSource.Token);
 
             //添加到心跳管理
-            _heartbeatManager.AddHeartbeat(registration.ID);
+            await _heartbeatManager.AddHeartbeat(registration.ID);
 
             if (result.StatusCode != HttpStatusCode.OK && _logger.IsEnabled(LogLevel.Error))
                 _logger.LogError($"ServiceRegister is return code :{result.StatusCode}");
