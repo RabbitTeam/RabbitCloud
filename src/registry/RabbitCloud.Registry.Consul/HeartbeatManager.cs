@@ -16,7 +16,7 @@ namespace RabbitCloud.Registry.Consul
         public HeartbeatManager(IConsulClient consulClient, ILogger<HeartbeatManager> logger = null)
         {
             logger = logger ?? NullLogger<HeartbeatManager>.Instance;
-            var timeSpan = ConsulConstants.TtlInterval.Subtract(TimeSpan.FromSeconds(3));
+            var timeSpan = ConsulConstants.TtlInterval.Subtract(TimeSpan.FromSeconds(30));
             _timer = new Timer(async s =>
             {
                 string[] ids;

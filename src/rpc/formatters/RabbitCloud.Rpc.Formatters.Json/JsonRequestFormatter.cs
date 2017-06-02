@@ -2,9 +2,11 @@
 using Newtonsoft.Json.Linq;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
+using RabbitCloud.Rpc.Formatter;
 using RabbitCloud.Rpc.Formatters.Json.Utilities;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -19,11 +21,11 @@ namespace RabbitCloud.Rpc.Formatters.Json
 
         #endregion Implementation of IRequestFormatter
 
-        private class JsonRequestInputFormatter : IInputFormatter<IRequest>
+        private class JsonRequestInputFormatter : RequestInputFormatter
         {
-            #region Implementation of IInputFormatter<out IRequest>
+            #region Overrides of RequestInputFormatter
 
-            public IRequest Format(byte[] data)
+            protected override void DoFormat(byte[] data, Request request)
             {
                 var json = Encoding.UTF8.GetString(data);
                 var obj = JObject.Parse(json);
@@ -32,26 +34,19 @@ namespace RabbitCloud.Rpc.Formatters.Json
 
                 var arguments = obj.SelectToken("Arguments")?.Select(StrongType.GetStrongType).ToArray();
 
-                var requestId = obj.SelectToken("RequestId")?.Value<long>();
                 var methodDescriptor = obj.SelectToken("MethodDescriptor")?.ToObject<MethodDescriptor>();
-                if (requestId == null)
-                    throw new ArgumentException($"missing {nameof(requestId)}.");
                 if (methodDescriptor == null)
                     throw new ArgumentException($"missing {nameof(methodDescriptor)}.");
 
-                var request = new Request(attachments)
-                {
-                    MethodDescriptor = methodDescriptor.Value,
-                    Arguments = arguments,
-                    RequestId = requestId.Value
-                };
-                return request;
+                request.Attachments = attachments;
+                request.Arguments = arguments;
+                request.MethodDescriptor = methodDescriptor.Value;
             }
 
-            #endregion Implementation of IInputFormatter<out IRequest>
+            #endregion Overrides of RequestInputFormatter
         }
 
-        private class JsonRequestOutputFormatter : IOutputFormatter<IRequest>
+        private class JsonRequestOutputFormatter : RequestOutputFormatter
         {
             private readonly JsonSerializerSettings _jsonSerializerSettings;
 
@@ -65,17 +60,17 @@ namespace RabbitCloud.Rpc.Formatters.Json
 
             #region Implementation of IOutputFormatter<in IRequest>
 
-            public byte[] Format(IRequest instance)
+            protected override void DoFormat(IRequest request, MemoryStream memoryStream)
             {
                 var model = new
                 {
-                    instance.MethodDescriptor,
-                    instance.RequestId,
-                    instance.Attachments,
-                    Arguments = instance.Arguments?.Select(StrongType.CreateStrongType)
+                    request.MethodDescriptor,
+                    request.Attachments,
+                    Arguments = request.Arguments?.Select(StrongType.CreateStrongType)
                 };
                 var json = JsonConvert.SerializeObject(model, _jsonSerializerSettings);
-                return Encoding.UTF8.GetBytes(json);
+                var data = Encoding.UTF8.GetBytes(json);
+                memoryStream.Write(data, 0, data.Length);
             }
 
             #endregion Implementation of IOutputFormatter<in IRequest>

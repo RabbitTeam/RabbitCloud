@@ -3,8 +3,10 @@ using Newtonsoft.Json.Linq;
 using RabbitCloud.Rpc.Abstractions;
 using RabbitCloud.Rpc.Abstractions.Exceptions;
 using RabbitCloud.Rpc.Abstractions.Formatter;
+using RabbitCloud.Rpc.Formatter;
 using RabbitCloud.Rpc.Formatters.Json.Utilities;
 using System;
+using System.IO;
 using System.Text;
 
 namespace RabbitCloud.Rpc.Formatters.Json
@@ -18,30 +20,24 @@ namespace RabbitCloud.Rpc.Formatters.Json
 
         #endregion Implementation of IResponseFormatter
 
-        private class JsonResponseInputFormatter : IInputFormatter<IResponse>
+        private class JsonResponseInputFormatter : ResponseInputFormatter
         {
             #region Implementation of IInputFormatter<out IResponse>
 
-            public IResponse Format(byte[] data)
+            protected override void DoFormat(byte[] data, Response response)
             {
                 var json = Encoding.UTF8.GetString(data);
 
                 var obj = JObject.Parse(json);
                 var exceptionMessage = obj.SelectToken("Exception")?.Value<string>();
-                var response = new Response
-                {
-                    RequestId = obj.Value<long>("RequestId"),
-                    Exception = exceptionMessage == null ? null : new RpcException(exceptionMessage),
-                    Value = StrongType.GetStrongType(obj.SelectToken("Value"))
-                };
-
-                return response;
+                response.Exception = exceptionMessage == null ? null : new RpcException(exceptionMessage);
+                response.Value = StrongType.GetStrongType(obj.SelectToken("Value"));
             }
 
             #endregion Implementation of IInputFormatter<out IResponse>
         }
 
-        private class JsonResponseOutputFormatter : IOutputFormatter<IResponse>
+        private class JsonResponseOutputFormatter : ResponseOutputFormatter
         {
             private readonly JsonSerializerSettings _jsonSerializerSettings;
 
@@ -60,7 +56,7 @@ namespace RabbitCloud.Rpc.Formatters.Json
 
             #region Implementation of IOutputFormatter<in IResponse>
 
-            public byte[] Format(IResponse instance)
+            protected override void DoFormat(IResponse response, MemoryStream memoryStream)
             {
                 string GetExceptionMessage(Exception exception)
                 {
@@ -79,12 +75,12 @@ namespace RabbitCloud.Rpc.Formatters.Json
                 }
                 var model = new
                 {
-                    instance.RequestId,
-                    Value = StrongType.CreateStrongType(instance.Value),
-                    Exception = GetExceptionMessage(instance.Exception)
+                    Value = StrongType.CreateStrongType(response.Value),
+                    Exception = GetExceptionMessage(response.Exception)
                 };
                 var json = JsonConvert.SerializeObject(model, _jsonSerializerSettings);
-                return Encoding.UTF8.GetBytes(json);
+                var data = Encoding.UTF8.GetBytes(json);
+                memoryStream.Write(data, 0, data.Length);
             }
 
             #endregion Implementation of IOutputFormatter<in IResponse>
