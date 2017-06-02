@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace RabbitCloud.Config
 {
-    public class ApplicationModelBuilder
+    public class ApplicationModelDescriptorBuilder
     {
         private readonly ApplicationModelDescriptor _applicationModelDescriptor = new ApplicationModelDescriptor
         {
@@ -20,14 +20,14 @@ namespace RabbitCloud.Config
 
         private readonly IList<IConfiguration> _configurations = new List<IConfiguration>();
 
-        public ApplicationModelBuilder AddConfiguration(IConfiguration configuration)
+        public ApplicationModelDescriptorBuilder AddConfiguration(IConfiguration configuration)
         {
             _configurations.Add(configuration);
 
             return this;
         }
 
-        public ApplicationModelBuilder AddReferer(Type serviceType)
+        public ApplicationModelDescriptorBuilder AddReferer(Type serviceType)
         {
             var refererAttribute = serviceType.GetTypeInfo().GetCustomAttribute<RefererAttribute>();
             var config = new RefererConfig

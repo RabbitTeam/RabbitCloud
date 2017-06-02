@@ -10,9 +10,12 @@ namespace RabbitCloud.Rpc.Formatters.Json.Utilities
             if (value == null)
                 return null;
             var valueType = value.GetType();
+
+            var typeCode = Type.GetTypeCode(valueType.HasElementType ? valueType.GetElementType() : valueType);
+
             return new StrongType
             {
-                TypeName = Type.GetTypeCode(valueType) == TypeCode.Object ? valueType.AssemblyQualifiedName : valueType.FullName,
+                TypeName = typeCode == TypeCode.Object ? valueType.AssemblyQualifiedName : valueType.FullName,
                 Data = value
             };
         }
