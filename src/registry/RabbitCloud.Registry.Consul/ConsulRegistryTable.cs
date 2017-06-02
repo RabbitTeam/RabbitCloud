@@ -47,15 +47,21 @@ namespace RabbitCloud.Registry.Consul
         {
             var registration = ConsulUtils.GetServiceRegistration(descriptor);
 
+            try
+            {
+                //尝试注销服务
+                await _consulClient.Agent.ServiceDeregister(registration.ID);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(0, e, $"Attempt to log out of service failed, will be directly registered service. serviceId:{registration.ID}");
+            }
+
             //注册服务
             var result = await _consulClient.Agent.ServiceRegister(registration, _cancellationTokenSource.Token);
 
             //添加到心跳管理
             _heartbeatManager.AddHeartbeat(registration.ID);
-
-            //todo:考虑是否需要立即发送或尝试其他方式
-            //立即发送一个心跳包
-            await SetAvailableAsync(descriptor);
 
             if (result.StatusCode != HttpStatusCode.OK && _logger.IsEnabled(LogLevel.Error))
                 _logger.LogError($"ServiceRegister is return code :{result.StatusCode}");
@@ -98,20 +104,6 @@ namespace RabbitCloud.Registry.Consul
             }
 
             return descriptors.ToArray();
-        }
-
-        public override async Task SetAvailableAsync(ServiceRegistryDescriptor descriptor)
-        {
-            var serviceId = ConsulUtils.GetServiceId(descriptor);
-            await _consulClient.Agent.PassTTL("service:" + serviceId, await _consulClient.Agent.GetNodeName(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
-            _heartbeatManager.RemoveHeartbeat(serviceId);
-        }
-
-        public override async Task SetUnAvailableAsync(ServiceRegistryDescriptor descriptor)
-        {
-            var serviceId = ConsulUtils.GetServiceId(descriptor);
-            await _consulClient.Agent.FailTTL("service:" + serviceId, await _consulClient.Agent.GetNodeName(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
-            _heartbeatManager.RemoveHeartbeat(serviceId);
         }
 
         #endregion Overrides of RegistryTable

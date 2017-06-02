@@ -9,10 +9,6 @@ namespace RabbitCloud.Registry.Abstractions
 
         Task UnRegisterAsync(ServiceRegistryDescriptor descriptor);
 
-        Task SetAvailableAsync(ServiceRegistryDescriptor descriptor);
-
-        Task SetUnAvailableAsync(ServiceRegistryDescriptor descriptor);
-
         IReadOnlyCollection<ServiceRegistryDescriptor> GetRegisteredServices();
     }
 }
