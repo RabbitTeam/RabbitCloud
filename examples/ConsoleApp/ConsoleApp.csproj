@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\discovery\Rabbit.Discovery.Client\Rabbit.Discovery.Client.csproj" />
+    <ProjectReference Include="..\..\src\discovery\Rabbit.Discovery.Consul.Client\Rabbit.Discovery.Consul.Client.csproj" />
+    <ProjectReference Include="..\..\src\registry\RabbitCloud.Registry.Consul\RabbitCloud.Registry.Consul.csproj" />
+  </ItemGroup>
+
+</Project>

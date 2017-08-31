@@ -1,1 +1,0 @@
-nuget push packages_publish\*.nupkg -Source https://www.myget.org/F/rabbitteam/api/v2/package

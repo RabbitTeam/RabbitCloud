@@ -5,13 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Consul" Version="0.7.2.3" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RabbitCloud.Registry.Abstractions\RabbitCloud.Registry.Abstractions.csproj" />
+    <ProjectReference Include="..\Rabbit.Discovery.Abstractions\Rabbit.Discovery.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
