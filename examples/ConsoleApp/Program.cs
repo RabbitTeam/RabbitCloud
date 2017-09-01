@@ -1,14 +1,26 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using Rabbit.Cloud.Discovery.Abstractions;
-using Rabbit.Cloud.Discovery.Client;
 using Rabbit.Cloud.Extensions.Consul;
+using Rabbit.Cloud.Facade;
+using Rabbit.Cloud.Facade.Abstractions;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
+    public class UserMode
+    {
+        public string Name { get; set; }
+        public ushort Age { get; set; }
+    }
+
+    [FacadeClient("userService")]
+    public interface IUserService
+    {
+        [RequestMapping]
+        Task<UserMode> GetUserAsync(long id);
+    }
+
     internal class Program
     {
         private static async Task Main()
@@ -24,12 +36,11 @@ namespace ConsoleApp
 
             var discoveryClient = services.GetRequiredService<IDiscoveryClient>();
 
-            var handler = new DiscoveryHttpClientHandler(discoveryClient, NullLogger<DiscoveryHttpClientHandler>.Instance);
-            var httpClient = new HttpClient(handler);
+            var client = new ProxyFactory(discoveryClient);
+            var user = await client.GetProxy<IUserService>().GetUserAsync(1);
 
-            var content = await httpClient.GetStringAsync("http://userService/User/GetUser/1");
-
-            Console.WriteLine(content);
+            Console.WriteLine($"name:{user.Name}");
+            Console.WriteLine($"age:{user.Age}");
         }
     }
 }

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Facade</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Facade</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" Version="4.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\discoverys\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
+    <ProjectReference Include="..\..\discoverys\RC.Discovery.Client\RC.Discovery.Client.csproj" />
+    <ProjectReference Include="..\RC.Facade.Abstractions\RC.Facade.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
