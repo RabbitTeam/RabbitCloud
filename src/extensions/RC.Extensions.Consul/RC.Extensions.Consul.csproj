@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Consul" Version="0.7.2.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>

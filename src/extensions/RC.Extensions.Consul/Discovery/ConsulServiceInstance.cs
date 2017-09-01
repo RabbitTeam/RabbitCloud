@@ -2,6 +2,7 @@
 using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Rabbit.Cloud.Extensions.Consul.Discovery
 {
@@ -22,13 +23,12 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
 
         public static ConsulServiceInstance Create(AgentService agentService)
         {
-            Uri.TryCreate(agentService.ID, UriKind.Absolute, out var uri);
             var instance = new ConsulServiceInstance
             {
                 ServiceId = agentService.Service,
                 Host = agentService.Address.ToLower(),
                 Port = agentService.Port,
-                IsSecure = uri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase),
+                IsSecure = agentService.Tags?.Contains("https") ?? false,
                 Metadata = new Dictionary<string, string>()
             };
             instance.Uri = new Uri(GetUrl(instance.IsSecure, instance.Host, instance.Port));

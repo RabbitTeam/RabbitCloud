@@ -1,43 +1,36 @@
 ﻿using Consul;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Registry.Abstractions;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Extensions.Consul.Registry
 {
-    public class ConsulRegistryService : IRegistryService<ConsulRegistration>
+    public class ConsulRegistryService : ConsulService, IRegistryService<ConsulRegistration>
     {
-        private readonly ConsulClient _consulClient;
+        #region Constructor
 
-        public ConsulRegistryService(ConsulClient consulClient)
+        public ConsulRegistryService(ConsulClient consulClient) : base(consulClient)
         {
-            _consulClient = consulClient;
         }
+
+        public ConsulRegistryService(IOptionsMonitor<RabbitConsulOptions> consulOptionsMonitor) : base(consulOptionsMonitor)
+        {
+        }
+
+        #endregion Constructor
 
         #region Implementation of IRegistryService<in ConsulRegistration>
 
         public async Task RegisterAsync(ConsulRegistration registration)
         {
-            await _consulClient.Agent.ServiceRegister(registration.AgentServiceRegistration);
+            await ConsulClient.Agent.ServiceRegister(registration.AgentServiceRegistration);
         }
 
         public async Task DeregisterAsync(ConsulRegistration registration)
         {
-            await _consulClient.Agent.ServiceDeregister(registration.InstanceId);
+            await ConsulClient.Agent.ServiceDeregister(registration.InstanceId);
         }
 
         #endregion Implementation of IRegistryService<in ConsulRegistration>
-
-        #region IDisposable
-
-        /// <inheritdoc />
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            _consulClient?.Dispose();
-        }
-
-        #endregion IDisposable
     }
 }

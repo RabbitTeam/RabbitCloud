@@ -55,7 +55,7 @@ namespace Rabbit.Cloud.Discovery.Client
 
             var instances = _discoveryClient.GetInstances(current.Host);
 
-            if (instances.Any())
+            if (instances != null && instances.Any())
             {
                 var index = Random.Next(instances.Count);
                 current = new Uri(instances.ElementAt(index).Uri, current.PathAndQuery);

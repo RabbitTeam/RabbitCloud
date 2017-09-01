@@ -1,6 +1,5 @@
 ﻿using Consul;
 using Rabbit.Cloud.Registry.Abstractions;
-using System;
 using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Extensions.Consul.Registry
@@ -24,33 +23,18 @@ namespace Rabbit.Cloud.Extensions.Consul.Registry
 
         #region Public Static Method
 
-        public static ConsulRegistration Create(string serviceName, Uri uri, IDictionary<string, string> metadata = null)
+        public static ConsulRegistration Create(RabbitConsulOptions.DiscoveryOptions options, IDictionary<string, string> metadata = null)
         {
-            var agentServiceRegistration = new AgentServiceRegistration
+            return new ConsulRegistration(new AgentServiceRegistration
             {
-                Address = uri.Host.ToLower(),
-                Port = uri.Port,
-                Name = serviceName,
-                ID = GetInstanceId(uri)
-            };
-
-            return new ConsulRegistration(agentServiceRegistration);
+                Address = options.HostName.ToLower(),
+                Port = options.Port,
+                Name = options.ServiceName,
+                ID = options.InstanceId,
+                Tags = options.IsSecure ? new[] { "https" } : null
+            });
         }
 
         #endregion Public Static Method
-
-        #region Private Method
-
-        private static string GetInstanceId(Uri uri)
-        {
-            return GetUrl(uri.Scheme, uri.Host, uri.Port);
-        }
-
-        private static string GetUrl(string scheme, string host, int port)
-        {
-            return $"{scheme}://{host}:{port}".ToLower();
-        }
-
-        #endregion Private Method
     }
 }

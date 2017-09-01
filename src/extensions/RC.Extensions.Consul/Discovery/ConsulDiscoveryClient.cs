@@ -1,4 +1,5 @@
 ﻿using Consul;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Concurrent;
@@ -8,27 +9,24 @@ using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Extensions.Consul.Discovery
 {
-    public class ConsulDiscoveryClient : IDiscoveryClient
+    public class ConsulDiscoveryClient : ConsulService, IDiscoveryClient
     {
-        private readonly ConsulClient _consulClient;
-        private bool _disposed;
-
         private readonly ConcurrentDictionary<string, IReadOnlyCollection<IServiceInstance>> _instances = new ConcurrentDictionary<string, IReadOnlyCollection<IServiceInstance>>(StringComparer.OrdinalIgnoreCase);
 
-        public ConsulDiscoveryClient(ConsulClient consulClient)
+        #region Constructor
+
+        public ConsulDiscoveryClient(ConsulClient consulClient) : base(consulClient)
         {
-            _consulClient = consulClient;
+            //first load
+            LoadServices().Wait();
 
             Task.Factory.StartNew(async () =>
             {
-                //first load
-                await LoadServices();
-
                 var response = await consulClient.Catalog.Services();
                 var index = response.LastIndex;
 
                 //watcher
-                while (!_disposed)
+                while (!Disposed)
                 {
                     response = await consulClient.Catalog.Services(new QueryOptions { WaitIndex = index });
 
@@ -44,6 +42,13 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
             });
         }
 
+        public ConsulDiscoveryClient(IOptionsMonitor<RabbitConsulOptions> consulOptionsMonitor)
+            : this(consulOptionsMonitor.CurrentValue.CreateClient())
+        {
+        }
+
+        #endregion Constructor
+
         #region Implementation of IDiscoveryClient
 
         public string Description => "Rabbit Cloud Consul Client";
@@ -57,25 +62,11 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
 
         #endregion Implementation of IDiscoveryClient
 
-        #region IDisposable
-
-        /// <inheritdoc />
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            _disposed = true;
-            _consulClient?.Dispose();
-        }
-
-        #endregion IDisposable
-
         #region Private Method
 
         private async Task LoadServices()
         {
-            var agentEndpoint = _consulClient.Agent;
+            var agentEndpoint = ConsulClient.Agent;
 
             var result = await agentEndpoint.Services();
             var services = result.Response.Values;
