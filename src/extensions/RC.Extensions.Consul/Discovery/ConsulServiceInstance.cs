@@ -3,7 +3,7 @@ using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Discovery.Consul.Client
+namespace Rabbit.Cloud.Extensions.Consul.Discovery
 {
     internal class ConsulServiceInstance : IServiceInstance
     {

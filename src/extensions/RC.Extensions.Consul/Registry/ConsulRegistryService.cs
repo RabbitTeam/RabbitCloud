@@ -2,7 +2,7 @@
 using Rabbit.Cloud.Registry.Abstractions;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Registry.Consul
+namespace Rabbit.Cloud.Extensions.Consul.Registry
 {
     public class ConsulRegistryService : IRegistryService<ConsulRegistration>
     {

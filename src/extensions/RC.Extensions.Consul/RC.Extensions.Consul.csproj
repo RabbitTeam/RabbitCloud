@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Extensions.Consul</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Extensions.Consul</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Consul" Version="0.7.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\discoverys\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
+    <ProjectReference Include="..\..\registrys\RC.Registry.Abstractions\RC.Registry.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -3,7 +3,7 @@ using Rabbit.Cloud.Registry.Abstractions;
 using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Registry.Consul
+namespace Rabbit.Cloud.Extensions.Consul.Registry
 {
     public class ConsulRegistration : IRegistration
     {

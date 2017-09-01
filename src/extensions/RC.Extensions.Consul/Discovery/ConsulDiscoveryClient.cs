@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Discovery.Consul.Client
+namespace Rabbit.Cloud.Extensions.Consul.Discovery
 {
     public class ConsulDiscoveryClient : IDiscoveryClient
     {
