@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Extensions.Consul;
 using Rabbit.Cloud.Facade;
@@ -25,19 +26,18 @@ namespace ConsoleApp
     {
         private static async Task Main()
         {
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .Build();
+
             var services = new ServiceCollection()
                 .AddOptions()
-                .Configure<RabbitConsulOptions>(options =>
-                {
-                    options.Address = "http://192.168.1.150:8500";
-                })
+                .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulDiscovery()
                 .BuildServiceProvider();
-
             var discoveryClient = services.GetRequiredService<IDiscoveryClient>();
-
             var client = new ProxyFactory(discoveryClient);
-            var user = await client.GetProxy<IUserService>().GetUserAsync(1);
+            var user = await client.GetProxy<IUserService>().GetUserAsync(0);
 
             Console.WriteLine($"name:{user.Name}");
             Console.WriteLine($"age:{user.Age}");

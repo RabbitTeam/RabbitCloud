@@ -5,7 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\" />
+    <Compile Remove="wwwroot\**" />
+    <Content Remove="wwwroot\**" />
+    <EmbeddedResource Remove="wwwroot\**" />
+    <None Remove="wwwroot\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -14,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\extensions\RC.Extensions.Consul\RC.Extensions.Consul.csproj" />
+    <ProjectReference Include="..\..\src\Rabbit.Extensions.Configuration\Rabbit.Extensions.Configuration.csproj" />
   </ItemGroup>
 
   <ItemGroup>

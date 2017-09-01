@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Cloud.Extensions.Consul;
+using Rabbit.Extensions.Configuration;
 
 namespace Web.Server
 {
@@ -12,7 +13,8 @@ namespace Web.Server
         {
             Configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
-                .Build();
+                .Build()
+                .EnableTemplateSupport();
         }
 
         public IConfigurationRoot Configuration { get; }
