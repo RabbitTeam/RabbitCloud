@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Extensions.Consul;
 
 namespace Web.Server
@@ -31,7 +30,6 @@ namespace Web.Server
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            var s = app.ApplicationServices.GetRequiredService<IOptions<RabbitConsulOptions>>();
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

@@ -11,7 +11,7 @@ namespace ConsoleApp
 {
     internal class Program
     {
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
             var services = new ServiceCollection()
                 .AddOptions()
@@ -28,9 +28,8 @@ namespace ConsoleApp
             var httpClient = new HttpClient(handler);
 
             var content = await httpClient.GetStringAsync("http://userService/User/GetUser/1");
-            Console.WriteLine(content);
 
-            Console.ReadLine();
+            Console.WriteLine(content);
         }
     }
 }
