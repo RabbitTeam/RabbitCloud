@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Extensions.Consul.Discovery;
 using Rabbit.Cloud.Extensions.Consul.Registry;
+using Rabbit.Cloud.Extensions.Consul.Utilities;
 using Rabbit.Cloud.Registry.Abstractions;
 using System;
 
@@ -43,7 +44,7 @@ namespace Rabbit.Cloud.Extensions.Consul
 
                     var discoveryOptions = services.GetRequiredService<IOptionsMonitor<RabbitConsulOptions>>().CurrentValue.Discovery;
                     var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
-                    registryService.RegisterAsync(ConsulRegistration.Create(discoveryOptions));
+                    registryService.RegisterAsync(ConsulUtil.Create(discoveryOptions));
 
                     next(app);
                 };

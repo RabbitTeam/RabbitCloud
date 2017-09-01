@@ -1,12 +1,10 @@
-﻿using Consul;
-using Rabbit.Cloud.Discovery.Abstractions;
+﻿using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Rabbit.Cloud.Extensions.Consul.Discovery
 {
-    internal class ConsulServiceInstance : IServiceInstance
+    public class ConsulServiceInstance : IServiceInstance
     {
         #region Implementation of IServiceInstance
 
@@ -18,38 +16,5 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
         public IDictionary<string, string> Metadata { get; set; }
 
         #endregion Implementation of IServiceInstance
-
-        #region Public Static Method
-
-        public static ConsulServiceInstance Create(AgentService agentService)
-        {
-            var instance = new ConsulServiceInstance
-            {
-                ServiceId = agentService.Service,
-                Host = agentService.Address.ToLower(),
-                Port = agentService.Port,
-                IsSecure = agentService.Tags?.Contains("https") ?? false,
-                Metadata = new Dictionary<string, string>()
-            };
-            instance.Uri = new Uri(GetUrl(instance.IsSecure, instance.Host, instance.Port));
-
-            return instance;
-        }
-
-        #endregion Public Static Method
-
-        #region Private Method
-
-        private static string GetUrl(bool isSecure, string host, int port)
-        {
-            return GetUrl(isSecure ? "https" : "http", host, port);
-        }
-
-        private static string GetUrl(string scheme, string host, int port)
-        {
-            return $"{scheme}://{host}:{port}".ToLower();
-        }
-
-        #endregion Private Method
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Consul;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
+using Rabbit.Cloud.Extensions.Consul.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -70,7 +71,7 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
 
             var result = await agentEndpoint.Services();
             var services = result.Response.Values;
-            var instances = services.Select(ConsulServiceInstance.Create).ToArray();
+            var instances = services.Select(ConsulUtil.Create).Where(i => i != null).ToArray();
 
             foreach (var instanceGroup in instances.GroupBy(i => i.ServiceId))
             {
