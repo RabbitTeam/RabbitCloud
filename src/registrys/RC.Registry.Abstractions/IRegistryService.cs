@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Registry.Abstractions
+namespace Rabbit.Cloud.Registry.Abstractions
 {
     public interface IRegistryService<in T> : IDisposable where T : IRegistration
     {

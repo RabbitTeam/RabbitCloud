@@ -1,4 +1,4 @@
-﻿namespace RabbitCloud.Registry.Abstractions
+﻿namespace Rabbit.Cloud.Registry.Abstractions
 {
     public interface IRegistration
     {

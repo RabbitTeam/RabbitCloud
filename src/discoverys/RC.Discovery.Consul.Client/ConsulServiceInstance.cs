@@ -1,9 +1,9 @@
 ﻿using Consul;
-using Rabbit.Discovery.Abstractions;
+using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Discovery.Consul.Client
+namespace Rabbit.Cloud.Discovery.Consul.Client
 {
     internal class ConsulServiceInstance : IServiceInstance
     {

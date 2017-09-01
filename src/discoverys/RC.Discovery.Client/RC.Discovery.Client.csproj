@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Rabbit.Cloud.Discovery.Client</RootNamespace>
+    <AssemblyName>Rabbit.Cloud.Discovery.Client</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -9,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Rabbit.Discovery.Abstractions\Rabbit.Discovery.Abstractions.csproj" />
+    <ProjectReference Include="..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,8 +1,8 @@
 ﻿using Consul;
 using Microsoft.Extensions.Logging.Abstractions;
-using Rabbit.Discovery.Client;
-using Rabbit.Discovery.Consul.Client;
-using RabbitCloud.Registry.Consul;
+using Rabbit.Cloud.Discovery.Client;
+using Rabbit.Cloud.Discovery.Consul.Client;
+using Rabbit.Cloud.Registry.Consul;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;

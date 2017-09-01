@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Discovery.Abstractions
+namespace Rabbit.Cloud.Discovery.Abstractions
 {
     public interface IServiceInstance
     {

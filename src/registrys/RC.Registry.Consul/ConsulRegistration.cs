@@ -1,9 +1,9 @@
 ﻿using Consul;
-using RabbitCloud.Registry.Abstractions;
+using Rabbit.Cloud.Registry.Abstractions;
 using System;
 using System.Collections.Generic;
 
-namespace RabbitCloud.Registry.Consul
+namespace Rabbit.Cloud.Registry.Consul
 {
     public class ConsulRegistration : IRegistration
     {

@@ -1,8 +1,8 @@
 ﻿using Consul;
-using RabbitCloud.Registry.Abstractions;
+using Rabbit.Cloud.Registry.Abstractions;
 using System.Threading.Tasks;
 
-namespace RabbitCloud.Registry.Consul
+namespace Rabbit.Cloud.Registry.Consul
 {
     public class ConsulRegistryService : IRegistryService<ConsulRegistration>
     {

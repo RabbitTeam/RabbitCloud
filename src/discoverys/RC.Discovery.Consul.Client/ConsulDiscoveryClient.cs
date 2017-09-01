@@ -1,12 +1,12 @@
 ﻿using Consul;
-using Rabbit.Discovery.Abstractions;
+using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Rabbit.Discovery.Consul.Client
+namespace Rabbit.Cloud.Discovery.Consul.Client
 {
     public class ConsulDiscoveryClient : IDiscoveryClient
     {

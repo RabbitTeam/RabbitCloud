@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Registry.Consul</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Registry.Consul</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RabbitCloud.Registry.Abstractions\RabbitCloud.Registry.Abstractions.csproj" />
+    <ProjectReference Include="..\RC.Registry.Abstractions\RC.Registry.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

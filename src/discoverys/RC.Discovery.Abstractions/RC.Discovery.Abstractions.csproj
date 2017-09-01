@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Rabbit.Cloud.Discovery.Abstractions</RootNamespace>
+    <AssemblyName>Rabbit.Cloud.Discovery.Abstractions</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
-using Rabbit.Discovery.Abstractions;
+using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rabbit.Discovery.Client
+namespace Rabbit.Cloud.Discovery.Client
 {
     public class DiscoveryHttpClientHandler : HttpClientHandler
     {

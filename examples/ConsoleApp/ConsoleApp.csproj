@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\discovery\Rabbit.Discovery.Client\Rabbit.Discovery.Client.csproj" />
-    <ProjectReference Include="..\..\src\discovery\Rabbit.Discovery.Consul.Client\Rabbit.Discovery.Consul.Client.csproj" />
-    <ProjectReference Include="..\..\src\registry\RabbitCloud.Registry.Consul\RabbitCloud.Registry.Consul.csproj" />
+    <ProjectReference Include="..\..\src\discoverys\RC.Discovery.Client\RC.Discovery.Client.csproj" />
+    <ProjectReference Include="..\..\src\discoverys\RC.Discovery.Consul.Client\RC.Discovery.Consul.Client.csproj" />
+    <ProjectReference Include="..\..\src\registrys\RC.Registry.Consul\RC.Registry.Consul.csproj" />
   </ItemGroup>
 
 </Project>
