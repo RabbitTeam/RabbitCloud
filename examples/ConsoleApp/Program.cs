@@ -35,6 +35,7 @@ namespace ConsoleApp
                 .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulDiscovery()
                 .BuildServiceProvider();
+
             var discoveryClient = services.GetRequiredService<IDiscoveryClient>();
             var client = new ProxyFactory(discoveryClient);
             var user = await client.GetProxy<IUserService>().GetUserAsync(0);

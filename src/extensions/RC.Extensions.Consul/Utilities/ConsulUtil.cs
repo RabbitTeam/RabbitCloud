@@ -31,7 +31,8 @@ namespace Rabbit.Cloud.Extensions.Consul.Utilities
                 Check = new AgentServiceCheck
                 {
                     HTTP = options.HealthCheckUrl,
-                    Interval = TimeUtil.GetTimeSpanBySimple(options.HealthCheckInterval)
+                    Interval = TimeUtil.GetTimeSpanBySimple(options.HealthCheckInterval),
+                    Status = HealthStatus.Passing
                 }
             });
         }
