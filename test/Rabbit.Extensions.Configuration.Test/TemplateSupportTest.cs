@@ -18,7 +18,7 @@ namespace Rabbit.Extensions.Configuration.Test
         [InlineData("ch:c:url", "http://localhost:80/User/Get/?p1=${notReplace}&t=${t}_test_test")]
         public void BasicTest(string key, string value)
         {
-            var configuration = GetConfiguration().EnableTemplateSupport();
+            var configuration = GetConfiguration();
 
             Assert.Equal(value, configuration[key]);
         }
@@ -69,14 +69,56 @@ namespace Rabbit.Extensions.Configuration.Test
             }
         }
 
-        private static IConfigurationRoot GetConfiguration(IDictionary<string, string> memoryConfiguration = null)
+        [Fact(DisplayName = "CyclicDependencyTest")]
+        public void CyclicDependencyTest()
+        {
+            var data = new Dictionary<string, string>
+            {
+                {"key1", "${key3}"},
+                {"key2", "${key1}"},
+                {"key3", "${key2}"}
+            };
+            var exception = Assert.Throws<ArgumentException>("key1", () =>
+               {
+                   GetConfiguration(data);
+               });
+            Assert.Equal("cyclic dependency 'key1 > key3 > key2 > key1'.\r\nParameter name: key1", exception.Message);
+        }
+
+        [Theory(DisplayName = "VariableMissingTest")]
+        [InlineData(VariableMissingAction.ThrowException, null)]
+        [InlineData(VariableMissingAction.UseKey, "http://localhost:80/User/Get/?p1=${notReplace}&t=${t}")]
+        [InlineData(VariableMissingAction.UseEmpty, "http://localhost:80/User/Get/?p1=${notReplace}&t=")]
+        public void VariableMissingTest(VariableMissingAction variableMissingAction, string value)
+        {
+            IConfiguration Init()
+            {
+                return GetConfiguration(configure: c => { c.VariableMissingAction = variableMissingAction; });
+            }
+
+            if (variableMissingAction == VariableMissingAction.ThrowException)
+            {
+                var exception = Assert.Throws<ArgumentException>((Func<IConfiguration>)Init);
+                Assert.Equal("missing key 't'.", exception.Message);
+            }
+            else
+            {
+                var configuration = Init();
+                Assert.Equal(value, configuration["url"]);
+            }
+        }
+
+        #region Private Method
+
+        private static IConfigurationRoot GetConfiguration(IDictionary<string, string> memoryConfiguration = null, Action<TemplateSupportOptions> configure = null)
         {
             if (memoryConfiguration == null)
                 memoryConfiguration = GetMemoryConfiguration();
 
             return new ConfigurationBuilder()
                 .AddInMemoryCollection(memoryConfiguration)
-                .Build();
+                .Build()
+                .EnableTemplateSupport(configure);
         }
 
         private static Dictionary<string, string> GetMemoryConfiguration()
@@ -92,5 +134,7 @@ namespace Rabbit.Extensions.Configuration.Test
                 {"ch:c:url","${ch:url}_test" }
             };
         }
+
+        #endregion Private Method
     }
 }

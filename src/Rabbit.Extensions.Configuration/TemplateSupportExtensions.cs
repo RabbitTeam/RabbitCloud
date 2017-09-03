@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+using Rabbit.Extensions.Configuration.Internal;
+using System;
 
 namespace Rabbit.Extensions.Configuration
 {
@@ -10,72 +9,46 @@ namespace Rabbit.Extensions.Configuration
         /// <summary>
         /// enable configuration template support.
         /// </summary>
-        /// <param name="targetConfiguration">need enable configuration.</param>
-        /// <param name="sourceConfiguration">template value source configuration.</param>
-        /// <param name="enableChildrens">is enable childrens template support.</param>
-        /// <param name="reloadOnChange">configuration change is re enable template support.</param>
-        /// <param name="forcedReplace">value is null replace empty, else cancel.</param>
-        /// <returns></returns>
-        public static T EnableTemplateSupport<T>(this T targetConfiguration, IConfiguration sourceConfiguration = null, bool enableChildrens = true, bool reloadOnChange = true, bool forcedReplace = false) where T : IConfiguration
+        private static void EnableTemplateSupport(TemplateSupportOptions options)
         {
-            if (sourceConfiguration == null)
-                sourceConfiguration = targetConfiguration;
+            if (options.Source == null)
+                throw new ArgumentNullException(nameof(options.Source));
+            if (options.Source == null)
+                throw new ArgumentNullException(nameof(options.Target));
+
+            var target = options.Target;
 
             //reload
-            if (reloadOnChange)
-                targetConfiguration.GetReloadToken().RegisterChangeCallback(s =>
+            if (options.ReloadOnChange)
+                target.GetReloadToken().RegisterChangeCallback(s =>
                 {
-                    targetConfiguration.EnableTemplateSupport(sourceConfiguration, enableChildrens);
+                    EnableTemplateSupport(options);
                 }, null);
 
-            void TemplateRender(IEnumerable<IConfigurationSection> sections)
+            var render = new TemplateRender(options);
+            render.Render();
+        }
+
+        /// <summary>
+        /// enable configuration template support.
+        /// </summary>
+        /// <param name="target">need enable configuration.</param>
+        /// <param name="configure">options configure.</param>
+        /// <returns></returns>
+        public static T EnableTemplateSupport<T>(this T target, Action<TemplateSupportOptions> configure = null)
+            where T : IConfiguration
+        {
+            var options = new TemplateSupportOptions
             {
-                while (true)
-                {
-                    var list = new List<IConfigurationSection>();
-                    foreach (var section in sections)
-                    {
-                        var key = section.Path;
-                        var value = section.Value;
+                Target = target,
+                Source = target
+            };
 
-                        var isReplace = !string.IsNullOrEmpty(value) && value.Contains("${");
-                        var isChildrens = value == null;
+            configure?.Invoke(options);
 
-                        if (isReplace)
-                        {
-                            value = Regex.Replace(value, @"\\?\${([^}]+)}", match =>
-                            {
-                                var raw = match.Groups[0].Value;
-                                var configKey = match.Groups[1].Value;
+            EnableTemplateSupport(options);
 
-                                //disabled
-                                if (raw.StartsWith("\\"))
-                                    return raw.Substring(1);
-
-                                var result = sourceConfiguration[configKey];
-
-                                //value
-                                return result ?? (forcedReplace ? null : raw);
-                            });
-                            targetConfiguration[key] = value;
-                        }
-                        else if (isChildrens)
-                        {
-                            list.AddRange(section.GetChildren());
-                        }
-                    }
-                    if (list.Any())
-                    {
-                        sections = list;
-                        continue;
-                    }
-                    break;
-                }
-            }
-
-            TemplateRender(targetConfiguration.GetChildren());
-
-            return targetConfiguration;
+            return target;
         }
     }
 }
