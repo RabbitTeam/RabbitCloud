@@ -22,7 +22,6 @@
     <ProjectReference Include="..\..\src\extensions\RC.Extensions.Consul\RC.Extensions.Consul.csproj" />
     <ProjectReference Include="..\..\src\facades\RC.Facade.Abstractions\RC.Facade.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\facades\RC.Facade\RC.Facade.csproj" />
-    <ProjectReference Include="..\..\src\Rabbit.Extensions.Configuration\Rabbit.Extensions.Configuration.csproj" />
     <ProjectReference Include="..\..\src\RC.Abstractions\RC.Abstractions.csproj" />
   </ItemGroup>
 
