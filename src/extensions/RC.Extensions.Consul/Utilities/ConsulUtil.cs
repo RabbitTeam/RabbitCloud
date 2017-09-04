@@ -28,12 +28,14 @@ namespace Rabbit.Cloud.Extensions.Consul.Utilities
                 Name = options.ServiceName,
                 ID = GetInstanceId(options.InstanceId),
                 Tags = tags.ToArray(),
-                Checks = options.HealthChecks?.Select(i => new AgentServiceCheck
-                {
-                    HTTP = i.Url,
-                    Interval = TimeUtil.GetTimeSpanBySimple(i.Interval),
-                    Status = HealthStatus.Passing
-                }).ToArray()
+                Checks = options.HealthChecks?
+                                .Where(i => Uri.TryCreate(i.Url, UriKind.Absolute, out var uri) && !uri.IsLoopback) // ignore invalid url
+                                .Select(i => new AgentServiceCheck
+                                {
+                                    HTTP = i.Url,
+                                    Interval = TimeUtil.GetTimeSpanBySimple(i.Interval),
+                                    Status = HealthStatus.Passing
+                                }).ToArray()
             });
         }
 

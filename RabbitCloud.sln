@@ -9,9 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "registrys", "registrys", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Registry.Abstractions", "src\registrys\RC.Registry.Abstractions\RC.Registry.Abstractions.csproj", "{740CEF65-60A7-43E0-ABFB-D9E0AB13817C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web.Server", "examples\Web.Server\Web.Server.csproj", "{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web.Server", "samples\Web.Server\Web.Server.csproj", "{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "discoverys", "discoverys", "{2BB99C91-4AC9-4AB2-81D3-2DEB42FF72CE}"
 EndProject
@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Client", "src\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Abstractions", "src\discoverys\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj", "{1A4BE30C-802F-4AB9-B75C-9B2354120A8F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "examples\ConsoleApp\ConsoleApp.csproj", "{5A4C5ADC-13EA-43C4-9224-D5E3E41B67C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "samples\ConsoleApp\ConsoleApp.csproj", "{5A4C5ADC-13EA-43C4-9224-D5E3E41B67C3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "extensions", "extensions", "{9808B479-46DC-41FC-A2EB-B01C3719A7C4}"
 EndProject

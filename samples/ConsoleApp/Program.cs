@@ -4,6 +4,7 @@ using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Extensions.Consul;
 using Rabbit.Cloud.Facade;
 using Rabbit.Cloud.Facade.Abstractions;
+using Rabbit.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 
@@ -24,11 +25,14 @@ namespace ConsoleApp
 
     internal class Program
     {
-        private static async Task Main()
+        private static async Task Main(string[] args)
         {
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
-                .Build();
+                .AddEnvironmentVariables()
+                .AddCommandLine(args)
+                .Build()
+                .EnableTemplateSupport();
 
             var services = new ServiceCollection()
                 .AddOptions()
