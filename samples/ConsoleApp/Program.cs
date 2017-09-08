@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Rabbit.Cloud.Discovery.Client.Internal;
 using Rabbit.Cloud.Discovery.Client.Middlewares;
 using Rabbit.Cloud.Extensions.Consul;
+using Rabbit.Cloud.Facade;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Builder;
 using Rabbit.Extensions.Configuration;
@@ -13,7 +13,6 @@ using RC.Discovery.Client.Abstractions;
 using RC.Discovery.Client.Abstractions.Extensions;
 using RC.Facade.Formatters.Json;
 using System;
-using System.Buffers;
 using System.Net.Http;
 using System.Threading.Tasks;
 using ProxyFactory = Rabbit.Cloud.Facade.ProxyFactory;
@@ -46,16 +45,14 @@ namespace ConsoleApp
                 .AddCommandLine(args)
                 .Build()
                 .EnableTemplateSupport();
-            
+
             var services = new ServiceCollection()
-                .AddSingleton(ArrayPool<char>.Shared)
-                .AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>()
-                .AddOptions()
-                .AddLogging()
                 .AddSingleton(new HttpClient())
                 .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulDiscovery()
+                .AddFacadeCore()
                 .AddJsonFormatters()
+                .Services
                 .BuildServiceProvider();
 
             IRabbitApplicationBuilder applicationBuilder = new RabbitApplicationBuilder(services);

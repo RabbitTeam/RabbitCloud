@@ -9,16 +9,13 @@
 
   <ItemGroup>
     <PackageReference Include="Castle.Core" Version="4.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\discoverys\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
     <ProjectReference Include="..\..\discoverys\RC.Discovery.Client\RC.Discovery.Client.csproj" />
     <ProjectReference Include="..\RC.Facade.Abstractions\RC.Facade.Abstractions.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Internal\" />
   </ItemGroup>
 
 </Project>
