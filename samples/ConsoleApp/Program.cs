@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.ObjectPool;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Rabbit.Cloud.Discovery.Client.Internal;
 using Rabbit.Cloud.Discovery.Client.Middlewares;
@@ -9,7 +11,9 @@ using Rabbit.Cloud.Facade.Builder;
 using Rabbit.Extensions.Configuration;
 using RC.Discovery.Client.Abstractions;
 using RC.Discovery.Client.Abstractions.Extensions;
+using RC.Facade.Formatters.Json;
 using System;
+using System.Buffers;
 using System.Net.Http;
 using System.Threading.Tasks;
 using ProxyFactory = Rabbit.Cloud.Facade.ProxyFactory;
@@ -27,6 +31,9 @@ namespace ConsoleApp
     {
         [RequestMapping]
         Task<UserMode> GetUserAsync(long id);
+
+        [RequestMapping]
+        UserMode GetUser(long id);
     }
 
     internal class Program
@@ -39,13 +46,16 @@ namespace ConsoleApp
                 .AddCommandLine(args)
                 .Build()
                 .EnableTemplateSupport();
-
+            
             var services = new ServiceCollection()
+                .AddSingleton(ArrayPool<char>.Shared)
+                .AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>()
                 .AddOptions()
                 .AddLogging()
                 .AddSingleton(new HttpClient())
                 .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulDiscovery()
+                .AddJsonFormatters()
                 .BuildServiceProvider();
 
             IRabbitApplicationBuilder applicationBuilder = new RabbitApplicationBuilder(services);
@@ -56,7 +66,7 @@ namespace ConsoleApp
 
             var rabbitRequestDelegate = applicationBuilder.Build();
 
-            var proxyFactory = new ProxyFactory(rabbitRequestDelegate);
+            var proxyFactory = new ProxyFactory(rabbitRequestDelegate, services.GetRequiredService<IOptions<FacadeOptions>>());
 
             var userService = proxyFactory.GetProxy<IUserService>();
 

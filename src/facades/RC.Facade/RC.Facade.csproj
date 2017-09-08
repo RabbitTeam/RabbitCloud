@@ -17,4 +17,8 @@
     <ProjectReference Include="..\RC.Facade.Abstractions\RC.Facade.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Internal\" />
+  </ItemGroup>
+
 </Project>

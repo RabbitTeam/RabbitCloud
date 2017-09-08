@@ -1,12 +1,12 @@
 ﻿using Castle.DynamicProxy;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Client.Internal;
 using Rabbit.Cloud.Facade.Abstractions;
+using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Features;
 using RC.Discovery.Client.Abstractions;
 using System;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -17,9 +17,9 @@ namespace Rabbit.Cloud.Facade
         private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
         private readonly Interceptor _interceptor;
 
-        public ProxyFactory(RabbitRequestDelegate rabbitRequestDelegate)
+        public ProxyFactory(RabbitRequestDelegate rabbitRequestDelegate, IOptions<FacadeOptions> facadeOptions)
         {
-            _interceptor = new Interceptor(rabbitRequestDelegate);
+            _interceptor = new Interceptor(rabbitRequestDelegate, facadeOptions.Value);
         }
 
         #region Implementation of IProxyFactory
@@ -36,11 +36,13 @@ namespace Rabbit.Cloud.Facade
     internal class Interceptor : IInterceptor
     {
         private readonly RabbitRequestDelegate _rabbitRequestDelegate;
+        private readonly FacadeOptions _facadeOptions;
         private static readonly MethodInfo HandleAsyncMethodInfo = typeof(Interceptor).GetMethod(nameof(HandleAsync), BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static);
 
-        public Interceptor(RabbitRequestDelegate rabbitRequestDelegate)
+        public Interceptor(RabbitRequestDelegate rabbitRequestDelegate, FacadeOptions facadeOptions)
         {
             _rabbitRequestDelegate = rabbitRequestDelegate;
+            _facadeOptions = facadeOptions;
         }
 
         #region Implementation of IInterceptor
@@ -57,68 +59,51 @@ namespace Rabbit.Cloud.Facade
             }
             else
             {
-                invocation.ReturnValue = null;
+                invocation.ReturnValue = Handle(invocation);
             }
         }
 
         private async Task<T> HandleAsync<T>(IInvocation invocation)
         {
-            var context = new DefaultRabbitContext();
+            return (T)await InternalHandleAsync(invocation, typeof(T));
+        }
 
-            context.Features.Set<IInvocationFeature>(new InvocationFeature(invocation));
+        private object Handle(IInvocation invocation)
+        {
+            return InternalHandleAsync(invocation, invocation.Method.ReturnType).GetAwaiter().GetResult();
+        }
+
+        private async Task<object> InternalHandleAsync(IInvocation invocation, Type returnType)
+        {
+            var context = GetRabbitContext(invocation);
 
             await _rabbitRequestDelegate(context);
 
-            return JsonConvert.DeserializeObject<T>(await context.Response.Content.ReadAsStringAsync());
+            return await Return(context, returnType);
         }
 
-        private object Handle(HttpRequestMessage requestMessage)
+        private static RabbitContext GetRabbitContext(IInvocation invocation)
         {
-            throw new NotSupportedException();
+            var context = new DefaultRabbitContext();
+            context.Features.Set<IInvocationFeature>(new InvocationFeature(invocation));
+            return context;
+        }
+
+        private async Task<object> Return(RabbitContext context, Type returnType)
+        {
+            using (var stream = await context.Response.Content.ReadAsStreamAsync())
+            {
+                var formatterContext = new OutputFormatterContext(context, returnType, stream);
+                foreach (var formatter in _facadeOptions.OutputFormatters.Where(f => f.CanWriteResult(formatterContext)))
+                {
+                    var result = await formatter.WriteAsync(formatterContext);
+                    if (result.IsModelSet)
+                        return result.Model;
+                }
+            }
+            return null;
         }
 
         #endregion Implementation of IInterceptor
-
-        /*        #region Private Method
-
-                private HttpRequestMessage GetRequestMessage(IInvocation invocation)
-                {
-                    var mapping = invocation.Method.GetCustomAttribute<RequestMappingAttribute>();
-                    return new HttpRequestMessage(new HttpMethod(mapping.Method), GetUrl(invocation.Method, mapping));
-                }
-
-                private static string GetUrl(MemberInfo method, RequestMappingAttribute mapping)
-                {
-                    var interfaceType = method.DeclaringType;
-
-                    var facadeClient = interfaceType.GetCustomAttribute<FacadeClientAttribute>();
-
-                    var url = facadeClient.Url ?? $"http://{facadeClient.Name}";
-
-                    return $"{url}{GetPath(method, mapping)}";
-                }
-
-                private static string GetPath(MemberInfo method, RequestMappingAttribute mapping)
-                {
-                    if (!string.IsNullOrEmpty(mapping.Value))
-                        return mapping.Value;
-
-                    var interfaceType = method.DeclaringType;
-
-                    var typeNmae = interfaceType.Name;
-
-                    typeNmae = typeNmae.TrimStart('I');
-                    if (typeNmae.EndsWith("Service"))
-                        typeNmae = typeNmae.Substring(0, typeNmae.Length - 7);
-
-                    var methodName = method.Name;
-
-                    if (methodName.EndsWith("Async"))
-                        methodName = methodName.Substring(0, methodName.Length - 5);
-
-                    return $"/{typeNmae}/{methodName}";
-                }
-
-                #endregion Private Method*/
     }
 }

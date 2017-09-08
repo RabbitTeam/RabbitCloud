@@ -15,4 +15,8 @@
     <Folder Include="Features\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\discoverys\RC.Discovery.Client.Abstractions\RC.Discovery.Client.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>
