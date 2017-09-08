@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -29,7 +30,7 @@ namespace ConsoleApp
     public interface IUserService
     {
         [RequestMapping]
-        Task<UserMode> GetUserAsync(long id);
+        Task<UserMode> GetUserAsync(long id, [FromHeader]string version = "1.0.0");
 
         [RequestMapping]
         UserMode GetUser(long id);
