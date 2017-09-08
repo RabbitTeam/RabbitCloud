@@ -1,12 +1,18 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Rabbit.Cloud.Discovery.Abstractions;
+using Newtonsoft.Json;
+using Rabbit.Cloud.Discovery.Client.Internal;
+using Rabbit.Cloud.Discovery.Client.Middlewares;
 using Rabbit.Cloud.Extensions.Consul;
-using Rabbit.Cloud.Facade;
 using Rabbit.Cloud.Facade.Abstractions;
+using Rabbit.Cloud.Facade.Builder;
 using Rabbit.Extensions.Configuration;
+using RC.Discovery.Client.Abstractions;
+using RC.Discovery.Client.Abstractions.Extensions;
 using System;
+using System.Net.Http;
 using System.Threading.Tasks;
+using ProxyFactory = Rabbit.Cloud.Facade.ProxyFactory;
 
 namespace ConsoleApp
 {
@@ -36,16 +42,27 @@ namespace ConsoleApp
 
             var services = new ServiceCollection()
                 .AddOptions()
+                .AddLogging()
+                .AddSingleton(new HttpClient())
                 .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulDiscovery()
                 .BuildServiceProvider();
 
-            var discoveryClient = services.GetRequiredService<IDiscoveryClient>();
-            var client = new ProxyFactory(discoveryClient);
-            var user = await client.GetProxy<IUserService>().GetUserAsync(0);
+            IRabbitApplicationBuilder applicationBuilder = new RabbitApplicationBuilder(services);
 
-            Console.WriteLine($"name:{user.Name}");
-            Console.WriteLine($"age:{user.Age}");
+            applicationBuilder
+                .UseFacade()
+                .UseMiddleware(typeof(ServiceAddressResolveMiddleware));
+
+            var rabbitRequestDelegate = applicationBuilder.Build();
+
+            var proxyFactory = new ProxyFactory(rabbitRequestDelegate);
+
+            var userService = proxyFactory.GetProxy<IUserService>();
+
+            var model = await userService.GetUserAsync(1);
+
+            Console.WriteLine(JsonConvert.SerializeObject(model));
         }
     }
 }

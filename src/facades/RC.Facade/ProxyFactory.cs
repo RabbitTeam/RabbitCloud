@@ -1,9 +1,10 @@
 ﻿using Castle.DynamicProxy;
-using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
-using Rabbit.Cloud.Discovery.Abstractions;
-using Rabbit.Cloud.Discovery.Client;
+using Rabbit.Cloud.Discovery.Client.Internal;
 using Rabbit.Cloud.Facade.Abstractions;
+using Rabbit.Cloud.Facade.Features;
+using RC.Discovery.Client.Abstractions;
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
@@ -11,34 +12,35 @@ using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Facade
 {
-    public class ProxyFactory
+    public class ProxyFactory : IProxyFactory
     {
-        private readonly IDiscoveryClient _discoveryClient;
+        private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
+        private readonly Interceptor _interceptor;
 
-        public ProxyFactory(IDiscoveryClient discoveryClient)
+        public ProxyFactory(RabbitRequestDelegate rabbitRequestDelegate)
         {
-            _discoveryClient = discoveryClient;
+            _interceptor = new Interceptor(rabbitRequestDelegate);
         }
+
+        #region Implementation of IProxyFactory
 
         public T GetProxy<T>()
         {
-            var generator = new ProxyGenerator();
-
             var type = typeof(T);
-            var handler = new DiscoveryHttpClientHandler(_discoveryClient, NullLogger<DiscoveryHttpClientHandler>.Instance);
-            var httpClient = new HttpClient(handler);
-            return (T)generator.CreateInterfaceProxyWithoutTarget(type, new[] { type }, new Interceptor(httpClient));
+            return (T)_proxyGenerator.CreateInterfaceProxyWithoutTarget(type, new[] { type }, _interceptor);
         }
+
+        #endregion Implementation of IProxyFactory
     }
 
     internal class Interceptor : IInterceptor
     {
-        private readonly HttpClient _httpClient;
+        private readonly RabbitRequestDelegate _rabbitRequestDelegate;
         private static readonly MethodInfo HandleAsyncMethodInfo = typeof(Interceptor).GetMethod(nameof(HandleAsync), BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static);
 
-        public Interceptor(HttpClient httpClient)
+        public Interceptor(RabbitRequestDelegate rabbitRequestDelegate)
         {
-            _httpClient = httpClient;
+            _rabbitRequestDelegate = rabbitRequestDelegate;
         }
 
         #region Implementation of IInterceptor
@@ -51,7 +53,7 @@ namespace Rabbit.Cloud.Facade
             if (isTask)
             {
                 returnType = returnType.GenericTypeArguments.FirstOrDefault() ?? typeof(object);
-                invocation.ReturnValue = HandleAsyncMethodInfo.MakeGenericMethod(returnType).Invoke(this, new object[] { GetRequestMessage(invocation) });
+                invocation.ReturnValue = HandleAsyncMethodInfo.MakeGenericMethod(returnType).Invoke(this, new object[] { invocation });
             }
             else
             {
@@ -59,59 +61,64 @@ namespace Rabbit.Cloud.Facade
             }
         }
 
-        private async Task<T> HandleAsync<T>(HttpRequestMessage requestMessage)
+        private async Task<T> HandleAsync<T>(IInvocation invocation)
         {
-            var result = await _httpClient.SendAsync(requestMessage);
-            return JsonConvert.DeserializeObject<T>(await result.Content.ReadAsStringAsync());
+            var context = new DefaultRabbitContext();
+
+            context.Features.Set<IInvocationFeature>(new InvocationFeature(invocation));
+
+            await _rabbitRequestDelegate(context);
+
+            return JsonConvert.DeserializeObject<T>(await context.Response.Content.ReadAsStringAsync());
         }
 
         private object Handle(HttpRequestMessage requestMessage)
         {
-            return null;
+            throw new NotSupportedException();
         }
 
         #endregion Implementation of IInterceptor
 
-        #region Private Method
+        /*        #region Private Method
 
-        private HttpRequestMessage GetRequestMessage(IInvocation invocation)
-        {
-            var mapping = invocation.Method.GetCustomAttribute<RequestMappingAttribute>();
-            return new HttpRequestMessage(new HttpMethod(mapping.Method), GetUrl(invocation.Method, mapping));
-        }
+                private HttpRequestMessage GetRequestMessage(IInvocation invocation)
+                {
+                    var mapping = invocation.Method.GetCustomAttribute<RequestMappingAttribute>();
+                    return new HttpRequestMessage(new HttpMethod(mapping.Method), GetUrl(invocation.Method, mapping));
+                }
 
-        private static string GetUrl(MemberInfo method, RequestMappingAttribute mapping)
-        {
-            var interfaceType = method.DeclaringType;
+                private static string GetUrl(MemberInfo method, RequestMappingAttribute mapping)
+                {
+                    var interfaceType = method.DeclaringType;
 
-            var facadeClient = interfaceType.GetCustomAttribute<FacadeClientAttribute>();
+                    var facadeClient = interfaceType.GetCustomAttribute<FacadeClientAttribute>();
 
-            var url = facadeClient.Url ?? $"http://{facadeClient.Name}";
+                    var url = facadeClient.Url ?? $"http://{facadeClient.Name}";
 
-            return $"{url}{GetPath(method, mapping)}";
-        }
+                    return $"{url}{GetPath(method, mapping)}";
+                }
 
-        private static string GetPath(MemberInfo method, RequestMappingAttribute mapping)
-        {
-            if (!string.IsNullOrEmpty(mapping.Value))
-                return mapping.Value;
+                private static string GetPath(MemberInfo method, RequestMappingAttribute mapping)
+                {
+                    if (!string.IsNullOrEmpty(mapping.Value))
+                        return mapping.Value;
 
-            var interfaceType = method.DeclaringType;
+                    var interfaceType = method.DeclaringType;
 
-            var typeNmae = interfaceType.Name;
+                    var typeNmae = interfaceType.Name;
 
-            typeNmae = typeNmae.TrimStart('I');
-            if (typeNmae.EndsWith("Service"))
-                typeNmae = typeNmae.Substring(0, typeNmae.Length - 7);
+                    typeNmae = typeNmae.TrimStart('I');
+                    if (typeNmae.EndsWith("Service"))
+                        typeNmae = typeNmae.Substring(0, typeNmae.Length - 7);
 
-            var methodName = method.Name;
+                    var methodName = method.Name;
 
-            if (methodName.EndsWith("Async"))
-                methodName = methodName.Substring(0, methodName.Length - 5);
+                    if (methodName.EndsWith("Async"))
+                        methodName = methodName.Substring(0, methodName.Length - 5);
 
-            return $"/{typeNmae}/{methodName}";
-        }
+                    return $"/{typeNmae}/{methodName}";
+                }
 
-        #endregion Private Method
+                #endregion Private Method*/
     }
 }

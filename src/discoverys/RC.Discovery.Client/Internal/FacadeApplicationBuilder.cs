@@ -1,25 +1,25 @@
-﻿using Rabbit.Cloud.Facade.Abstractions;
+﻿using RC.Discovery.Client.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Facade.Internal
+namespace Rabbit.Cloud.Discovery.Client.Internal
 {
-    public class FacadeApplicationBuilder : IFacadeApplicationBuilder
+    public class RabbitApplicationBuilder : IRabbitApplicationBuilder
     {
-        private readonly IList<Func<FacadeRequestDelegate, FacadeRequestDelegate>> _components = new List<Func<FacadeRequestDelegate, FacadeRequestDelegate>>();
+        private readonly IList<Func<RabbitRequestDelegate, RabbitRequestDelegate>> _components = new List<Func<RabbitRequestDelegate, RabbitRequestDelegate>>();
 
         #region Constructor
 
-        public FacadeApplicationBuilder(IServiceProvider serviceProvider)
+        public RabbitApplicationBuilder(IServiceProvider serviceProvider)
         {
             Properties = new Dictionary<string, object>(StringComparer.Ordinal);
             ApplicationServices = serviceProvider;
         }
 
-        private FacadeApplicationBuilder(IFacadeApplicationBuilder builder)
+        private RabbitApplicationBuilder(IRabbitApplicationBuilder builder)
         {
             Properties = new Dictionary<string, object>(builder.Properties, StringComparer.Ordinal);
         }
@@ -36,11 +36,11 @@ namespace Rabbit.Cloud.Facade.Internal
 
         public IDictionary<string, object> Properties { get; }
 
-        public FacadeRequestDelegate Build()
+        public RabbitRequestDelegate Build()
         {
-            FacadeRequestDelegate app = context =>
+            RabbitRequestDelegate app = context =>
             {
-                context.ResponseMessage.StatusCode = HttpStatusCode.NotFound;
+                context.Response.StatusCode = HttpStatusCode.NotFound;
                 return Task.CompletedTask;
             };
 
@@ -52,12 +52,12 @@ namespace Rabbit.Cloud.Facade.Internal
             return app;
         }
 
-        public IFacadeApplicationBuilder New()
+        public IRabbitApplicationBuilder New()
         {
-            return new FacadeApplicationBuilder(this);
+            return new RabbitApplicationBuilder(this);
         }
 
-        public IFacadeApplicationBuilder Use(Func<FacadeRequestDelegate, FacadeRequestDelegate> middleware)
+        public IRabbitApplicationBuilder Use(Func<RabbitRequestDelegate, RabbitRequestDelegate> middleware)
         {
             _components.Add(middleware);
             return this;

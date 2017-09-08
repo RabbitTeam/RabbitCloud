@@ -1,17 +1,16 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+﻿/*using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Cloud.Facade.Abstractions;
+using RC.Discovery.Client.Abstractions;
 
 namespace Rabbit.Cloud.Facade
 {
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddFacade(this IServiceCollection services)
+        public static IServiceCollection AddFacade(this IServiceCollection services, RabbitRequestDelegate rabbitRequestDelegate)
         {
             services
-                .AddTransient<IConfigureOptions<FacadeOptions>, FacadeOptionsSetup>()
-                .AddTransient<ProxyFactory, ProxyFactory>();
+                .AddSingleton<IProxyFactory>(new ProxyFactory(rabbitRequestDelegate));
             return services;
         }
     }
-}
+}*/

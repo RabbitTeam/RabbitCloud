@@ -1,4 +1,4 @@
-﻿namespace Rabbit.Cloud.Facade.Internal
+﻿namespace Rabbit.Cloud.Discovery.Client.Internal
 {
     internal static class Constants
     {
