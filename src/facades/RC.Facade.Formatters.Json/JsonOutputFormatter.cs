@@ -36,6 +36,9 @@ namespace RC.Facade.Formatters.Json
             var response = context.RabbitContext.Response;
             var contentType = response.Content.Headers.ContentType;
 
+            if (contentType == null)
+                return false;
+
             return new[] { "application/json", "text/json" }.Contains(contentType.MediaType,
                 StringComparer.OrdinalIgnoreCase);
         }

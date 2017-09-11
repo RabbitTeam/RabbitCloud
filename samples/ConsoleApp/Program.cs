@@ -29,10 +29,10 @@ namespace ConsoleApp
     [FacadeClient("userService")]
     public interface IUserService
     {
-        [RequestMapping]
+        [RequestMapping("User/GetUser/{id}")]
         Task<UserMode> GetUserAsync(long id, [FromHeader]string version = "1.0.0");
 
-        [RequestMapping]
+        [RequestMapping("User/GetUser/{id}")]
         UserMode GetUser(long id);
     }
 
