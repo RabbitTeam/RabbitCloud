@@ -63,8 +63,7 @@ namespace ConsoleApp
     }
 
     [FacadeClient("userService")]
-    [ToHeader("interface", "IUserService")]
-    [ToHeader("service", "userService")]
+    [ToHeader("interface", "IUserService"), ToHeader("service", "userService")]
     public interface IUserService
     {
         [RequestMapping("api/User/{id}")]
@@ -107,7 +106,7 @@ namespace ConsoleApp
             var model = await userService.GetUserAsync(1);
             Console.WriteLine(JsonConvert.SerializeObject(model));
 
-            var result=await userService.PutUserAsync(1, new UserMode
+            var result = await userService.PutUserAsync(1, new UserMode
             {
                 Age = 30,
                 Name = "mk"
