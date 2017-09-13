@@ -31,7 +31,7 @@ namespace Rabbit.Cloud.Facade.Middlewares
 
         private void SetRequest(RabbitContext context, IInvocation invocation)
         {
-            _requestMessageBuilderProvider.Build(invocation, context.Request);
+            _requestMessageBuilderProvider.Build(invocation, context);
         }
 
         #endregion Private Method

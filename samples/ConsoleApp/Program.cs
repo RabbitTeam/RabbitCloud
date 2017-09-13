@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -23,7 +22,7 @@ namespace ConsoleApp
         public ushort Age { get; set; }
     }
 
-    public class FilterAttribute : Attribute, IRequestFilter, IResultFilter, IExceptionFilter
+    public class CustomFilterAttribute : Attribute, IRequestFilter, IResultFilter, IExceptionFilter
     {
         #region Implementation of IRequestFilter
 
@@ -34,7 +33,6 @@ namespace ConsoleApp
 
         public void OnRequestExecuted(RequestExecutedContext context)
         {
-            Console.WriteLine(context.RabbitContext.Response.ResponseMessage?.StatusCode);
             Console.WriteLine("OnRequestExecuted");
         }
 
@@ -44,13 +42,11 @@ namespace ConsoleApp
 
         public void OnResultExecuting(ResultExecutingContext context)
         {
-            Console.WriteLine(context.RabbitContext.Response.ResponseMessage?.StatusCode);
             Console.WriteLine("OnResultExecuting");
         }
 
         public void OnResultExecuted(ResultExecutedContext context)
         {
-            Console.WriteLine(context.RabbitContext.Response.ResponseMessage?.StatusCode);
             Console.WriteLine("OnResultExecuted");
         }
 
@@ -67,11 +63,17 @@ namespace ConsoleApp
     }
 
     [FacadeClient("userService")]
+    [ToHeader("interface", "IUserService")]
+    [ToHeader("service", "userService")]
     public interface IUserService
     {
-        [RequestMapping("User/GetUser/{id}")]
-        [Filter]
-        Task<UserMode> GetUserAsync(long id, [FromHeader]string version = "1.0.0");
+        [RequestMapping("api/User/{id}")]
+        [CustomFilter]
+        [ToHeader("method", "GetUserAsync"), ToHeader("returnType", "UserMode")]
+        Task<UserMode> GetUserAsync(long id, [ToHeader]string version = "1.0.0");
+
+        [RequestMapping("api/User/{id}", "PUT")]
+        Task<object> PutUserAsync(long id, [ToBody]UserMode user);
     }
 
     internal class Program
@@ -86,6 +88,8 @@ namespace ConsoleApp
                 .EnableTemplateSupport();
 
             var services = new ServiceCollection()
+                .AddMvcCore()
+                .Services
                 .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulDiscovery()
                 .AddFacadeCore()
@@ -102,6 +106,13 @@ namespace ConsoleApp
 
             var model = await userService.GetUserAsync(1);
             Console.WriteLine(JsonConvert.SerializeObject(model));
+
+            var result=await userService.PutUserAsync(1, new UserMode
+            {
+                Age = 30,
+                Name = "mk"
+            });
+            Console.WriteLine(JsonConvert.SerializeObject(result));
         }
     }
 }

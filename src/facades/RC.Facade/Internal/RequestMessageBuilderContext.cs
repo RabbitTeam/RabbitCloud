@@ -1,15 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Net.Http;
 using System.Reflection;
+using RC.Discovery.Client.Abstractions;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
     public class RequestMessageBuilderContext
     {
-        public RequestMessageBuilderContext(MethodInfo method, object[] arguments, HttpRequestMessage requestMessage)
+        public RequestMessageBuilderContext(MethodInfo method, object[] arguments, RabbitContext rabbitContext)
         {
             Method = method;
-            RequestMessage = requestMessage;
+            RequestMessage = rabbitContext.Request.RequestMessage;
+            RabbitContext = rabbitContext;
             Arguments = new Dictionary<string, object>();
 
             var index = 0;
@@ -23,6 +25,7 @@ namespace Rabbit.Cloud.Facade.Internal
         public IDictionary<string, object> Arguments { get; }
         public MethodInfo Method { get; set; }
         public HttpRequestMessage RequestMessage { get; }
+        public RabbitContext RabbitContext { get; }
         public bool Canceled { get; set; }
 
         public object GetArgument(string parameterName)

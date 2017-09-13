@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Rabbit.Cloud.Facade.Abstractions;
 using System.Linq;
 using System.Reflection;
 
@@ -12,17 +12,23 @@ namespace Rabbit.Cloud.Facade.Internal
         {
             var method = context.Method;
 
-            var parameters = method.GetParameters().ToDictionary(i => i, i => i.GetCustomAttributes().OfType<FromHeaderAttribute>().LastOrDefault()).Where(i => i.Value != null);
+            var interfaceHeaders = method.DeclaringType.GetCustomAttributes<ToHeaderAttribute>();
+            var methodHeaders = method.GetCustomAttributes<ToHeaderAttribute>();
 
-            foreach (var parameter in parameters)
+            var parameterHeaders = method.GetParameters().ToDictionary(i => i, i => i.GetCustomAttributes().OfType<ToHeaderAttribute>().LastOrDefault()).Where(i => i.Value != null).Select(
+                i =>
+                {
+                    var toHeaderAttribute = i.Value;
+                    if (string.IsNullOrEmpty(toHeaderAttribute.Name))
+                        toHeaderAttribute.Name = i.Key.Name;
+                    toHeaderAttribute.Value = context.GetArgument(i.Key.Name)?.ToString();
+
+                    return toHeaderAttribute;
+                });
+
+            foreach (var toHeaderAttribute in interfaceHeaders.Concat(methodHeaders).Concat(parameterHeaders).Where(i => !string.IsNullOrEmpty(i.Name)))
             {
-                var parameterInfo = parameter.Key;
-                var fromHeaderAttribute = parameter.Value;
-
-                if (string.IsNullOrEmpty(fromHeaderAttribute.Name))
-                    fromHeaderAttribute.Name = parameterInfo.Name;
-
-                context.RequestMessage.Headers.Add(fromHeaderAttribute.Name, context.GetArgument(parameterInfo.Name)?.ToString());
+                context.RequestMessage.Headers.Add(toHeaderAttribute.Name, toHeaderAttribute.Value);
             }
         }
 

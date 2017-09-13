@@ -34,6 +34,7 @@ namespace RC.Facade.Formatters.Json.Internal
         public void Configure(FacadeOptions options)
         {
             options.OutputFormatters.Add(new JsonOutputFormatter(_jsonSerializerSettings, _charPool, _objectPoolProvider, _loggerFactory.CreateLogger<JsonOutputFormatter>()));
+            options.InputFormatters.Add(new JsonInputFormatter(_jsonSerializerSettings, _charPool));
         }
 
         #endregion Implementation of IConfigureOptions<in FacadeOptions>

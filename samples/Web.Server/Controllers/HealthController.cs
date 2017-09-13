@@ -1,4 +1,4 @@
-﻿namespace Web.Server.Controller
+﻿namespace Web.Server.Controllers
 {
     public class HealthController
     {

@@ -1,65 +1,46 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Facade.Abstractions;
+using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
     public class RequestMessageContentBuilder : IRequestMessageBuilder
     {
+        private readonly FacadeOptions _facadeOptions;
+
+        public RequestMessageContentBuilder(IOptions<FacadeOptions> facadeOptions)
+        {
+            _facadeOptions = facadeOptions.Value;
+        }
+
         #region Implementation of IRequestMessageBuilder
 
         public void Build(RequestMessageBuilderContext context)
         {
             var method = context.Method;
-            var parameters = GetBodyParameters(method).ToArray();
-            var isAppendPrefix = parameters.Length > 1;
+            var parameters = method.GetParameters().ToDictionary(i => i, i => i.GetCustomAttribute<ToBodyAttribute>()).Where(i => i.Value != null).ToArray();
 
-            var request = context.RequestMessage;
+            if (!parameters.Any())
+                return;
+            if (parameters.Length > 1)
+                throw new ArgumentOutOfRangeException(nameof(parameters), "FromBodyAttribute");
 
-            var dictionary = new Dictionary<string, string>();
-            foreach (var parameter in parameters)
+            var item = parameters.First();
+            var parameter = item.Key;
+            var fromBodyAttribute = item.Value;
+
+            var inputFormatterWriteContext = new InputFormatterWriteContext(context.RabbitContext, parameter.ParameterType, context.GetArgument(parameter.Name))
             {
-                AppendParameter(isAppendPrefix ? parameter.Name : string.Empty, context.GetArgument(parameter.Name), dictionary);
-            }
+                ContentType = fromBodyAttribute.Formatter ?? "application/json"
+            };
+            var formatter = _facadeOptions.InputFormatters.FirstOrDefault(i => i.CanWriteResult(inputFormatterWriteContext));
 
-            request.Content = new FormUrlEncodedContent(dictionary);
+            formatter.WriteAsync(inputFormatterWriteContext).Wait();
         }
 
         #endregion Implementation of IRequestMessageBuilder
-
-        #region Private Method
-
-        private static IEnumerable<ParameterInfo> GetBodyParameters(MethodBase method)
-        {
-            return method.GetParameters().Where(i => i.GetCustomAttributes<FromBodyAttribute>().Any());
-        }
-
-        private static void AppendParameter(string prefix, object instance, IDictionary<string, string> dictionary)
-        {
-            var type = instance.GetType();
-
-            var properties = type.GetProperties().Where(i => i.GetMethod != null);
-
-            foreach (var propertyInfo in properties)
-            {
-                var value = propertyInfo.GetValue(instance);
-
-                var key = string.IsNullOrEmpty(prefix) ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}";
-                if (value is IConvertible convertible)
-                {
-                    dictionary[key] = convertible.ToString(CultureInfo.InvariantCulture);
-                }
-                else
-                {
-                    AppendParameter(key, value, dictionary);
-                }
-            }
-        }
-
-        #endregion Private Method
     }
 }

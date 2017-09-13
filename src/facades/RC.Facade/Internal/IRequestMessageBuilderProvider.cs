@@ -6,7 +6,7 @@ namespace Rabbit.Cloud.Facade.Internal
 {
     public interface IRequestMessageBuilderProvider
     {
-        void Build(IInvocation invocation, RabbitRequest request);
+        void Build(IInvocation invocation, RabbitContext rabbitContext);
     }
 
     public class RequestMessageBuilderProvider : IRequestMessageBuilderProvider
@@ -20,9 +20,9 @@ namespace Rabbit.Cloud.Facade.Internal
 
         #region Implementation of IRequestMessageBuilderProvider
 
-        public void Build(IInvocation invocation, RabbitRequest request)
+        public void Build(IInvocation invocation, RabbitContext rabbitContext)
         {
-            var context = new RequestMessageBuilderContext(invocation.Method, invocation.Arguments, request.RequestMessage);
+            var context = new RequestMessageBuilderContext(invocation.Method, invocation.Arguments, rabbitContext);
 
             foreach (var requestMessageBuilder in _requestMessageBuilders)
             {
