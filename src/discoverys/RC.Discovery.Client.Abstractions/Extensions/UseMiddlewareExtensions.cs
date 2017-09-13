@@ -93,7 +93,7 @@ namespace RC.Discovery.Client.Abstractions.Extensions
             {
                 return async context =>
                 {
-                    var middleware = (IRabbitMiddleware)context.RequestServices.GetRequiredService(middlewareType);
+                    var middleware = (IRabbitMiddleware)context.RequestServices.GetService(middlewareType);
                     if (middleware == null)
                     {
                         throw new InvalidOperationException($"UseMiddlewareUnableToCreateMiddleware {middlewareType}");

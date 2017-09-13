@@ -10,7 +10,7 @@ namespace Rabbit.Cloud.Facade.Internal
 
         public void Build(RequestMessageBuilderContext context)
         {
-            var method = context.Invocation.Method;
+            var method = context.Method;
 
             var parameters = method.GetParameters().ToDictionary(i => i, i => i.GetCustomAttributes().OfType<FromHeaderAttribute>().LastOrDefault()).Where(i => i.Value != null);
 

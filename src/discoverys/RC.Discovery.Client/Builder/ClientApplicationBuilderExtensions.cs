@@ -8,7 +8,9 @@ namespace Rabbit.Cloud.Discovery.Client.Builder
     {
         public static IRabbitApplicationBuilder UseRabbitClient(this IRabbitApplicationBuilder app)
         {
-            return app.UseMiddleware<ServiceAddressResolveMiddleware>()
+            return app
+                .UseMiddleware<ServiceContainerMiddleware>()
+                .UseMiddleware<ServiceAddressResolveMiddleware>()
                 .UseMiddleware<ServiceRequestMiddleware>();
         }
     }

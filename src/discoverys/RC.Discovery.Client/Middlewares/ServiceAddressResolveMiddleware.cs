@@ -24,7 +24,7 @@ namespace Rabbit.Cloud.Discovery.Client.Middlewares
 
         public async Task Invoke(RabbitContext context)
         {
-            var request = context.Request;
+            var request = context.Request.RequestMessage;
             var current = request.RequestUri;
             if (!current.IsDefaultPort)
             {

@@ -5,21 +5,16 @@ namespace Rabbit.Cloud.Discovery.Client.Internal
 {
     public class DefaultRabbitResponse : RabbitResponse
     {
-        public DefaultRabbitResponse()
+        public DefaultRabbitResponse(RabbitContext rabbitContext)
         {
+            RabbitContext = rabbitContext;
         }
 
-        public DefaultRabbitResponse(HttpResponseMessage responseMessage)
-        {
-            Content = responseMessage.Content;
-            foreach (var item in responseMessage.Headers)
-            {
-                Headers.Add(item.Key, item.Value);
-            }
-            ReasonPhrase = responseMessage.ReasonPhrase;
-            RequestMessage = responseMessage.RequestMessage;
-            StatusCode = responseMessage.StatusCode;
-            Version = responseMessage.Version;
-        }
+        #region Overrides of RabbitResponse
+
+        public override RabbitContext RabbitContext { get; }
+        public override HttpResponseMessage ResponseMessage { get; set; }
+
+        #endregion Overrides of RabbitResponse
     }
 }

@@ -7,9 +7,9 @@ namespace RC.Discovery.Client.Abstractions
     public abstract class RabbitContext
     {
         public abstract IFeatureCollection Features { get; }
-        public RabbitRequest Request { get; set; }
-        public RabbitResponse Response { get; set; }
+        public abstract RabbitRequest Request { get; }
+        public abstract RabbitResponse Response { get; }
         public abstract IDictionary<object, object> Items { get; set; }
-        public IServiceProvider RequestServices { get; set; }
+        public abstract IServiceProvider RequestServices { get; set; }
     }
 }

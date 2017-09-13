@@ -1,33 +1,33 @@
-﻿using Castle.DynamicProxy;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net.Http;
+using System.Reflection;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
     public class RequestMessageBuilderContext
     {
-        private readonly IDictionary<string, object> _arguments = new Dictionary<string, object>();
-
-        public RequestMessageBuilderContext(IInvocation invocation, HttpRequestMessage requestMessage)
+        public RequestMessageBuilderContext(MethodInfo method, object[] arguments, HttpRequestMessage requestMessage)
         {
-            Invocation = invocation;
+            Method = method;
             RequestMessage = requestMessage;
+            Arguments = new Dictionary<string, object>();
 
             var index = 0;
-            foreach (var parameterInfo in invocation.Method.GetParameters())
+            foreach (var parameterInfo in method.GetParameters())
             {
-                _arguments[parameterInfo.Name] = invocation.Arguments[index];
+                Arguments[parameterInfo.Name] = arguments[index];
                 index = index + 1;
             }
         }
 
-        public IInvocation Invocation { get; }
+        public IDictionary<string, object> Arguments { get; }
+        public MethodInfo Method { get; set; }
         public HttpRequestMessage RequestMessage { get; }
         public bool Canceled { get; set; }
 
         public object GetArgument(string parameterName)
         {
-            _arguments.TryGetValue(parameterName, out var value);
+            Arguments.TryGetValue(parameterName, out var value);
             return value;
         }
     }

@@ -33,7 +33,7 @@ namespace RC.Facade.Formatters.Json
 
         public bool CanWriteResult(OutputFormatterContext context)
         {
-            var response = context.RabbitContext.Response;
+            var response = context.RabbitContext.Response.ResponseMessage;
             var contentType = response.Content.Headers.ContentType;
 
             if (contentType == null)

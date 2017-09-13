@@ -40,7 +40,7 @@ namespace Rabbit.Cloud.Discovery.Client.Internal
         {
             RabbitRequestDelegate app = context =>
             {
-                context.Response.StatusCode = HttpStatusCode.NotFound;
+                context.Response.ResponseMessage.StatusCode = HttpStatusCode.NotFound;
                 return Task.CompletedTask;
             };
 

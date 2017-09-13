@@ -22,7 +22,7 @@ namespace Rabbit.Cloud.Facade.Internal
 
         public void Build(IInvocation invocation, RabbitRequest request)
         {
-            var context = new RequestMessageBuilderContext(invocation, request);
+            var context = new RequestMessageBuilderContext(invocation.Method, invocation.Arguments, request.RequestMessage);
 
             foreach (var requestMessageBuilder in _requestMessageBuilders)
             {

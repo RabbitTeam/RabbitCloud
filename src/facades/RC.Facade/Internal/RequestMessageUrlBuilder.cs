@@ -12,7 +12,7 @@ namespace Rabbit.Cloud.Facade.Internal
 
         public void Build(RequestMessageBuilderContext context)
         {
-            var method = context.Invocation.Method;
+            var method = context.Method;
             var interfaceType = method.DeclaringType;
             var facadeClientAttribute = GetFacadeClientAttribute(interfaceType);
 
