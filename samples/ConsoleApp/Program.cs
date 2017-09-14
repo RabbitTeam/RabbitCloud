@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Rabbit.Cloud.Discovery.Client.Builder;
 using Rabbit.Cloud.Discovery.Client.Internal;
 using Rabbit.Cloud.Extensions.Consul;
 using Rabbit.Cloud.Facade;
@@ -9,6 +10,7 @@ using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Builder;
 using Rabbit.Extensions.Configuration;
+using RC.Cluster;
 using RC.Facade.Formatters.Json;
 using System;
 using System.Threading.Tasks;
@@ -87,17 +89,21 @@ namespace ConsoleApp
                 .EnableTemplateSupport();
 
             var services = new ServiceCollection()
-                .AddMvcCore()
-                .Services
                 .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulDiscovery()
+                .AddHighAvailability()
+                .AddRandomAddressSelector()
                 .AddFacadeCore()
                 .AddJsonFormatters()
                 .Services
                 .BuildServiceProvider();
 
             var rabbitRequestDelegate = new RabbitApplicationBuilder(services)
+                .UseServiceContainer()
                 .UseFacade()
+                .UseHighAvailability()
+                .UseLoadBalance()
+                .UseRabbitClient()
                 .Build();
 
             var proxyFactory = new ProxyFactory(rabbitRequestDelegate, services.GetRequiredService<IOptions<FacadeOptions>>());

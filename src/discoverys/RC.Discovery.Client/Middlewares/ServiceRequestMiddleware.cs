@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RC.Discovery.Client.Abstractions;
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -15,7 +16,10 @@ namespace Rabbit.Cloud.Discovery.Client.Middlewares
         {
             var httpClient = context.RequestServices.GetRequiredService<HttpClient>();
             var request = context.Request;
-            context.Response.ResponseMessage = await httpClient.SendAsync(request.RequestMessage);
+            var responseMessage = context.Response.ResponseMessage = await httpClient.SendAsync(request.RequestMessage);
+
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new Exception(responseMessage.ToString());
         }
     }
 }

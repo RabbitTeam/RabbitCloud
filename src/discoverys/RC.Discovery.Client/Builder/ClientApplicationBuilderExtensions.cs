@@ -6,11 +6,15 @@ namespace Rabbit.Cloud.Discovery.Client.Builder
 {
     public static class ClientApplicationBuilderExtensions
     {
+        public static IRabbitApplicationBuilder UseServiceContainer(this IRabbitApplicationBuilder app)
+        {
+            return app
+                .UseMiddleware<ServiceContainerMiddleware>();
+        }
+
         public static IRabbitApplicationBuilder UseRabbitClient(this IRabbitApplicationBuilder app)
         {
             return app
-                .UseMiddleware<ServiceContainerMiddleware>()
-                .UseMiddleware<ServiceAddressResolveMiddleware>()
                 .UseMiddleware<ServiceRequestMiddleware>();
         }
     }

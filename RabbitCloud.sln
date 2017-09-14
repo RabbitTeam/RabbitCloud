@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{850A43C4-8B62-4732-95F9-A769981A59E5}"
 EndProject
@@ -45,7 +45,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Client.Abstractions", "src\discoverys\RC.Discovery.Client.Abstractions\RC.Discovery.Client.Abstractions.csproj", "{1B488C2A-BE8C-454D-9429-4DB8888A3A69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Facade.Formatters.Json", "src\facades\RC.Facade.Formatters.Json\RC.Facade.Formatters.Json.csproj", "{CCF0E199-EC54-4376-96A1-5FF0A728EFB0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Facade.Formatters.Json", "src\facades\RC.Facade.Formatters.Json\RC.Facade.Formatters.Json.csproj", "{CCF0E199-EC54-4376-96A1-5FF0A728EFB0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cluster", "cluster", "{87AB1EF8-AD8B-4C7B-AC65-D69B955C18D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Cluster.Abstractions", "src\cluster\RC.Cluster.Abstractions\RC.Cluster.Abstractions.csproj", "{69D3C525-7AB5-48DE-B4B1-915575F78162}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Cluster", "src\cluster\RC.Cluster\RC.Cluster.csproj", "{7B71BD84-CB89-43FC-8ECE-B76235BD027D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -101,6 +107,14 @@ Global
 		{CCF0E199-EC54-4376-96A1-5FF0A728EFB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCF0E199-EC54-4376-96A1-5FF0A728EFB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CCF0E199-EC54-4376-96A1-5FF0A728EFB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69D3C525-7AB5-48DE-B4B1-915575F78162}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69D3C525-7AB5-48DE-B4B1-915575F78162}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69D3C525-7AB5-48DE-B4B1-915575F78162}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69D3C525-7AB5-48DE-B4B1-915575F78162}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B71BD84-CB89-43FC-8ECE-B76235BD027D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B71BD84-CB89-43FC-8ECE-B76235BD027D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B71BD84-CB89-43FC-8ECE-B76235BD027D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B71BD84-CB89-43FC-8ECE-B76235BD027D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,6 +136,9 @@ Global
 		{41E6B826-A66A-46B2-9841-4C4372C155EF} = {78E99656-D80A-4181-9F1C-42B8DF84BB3B}
 		{1B488C2A-BE8C-454D-9429-4DB8888A3A69} = {2BB99C91-4AC9-4AB2-81D3-2DEB42FF72CE}
 		{CCF0E199-EC54-4376-96A1-5FF0A728EFB0} = {78E99656-D80A-4181-9F1C-42B8DF84BB3B}
+		{87AB1EF8-AD8B-4C7B-AC65-D69B955C18D8} = {850A43C4-8B62-4732-95F9-A769981A59E5}
+		{69D3C525-7AB5-48DE-B4B1-915575F78162} = {87AB1EF8-AD8B-4C7B-AC65-D69B955C18D8}
+		{7B71BD84-CB89-43FC-8ECE-B76235BD027D} = {87AB1EF8-AD8B-4C7B-AC65-D69B955C18D8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {36EA6FDA-5082-43F0-932E-8E204636C432}

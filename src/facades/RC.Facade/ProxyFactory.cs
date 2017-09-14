@@ -158,11 +158,6 @@ namespace Rabbit.Cloud.Facade
 
                 OnResultExecuting(resultExecutingContext);
 
-                if (!responseMessage.IsSuccessStatusCode)
-                {
-                    throw new Exception(responseMessage.ToString());
-                }
-
                 using (var stream = await responseMessage.Content.ReadAsStreamAsync())
                 {
                     var formatterContext = new OutputFormatterContext(context, returnType, stream);

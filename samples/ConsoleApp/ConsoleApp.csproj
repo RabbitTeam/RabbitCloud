@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\cluster\RC.Cluster\RC.Cluster.csproj" />
     <ProjectReference Include="..\..\src\discoverys\RC.Discovery.Client\RC.Discovery.Client.csproj" />
     <ProjectReference Include="..\..\src\extensions\RC.Extensions.Consul\RC.Extensions.Consul.csproj" />
     <ProjectReference Include="..\..\src\facades\RC.Facade.Abstractions\RC.Facade.Abstractions.csproj" />
