@@ -4,11 +4,11 @@ using System.Reflection;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
-    public class RequestMessageHeaderBuilder : IRequestMessageBuilder
+    public class RequestMessageHeaderBuilder : RequestMessageBuilder
     {
-        #region Implementation of IRequestMessageBuilder
+        #region Overrides of RequestMessageBuilder
 
-        public void Build(RequestMessageBuilderContext context)
+        public override void Build(RequestMessageBuilderContext context)
         {
             var method = context.Method;
 
@@ -32,6 +32,6 @@ namespace Rabbit.Cloud.Facade.Internal
             }
         }
 
-        #endregion Implementation of IRequestMessageBuilder
+        #endregion Overrides of RequestMessageBuilder
     }
 }

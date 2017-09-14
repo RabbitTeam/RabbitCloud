@@ -1,12 +1,13 @@
 ﻿using Castle.DynamicProxy;
 using RC.Discovery.Client.Abstractions;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
     public interface IRequestMessageBuilderProvider
     {
-        void Build(IInvocation invocation, RabbitContext rabbitContext);
+        Task BuildAsync(IInvocation invocation, RabbitContext rabbitContext);
     }
 
     public class RequestMessageBuilderProvider : IRequestMessageBuilderProvider
@@ -20,7 +21,7 @@ namespace Rabbit.Cloud.Facade.Internal
 
         #region Implementation of IRequestMessageBuilderProvider
 
-        public void Build(IInvocation invocation, RabbitContext rabbitContext)
+        public async Task BuildAsync(IInvocation invocation, RabbitContext rabbitContext)
         {
             var context = new RequestMessageBuilderContext(invocation.Method, invocation.Arguments, rabbitContext);
 
@@ -28,7 +29,7 @@ namespace Rabbit.Cloud.Facade.Internal
             {
                 if (context.Canceled)
                     break;
-                requestMessageBuilder.Build(context);
+                await requestMessageBuilder.BuildAsync(context);
             }
         }
 

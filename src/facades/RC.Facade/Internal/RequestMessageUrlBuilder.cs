@@ -10,11 +10,11 @@ using System.Text.RegularExpressions;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
-    public class RequestMessageUrlBuilder : IRequestMessageBuilder
+    public class RequestMessageUrlBuilder : RequestMessageBuilder
     {
-        #region Implementation of IRequestMessageBuilder
+        #region Overrides of RequestMessageBuilder
 
-        public void Build(RequestMessageBuilderContext context)
+        public override void Build(RequestMessageBuilderContext context)
         {
             var method = context.Method;
             var interfaceType = method.DeclaringType;
@@ -56,7 +56,7 @@ namespace Rabbit.Cloud.Facade.Internal
             request.RequestUri = new Uri(new Uri(baseUrl), QueryHelpers.AddQueryString(pathAndQuery, result));
         }
 
-        #endregion Implementation of IRequestMessageBuilder
+        #endregion Overrides of RequestMessageBuilder
 
         #region Private Method
 

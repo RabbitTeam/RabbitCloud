@@ -22,16 +22,16 @@ namespace Rabbit.Cloud.Facade.Middlewares
             var invocationFeature = context.Features.Get<IInvocationFeature>();
             var invocation = invocationFeature.Invocation;
 
-            SetRequest(context, invocation);
+            await SetRequest(context, invocation);
 
             await _next(context);
         }
 
         #region Private Method
 
-        private void SetRequest(RabbitContext context, IInvocation invocation)
+        private Task SetRequest(RabbitContext context, IInvocation invocation)
         {
-            _requestMessageBuilderProvider.Build(invocation, context);
+            return _requestMessageBuilderProvider.BuildAsync(invocation, context);
         }
 
         #endregion Private Method

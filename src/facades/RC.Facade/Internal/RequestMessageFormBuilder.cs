@@ -8,11 +8,11 @@ using System.Reflection;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
-    public class RequestMessageFormBuilder : IRequestMessageBuilder
+    public class RequestMessageFormBuilder : RequestMessageBuilder
     {
-        #region Implementation of IRequestMessageBuilder
+        #region Overrides of RequestMessageBuilder
 
-        public void Build(RequestMessageBuilderContext context)
+        public override void Build(RequestMessageBuilderContext context)
         {
             if (context.RequestMessage.Content != null)
                 return;
@@ -32,7 +32,7 @@ namespace Rabbit.Cloud.Facade.Internal
             request.Content = new FormUrlEncodedContent(dictionary);
         }
 
-        #endregion Implementation of IRequestMessageBuilder
+        #endregion Overrides of RequestMessageBuilder
 
         #region Private Method
 

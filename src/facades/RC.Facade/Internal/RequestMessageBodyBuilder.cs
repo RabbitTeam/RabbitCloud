@@ -4,10 +4,11 @@ using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
-    public class RequestMessageBodyBuilder : IRequestMessageBuilder
+    public class RequestMessageBodyBuilder : RequestMessageBuilder
     {
         private readonly FacadeOptions _facadeOptions;
 
@@ -16,9 +17,9 @@ namespace Rabbit.Cloud.Facade.Internal
             _facadeOptions = facadeOptions.Value;
         }
 
-        #region Implementation of IRequestMessageBuilder
+        #region Overrides of RequestMessageBuilder
 
-        public void Build(RequestMessageBuilderContext context)
+        public override async Task BuildAsync(RequestMessageBuilderContext context)
         {
             if (context.RequestMessage.Content != null)
                 return;
@@ -41,9 +42,9 @@ namespace Rabbit.Cloud.Facade.Internal
             };
             var formatter = _facadeOptions.InputFormatters.FirstOrDefault(i => i.CanWriteResult(inputFormatterWriteContext));
 
-            formatter.WriteAsync(inputFormatterWriteContext).Wait();
+            await formatter.WriteAsync(inputFormatterWriteContext);
         }
 
-        #endregion Implementation of IRequestMessageBuilder
+        #endregion Overrides of RequestMessageBuilder
     }
 }
