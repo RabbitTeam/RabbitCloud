@@ -1,7 +1,11 @@
-﻿using Rabbit.Cloud.Facade.Abstractions;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using Rabbit.Cloud.Facade.Abstractions;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Rabbit.Cloud.Facade.Internal
@@ -24,18 +28,89 @@ namespace Rabbit.Cloud.Facade.Internal
 
             var baseUrl = GetBaseUrl(facadeClientAttribute);
             var requestMappingAttribute = GetRequestMappingAttribute(method);
+            var request = context.RequestMessage;
+            request.Method = new HttpMethod(requestMappingAttribute.Method);
 
-            var pathAndQuery = GetPathAndQuery(requestMappingAttribute.Value, context.GetArgument);
+            string GetQuery(string key)
+            {
+                return context.GetArgument(key)?.ToString();
+            }
 
-            var uri = new Uri(new Uri(baseUrl), pathAndQuery);
+            // interface , method ToQuery
+            var querys = GetQuerys(interfaceType).Concat(GetQuerys(method)).Select(i => new KeyValuePair<string, string>(i.Name, i.Value)).ToArray();
 
-            context.RequestMessage.RequestUri = uri;
-            context.RequestMessage.Method = new HttpMethod(requestMappingAttribute.Method);
+            // arguments ToQuery
+            var parameterQuerys = GetQuerysByParameter(request.Method, method.GetParameters(), GetQuery).Select(i => new KeyValuePair<string, string>(i.Name, i.Value)).ToArray();
+
+            // placeholder keys
+            var parameterKeys = GetPlaceholders(requestMappingAttribute.Value).ToArray();
+
+            // resolve placeholder
+            var pathAndQuery = BuildPathAndQuery(requestMappingAttribute.Value,
+                parameterKeys.ToDictionary(i => i, GetQuery));
+
+            // remove placeholder querys
+            var result = querys.Concat(parameterQuerys.Where(i => !parameterKeys.Contains(i.Key)))
+                .ToDictionary(i => i.Key, i => i.Value);
+
+            request.RequestUri = new Uri(new Uri(baseUrl), QueryHelpers.AddQueryString(pathAndQuery, result));
         }
 
         #endregion Implementation of IRequestMessageBuilder
 
         #region Private Method
+
+        private static IEnumerable<ToQueryAttribute> GetQuerys(MemberInfo methodInfo)
+        {
+            return methodInfo.GetCustomAttributes<ToQueryAttribute>();
+        }
+
+        private static IEnumerable<ToQueryAttribute> GetQuerysByParameter(HttpMethod httpMethod, IEnumerable<ParameterInfo> parameterInfos, Func<string, string> getQuery)
+        {
+            foreach (var parameterInfo in parameterInfos)
+            {
+                var metadatas = parameterInfo.GetCustomAttributes(false).OfType<IBuilderMetadata>().ToArray();
+                var toQueryAttribute = metadatas.OfType<ToQueryAttribute>().LastOrDefault();
+
+                if (toQueryAttribute != null)
+                    yield return toQueryAttribute;
+
+                if (metadatas.Any())
+                    continue;
+
+                if (httpMethod != HttpMethod.Get && httpMethod != HttpMethod.Head)
+                    continue;
+
+                if (toQueryAttribute == null)
+                    toQueryAttribute = new ToQueryAttribute(parameterInfo.Name);
+                toQueryAttribute.Value = getQuery(parameterInfo.Name);
+
+                yield return toQueryAttribute;
+            }
+        }
+
+        private static string BuildPathAndQuery(string pathAndQuery, IDictionary<string, string> values)
+        {
+            if (values == null || !values.Any())
+                return pathAndQuery;
+
+            var builder = new StringBuilder(pathAndQuery);
+            foreach (var value in values)
+            {
+                builder.Replace($"{{{value.Key}}}", value.Value);
+            }
+
+            return builder.ToString();
+        }
+
+        private static IEnumerable<string> GetPlaceholders(string value)
+        {
+            foreach (Match match in Regex.Matches(value, "{(\\w+)}"))
+            {
+                var key = match.Groups[1].Value;
+                yield return key;
+            }
+        }
 
         private static FacadeClientAttribute GetFacadeClientAttribute(Type interfaceType)
         {
@@ -82,17 +157,6 @@ namespace Rabbit.Cloud.Facade.Internal
         {
             var url = facadeClientAttribute.Url ?? $"http://{facadeClientAttribute.Name}";
             return url;
-        }
-
-        private static string GetPathAndQuery(string value, Func<string, object> getArgument)
-        {
-            return Regex.Replace(value, "{(\\w+)}", match =>
-            {
-                var key = match.Groups[1].Value;
-                var argument = getArgument(key);
-
-                return argument?.ToString();
-            });
         }
 
         #endregion Private Method

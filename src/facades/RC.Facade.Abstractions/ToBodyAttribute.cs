@@ -3,7 +3,7 @@
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class ToBodyAttribute : Attribute
+    public class ToBodyAttribute : Attribute, IBuilderMetadata
     {
         public ToBodyAttribute(string formatter = null)
         {

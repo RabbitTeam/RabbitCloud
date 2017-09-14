@@ -17,7 +17,8 @@ namespace Rabbit.Cloud.Facade
                 .AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>()
                 .AddSingleton<IRequestMessageBuilder, RequestMessageUrlBuilder>()
                 .AddSingleton<IRequestMessageBuilder, RequestMessageHeaderBuilder>()
-                .AddSingleton<IRequestMessageBuilder, RequestMessageContentBuilder>()
+                .AddSingleton<IRequestMessageBuilder, RequestMessageBodyBuilder>()
+                .AddSingleton<IRequestMessageBuilder, RequestMessageFormBuilder>()
                 .AddSingleton<IRequestMessageBuilderProvider, RequestMessageBuilderProvider>()
                 .AddOptions()
                 .AddLogging();

@@ -33,7 +33,7 @@ namespace Web.Server.Controllers
         }
 
         [HttpPut("{id}")]
-        public object Put(long id, [FromBody]UserViewModel model)
+        public object Put(long id, UserViewModel model)
         {
             if (model == null)
                 return null;

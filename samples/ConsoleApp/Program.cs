@@ -72,7 +72,7 @@ namespace ConsoleApp
         Task<UserMode> GetUserAsync(long id, [ToHeader]string version = "1.0.0");
 
         [RequestMapping("api/User/{id}", "PUT")]
-        Task<object> PutUserAsync(long id, [ToBody]UserMode user);
+        Task<object> PutUserAsync(long id, [ToForm]UserMode user);
     }
 
     internal class Program

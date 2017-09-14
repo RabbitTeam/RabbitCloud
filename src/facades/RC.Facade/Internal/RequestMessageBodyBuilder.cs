@@ -7,11 +7,11 @@ using System.Reflection;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
-    public class RequestMessageContentBuilder : IRequestMessageBuilder
+    public class RequestMessageBodyBuilder : IRequestMessageBuilder
     {
         private readonly FacadeOptions _facadeOptions;
 
-        public RequestMessageContentBuilder(IOptions<FacadeOptions> facadeOptions)
+        public RequestMessageBodyBuilder(IOptions<FacadeOptions> facadeOptions)
         {
             _facadeOptions = facadeOptions.Value;
         }
@@ -20,13 +20,16 @@ namespace Rabbit.Cloud.Facade.Internal
 
         public void Build(RequestMessageBuilderContext context)
         {
+            if (context.RequestMessage.Content != null)
+                return;
+
             var method = context.Method;
             var parameters = method.GetParameters().ToDictionary(i => i, i => i.GetCustomAttribute<ToBodyAttribute>()).Where(i => i.Value != null).ToArray();
 
             if (!parameters.Any())
                 return;
             if (parameters.Length > 1)
-                throw new ArgumentOutOfRangeException(nameof(parameters), "FromBodyAttribute");
+                throw new ArgumentOutOfRangeException(nameof(parameters), nameof(ToBodyAttribute));
 
             var item = parameters.First();
             var parameter = item.Key;
