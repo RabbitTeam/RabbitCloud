@@ -5,7 +5,11 @@ namespace Rabbit.Cloud.Facade.Abstractions
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Parameter, AllowMultiple = true)]
     public class ToQueryAttribute : Attribute, IBuilderMetadata
     {
-        public ToQueryAttribute(string name = null, string value = null)
+        public ToQueryAttribute()
+        {
+        }
+
+        public ToQueryAttribute(string name, string value = null)
         {
             Name = name;
             Value = value;
