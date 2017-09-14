@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Extensions.Consul.Discovery;
@@ -21,7 +22,7 @@ namespace Rabbit.Cloud.Extensions.Consul
 
         public static IServiceCollection AddConsulRegistry(this IServiceCollection services, ConsulClient consulClient = null)
         {
-            return consulClient != null ? services.AddSingleton<IRegistryService<ConsulRegistration>>(new ConsulRegistryService(consulClient)) : services.AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
+            return consulClient != null ? services.AddSingleton<IRegistryService<ConsulRegistration>>(s => new ConsulRegistryService(consulClient, s.GetRequiredService<ILogger<ConsulRegistryService>>())) : services.AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
         }
 
         public static IServiceCollection AddConsulAutoRegistry(this IServiceCollection services, ConsulClient consulClient = null)
@@ -42,9 +43,13 @@ namespace Rabbit.Cloud.Extensions.Consul
                 {
                     var services = app.ApplicationServices;
 
-                    var discoveryOptions = services.GetRequiredService<IOptionsMonitor<RabbitConsulOptions>>().CurrentValue.Discovery;
-                    var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
-                    registryService.RegisterAsync(ConsulUtil.Create(discoveryOptions));
+                    app.ApplicationServices.GetRequiredService<IApplicationLifetime>().ApplicationStarted.Register(
+                        async () =>
+                        {
+                            var discoveryOptions = services.GetRequiredService<IOptionsMonitor<RabbitConsulOptions>>().CurrentValue.Discovery;
+                            var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
+                            await registryService.RegisterAsync(ConsulUtil.Create(discoveryOptions));
+                        });
 
                     next(app);
                 };
