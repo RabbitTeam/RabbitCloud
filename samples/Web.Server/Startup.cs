@@ -23,6 +23,7 @@ namespace Web.Server
             services
                 .Configure<RabbitConsulOptions>(Configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulAutoRegistry()
+                .AddResponseCompression()
                 .AddMvc();
         }
 
@@ -34,7 +35,9 @@ namespace Web.Server
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseMvcWithDefaultRoute();
+            app
+                .UseResponseCompression()
+                .UseMvcWithDefaultRoute();
         }
     }
 }
