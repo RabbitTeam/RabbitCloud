@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Rabbit.Cloud.Facade.Abstractions.ModelBinding;
+using System;
 
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Parameter, AllowMultiple = true)]
-    public class ToQueryAttribute : Attribute, IBuilderMetadata
+    public class ToQueryAttribute : Attribute, IBindingSourceMetadata, IModelNameProvider, IDefaultValueProviderMetadata
     {
         public ToQueryAttribute()
         {
@@ -15,7 +16,22 @@ namespace Rabbit.Cloud.Facade.Abstractions
             Value = value;
         }
 
-        public string Name { get; set; }
-        public string Value { get; set; }
+        #region Implementation of IBindingSourceMetadata
+
+        public BindingSource BindingSource { get; } = BindingSource.Header;
+
+        #endregion Implementation of IBindingSourceMetadata
+
+        #region Implementation of IModelNameProvider
+
+        public string Name { get; }
+
+        #endregion Implementation of IModelNameProvider
+
+        #region Implementation of IDefaultValueProviderMetadata
+
+        public object Value { get; set; }
+
+        #endregion Implementation of IDefaultValueProviderMetadata
     }
 }

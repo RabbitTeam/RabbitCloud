@@ -16,6 +16,7 @@ namespace Rabbit.Cloud.Facade.Utilities
         public static IEnumerable<T> GetFilters<T>(object[] attributes, IServiceProvider services) where T : IFilterMetadata
         {
             var items1 = attributes.OfType<T>().Cast<IFilterMetadata>();
+            //todo whether distinguish ServiceFilterAttribute and TypeFilterAttribute
             var items2 = attributes.OfType<ServiceFilterAttribute>()
                 .Where(i => typeof(T).IsAssignableFrom(i.ServiceType))
                 .Select(i => i.CreateInstance(services));

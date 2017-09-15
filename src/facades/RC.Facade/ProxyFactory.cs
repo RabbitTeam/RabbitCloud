@@ -140,7 +140,7 @@ namespace Rabbit.Cloud.Facade
             }
 
             if (!exceptionContext.ExceptionHandled && exceptionContext.Exception != null)
-                throw exceptionContext.Exception;
+                exceptionContext.ExceptionDispatchInfo.Throw();
         }
 
         private async Task<object> ReturnAsync(MethodInfo method, RabbitContext context, Type returnType)
@@ -192,7 +192,7 @@ namespace Rabbit.Cloud.Facade
             }
 
             if (!exceptionContext.ExceptionHandled && exceptionContext.Exception != null)
-                throw exceptionContext.Exception;
+                exceptionContext.ExceptionDispatchInfo.Throw();
 
             return resultExecutedContext.Result;
         }

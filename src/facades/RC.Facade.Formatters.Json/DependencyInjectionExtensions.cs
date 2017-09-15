@@ -15,7 +15,7 @@ namespace RC.Facade.Formatters.Json
             var services = builder.Services;
 
             services.TryAddEnumerable(
-                ServiceDescriptor.Transient<IConfigureOptions<FacadeOptions>, FacadeJsonFacadeOptionsSetup>());
+                Microsoft.Extensions.DependencyInjection.ServiceDescriptor.Transient<IConfigureOptions<FacadeOptions>, FacadeJsonFacadeOptionsSetup>());
 
             if (setupAction != null)
                 services.Configure(setupAction);

@@ -1,7 +1,10 @@
-﻿using Castle.DynamicProxy;
+﻿using Microsoft.AspNetCore.Routing;
+using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Features;
 using Rabbit.Cloud.Facade.Internal;
+using Rabbit.Cloud.Facade.Utilities.Extensions;
 using RC.Discovery.Client.Abstractions;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Facade.Middlewares
@@ -9,12 +12,14 @@ namespace Rabbit.Cloud.Facade.Middlewares
     public class FacadeMiddleware
     {
         private readonly RabbitRequestDelegate _next;
-        private readonly IRequestMessageBuilderProvider _requestMessageBuilderProvider;
+        private readonly IRequestMessageBuilder _requestMessageBuilder;
+        private readonly IServiceDescriptorCollectionProvider _serviceDescriptorCollectionProvider;
 
-        public FacadeMiddleware(RabbitRequestDelegate next, IRequestMessageBuilderProvider requestMessageBuilderProvider)
+        public FacadeMiddleware(RabbitRequestDelegate next, IRequestMessageBuilder requestMessageBuilder, IServiceDescriptorCollectionProvider serviceDescriptorCollectionProvider)
         {
             _next = next;
-            _requestMessageBuilderProvider = requestMessageBuilderProvider;
+            _requestMessageBuilder = requestMessageBuilder;
+            _serviceDescriptorCollectionProvider = serviceDescriptorCollectionProvider;
         }
 
         public async Task Invoke(RabbitContext context)
@@ -22,16 +27,27 @@ namespace Rabbit.Cloud.Facade.Middlewares
             var invocationFeature = context.Features.Get<IInvocationFeature>();
             var invocation = invocationFeature.Invocation;
 
-            await SetRequest(context, invocation);
+            var serviceDescriptor =
+                _serviceDescriptorCollectionProvider.ServiceDescriptors.GetServiceDescriptor(invocation.Method
+                    .GetHashCode());
+
+            var arguments = new Dictionary<string, object>();
+            var parameters = invocation.Method.GetParameters();
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                arguments[parameters[i].Name] = invocation.Arguments[i];
+            }
+
+            await SetRequest(new ServiceRequestContext(context, arguments, new RouteData(), serviceDescriptor));
 
             await _next(context);
         }
 
         #region Private Method
 
-        private Task SetRequest(RabbitContext context, IInvocation invocation)
+        private Task SetRequest(ServiceRequestContext serviceRequestContext)
         {
-            return _requestMessageBuilderProvider.BuildAsync(invocation, context);
+            return _requestMessageBuilder.BuildAsync(new RequestMessageBuilderContext(serviceRequestContext));
         }
 
         #endregion Private Method

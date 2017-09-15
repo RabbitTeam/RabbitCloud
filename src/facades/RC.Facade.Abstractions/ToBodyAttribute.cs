@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Rabbit.Cloud.Facade.Abstractions.ModelBinding;
+using System;
 
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class ToBodyAttribute : Attribute, IBuilderMetadata
+    public class ToBodyAttribute : Attribute, IBindingSourceMetadata
     {
         public ToBodyAttribute()
         {
@@ -15,5 +16,11 @@ namespace Rabbit.Cloud.Facade.Abstractions
         }
 
         public string Formatter { get; set; }
+
+        #region Implementation of IBindingSourceMetadata
+
+        public BindingSource BindingSource { get; } = BindingSource.Body;
+
+        #endregion Implementation of IBindingSourceMetadata
     }
 }
