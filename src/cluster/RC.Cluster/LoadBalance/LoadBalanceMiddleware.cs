@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RC.Abstractions;
 using RC.Cluster.Abstractions.LoadBalance;
-using RC.Discovery.Client.Abstractions;
 using System;
 using System.Threading.Tasks;
 

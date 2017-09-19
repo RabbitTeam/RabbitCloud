@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using RC.Abstractions;
 
 namespace RC.Discovery.Client.Abstractions.Extensions
 {

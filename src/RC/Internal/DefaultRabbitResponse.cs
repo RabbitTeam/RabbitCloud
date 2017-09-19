@@ -1,7 +1,7 @@
-﻿using RC.Discovery.Client.Abstractions;
+﻿using RC.Abstractions;
 using System.Net.Http;
 
-namespace Rabbit.Cloud.Discovery.Client.Internal
+namespace Rabbit.Cloud.Internal
 {
     public class DefaultRabbitResponse : RabbitResponse
     {

@@ -1,6 +1,6 @@
 using System.Net.Http;
 
-namespace RC.Discovery.Client.Abstractions
+namespace RC.Abstractions
 {
     public abstract class RabbitResponse
     {

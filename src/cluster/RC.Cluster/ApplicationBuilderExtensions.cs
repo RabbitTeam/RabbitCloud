@@ -1,6 +1,6 @@
-﻿using RC.Cluster.HighAvailability;
+﻿using RC.Abstractions;
+using RC.Cluster.HighAvailability;
 using RC.Cluster.LoadBalance;
-using RC.Discovery.Client.Abstractions;
 using RC.Discovery.Client.Abstractions.Extensions;
 
 namespace RC.Cluster

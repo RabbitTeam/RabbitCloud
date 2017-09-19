@@ -1,12 +1,12 @@
 ﻿using Castle.DynamicProxy;
 using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Discovery.Client.Internal;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Features;
 using Rabbit.Cloud.Facade.Utilities;
-using RC.Discovery.Client.Abstractions;
+using Rabbit.Cloud.Internal;
+using RC.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;

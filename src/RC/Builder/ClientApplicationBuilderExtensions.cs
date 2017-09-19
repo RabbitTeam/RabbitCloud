@@ -1,8 +1,8 @@
-﻿using Rabbit.Cloud.Discovery.Client.Middlewares;
-using RC.Discovery.Client.Abstractions;
+﻿using Rabbit.Cloud.Middlewares;
+using RC.Abstractions;
 using RC.Discovery.Client.Abstractions.Extensions;
 
-namespace Rabbit.Cloud.Discovery.Client.Builder
+namespace Rabbit.Cloud.Builder
 {
     public static class ClientApplicationBuilderExtensions
     {

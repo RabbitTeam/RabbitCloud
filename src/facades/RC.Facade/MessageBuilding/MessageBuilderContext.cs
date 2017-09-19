@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
-using Rabbit.Cloud.Facade.Abstractions;
+﻿using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
-using RC.Discovery.Client.Abstractions;
+using RC.Abstractions;
+using System.Net.Http;
 
 namespace Rabbit.Cloud.Facade.MessageBuilding
 {

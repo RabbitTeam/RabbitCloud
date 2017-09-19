@@ -1,4 +1,4 @@
-﻿using RC.Discovery.Client.Abstractions;
+﻿using RC.Abstractions;
 using System;
 using System.IO;
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RC.Discovery.Client.Abstractions;
+using RC.Abstractions;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;

@@ -1,5 +1,5 @@
 ﻿using Rabbit.Cloud.Facade.Middlewares;
-using RC.Discovery.Client.Abstractions;
+using RC.Abstractions;
 using RC.Discovery.Client.Abstractions.Extensions;
 
 namespace Rabbit.Cloud.Facade.Builder

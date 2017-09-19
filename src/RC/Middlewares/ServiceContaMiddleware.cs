@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using RC.Discovery.Client.Abstractions;
+using RC.Abstractions;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Discovery.Client.Middlewares
+namespace Rabbit.Cloud.Middlewares
 {
     public class ServiceContainerMiddleware
     {

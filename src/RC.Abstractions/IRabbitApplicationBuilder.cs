@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RC.Discovery.Client.Abstractions
+namespace RC.Abstractions
 {
     public interface IRabbitApplicationBuilder
     {

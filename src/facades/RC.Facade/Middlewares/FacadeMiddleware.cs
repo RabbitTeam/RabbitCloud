@@ -3,7 +3,7 @@ using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Features;
 using Rabbit.Cloud.Facade.Internal;
 using Rabbit.Cloud.Facade.Utilities.Extensions;
-using RC.Discovery.Client.Abstractions;
+using RC.Abstractions;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

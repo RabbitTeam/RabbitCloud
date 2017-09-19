@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace RC.Discovery.Client.Abstractions
+namespace RC.Abstractions
 {
     public delegate Task RabbitRequestDelegate(RabbitContext rabbitContext);
 }

@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\discoverys\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
-    <ProjectReference Include="..\..\discoverys\RC.Discovery.Client\RC.Discovery.Client.csproj" />
+    <ProjectReference Include="..\..\RC\RC.csproj" />
     <ProjectReference Include="..\RC.Facade.Abstractions\RC.Facade.Abstractions.csproj" />
   </ItemGroup>
 

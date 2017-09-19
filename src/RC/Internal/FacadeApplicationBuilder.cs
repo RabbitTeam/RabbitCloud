@@ -1,11 +1,11 @@
-﻿using RC.Discovery.Client.Abstractions;
+﻿using RC.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Discovery.Client.Internal
+namespace Rabbit.Cloud.Internal
 {
     public class RabbitApplicationBuilder : IRabbitApplicationBuilder
     {
