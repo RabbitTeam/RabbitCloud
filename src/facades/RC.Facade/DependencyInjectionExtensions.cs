@@ -5,6 +5,7 @@ using Rabbit.Cloud.Facade.Abstractions.Abstractions;
 using Rabbit.Cloud.Facade.Internal;
 using Rabbit.Cloud.Facade.Models;
 using Rabbit.Cloud.Facade.Models.Internal;
+using RC.Abstractions;
 using System.Buffers;
 using System.Net.Http;
 
@@ -12,8 +13,9 @@ namespace Rabbit.Cloud.Facade
 {
     public static class DependencyInjectionExtensions
     {
-        public static IFacadeBuilder AddFacadeCore(this IServiceCollection services)
+        public static IFacadeBuilder AddFacadeCore(this IRabbitBuilder builder)
         {
+            var services = builder.Services;
             services
                 .AddSingleton(new HttpClient())
                 .AddSingleton(ArrayPool<char>.Shared)
@@ -25,8 +27,8 @@ namespace Rabbit.Cloud.Facade
                 .AddOptions()
                 .AddLogging();
 
-            var builder = new FacadeBuilder(services);
-            return builder;
+            var facadeBuilder = new FacadeBuilder(services);
+            return facadeBuilder;
         }
     }
 }

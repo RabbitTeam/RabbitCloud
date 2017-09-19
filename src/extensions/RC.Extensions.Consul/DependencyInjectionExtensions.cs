@@ -9,27 +9,37 @@ using Rabbit.Cloud.Extensions.Consul.Discovery;
 using Rabbit.Cloud.Extensions.Consul.Registry;
 using Rabbit.Cloud.Extensions.Consul.Utilities;
 using Rabbit.Cloud.Registry.Abstractions;
+using RC.Abstractions;
 using System;
 
 namespace Rabbit.Cloud.Extensions.Consul
 {
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddConsulDiscovery(this IServiceCollection services)
+        public static IRabbitBuilder AddConsulDiscovery(this IRabbitBuilder builder)
         {
-            return services.AddSingleton<IDiscoveryClient, ConsulDiscoveryClient>();
+            builder.Services.AddSingleton<IDiscoveryClient, ConsulDiscoveryClient>();
+            return builder;
         }
 
-        public static IServiceCollection AddConsulRegistry(this IServiceCollection services, ConsulClient consulClient = null)
+        public static IRabbitBuilder AddConsulRegistry(this IRabbitBuilder builder, ConsulClient consulClient = null)
         {
-            return consulClient != null ? services.AddSingleton<IRegistryService<ConsulRegistration>>(s => new ConsulRegistryService(consulClient, s.GetRequiredService<ILoggerFactory>())) : services.AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
+            var services = builder.Services;
+            if (consulClient == null)
+                services.AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
+            else
+                services.AddSingleton<IRegistryService<ConsulRegistration>>(s => new ConsulRegistryService(consulClient, s.GetRequiredService<ILoggerFactory>()));
+            return builder;
         }
 
-        public static IServiceCollection AddConsulAutoRegistry(this IServiceCollection services, ConsulClient consulClient = null)
+        public static IRabbitBuilder AddConsulAutoRegistry(this IRabbitBuilder builder, ConsulClient consulClient = null)
         {
-            return services
+            builder
                 .AddConsulRegistry(consulClient)
+                .Services
                 .AddSingleton<IStartupFilter, AutoRegistryStartupFilter>();
+
+            return builder;
         }
 
         /// <inheritdoc />

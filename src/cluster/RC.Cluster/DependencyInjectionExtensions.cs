@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using RC.Abstractions;
 using RC.Cluster.Abstractions.LoadBalance;
 using RC.Cluster.HighAvailability;
 using RC.Cluster.LoadBalance;
@@ -8,26 +9,28 @@ namespace RC.Cluster
 {
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddHighAvailability(this IServiceCollection services, Action<HighAvailabilityOptions> configure = null)
+        public static IRabbitBuilder AddHighAvailability(this IRabbitBuilder builder, Action<HighAvailabilityOptions> configure = null)
         {
-            return services.Configure(configure ?? (s => { }));
+            builder.Services.Configure(configure ?? (s => { }));
+            return builder;
         }
 
-        public static IServiceCollection AddRandomServiceInstanceChoose(this IServiceCollection services)
+        public static IRabbitBuilder AddRandomServiceInstanceChoose(this IRabbitBuilder builder)
         {
-            return services.AddServiceInstanceChoose<RandomServiceInstanceChoose>();
+            return builder.AddServiceInstanceChoose<RandomServiceInstanceChoose>();
         }
 
-        public static IServiceCollection AddRoundRobinServiceInstanceChoose(this IServiceCollection services)
+        public static IRabbitBuilder AddRoundRobinServiceInstanceChoose(this IRabbitBuilder builder)
         {
-            return services.AddServiceInstanceChoose<RoundRobinServiceInstanceChoose>();
+            return builder.AddServiceInstanceChoose<RoundRobinServiceInstanceChoose>();
         }
 
-        public static IServiceCollection AddServiceInstanceChoose<T>(this IServiceCollection services) where T : class, IServiceInstanceChoose
+        public static IRabbitBuilder AddServiceInstanceChoose<T>(this IRabbitBuilder builder) where T : class, IServiceInstanceChoose
         {
-            return services
+            builder.Services
                 .AddSingleton<T>()
                 .AddSingleton<IServiceInstanceChoose, T>();
+            return builder;
         }
     }
 }

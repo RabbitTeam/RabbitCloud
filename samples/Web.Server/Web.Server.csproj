@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\extensions\RC.Extensions.Consul\RC.Extensions.Consul.csproj" />
+    <ProjectReference Include="..\..\src\RC\RC.csproj" />
   </ItemGroup>
 
   <ItemGroup>

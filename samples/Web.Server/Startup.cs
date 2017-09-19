@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Rabbit.Cloud;
 using Rabbit.Cloud.Extensions.Consul;
 using Rabbit.Extensions.Configuration;
 
@@ -22,8 +23,10 @@ namespace Web.Server
         {
             services
                 .Configure<RabbitConsulOptions>(Configuration.GetSection("RabbitCloud:Consul"))
-                .AddConsulAutoRegistry()
                 .AddResponseCompression()
+                .AddRabbitCloudCore()
+                .AddConsulAutoRegistry()
+                .Services
                 .AddMvc();
         }
 

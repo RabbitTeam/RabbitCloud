@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Rabbit.Cloud;
 using Rabbit.Cloud.Builder;
 using Rabbit.Cloud.Extensions.Consul;
 using Rabbit.Cloud.Facade;
@@ -90,6 +91,7 @@ namespace ConsoleApp
 
             var services = new ServiceCollection()
                 .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
+                .AddRabbitCloudCore()
                 .AddConsulDiscovery()
                 .AddHighAvailability()
                 .AddRandomServiceInstanceChoose()
