@@ -92,7 +92,7 @@ namespace ConsoleApp
                 .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                 .AddConsulDiscovery()
                 .AddHighAvailability()
-                .AddRandomAddressSelector()
+                .AddRandomServiceInstanceChoose()
                 .AddFacadeCore()
                 .AddJsonFormatters()
                 .Services
