@@ -30,10 +30,10 @@ namespace Rabbit.Cloud.Extensions.Consul.Registry
         {
             var serviceRegistration = registration.AgentServiceRegistration;
 
+            await ConsulClient.Agent.ServiceRegister(serviceRegistration);
+
             if (serviceRegistration.Check.TTL.HasValue)
                 await _heartbeatManager.AddHeartbeat(serviceRegistration.ID, serviceRegistration.Check.TTL.Value);
-
-            await ConsulClient.Agent.ServiceRegister(serviceRegistration);
         }
 
         public async Task DeregisterAsync(ConsulRegistration registration)
