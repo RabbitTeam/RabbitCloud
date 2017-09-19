@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
-using Rabbit.Cloud.Facade.Abstractions.ModelBinding;
+using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using Rabbit.Cloud.Facade.Utilities.Extensions;
 using System;
 using System.Collections.Generic;
@@ -34,62 +33,54 @@ namespace Rabbit.Cloud.Facade.Internal
 
             var requestMessage = rabbitContext.Request.RequestMessage;
 
-            var routeTemplate = serviceDescriptor.AttributeRouteInfo.Template;
-            var placeholders = GetPlaceholders(routeTemplate);
+            var parameterQuerys = GetValues(context, BuildingTarget.Query);
+            var parameterHeaders = GetValues(context, BuildingTarget.Header);
+            var forms = GetValues(context, BuildingTarget.Form);
+            var body = serviceDescriptor.Parameters.LastOrDefault(i => i.BuildingInfo.BuildingTarget == BuildingTarget.Body);
 
+            var headers = serviceDescriptor.Headers.Concat(parameterHeaders).GroupBy(i => i.Key).Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.SelectMany(z => z.Value))).ToArray();
+            var querys = serviceDescriptor.Querys.Concat(parameterQuerys).GroupBy(i => i.Key).Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.SelectMany(z => z.Value))).ToArray();
+
+            // add header
+            foreach (var header in headers)
+                requestMessage.Headers.Add(header.Key, header.Value);
+
+            // resolve url
+            var routeTemplate = serviceDescriptor.ServiceRouteInfo.Template;
+            var placeholders = GetPlaceholders(routeTemplate);
             var routeUrl = BuildPathAndQuery(routeTemplate,
-                serviceDescriptor.RouteValues
-                    .Concat(placeholders.ToDictionary(i => i, i => requestContext.GetArgument(i)?.ToString()))
+                placeholders.ToDictionary(i => i, i =>
+                    {
+                        var items = querys.FirstOrDefault(z => string.Equals(z.Key, i, StringComparison.OrdinalIgnoreCase));
+                        return items.Value == null ? string.Empty : string.Join(",", items.Value);
+                    })
                     .ToDictionary(i => i.Key, i => i.Value));
 
+            // set httpMethod
             requestMessage.Method = serviceDescriptor.HttpMethod;
 
-            var querys = new List<KeyValuePair<string, string>>();
-            var headers = new List<KeyValuePair<string, string>>();
-            var forms = new List<KeyValuePair<string, string>>();
-
-            foreach (var parameterDescriptor in serviceDescriptor.Parameters)
+            if (body != null)
             {
-                var bindingInfo = parameterDescriptor.BindingInfo;
-                var source = bindingInfo.BindingSource;
+                var inputFormatterWriteContext = new InputFormatterWriteContext(rabbitContext, body.ParameterType,
+                    context.ServiceRequestContext.GetArgument(body.Name))
+                {
+                    ContentType = "application/json"
+                };
+                var formatter =
+                    _facadeOptions.InputFormatters.FirstOrDefault(i => i.CanWriteResult(inputFormatterWriteContext));
 
-                var key = bindingInfo.BinderModelName ?? parameterDescriptor.Name;
-                var value = bindingInfo.DefaultValue ?? requestContext.GetArgument(parameterDescriptor.Name);
-
-                if (source == BindingSource.Query)
-                {
-                    querys.Add(new KeyValuePair<string, string>(key, value?.ToString()));
-                }
-                else if (source == BindingSource.Header)
-                {
-                    headers.Add(new KeyValuePair<string, string>(key, value?.ToString()));
-                }
-                else if (source == BindingSource.Form)
-                {
-                    AppendParameter(bindingInfo.BinderModelName ?? string.Empty, value, forms);
-                }
-                else if (source == BindingSource.Body)
-                {
-                    var inputFormatterWriteContext = new InputFormatterWriteContext(rabbitContext, parameterDescriptor.ParameterType, value)
-                    {
-                        ContentType = "application/json"
-                    };
-                    var formatter = _facadeOptions.InputFormatters.FirstOrDefault(i => i.CanWriteResult(inputFormatterWriteContext));
-
-                    await formatter.WriteAsync(inputFormatterWriteContext);
-                }
+                await formatter.WriteAsync(inputFormatterWriteContext);
+            }
+            else
+            {
+                requestMessage.Content = new FormUrlEncodedContent(forms.Select(i => new KeyValuePair<string, string>(i.Key, i.Value == null ? string.Empty : string.Join(",", i.Value))));
             }
 
-            if (requestMessage.Content == null)
-            {
-                requestMessage.Content = new FormUrlEncodedContent(forms);
-            }
+            var url = routeUrl;
+            if (!url.StartsWith("http"))
+                url = "http://" + url;
 
-            var baseUrl = serviceDescriptor.BaseUrl;
-            if (!baseUrl.StartsWith("http"))
-                baseUrl = "http://" + baseUrl;
-
-            requestMessage.RequestUri = new Uri(new Uri(baseUrl), routeUrl);
+            requestMessage.RequestUri = new Uri(url);
         }
 
         #endregion Implementation of IRequestMessageBuilder
@@ -117,6 +108,31 @@ namespace Rabbit.Cloud.Facade.Internal
                 var key = match.Groups[1].Value;
                 yield return key;
             }
+        }
+
+        private static IEnumerable<KeyValuePair<string, IEnumerable<string>>> GetValues(RequestMessageBuilderContext context, BuildingTarget buildingTarget)
+        {
+            var serviceRequestContext = context.ServiceRequestContext;
+            var serviceDescriptor = serviceRequestContext.ServiceDescriptor;
+
+            var querys = new List<KeyValuePair<string, string>>();
+
+            foreach (var parameterDescriptor in serviceDescriptor.Parameters.Where(i => i.BuildingInfo.BuildingTarget == buildingTarget))
+            {
+                var key = parameterDescriptor.BuildingInfo.BuildingModelName ?? parameterDescriptor.Name;
+                var argument = serviceRequestContext.GetArgument(parameterDescriptor.Name);
+
+                if (argument is IConvertible convertible)
+                    querys.Add(
+                        new KeyValuePair<string, string>(key, convertible.ToString(CultureInfo.InvariantCulture)));
+                else
+                {
+                    AppendParameter(key, argument, querys);
+                }
+            }
+
+            return querys.GroupBy(i => i.Key)
+                .Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.Select(z => z.Value)));
         }
 
         private static void AppendParameter(string prefix, object instance, ICollection<KeyValuePair<string, string>> dictionary)

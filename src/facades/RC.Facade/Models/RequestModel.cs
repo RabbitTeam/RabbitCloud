@@ -15,7 +15,7 @@ namespace Rabbit.Cloud.Facade.Models
             Parameters = new List<ParameterModel>();
         }
 
-        public string RequestUrl { get; set; }
+        public string RouteUrl { get; set; }
         public MethodInfo Method { get; }
         public IReadOnlyList<object> Attributes { get; }
         public ServiceModel Service { get; set; }

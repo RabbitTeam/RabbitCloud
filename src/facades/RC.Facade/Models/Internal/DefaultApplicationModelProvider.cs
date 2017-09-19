@@ -99,7 +99,7 @@ namespace Rabbit.Cloud.Facade.Models.Internal
                 requestMappingAttribute.Value = methodName;
             }
 
-            requestModel.RequestUrl = requestMappingAttribute.Value;
+            requestModel.RouteUrl = requestMappingAttribute.Value;
 
             foreach (var parameterModel in GetParameterModels(methodInfo))
             {

@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Facade;
 using Rabbit.Cloud.Facade.Abstractions;
 using RC.Facade.Formatters.Json.Internal;
 using System;
+using ServiceDescriptor = Microsoft.Extensions.DependencyInjection.ServiceDescriptor;
 
 namespace RC.Facade.Formatters.Json
 {
@@ -15,7 +17,7 @@ namespace RC.Facade.Formatters.Json
             var services = builder.Services;
 
             services.TryAddEnumerable(
-                Microsoft.Extensions.DependencyInjection.ServiceDescriptor.Transient<IConfigureOptions<FacadeOptions>, FacadeJsonFacadeOptionsSetup>());
+                ServiceDescriptor.Transient<IConfigureOptions<FacadeOptions>, FacadeJsonFacadeOptionsSetup>());
 
             if (setupAction != null)
                 services.Configure(setupAction);

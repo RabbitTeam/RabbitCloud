@@ -1,10 +1,10 @@
-﻿using Rabbit.Cloud.Facade.Abstractions.ModelBinding;
+﻿using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using System;
 
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class ToBodyAttribute : Attribute, IBindingSourceMetadata
+    public class ToBodyAttribute : Attribute, IBuildingTargetMetadata
     {
         public ToBodyAttribute()
         {
@@ -17,10 +17,10 @@ namespace Rabbit.Cloud.Facade.Abstractions
 
         public string Formatter { get; set; }
 
-        #region Implementation of IBindingSourceMetadata
+        #region Implementation of IBuildingTargetMetadata
 
-        public BindingSource BindingSource { get; } = BindingSource.Body;
+        public BuildingTarget BuildingTarget { get; } = BuildingTarget.Body;
 
-        #endregion Implementation of IBindingSourceMetadata
+        #endregion Implementation of IBuildingTargetMetadata
     }
 }

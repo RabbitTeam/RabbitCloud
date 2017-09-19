@@ -1,12 +1,11 @@
-﻿using Rabbit.Cloud.Facade.Abstractions;
+﻿using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Abstractions;
-using Rabbit.Cloud.Facade.Abstractions.Filters;
-using Rabbit.Cloud.Facade.Abstractions.ModelBinding;
 using Rabbit.Cloud.Facade.Models;
+using Rabbit.Cloud.Facade.Models.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 
 namespace Rabbit.Cloud.Facade.Internal
@@ -14,13 +13,15 @@ namespace Rabbit.Cloud.Facade.Internal
     public class ApplicationServiceDescriptorProvider : IServiceDescriptorProvider
     {
         private readonly IApplicationModelProvider[] _applicationModelProviders;
+        private readonly IEnumerable<IApplicationModelConvention> _conventions;
 
-        public ApplicationServiceDescriptorProvider(IEnumerable<IApplicationModelProvider> applicationModelProviders)
+        public ApplicationServiceDescriptorProvider(IEnumerable<IApplicationModelProvider> applicationModelProviders, IOptions<FacadeOptions> optionsAccessor)
         {
             if (applicationModelProviders == null)
                 throw new ArgumentNullException(nameof(applicationModelProviders));
 
             _applicationModelProviders = applicationModelProviders.OrderBy(i => i.Order).ToArray();
+            _conventions = optionsAccessor.Value.Conventions;
         }
 
         #region Implementation of IServiceDescriptorProvider
@@ -42,25 +43,6 @@ namespace Rabbit.Cloud.Facade.Internal
 
         public void OnProvidersExecuted(ServiceDescriptorProviderContext context)
         {
-            var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var action in context.Results)
-            {
-                foreach (var key in action.RouteValues.Keys)
-                {
-                    keys.Add(key);
-                }
-            }
-
-            foreach (var action in context.Results)
-            {
-                foreach (var key in keys)
-                {
-                    if (!action.RouteValues.ContainsKey(key))
-                    {
-                        action.RouteValues.Add(key, null);
-                    }
-                }
-            }
         }
 
         #endregion Implementation of IServiceDescriptorProvider
@@ -69,39 +51,9 @@ namespace Rabbit.Cloud.Facade.Internal
 
         private IEnumerable<ServiceDescriptor> GetDescriptors()
         {
-            var applicationModel = BuildModel();
-            foreach (var serviceModel in applicationModel.Services)
-            {
-                var facadeClientAttribute = serviceModel.Attributes.OfType<FacadeClientAttribute>().LastOrDefault();
-                foreach (var requestModel in serviceModel.Requests)
-                {
-                    var requestMappingAttribute = requestModel.Attributes.OfType<RequestMappingAttribute>().LastOrDefault();
-                    var serviceDescriptor = new ServiceDescriptor(requestModel.Method.GetHashCode().ToString())
-                    {
-                        HttpMethod = requestMappingAttribute?.Method == null ? HttpMethod.Get : new HttpMethod(requestMappingAttribute.Method),
-                        BaseUrl = facadeClientAttribute.Name ?? facadeClientAttribute.Url,
-                        AttributeRouteInfo = new AttributeRouteInfo
-                        {
-                            Template = requestModel.RequestUrl
-                        },
-                        DisplayName = requestModel.RequestUrl,
-                        FilterDescriptors = requestModel.Filters.Select(i => new FilterDescriptor(i)).ToArray(),
-                        Parameters = requestModel.Parameters.Select(CreateParameterDescriptor).ToArray()
-                    };
-                    yield return serviceDescriptor;
-                }
-            }
-        }
-
-        private static ParameterDescriptor CreateParameterDescriptor(ParameterModel model)
-        {
-            var descriptor = new ParameterDescriptor
-            {
-                Name = model.ParameterName,
-                ParameterType = model.ParameterInfo.ParameterType,
-                BindingInfo = BindingInfo.GetBindingInfo(model.ParameterInfo.GetCustomAttributes(false))
-            };
-            return descriptor;
+            var application = BuildModel();
+            ApplicationModelConventions.ApplyConventions(application, _conventions);
+            return ServiceDescriptorBuilder.Build(application);
         }
 
         private ApplicationModel BuildModel()

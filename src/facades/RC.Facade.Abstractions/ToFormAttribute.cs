@@ -1,10 +1,10 @@
-﻿using Rabbit.Cloud.Facade.Abstractions.ModelBinding;
+﻿using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using System;
 
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = true)]
-    public class ToFormAttribute : Attribute, IBindingSourceMetadata, IModelNameProvider, IDefaultValueProviderMetadata
+    public class ToFormAttribute : Attribute, IBuildingTargetMetadata, IBuildingModelNameProvider
     {
         public ToFormAttribute()
         {
@@ -16,22 +16,18 @@ namespace Rabbit.Cloud.Facade.Abstractions
             Value = value;
         }
 
-        #region Implementation of IBindingSourceMetadata
+        #region Implementation of IBuildingTargetMetadata
 
-        public BindingSource BindingSource { get; } = BindingSource.Form;
+        public BuildingTarget BuildingTarget { get; } = BuildingTarget.Form;
 
-        #endregion Implementation of IBindingSourceMetadata
+        #endregion Implementation of IBuildingTargetMetadata
 
-        #region Implementation of IModelNameProvider
+        #region Implementation of IBuildingModelNameProvider
 
         public string Name { get; }
 
-        #endregion Implementation of IModelNameProvider
-
-        #region Implementation of IDefaultValueProviderMetadata
+        #endregion Implementation of IBuildingModelNameProvider
 
         public object Value { get; }
-
-        #endregion Implementation of IDefaultValueProviderMetadata
     }
 }

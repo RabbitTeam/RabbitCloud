@@ -1,10 +1,10 @@
-﻿using Rabbit.Cloud.Facade.Abstractions.ModelBinding;
+﻿using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using System;
 
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Method | AttributeTargets.Interface, AllowMultiple = true)]
-    public class ToHeaderAttribute : Attribute, IBindingSourceMetadata, IModelNameProvider, IDefaultValueProviderMetadata
+    public class ToHeaderAttribute : Attribute, IBuildingTargetMetadata, IBuildingModelNameProvider
     {
         public ToHeaderAttribute()
         {
@@ -16,11 +16,11 @@ namespace Rabbit.Cloud.Facade.Abstractions
             Value = value;
         }
 
-        #region Implementation of IBindingSourceMetadata
+        #region Implementation of IBuildingTargetMetadata
 
-        public BindingSource BindingSource { get; } = BindingSource.Header;
+        public BuildingTarget BuildingTarget { get; } = BuildingTarget.Header;
 
-        #endregion Implementation of IBindingSourceMetadata
+        #endregion Implementation of IBuildingTargetMetadata
 
         #region Implementation of IModelNameProvider
 
@@ -28,10 +28,6 @@ namespace Rabbit.Cloud.Facade.Abstractions
 
         #endregion Implementation of IModelNameProvider
 
-        #region Implementation of IDefaultValueProviderMetadata
-
         public object Value { get; set; }
-
-        #endregion Implementation of IDefaultValueProviderMetadata
     }
 }

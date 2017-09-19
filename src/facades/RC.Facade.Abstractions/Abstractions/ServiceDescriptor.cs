@@ -11,14 +11,16 @@ namespace Rabbit.Cloud.Facade.Abstractions
         {
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Properties = new Dictionary<object, object>();
-            RouteValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         public string Id { get; }
         public HttpMethod HttpMethod { get; set; }
-        public IDictionary<string, string> RouteValues { get; set; }
-        public string BaseUrl { get; set; }
-        public AttributeRouteInfo AttributeRouteInfo { get; set; }
+
+        public ServiceRouteInfo ServiceRouteInfo { get; set; }
+
+        public IEnumerable<KeyValuePair<string, IEnumerable<string>>> Headers { get; set; }
+        public IEnumerable<KeyValuePair<string,IEnumerable<string>>> Querys { get; set; }
+
         public IList<ParameterDescriptor> Parameters { get; set; }
         public IList<FilterDescriptor> FilterDescriptors { get; set; }
         public virtual string DisplayName { get; set; }

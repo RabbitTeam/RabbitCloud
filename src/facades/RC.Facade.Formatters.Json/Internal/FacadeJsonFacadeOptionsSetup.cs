@@ -2,7 +2,7 @@
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Rabbit.Cloud.Facade.Abstractions;
+using Rabbit.Cloud.Facade;
 using System.Buffers;
 
 namespace RC.Facade.Formatters.Json.Internal
