@@ -13,21 +13,21 @@ namespace RC.Cluster
             return services.Configure(configure ?? (s => { }));
         }
 
-        public static IServiceCollection AddRandomAddressSelector(this IServiceCollection services)
+        public static IServiceCollection AddRandomServiceInstanceChoose(this IServiceCollection services)
         {
-            return services.AddAddressSelector<RandomAddressSelector>();
+            return services.AddServiceInstanceChoose<RandomServiceInstanceChoose>();
         }
 
-        public static IServiceCollection AddRoundRobinAddressSelector(this IServiceCollection services)
+        public static IServiceCollection AddRoundRobinServiceInstanceChoose(this IServiceCollection services)
         {
-            return services.AddAddressSelector<RoundRobinAddressSelector>();
+            return services.AddServiceInstanceChoose<RoundRobinServiceInstanceChoose>();
         }
 
-        public static IServiceCollection AddAddressSelector<T>(this IServiceCollection services) where T : class, IAddressSelector
+        public static IServiceCollection AddServiceInstanceChoose<T>(this IServiceCollection services) where T : class, IServiceInstanceChoose
         {
             return services
                 .AddSingleton<T>()
-                .AddSingleton<IAddressSelector, T>();
+                .AddSingleton<IServiceInstanceChoose, T>();
         }
     }
 }

@@ -8,4 +8,8 @@
     <Folder Include="HighAvailability\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\discoverys\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

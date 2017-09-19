@@ -31,7 +31,7 @@ namespace RC.Cluster.LoadBalance
             try
             {
                 var uri = await LookupServiceAsync(current,
-                    context.RequestServices.GetRequiredService<IAddressSelector>());
+                    context.RequestServices.GetRequiredService<IServiceInstanceChoose>());
                 request.RequestUri = new Uri(uri, request.RequestUri.PathAndQuery);
                 await _next(context);
             }
@@ -41,11 +41,18 @@ namespace RC.Cluster.LoadBalance
             }
         }
 
-        private async Task<Uri> LookupServiceAsync(Uri current, IAddressSelector addressSelector)
+        private async Task<Uri> LookupServiceAsync(Uri current, IServiceInstanceChoose serviceInstanceChoose)
         {
             _logger?.LogDebug("LookupService({0})", current.ToString());
 
-            current = await addressSelector.SelectAsync(current.Host);
+            var serviceName = current.Host;
+            var instance = await serviceInstanceChoose.ChooseAsync(serviceName);
+            if (instance == null)
+            {
+                _logger.LogWarning($"basis serviceName '{serviceName}' not found serviceInstance.");
+            }
+            else
+                current = instance.Uri;
 
             _logger?.LogDebug("LookupService() returning {0} ", current.ToString());
             return current;
