@@ -22,7 +22,7 @@ namespace Rabbit.Cloud.Extensions.Consul
 
         public static IServiceCollection AddConsulRegistry(this IServiceCollection services, ConsulClient consulClient = null)
         {
-            return consulClient != null ? services.AddSingleton<IRegistryService<ConsulRegistration>>(s => new ConsulRegistryService(consulClient, s.GetRequiredService<ILogger<ConsulRegistryService>>())) : services.AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
+            return consulClient != null ? services.AddSingleton<IRegistryService<ConsulRegistration>>(s => new ConsulRegistryService(consulClient, s.GetRequiredService<ILoggerFactory>())) : services.AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
         }
 
         public static IServiceCollection AddConsulAutoRegistry(this IServiceCollection services, ConsulClient consulClient = null)

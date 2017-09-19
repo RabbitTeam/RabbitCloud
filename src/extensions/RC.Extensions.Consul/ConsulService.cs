@@ -7,9 +7,9 @@ namespace Rabbit.Cloud.Extensions.Consul
     public abstract class ConsulService : IDisposable
     {
         protected bool Disposed { get; private set; }
-        public ConsulClient ConsulClient { get; private set; }
+        public IConsulClient ConsulClient { get; private set; }
 
-        protected ConsulService(ConsulClient consulClient)
+        protected ConsulService(IConsulClient consulClient)
         {
             ConsulClient = consulClient;
         }

@@ -1,4 +1,5 @@
 ﻿using Consul;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Extensions.Consul.Utilities;
@@ -7,44 +8,60 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Rabbit.Cloud.Extensions.Consul.Discovery
 {
     public class ConsulDiscoveryClient : ConsulService, IDiscoveryClient
     {
-        private readonly ConcurrentDictionary<string, IReadOnlyCollection<IServiceInstance>> _instances = new ConcurrentDictionary<string, IReadOnlyCollection<IServiceInstance>>(StringComparer.OrdinalIgnoreCase);
+        public class InstanceEntry
+        {
+            public InstanceEntry()
+            {
+                Instances = new List<IServiceInstance>();
+            }
+
+            public ICollection<IServiceInstance> Instances { get; }
+            public ulong Index { get; set; }
+        }
+
+        private readonly ConcurrentDictionary<string, ICollection<IServiceInstance>> _instances = new ConcurrentDictionary<string, ICollection<IServiceInstance>>(StringComparer.OrdinalIgnoreCase);
 
         #region Constructor
 
-        public ConsulDiscoveryClient(ConsulClient consulClient) : base(consulClient)
+        public ConsulDiscoveryClient(IConsulClient consulClient, ILogger<ConsulDiscoveryClient> logger) : base(consulClient)
         {
-            //first load
-            LoadServices().Wait();
-
             Task.Factory.StartNew(async () =>
             {
-                var response = await consulClient.Catalog.Services();
-                var index = response.LastIndex;
+                var healthEndpoint = consulClient.Health;
 
+                ulong index = 0;
                 //watcher
                 while (!Disposed)
                 {
-                    response = await consulClient.Catalog.Services(new QueryOptions { WaitIndex = index });
+                    var result = await healthEndpoint.State(HealthStatus.Passing, new QueryOptions { WaitIndex = index });
+                    var response = result.Response;
 
                     //timeout ignore
-                    if (response.LastIndex == index)
+                    if (index == result.LastIndex)
                         continue;
 
-                    //reload
-                    await LoadServices();
+                    // expired to delete
+                    var expiredServices = response.GroupBy(i => i.ServiceName).Select(i => i.Key).ToArray();
+                    if (logger.IsEnabled(LogLevel.Debug))
+                        logger.LogDebug($"ready delete expired service info ,{string.Join(",", expiredServices)}");
+                    foreach (var serviceName in expiredServices)
+                    {
+                        _instances.TryRemove(serviceName, out var _);
+                    }
 
-                    index = response.LastIndex;
+                    index = result.LastIndex;
                 }
             });
         }
 
-        public ConsulDiscoveryClient(IOptionsMonitor<RabbitConsulOptions> consulOptionsMonitor)
-            : this(consulOptionsMonitor.CurrentValue.CreateClient())
+        public ConsulDiscoveryClient(IOptionsMonitor<RabbitConsulOptions> consulOptionsMonitor, ILogger<ConsulDiscoveryClient> logger)
+            : this(consulOptionsMonitor.CurrentValue.CreateClient(), logger)
         {
         }
 
@@ -57,33 +74,23 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
 
         public IReadOnlyCollection<IServiceInstance> GetInstances(string serviceId)
         {
-            _instances.TryGetValue(serviceId, out var instances);
-            return instances;
+            if (_instances.TryGetValue(serviceId, out var instances))
+                return instances.ToArray();
+
+            Task.Run(async () =>
+            {
+                instances = new List<IServiceInstance>();
+
+                var result = await ConsulClient.Health.Service(serviceId, null, true);
+                foreach (var instance in result.Response.Where(i => i.Checks.All(c => c.Status.Status == HealthStatus.Passing.Status)).Select(i => ConsulUtil.Create(i.Service)).Where(i => i != null))
+                {
+                    instances.Add(instance);
+                }
+            }).Wait();
+
+            return instances.ToArray();
         }
 
         #endregion Implementation of IDiscoveryClient
-
-        #region Private Method
-
-        private async Task LoadServices()
-        {
-            var agentEndpoint = ConsulClient.Agent;
-
-            var result = await agentEndpoint.Services();
-            var services = result.Response.Values;
-            var instances = services.Select(ConsulUtil.Create).Where(i => i != null).ToArray();
-
-            foreach (var instanceGroup in instances.GroupBy(i => i.ServiceId))
-            {
-                var serviceName = instanceGroup.Key;
-                var serviceInstances = instanceGroup.ToArray();
-
-                _instances.AddOrUpdate(serviceName, serviceInstances, (key, existing) => serviceInstances);
-            }
-
-            Services = instances.Select(i => i.ServiceId).ToArray();
-        }
-
-        #endregion Private Method
     }
 }

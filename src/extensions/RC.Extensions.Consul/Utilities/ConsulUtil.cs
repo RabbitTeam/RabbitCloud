@@ -11,6 +11,7 @@ namespace Rabbit.Cloud.Extensions.Consul.Utilities
     public class ConsulUtil
     {
         public const string ServicePrefix = "rabbitcloud";
+        public static readonly TimeSpan TtlInterval = TimeSpan.FromSeconds(30);
 
         #region Public  Method
 
@@ -28,14 +29,11 @@ namespace Rabbit.Cloud.Extensions.Consul.Utilities
                 Name = options.ServiceName,
                 ID = GetInstanceId(options.InstanceId),
                 Tags = tags.ToArray(),
-                Checks = options.HealthChecks?
-                                .Where(i => Uri.TryCreate(i.Url, UriKind.Absolute, out var uri) && !uri.IsLoopback) // ignore invalid url
-                                .Select(i => new AgentServiceCheck
-                                {
-                                    HTTP = i.Url,
-                                    Interval = TimeUtil.GetTimeSpanBySimple(i.Interval),
-                                    Status = HealthStatus.Passing
-                                }).ToArray()
+                Check = new AgentServiceCheck
+                {
+                    TTL = TimeUtil.GetTimeSpanBySimple(options.HealthCheckInterval),
+                    Status = HealthStatus.Passing
+                }
             });
         }
 
