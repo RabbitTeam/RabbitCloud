@@ -5,17 +5,17 @@ VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{850A43C4-8B62-4732-95F9-A769981A59E5}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "registrys", "registrys", "{EB4464E9-6F71-4CFE-BCE4-60D49A84FFDB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "registry", "registry", "{EB4464E9-6F71-4CFE-BCE4-60D49A84FFDB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Registry.Abstractions", "src\registrys\RC.Registry.Abstractions\RC.Registry.Abstractions.csproj", "{740CEF65-60A7-43E0-ABFB-D9E0AB13817C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Registry.Abstractions", "src\registry\RC.Registry.Abstractions\RC.Registry.Abstractions.csproj", "{740CEF65-60A7-43E0-ABFB-D9E0AB13817C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web.Server", "samples\Web.Server\Web.Server.csproj", "{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "discoverys", "discoverys", "{2BB99C91-4AC9-4AB2-81D3-2DEB42FF72CE}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "discovery", "discovery", "{2BB99C91-4AC9-4AB2-81D3-2DEB42FF72CE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Abstractions", "src\discoverys\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj", "{1A4BE30C-802F-4AB9-B75C-9B2354120A8F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Abstractions", "src\discovery\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj", "{1A4BE30C-802F-4AB9-B75C-9B2354120A8F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "samples\ConsoleApp\ConsoleApp.csproj", "{5A4C5ADC-13EA-43C4-9224-D5E3E41B67C3}"
 EndProject
@@ -25,11 +25,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Extensions.Consul", "src
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Abstractions", "src\RC.Abstractions\RC.Abstractions.csproj", "{66DE5CE8-3953-47E7-9FEE-8CD475601E21}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "facades", "facades", "{78E99656-D80A-4181-9F1C-42B8DF84BB3B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "facade", "facade", "{78E99656-D80A-4181-9F1C-42B8DF84BB3B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Facade.Abstractions", "src\facades\RC.Facade.Abstractions\RC.Facade.Abstractions.csproj", "{C6204FC9-8940-4DF8-83C9-5FF5A39BCA72}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Facade.Abstractions", "src\facade\RC.Facade.Abstractions\RC.Facade.Abstractions.csproj", "{C6204FC9-8940-4DF8-83C9-5FF5A39BCA72}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Facade", "src\facades\RC.Facade\RC.Facade.csproj", "{41E6B826-A66A-46B2-9841-4C4372C155EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Facade", "src\facade\RC.Facade\RC.Facade.csproj", "{41E6B826-A66A-46B2-9841-4C4372C155EF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{A143749E-EB55-408E-A5FE-B4B48B5C99C4}"
 EndProject
@@ -39,7 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		build\version.props = build\version.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Facade.Formatters.Json", "src\facades\RC.Facade.Formatters.Json\RC.Facade.Formatters.Json.csproj", "{CCF0E199-EC54-4376-96A1-5FF0A728EFB0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Facade.Formatters.Json", "src\facade\RC.Facade.Formatters.Json\RC.Facade.Formatters.Json.csproj", "{CCF0E199-EC54-4376-96A1-5FF0A728EFB0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cluster", "cluster", "{87AB1EF8-AD8B-4C7B-AC65-D69B955C18D8}"
 EndProject
