@@ -1,5 +1,7 @@
 ﻿using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
+using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
+using Rabbit.Cloud.Facade.Abstractions.Utilities.Extensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -87,8 +89,6 @@ namespace Rabbit.Cloud.Facade.Models.Internal
             if (requestMappingAttribute == null)
                 return null;
 
-            if (string.IsNullOrEmpty(requestMappingAttribute.Method))
-                requestMappingAttribute.Method = HttpMethod.Get.Method;
             if (string.IsNullOrEmpty(requestMappingAttribute.Value))
             {
                 var methodName = methodInfo.Name;
@@ -101,7 +101,7 @@ namespace Rabbit.Cloud.Facade.Models.Internal
 
             requestModel.RouteUrl = requestMappingAttribute.Value;
 
-            foreach (var parameterModel in GetParameterModels(methodInfo))
+            foreach (var parameterModel in GetParameterModels(methodInfo, requestMappingAttribute.Method))
             {
                 parameterModel.Request = requestModel;
                 requestModel.Parameters.Add(parameterModel);
@@ -110,14 +110,35 @@ namespace Rabbit.Cloud.Facade.Models.Internal
             return requestModel;
         }
 
-        private static IEnumerable<ParameterModel> GetParameterModels(MethodBase methodInfo)
+        private static IEnumerable<ParameterModel> GetParameterModels(MethodBase methodInfo, HttpMethod httpMethod)
         {
-            return methodInfo.GetParameters().Select(GetParameterModel);
+            return methodInfo.GetParameters().Select(i => GetParameterModel(i, httpMethod));
         }
 
-        private static ParameterModel GetParameterModel(ParameterInfo parameterInfo)
+        private static ParameterModel GetParameterModel(ParameterInfo parameterInfo, HttpMethod httpMethod)
         {
-            return new ParameterModel(parameterInfo, parameterInfo.GetCustomAttributes(false));
+            var attributes = parameterInfo.GetCustomAttributes(false).ToList();
+
+            var buildingTargetMetadata = attributes.OfType<IBuildingTargetMetadata>().LastOrDefault();
+            if (buildingTargetMetadata == null)
+            {
+                var haveBody = httpMethod.HaveBody();
+                var isForm = haveBody;
+
+                if (isForm)
+                    isForm = Type.GetTypeCode(parameterInfo.ParameterType) == TypeCode.Object;
+
+                if (isForm)
+                {
+                    attributes.Add(new ToFormAttribute(parameterInfo.Name));
+                }
+                else
+                {
+                    attributes.Add(new ToQueryAttribute(parameterInfo.Name));
+                }
+            }
+
+            return new ParameterModel(parameterInfo, attributes);
         }
 
         private static void AddFilters(ICollection<IFilterMetadata> filters, IEnumerable attributes)

@@ -71,10 +71,10 @@ namespace ConsoleApp
         [RequestMapping("api/User/{id}")]
         [CustomFilter]
         [ToHeader("method", "GetUserAsync"), ToHeader("returnType", "UserMode")]
-        Task<UserMode> GetUserAsync([ToQuery]long id, [ToHeader]string version = "1.0.0");
+        Task<UserMode> GetUserAsync(long id, [ToHeader]string version = "1.0.0");
 
         [RequestMapping("api/User/{id}", "PUT")]
-        Task<object> PutUserAsync([ToQuery]long id, [ToForm]UserMode model);
+        Task<object> PutUserAsync(long id, UserMode model);
     }
 
     internal class Program

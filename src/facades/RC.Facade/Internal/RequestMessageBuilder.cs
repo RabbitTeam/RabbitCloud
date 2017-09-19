@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using Rabbit.Cloud.Facade.Utilities.Extensions;
@@ -47,7 +48,7 @@ namespace Rabbit.Cloud.Facade.Internal
 
             // resolve url
             var routeTemplate = serviceDescriptor.ServiceRouteInfo.Template;
-            var placeholders = GetPlaceholders(routeTemplate);
+            var placeholders = GetPlaceholders(routeTemplate).ToArray();
             var routeUrl = BuildPathAndQuery(routeTemplate,
                 placeholders.ToDictionary(i => i, i =>
                     {
@@ -55,6 +56,9 @@ namespace Rabbit.Cloud.Facade.Internal
                         return items.Value == null ? string.Empty : string.Join(",", items.Value);
                     })
                     .ToDictionary(i => i.Key, i => i.Value));
+
+            // remove placeholder to query
+            querys = querys.Where(i => !placeholders.Contains(i.Key, StringComparer.OrdinalIgnoreCase)).ToArray();
 
             // set httpMethod
             requestMessage.Method = serviceDescriptor.HttpMethod;
@@ -79,6 +83,10 @@ namespace Rabbit.Cloud.Facade.Internal
             var url = routeUrl;
             if (!url.StartsWith("http"))
                 url = "http://" + url;
+
+            url = QueryHelpers.AddQueryString(url,
+                querys.ToDictionary(i => i.Key,
+                    i => i.Value == null ? string.Empty : string.Join(",", i.Value.Distinct())));
 
             requestMessage.RequestUri = new Uri(url);
         }

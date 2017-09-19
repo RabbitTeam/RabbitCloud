@@ -3,7 +3,6 @@ using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 
 namespace Rabbit.Cloud.Facade.Models.Internal
 {
@@ -29,9 +28,10 @@ namespace Rabbit.Cloud.Facade.Models.Internal
             var attributes = GetServiceAndRequestAttributes(request).ToArray();
             var facadeClientAttribute = attributes.OfType<FacadeClientAttribute>().LastOrDefault();
             var requestMappingAttribute = attributes.OfType<RequestMappingAttribute>().LastOrDefault();
+
             var serviceDescriptor = new ServiceDescriptor(request.Method.GetHashCode().ToString())
             {
-                HttpMethod = GetHttpMethod(requestMappingAttribute.Method, HttpMethod.Get),
+                HttpMethod = requestMappingAttribute.Method,
                 ServiceRouteInfo = new ServiceRouteInfo
                 {
                     Template = (facadeClientAttribute.Url ?? facadeClientAttribute.Name).TrimEnd('/') + "/" + request.RouteUrl.TrimStart('/')
@@ -73,46 +73,13 @@ namespace Rabbit.Cloud.Facade.Models.Internal
                 }
         }
 
-        private static HttpMethod GetHttpMethod(string method, HttpMethod defaultHttpMethod)
-        {
-            if (string.IsNullOrEmpty(method))
-                return defaultHttpMethod;
-
-            switch (method.ToLower())
-            {
-                case "get":
-                    return HttpMethod.Get;
-
-                case "post":
-                    return HttpMethod.Post;
-
-                case "put":
-                    return HttpMethod.Put;
-
-                case "delete":
-                    return HttpMethod.Delete;
-
-                case "head":
-                    return HttpMethod.Head;
-
-                case "options":
-                    return HttpMethod.Options;
-
-                case "trace":
-                    return HttpMethod.Trace;
-
-                default:
-                    return new HttpMethod(method);
-            }
-        }
-
         private static ParameterDescriptor CreateParameterDescriptor(ParameterModel model)
         {
             var descriptor = new ParameterDescriptor
             {
                 Name = model.ParameterName,
                 ParameterType = model.ParameterInfo.ParameterType,
-                BuildingInfo = BuildingInfo.GetBuildingInfo(model.ParameterInfo.GetCustomAttributes(false))
+                BuildingInfo = BuildingInfo.GetBuildingInfo(model.Attributes)
             };
             return descriptor;
         }
