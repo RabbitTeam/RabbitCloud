@@ -1,6 +1,4 @@
 ﻿using Castle.DynamicProxy;
-using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Features;
@@ -14,42 +12,21 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Facade
+namespace Rabbit.Cloud.Facade.Internal
 {
-    public class ProxyFactory : IProxyFactory
-    {
-        private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
-        private readonly Interceptor _interceptor;
-
-        public ProxyFactory(RabbitRequestDelegate rabbitRequestDelegate, IOptions<FacadeOptions> facadeOptions)
-        {
-            _interceptor = new Interceptor(rabbitRequestDelegate, facadeOptions.Value);
-        }
-
-        #region Implementation of IProxyFactory
-
-        public T GetProxy<T>()
-        {
-            var type = typeof(T);
-            return (T)_proxyGenerator.CreateInterfaceProxyWithoutTarget(type, new[] { type }, _interceptor);
-        }
-
-        #endregion Implementation of IProxyFactory
-    }
-
-    internal class Interceptor : IInterceptor
+    internal class ServiceRequestInterceptor : IInterceptor
     {
         #region Field
 
         private readonly RabbitRequestDelegate _rabbitRequestDelegate;
         private readonly FacadeOptions _facadeOptions;
-        private static readonly MethodInfo HandleAsyncMethodInfo = typeof(Interceptor).GetMethod(nameof(HandleAsync), BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo HandleAsyncMethodInfo = typeof(ServiceRequestInterceptor).GetMethod(nameof(HandleAsync), BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static);
 
         #endregion Field
 
         #region Constructor
 
-        public Interceptor(RabbitRequestDelegate rabbitRequestDelegate, FacadeOptions facadeOptions)
+        public ServiceRequestInterceptor(RabbitRequestDelegate rabbitRequestDelegate, FacadeOptions facadeOptions)
         {
             _rabbitRequestDelegate = rabbitRequestDelegate;
             _facadeOptions = facadeOptions;

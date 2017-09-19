@@ -24,6 +24,7 @@ namespace Rabbit.Cloud.Facade
                 .AddSingleton<IServiceDescriptorProvider, ApplicationServiceDescriptorProvider>()
                 .AddSingleton<IApplicationModelProvider, DefaultApplicationModelProvider>()
                 .AddSingleton<IRequestMessageBuilder, RequestMessageBuilder>()
+                .AddSingleton<IProxyFactory, ProxyFactory>()
                 .AddOptions()
                 .AddLogging();
 

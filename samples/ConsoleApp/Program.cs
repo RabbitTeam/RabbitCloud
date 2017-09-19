@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Rabbit.Cloud;
 using Rabbit.Cloud.Builder;
@@ -9,13 +8,13 @@ using Rabbit.Cloud.Facade;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Builder;
+using Rabbit.Cloud.Facade.Internal;
 using Rabbit.Cloud.Internal;
 using Rabbit.Extensions.Configuration;
 using RC.Cluster;
 using RC.Facade.Formatters.Json;
 using System;
 using System.Threading.Tasks;
-using ProxyFactory = Rabbit.Cloud.Facade.ProxyFactory;
 
 namespace ConsoleApp
 {
@@ -98,6 +97,7 @@ namespace ConsoleApp
                 .AddFacadeCore()
                 .AddJsonFormatters()
                 .Services
+                .AddSingleton(s=>s.GetRequiredService<IProxyFactory>().GetProxy<IUserService>())
                 .BuildServiceProvider();
 
             var rabbitRequestDelegate = new RabbitApplicationBuilder(services)
@@ -107,9 +107,9 @@ namespace ConsoleApp
                 .UseLoadBalance()
                 .UseRabbitClient()
                 .Build();
+            ProxyFactory.RabbitRequestDelegate = rabbitRequestDelegate;
 
-            var proxyFactory = new ProxyFactory(rabbitRequestDelegate, services.GetRequiredService<IOptions<FacadeOptions>>());
-            var userService = proxyFactory.GetProxy<IUserService>();
+            var userService = services.GetRequiredService<IUserService>();
 
             var model = await userService.GetUserAsync(1);
             Console.WriteLine(JsonConvert.SerializeObject(model));
