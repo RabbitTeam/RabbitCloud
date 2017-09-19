@@ -19,6 +19,7 @@ namespace Rabbit.Cloud.Extensions.Consul.Utilities
         {
             var tags = options.Tags ?? Enumerable.Empty<string>();
 
+            tags = tags.Concat(new[] { ServicePrefix });
             if (options.IsSecure)
                 tags = tags.Concat(new[] { "https" });
 
@@ -28,7 +29,7 @@ namespace Rabbit.Cloud.Extensions.Consul.Utilities
                 Port = options.Port,
                 Name = options.ServiceName,
                 ID = GetInstanceId(options.InstanceId),
-                Tags = tags.ToArray(),
+                Tags = tags.Distinct().ToArray(),
                 Check = new AgentServiceCheck
                 {
                     TTL = TimeUtil.GetTimeSpanBySimple(options.HealthCheckInterval),

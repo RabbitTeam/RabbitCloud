@@ -42,8 +42,8 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
                     var result = await healthEndpoint.State(HealthStatus.Passing, new QueryOptions { WaitIndex = index });
                     var response = result.Response;
 
-                    //timeout ignore
-                    if (index == result.LastIndex)
+                    //timeout ignore or _instances no data ignore
+                    if (index == result.LastIndex || !_instances.Any())
                         continue;
 
                     // expired to delete
@@ -51,9 +51,27 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
                     if (logger.IsEnabled(LogLevel.Debug))
                         logger.LogDebug($"ready delete expired service info ,{string.Join(",", expiredServices)}");
                     foreach (var serviceName in expiredServices)
-                    {
                         _instances.TryRemove(serviceName, out var _);
-                    }
+
+                    index = result.LastIndex;
+                }
+            });
+            Task.Factory.StartNew(async () =>
+            {
+                var catalogEndpoint = consulClient.Catalog;
+
+                ulong index = 0;
+                //watcher
+                while (!Disposed)
+                {
+                    var result = await catalogEndpoint.Services(new QueryOptions { WaitIndex = index });
+                    var response = result.Response;
+
+                    //timeout ignore
+                    if (index == result.LastIndex)
+                        continue;
+
+                    Services = response.Where(i => i.Value.Contains(ConsulUtil.ServicePrefix)).Select(i => i.Key).ToArray();
 
                     index = result.LastIndex;
                 }
@@ -86,6 +104,7 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
                 {
                     instances.Add(instance);
                 }
+                _instances.TryAdd(serviceId, instances);
             }).Wait();
 
             return instances.ToArray();
