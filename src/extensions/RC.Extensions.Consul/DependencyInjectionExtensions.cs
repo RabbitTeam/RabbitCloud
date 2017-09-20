@@ -1,6 +1,7 @@
 ﻿using Consul;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,9 +17,25 @@ namespace Rabbit.Cloud.Extensions.Consul
 {
     public static class DependencyInjectionExtensions
     {
-        public static IRabbitBuilder AddConsulDiscovery(this IRabbitBuilder builder)
+        public static IRabbitBuilder AddConsulDiscovery(this IRabbitBuilder builder, IConfiguration configuration)
         {
-            builder.Services.AddSingleton<IDiscoveryClient, ConsulDiscoveryClient>();
+            if (configuration is IConfigurationRoot configurationRoot)
+                configuration = configurationRoot.GetSection("RabbitCloud:Consul");
+
+            var services = builder.Services;
+            services
+                .Configure<RabbitConsulOptions>(configuration)
+                .AddSingleton<IDiscoveryClient, ConsulDiscoveryClient>();
+
+            return builder;
+        }
+
+        public static IRabbitBuilder AddConsulDiscovery(this IRabbitBuilder builder, Action<RabbitConsulOptions> configure)
+        {
+            builder.Services
+                .Configure(configure)
+                .AddSingleton<IDiscoveryClient, ConsulDiscoveryClient>();
+
             return builder;
         }
 

@@ -91,9 +91,8 @@ namespace ConsoleApp
 
             var rabbitCloudClient = serviceCollection
                 .BuildRabbitCloudClient((appServices, hostingServiceProvider) => appServices
-                        .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
                         .AddRabbitCloudCore()
-                        .AddConsulDiscovery()
+                        .AddConsulDiscovery(configuration)
                         .AddHighAvailability()
                         .AddRandomServiceInstanceChoose()
                         .AddFacadeCore()
