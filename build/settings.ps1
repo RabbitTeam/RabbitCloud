@@ -4,6 +4,8 @@ $artifacts_dir = "$base_dir\artifacts"
 $build_dir = "$base_dir\build"
 $source_dir = "$base_dir\src"
 $working_dir = "$build_dir\working"
+$nuget_source = "https://www.myget.org/F/rabbitcloud/api/v3/index.json"
+$nuget_apiKey = "xxxxxx"
 $projects = @(
     @{ Name = "Rabbit.Cloud.Abstractions"; SourceDir = "$source_dir\RC.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud"; SourceDir = "$source_dir\RC"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
