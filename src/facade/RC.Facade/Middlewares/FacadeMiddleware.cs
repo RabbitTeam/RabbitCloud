@@ -25,6 +25,11 @@ namespace Rabbit.Cloud.Facade.Middlewares
         public async Task Invoke(RabbitContext context)
         {
             var invocationFeature = context.Features.Get<IInvocationFeature>();
+            if (invocationFeature == null)
+            {
+                await _next(context);
+                return;
+            }
             var invocation = invocationFeature.Invocation;
 
             var serviceDescriptor =

@@ -55,7 +55,7 @@ namespace Rabbit.Cloud.Client.Internal
 
         private RabbitRequestDelegate BuildApplication()
         {
-            var builder = new RabbitApplicationBuilder(_applicationServices);
+            var builder = new RabbitApplicationBuilder(Services);
 
             _configure(builder);
 

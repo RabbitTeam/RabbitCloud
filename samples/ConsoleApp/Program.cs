@@ -88,10 +88,12 @@ namespace ConsoleApp
                 .EnableTemplateSupport();
 
             var serviceCollection = new ServiceCollection();
-
             var rabbitCloudClient = serviceCollection
-                .BuildRabbitCloudClient((appServices, hostingServiceProvider) => appServices
+                        .BuildRabbitCloudClient((appServices, hostingServiceProvider) => appServices
+                        .AddLogging()
+                        .AddOptions()
                         .AddRabbitCloudCore()
+                        .AddRabbitCloudClient()
                         .AddConsulDiscovery(configuration)
                         .AddHighAvailability()
                         .AddRandomServiceInstanceChoose()
@@ -108,6 +110,10 @@ namespace ConsoleApp
                             .UseLoadBalance()
                             .UseRabbitClient();
                     });
+
+            var response = await rabbitCloudClient.GetAsync("http://userService/api/User/1");
+
+            Console.WriteLine(await response.Content.ReadAsStringAsync());
 
             var services = serviceCollection.InjectionFacadeClient(rabbitCloudClient).BuildServiceProvider();
 
