@@ -5,9 +5,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using RC.Abstractions;
 
-namespace RC.Discovery.Client.Abstractions.Extensions
+namespace Rabbit.Cloud.Abstractions.Extensions
 {
     public static class UseMiddlewareExtensions
     {

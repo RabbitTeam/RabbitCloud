@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace RC.Abstractions
+namespace Rabbit.Cloud.Abstractions
 {
     public interface IRabbitBuilder
     {

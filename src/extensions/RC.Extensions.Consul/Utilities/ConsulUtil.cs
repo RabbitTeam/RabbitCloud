@@ -1,7 +1,7 @@
 ﻿using Consul;
+using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Extensions.Consul.Discovery;
 using Rabbit.Cloud.Extensions.Consul.Registry;
-using RC.Abstractions.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Internal;
-using RC.Abstractions;
 
 namespace Rabbit.Cloud
 {

@@ -1,4 +1,4 @@
-﻿namespace RC.Cluster.HighAvailability
+﻿namespace Rabbit.Cloud.Cluster.HighAvailability
 {
     public enum HighAvailabilityStrategy
     {

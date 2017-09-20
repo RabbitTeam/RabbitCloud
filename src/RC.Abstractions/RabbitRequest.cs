@@ -1,6 +1,6 @@
 using System.Net.Http;
 
-namespace RC.Abstractions
+namespace Rabbit.Cloud.Abstractions
 {
     public abstract class RabbitRequest
     {

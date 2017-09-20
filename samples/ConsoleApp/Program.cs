@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rabbit.Cloud;
 using Rabbit.Cloud.Builder;
+using Rabbit.Cloud.Cluster;
 using Rabbit.Cloud.Extensions.Consul;
 using Rabbit.Cloud.Facade;
 using Rabbit.Cloud.Facade.Abstractions;
@@ -11,7 +12,6 @@ using Rabbit.Cloud.Facade.Builder;
 using Rabbit.Cloud.Facade.Internal;
 using Rabbit.Cloud.Internal;
 using Rabbit.Extensions.Configuration;
-using RC.Cluster;
 using RC.Facade.Formatters.Json;
 using System;
 using System.Threading.Tasks;
@@ -111,8 +111,13 @@ namespace ConsoleApp
 
             var userService = services.GetRequiredService<IUserService>();
 
-            var model = await userService.GetUserAsync(1);
-            Console.WriteLine(JsonConvert.SerializeObject(model));
+            while (true)
+            {
+
+                var model = await userService.GetUserAsync(1);
+                Console.WriteLine(JsonConvert.SerializeObject(model));
+                Console.ReadLine();
+            }
 
             var result = await userService.PutUserAsync(1, new UserMode
             {

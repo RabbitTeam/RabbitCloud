@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using RC.Abstractions;
 
-namespace RC.Discovery.Client.Abstractions.Extensions
+namespace Rabbit.Cloud.Abstractions.Extensions
 {
     public static class UseExtensions
     {

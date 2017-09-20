@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 
-namespace RC.Cluster.LoadBalance
+namespace Rabbit.Cloud.Cluster.LoadBalance
 {
     public class RandomServiceInstanceChoose : ServiceInstanceChoose
     {

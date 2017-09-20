@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using RC.Abstractions;
+using Rabbit.Cloud.Abstractions;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Middlewares

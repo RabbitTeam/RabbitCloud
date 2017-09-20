@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using RC.Abstractions;
-using RC.Cluster.Abstractions.LoadBalance;
+using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Cluster.Abstractions.LoadBalance;
 using System;
 using System.Threading.Tasks;
 
-namespace RC.Cluster.LoadBalance
+namespace Rabbit.Cloud.Cluster.LoadBalance
 {
     public class LoadBalanceMiddleware
     {

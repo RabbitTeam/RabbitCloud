@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Cluster</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Cluster</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

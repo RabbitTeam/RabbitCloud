@@ -1,4 +1,4 @@
-﻿using RC.Abstractions;
+﻿using Rabbit.Cloud.Abstractions;
 using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Facade.Abstractions.Filters

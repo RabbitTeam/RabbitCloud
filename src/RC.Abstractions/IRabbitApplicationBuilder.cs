@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RC.Abstractions
+namespace Rabbit.Cloud.Abstractions
 {
     public interface IRabbitApplicationBuilder
     {

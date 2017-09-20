@@ -1,9 +1,9 @@
-﻿using RC.Abstractions;
-using RC.Cluster.HighAvailability;
-using RC.Cluster.LoadBalance;
-using RC.Discovery.Client.Abstractions.Extensions;
+﻿using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Abstractions.Extensions;
+using Rabbit.Cloud.Cluster.HighAvailability;
+using Rabbit.Cloud.Cluster.LoadBalance;
 
-namespace RC.Cluster
+namespace Rabbit.Cloud.Cluster
 {
     public static class ApplicationBuilderExtensions
     {

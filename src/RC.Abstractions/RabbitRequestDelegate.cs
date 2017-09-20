@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace RC.Abstractions
+namespace Rabbit.Cloud.Abstractions
 {
     public delegate Task RabbitRequestDelegate(RabbitContext rabbitContext);
 }

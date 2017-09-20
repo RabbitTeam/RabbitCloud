@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading;
 
-namespace RC.Cluster.LoadBalance
+namespace Rabbit.Cloud.Cluster.LoadBalance
 {
     public class RoundRobinServiceInstanceChoose : ServiceInstanceChoose
     {

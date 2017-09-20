@@ -1,7 +1,7 @@
-﻿using RC.Abstractions.Features;
+﻿using Rabbit.Cloud.Abstractions.Features;
 using System;
 
-namespace RC.Abstractions
+namespace Rabbit.Cloud.Abstractions
 {
     public abstract class RabbitContext
     {

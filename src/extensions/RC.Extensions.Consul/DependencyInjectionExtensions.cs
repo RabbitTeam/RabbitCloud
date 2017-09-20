@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Extensions.Consul.Discovery;
 using Rabbit.Cloud.Extensions.Consul.Registry;
 using Rabbit.Cloud.Extensions.Consul.Utilities;
 using Rabbit.Cloud.Registry.Abstractions;
-using RC.Abstractions;
 using System;
 
 namespace Rabbit.Cloud.Extensions.Consul

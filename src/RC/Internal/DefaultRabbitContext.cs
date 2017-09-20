@@ -1,6 +1,6 @@
-﻿using Rabbit.Cloud.Features;
-using RC.Abstractions;
-using RC.Abstractions.Features;
+﻿using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Abstractions.Features;
+using Rabbit.Cloud.Features;
 using System;
 using System.Net.Http;
 

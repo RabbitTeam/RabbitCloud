@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RC.Abstractions.Features
+namespace Rabbit.Cloud.Abstractions.Features
 {
     public interface IFeatureCollection : IEnumerable<KeyValuePair<Type, object>>
     {

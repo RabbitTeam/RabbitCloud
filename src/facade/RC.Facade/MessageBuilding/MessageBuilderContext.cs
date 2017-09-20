@@ -1,6 +1,6 @@
-﻿using Rabbit.Cloud.Facade.Abstractions;
+﻿using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
-using RC.Abstractions;
 using System.Net.Http;
 
 namespace Rabbit.Cloud.Facade.MessageBuilding

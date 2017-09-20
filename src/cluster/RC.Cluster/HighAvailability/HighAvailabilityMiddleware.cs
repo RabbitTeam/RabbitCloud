@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RC.Abstractions;
+using Rabbit.Cloud.Abstractions;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace RC.Cluster.HighAvailability
+namespace Rabbit.Cloud.Cluster.HighAvailability
 {
     public class HighAvailabilityMiddleware
     {

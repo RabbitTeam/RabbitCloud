@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Cluster.Abstractions</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Cluster.Abstractions</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

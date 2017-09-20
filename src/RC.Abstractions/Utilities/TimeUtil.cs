@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-namespace RC.Abstractions.Utilities
+namespace Rabbit.Cloud.Abstractions.Utilities
 {
     public class TimeUtil
     {

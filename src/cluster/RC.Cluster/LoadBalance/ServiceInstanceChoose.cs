@@ -1,8 +1,8 @@
-﻿using Rabbit.Cloud.Discovery.Abstractions;
-using RC.Cluster.Abstractions.LoadBalance;
+﻿using Rabbit.Cloud.Cluster.Abstractions.LoadBalance;
+using Rabbit.Cloud.Discovery.Abstractions;
 using System.Threading.Tasks;
 
-namespace RC.Cluster.LoadBalance
+namespace Rabbit.Cloud.Cluster.LoadBalance
 {
     public class ServiceInstanceChoose : IServiceInstanceChoose
     {

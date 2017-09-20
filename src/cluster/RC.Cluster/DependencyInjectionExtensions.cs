@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using RC.Abstractions;
-using RC.Cluster.Abstractions.LoadBalance;
-using RC.Cluster.HighAvailability;
-using RC.Cluster.LoadBalance;
+using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Cluster.Abstractions.LoadBalance;
+using Rabbit.Cloud.Cluster.HighAvailability;
+using Rabbit.Cloud.Cluster.LoadBalance;
 using System;
 
-namespace RC.Cluster
+namespace Rabbit.Cloud.Cluster
 {
     public static class DependencyInjectionExtensions
     {

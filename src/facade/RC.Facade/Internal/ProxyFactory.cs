@@ -1,7 +1,7 @@
 ﻿using Castle.DynamicProxy;
 using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions;
-using RC.Abstractions;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
