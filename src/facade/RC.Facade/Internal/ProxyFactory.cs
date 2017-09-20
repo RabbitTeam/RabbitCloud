@@ -2,26 +2,26 @@
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions;
+using System;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
     public class ProxyFactory : IProxyFactory
     {
         private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
-        private readonly ServiceRequestInterceptor _serviceRequestInterceptor;
         public static RabbitRequestDelegate RabbitRequestDelegate { get; set; }
+        private readonly FacadeOptions _facadeOptions;
 
         public ProxyFactory(IOptions<FacadeOptions> facadeOptions)
         {
-            _serviceRequestInterceptor = new ServiceRequestInterceptor(RabbitRequestDelegate, facadeOptions.Value);
+            _facadeOptions = facadeOptions.Value;
         }
 
         #region Implementation of IProxyFactory
 
-        public T GetProxy<T>()
+        public object GetProxy(Type type, RabbitRequestDelegate rabbitRequestDelegate)
         {
-            var type = typeof(T);
-            return (T)_proxyGenerator.CreateInterfaceProxyWithoutTarget(type, new[] { type }, _serviceRequestInterceptor);
+            return _proxyGenerator.CreateInterfaceProxyWithoutTarget(type, new[] { type }, new ServiceRequestInterceptor(rabbitRequestDelegate, _facadeOptions));
         }
 
         #endregion Implementation of IProxyFactory

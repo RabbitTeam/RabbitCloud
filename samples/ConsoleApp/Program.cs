@@ -3,14 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rabbit.Cloud;
 using Rabbit.Cloud.Builder;
+using Rabbit.Cloud.Client;
 using Rabbit.Cloud.Cluster;
 using Rabbit.Cloud.Extensions.Consul;
 using Rabbit.Cloud.Facade;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Builder;
-using Rabbit.Cloud.Facade.Internal;
-using Rabbit.Cloud.Internal;
 using Rabbit.Extensions.Configuration;
 using RC.Facade.Formatters.Json;
 using System;
@@ -88,36 +87,35 @@ namespace ConsoleApp
                 .Build()
                 .EnableTemplateSupport();
 
-            var services = new ServiceCollection()
-                .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
-                .AddRabbitCloudCore()
-                .AddConsulDiscovery()
-                .AddHighAvailability()
-                .AddRandomServiceInstanceChoose()
-                .AddFacadeCore()
-                .AddJsonFormatters()
-                .Services
-                .AddSingleton(s=>s.GetRequiredService<IProxyFactory>().GetProxy<IUserService>())
-                .BuildServiceProvider();
+            var serviceCollection = new ServiceCollection();
 
-            var rabbitRequestDelegate = new RabbitApplicationBuilder(services)
-                .UseServiceContainer()
-                .UseFacade()
-                .UseHighAvailability()
-                .UseLoadBalance()
-                .UseRabbitClient()
-                .Build();
-            ProxyFactory.RabbitRequestDelegate = rabbitRequestDelegate;
+            var rabbitCloudClient = serviceCollection
+                .BuildRabbitCloudClient((appServices, hostingServiceProvider) => appServices
+                        .Configure<RabbitConsulOptions>(configuration.GetSection("RabbitCloud:Consul"))
+                        .AddRabbitCloudCore()
+                        .AddConsulDiscovery()
+                        .AddHighAvailability()
+                        .AddRandomServiceInstanceChoose()
+                        .AddFacadeCore()
+                        .AddJsonFormatters()
+                        .Services
+                        .BuildServiceProvider(),
+                    app =>
+                    {
+                        app
+                            .UseServiceContainer()
+                            .UseFacade()
+                            .UseHighAvailability()
+                            .UseLoadBalance()
+                            .UseRabbitClient();
+                    });
+
+            var services = serviceCollection.InjectionFacadeClient(rabbitCloudClient).BuildServiceProvider();
 
             var userService = services.GetRequiredService<IUserService>();
 
-            while (true)
-            {
-
-                var model = await userService.GetUserAsync(1);
-                Console.WriteLine(JsonConvert.SerializeObject(model));
-                Console.ReadLine();
-            }
+            var model = await userService.GetUserAsync(1);
+            Console.WriteLine(JsonConvert.SerializeObject(model));
 
             var result = await userService.PutUserAsync(1, new UserMode
             {

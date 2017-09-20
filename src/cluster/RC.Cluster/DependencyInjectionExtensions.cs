@@ -11,7 +11,8 @@ namespace Rabbit.Cloud.Cluster
     {
         public static IRabbitBuilder AddHighAvailability(this IRabbitBuilder builder, Action<HighAvailabilityOptions> configure = null)
         {
-            builder.Services.Configure(configure ?? (s => { }));
+            builder.Services
+                .Configure(configure ?? (s => { }));
             return builder;
         }
 

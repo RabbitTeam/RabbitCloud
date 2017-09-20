@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\src\facade\RC.Facade.Formatters.Json\RC.Facade.Formatters.Json.csproj" />
     <ProjectReference Include="..\..\src\facade\RC.Facade\RC.Facade.csproj" />
     <ProjectReference Include="..\..\src\RC.Abstractions\RC.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\RC.Client\RC.Client.csproj" />
     <ProjectReference Include="..\..\src\RC\RC.csproj" />
   </ItemGroup>
 

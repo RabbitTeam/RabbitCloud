@@ -74,7 +74,7 @@ namespace Rabbit.Cloud.Facade.Internal
             return context.Result;
         }
 
-        private static IEnumerable<TypeInfo> GetFacadeTypes()
+        public static IEnumerable<TypeInfo> GetFacadeTypes()
         {
             return AppDomain.CurrentDomain.GetAssemblies().Where(i => !i.IsDynamic).SelectMany(i => i.ExportedTypes).Where(i =>
                   i.IsInterface && i.IsPublic && i.GetCustomAttribute<FacadeClientAttribute>() != null).Select(i => i.GetTypeInfo());

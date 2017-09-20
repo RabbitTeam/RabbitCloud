@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Client.Abstractions</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Client.Abstractions</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RC\RC.csproj" />
+  </ItemGroup>
+
+</Project>
