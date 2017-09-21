@@ -2,7 +2,7 @@
 using Microsoft.Extensions.ObjectPool;
 using Newtonsoft.Json;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
-using RC.Facade.Formatters.Json.Internal;
+using Rabbit.Cloud.Facade.Formatters.Json.Internal;
 using System;
 using System.Buffers;
 using System.IO;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using IOutputFormatter = Rabbit.Cloud.Facade.Abstractions.Formatters.IOutputFormatter;
 
-namespace RC.Facade.Formatters.Json
+namespace Rabbit.Cloud.Facade.Formatters.Json
 {
     public class JsonOutputFormatter : IOutputFormatter
     {

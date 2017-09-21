@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 
-namespace RC.Facade.Formatters.Json.Internal
+namespace Rabbit.Cloud.Facade.Formatters.Json.Internal
 {
     internal static class FacadeJsonLoggerExtensions
     {

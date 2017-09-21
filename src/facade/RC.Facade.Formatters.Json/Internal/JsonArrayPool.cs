@@ -2,7 +2,7 @@
 using System;
 using System.Buffers;
 
-namespace RC.Facade.Formatters.Json.Internal
+namespace Rabbit.Cloud.Facade.Formatters.Json.Internal
 {
     public class JsonArrayPool<T> : IArrayPool<T>
     {

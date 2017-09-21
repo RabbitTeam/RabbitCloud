@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
-namespace RC.Facade.Formatters.Json
+namespace Rabbit.Cloud.Facade.Formatters.Json
 {
     public class JsonInputFormatter : IInputFormatter
     {

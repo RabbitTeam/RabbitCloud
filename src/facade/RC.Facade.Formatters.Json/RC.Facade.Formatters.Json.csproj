@@ -3,6 +3,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Rabbit.Cloud.Facade.Formatters.Json</RootNamespace>
+    <AssemblyName>Rabbit.Cloud.Facade.Formatters.Json</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

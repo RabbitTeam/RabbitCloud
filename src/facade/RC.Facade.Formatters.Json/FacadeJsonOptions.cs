@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace RC.Facade.Formatters.Json
+namespace Rabbit.Cloud.Facade.Formatters.Json
 {
     public class FacadeJsonOptions
     {

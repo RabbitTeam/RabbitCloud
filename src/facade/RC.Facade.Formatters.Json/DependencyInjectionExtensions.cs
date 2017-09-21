@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Facade;
 using Rabbit.Cloud.Facade.Abstractions;
-using RC.Facade.Formatters.Json.Internal;
+using Rabbit.Cloud.Facade.Formatters.Json.Internal;
 using System;
 using ServiceDescriptor = Microsoft.Extensions.DependencyInjection.ServiceDescriptor;
 
-namespace RC.Facade.Formatters.Json
+namespace Rabbit.Cloud.Facade.Formatters.Json
 {
     public static class DependencyInjectionExtensions
     {

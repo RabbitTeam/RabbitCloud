@@ -2,10 +2,9 @@
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Rabbit.Cloud.Facade;
 using System.Buffers;
 
-namespace RC.Facade.Formatters.Json.Internal
+namespace Rabbit.Cloud.Facade.Formatters.Json.Internal
 {
     public class FacadeJsonFacadeOptionsSetup : IConfigureOptions<FacadeOptions>
     {

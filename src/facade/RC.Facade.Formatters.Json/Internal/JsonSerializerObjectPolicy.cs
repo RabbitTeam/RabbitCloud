@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.ObjectPool;
 using Newtonsoft.Json;
 
-namespace RC.Facade.Formatters.Json.Internal
+namespace Rabbit.Cloud.Facade.Formatters.Json.Internal
 {
     public class JsonSerializerObjectPolicy : IPooledObjectPolicy<JsonSerializer>
     {
