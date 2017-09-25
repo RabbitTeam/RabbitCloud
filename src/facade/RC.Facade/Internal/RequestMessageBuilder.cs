@@ -4,8 +4,8 @@ using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using Rabbit.Cloud.Facade.Utilities.Extensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -37,10 +37,13 @@ namespace Rabbit.Cloud.Facade.Internal
             var parameterQuerys = GetValues(context, BuildingTarget.Query);
             var parameterHeaders = GetValues(context, BuildingTarget.Header);
             var forms = GetValues(context, BuildingTarget.Form);
-            var body = serviceDescriptor.Parameters.LastOrDefault(i => i.BuildingInfo.BuildingTarget == BuildingTarget.Body);
+            var body = serviceDescriptor.Parameters.LastOrDefault(i =>
+                i.BuildingInfo.BuildingTarget == BuildingTarget.Body);
 
-            var headers = serviceDescriptor.Headers.Concat(parameterHeaders).GroupBy(i => i.Key).Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.SelectMany(z => z.Value))).ToArray();
-            var querys = serviceDescriptor.Querys.Concat(parameterQuerys).GroupBy(i => i.Key).Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.SelectMany(z => z.Value))).ToArray();
+            var headers = serviceDescriptor.Headers.Concat(parameterHeaders).GroupBy(i => i.Key).Select(i =>
+                new KeyValuePair<string, IEnumerable<string>>(i.Key, i.SelectMany(z => z.Value))).ToArray();
+            var querys = serviceDescriptor.Querys.Concat(parameterQuerys).GroupBy(i => i.Key).Select(i =>
+                new KeyValuePair<string, IEnumerable<string>>(i.Key, i.SelectMany(z => z.Value))).ToArray();
 
             // add header
             foreach (var header in headers)
@@ -52,7 +55,8 @@ namespace Rabbit.Cloud.Facade.Internal
             var routeUrl = BuildPathAndQuery(routeTemplate,
                 placeholders.ToDictionary(i => i, i =>
                     {
-                        var items = querys.FirstOrDefault(z => string.Equals(z.Key, i, StringComparison.OrdinalIgnoreCase));
+                        var items = querys.FirstOrDefault(z =>
+                            string.Equals(z.Key, i, StringComparison.OrdinalIgnoreCase));
                         return items.Value == null ? string.Empty : string.Join(",", items.Value);
                     })
                     .ToDictionary(i => i.Key, i => i.Value));
@@ -77,7 +81,9 @@ namespace Rabbit.Cloud.Facade.Internal
             }
             else
             {
-                requestMessage.Content = new FormUrlEncodedContent(forms.Select(i => new KeyValuePair<string, string>(i.Key, i.Value == null ? string.Empty : string.Join(",", i.Value))));
+                requestMessage.Content = new FormUrlEncodedContent(forms.Select(i =>
+                    new KeyValuePair<string, string>(i.Key,
+                        i.Value == null ? string.Empty : string.Join(",", i.Value))));
             }
 
             var url = routeUrl;
@@ -118,53 +124,57 @@ namespace Rabbit.Cloud.Facade.Internal
             }
         }
 
-        private static IEnumerable<KeyValuePair<string, IEnumerable<string>>> GetValues(RequestMessageBuilderContext context, BuildingTarget buildingTarget)
+        private static IEnumerable<KeyValuePair<string, IEnumerable<string>>> GetValues(
+            RequestMessageBuilderContext context, BuildingTarget buildingTarget)
         {
             var serviceRequestContext = context.ServiceRequestContext;
             var serviceDescriptor = serviceRequestContext.ServiceDescriptor;
 
-            var querys = new List<KeyValuePair<string, string>>();
-
-            foreach (var parameterDescriptor in serviceDescriptor.Parameters.Where(i => i.BuildingInfo.BuildingTarget == buildingTarget))
+            var items = new List<KeyValuePair<string, string>>();
+            foreach (var parameterDescriptor in serviceDescriptor.Parameters.Where(i =>
+                i.BuildingInfo.BuildingTarget == buildingTarget))
             {
                 var key = parameterDescriptor.BuildingInfo.BuildingModelName ?? parameterDescriptor.Name;
                 var argument = serviceRequestContext.GetArgument(parameterDescriptor.Name);
 
-                if (argument is IConvertible convertible)
-                    querys.Add(
-                        new KeyValuePair<string, string>(key, convertible.ToString(CultureInfo.InvariantCulture)));
-                else
-                {
-                    AppendParameter(key, argument, querys);
-                }
+                AppendParameters(key, argument, items);
             }
 
-            return querys.GroupBy(i => i.Key)
+            return items.GroupBy(i => i.Key)
                 .Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.Select(z => z.Value)));
         }
 
-        private static void AppendParameter(string prefix, object instance, ICollection<KeyValuePair<string, string>> dictionary)
+        private static void AppendParameters(string prefix, object value,
+            ICollection<KeyValuePair<string, string>> items)
         {
-            var type = instance.GetType();
-
-            var properties = type.GetProperties().Where(i => i.GetMethod != null);
-
-            foreach (var propertyInfo in properties)
+            var valueType = value.GetType();
+            switch (Type.GetTypeCode(valueType))
             {
-                var value = propertyInfo.GetValue(instance);
+                case TypeCode.Object:
+                    if (value is IEnumerable enumerable)
+                    {
+                        var index = -1;
+                        foreach (var item in enumerable)
+                        {
+                            index++;
+                            AppendParameters($"{prefix}[{index}]", item, items);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var propertyInfo in valueType.GetProperties())
+                        {
+                            AppendParameters(prefix + "." + propertyInfo.Name, propertyInfo.GetValue(value), items);
+                        }
+                    }
+                    break;
 
-                var key = string.IsNullOrEmpty(prefix) ? propertyInfo.Name : $"{prefix}.{propertyInfo.Name}";
-                if (value is IConvertible convertible)
-                {
-                    dictionary.Add(new KeyValuePair<string, string>(key, convertible.ToString(CultureInfo.InvariantCulture)));
-                }
-                else
-                {
-                    AppendParameter(key, value, dictionary);
-                }
+                default:
+                    items.Add(new KeyValuePair<string, string>(prefix, value.ToString()));
+                    break;
             }
-        }
 
-        #endregion Private Method
+            #endregion Private Method
+        }
     }
 }
