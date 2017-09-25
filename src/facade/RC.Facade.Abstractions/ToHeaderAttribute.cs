@@ -4,7 +4,7 @@ using System;
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Method | AttributeTargets.Interface, AllowMultiple = true)]
-    public class ToHeaderAttribute : Attribute, IBuildingTargetMetadata, IBuildingModelNameProvider
+    public class ToHeaderAttribute : Attribute, IBuilderTargetMetadata, IBuilderModelNameProvider
     {
         public ToHeaderAttribute()
         {

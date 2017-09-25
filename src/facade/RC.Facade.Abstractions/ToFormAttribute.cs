@@ -4,7 +4,7 @@ using System;
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = true)]
-    public class ToFormAttribute : Attribute, IBuildingTargetMetadata, IBuildingModelNameProvider
+    public class ToFormAttribute : Attribute, IBuilderTargetMetadata, IBuilderModelNameProvider
     {
         public ToFormAttribute()
         {

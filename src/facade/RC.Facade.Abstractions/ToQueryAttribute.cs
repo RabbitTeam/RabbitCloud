@@ -4,7 +4,7 @@ using System;
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Parameter, AllowMultiple = true)]
-    public class ToQueryAttribute : Attribute, IBuildingTargetMetadata, IBuildingModelNameProvider
+    public class ToQueryAttribute : Attribute, IBuilderTargetMetadata, IBuilderModelNameProvider
     {
         public ToQueryAttribute()
         {

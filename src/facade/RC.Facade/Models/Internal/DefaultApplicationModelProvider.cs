@@ -119,7 +119,7 @@ namespace Rabbit.Cloud.Facade.Models.Internal
         {
             var attributes = parameterInfo.GetCustomAttributes(false).ToList();
 
-            var buildingTargetMetadata = attributes.OfType<IBuildingTargetMetadata>().LastOrDefault();
+            var buildingTargetMetadata = attributes.OfType<IBuilderTargetMetadata>().LastOrDefault();
             if (buildingTargetMetadata == null)
             {
                 var haveBody = httpMethod.HaveBody();

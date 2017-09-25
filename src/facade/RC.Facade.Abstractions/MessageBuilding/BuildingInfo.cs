@@ -8,15 +8,19 @@ namespace Rabbit.Cloud.Facade.Abstractions.MessageBuilding
     {
         public BuildingTarget BuildingTarget { get; set; }
         public string BuildingModelName { get; set; }
-        public Type BuildingType { get; set; }
+        public Type BuilderType { get; set; }
+        public IEnumerable<IBuilderTargetMetadata> Metadatas { get; set; }
 
         public static BuildingInfo GetBuildingInfo(IReadOnlyCollection<object> attributes)
         {
-            var buildingInfo = new BuildingInfo();
+            var buildingInfo = new BuildingInfo
+            {
+                Metadatas = attributes.OfType<IBuilderTargetMetadata>().ToArray()
+            };
             var isBuildingInfoPresent = false;
 
             // BinderModelName
-            foreach (var buildingModelName in attributes.OfType<IBuildingModelNameProvider>())
+            foreach (var buildingModelName in attributes.OfType<IBuilderModelNameProvider>())
             {
                 isBuildingInfoPresent = true;
                 if (buildingModelName?.Name != null)
@@ -27,18 +31,18 @@ namespace Rabbit.Cloud.Facade.Abstractions.MessageBuilding
             }
 
             // BinderType
-            foreach (var buildingTypeProviderMetadata in attributes.OfType<IBuildingTypeProviderMetadata>())
+            foreach (var builderTypeProviderMetadata in attributes.OfType<IBuilderTypeProviderMetadata>())
             {
                 isBuildingInfoPresent = true;
-                if (buildingTypeProviderMetadata.BuildingType != null)
+                if (builderTypeProviderMetadata.BuilderType != null)
                 {
-                    buildingInfo.BuildingType = buildingTypeProviderMetadata.BuildingType;
+                    buildingInfo.BuilderType = builderTypeProviderMetadata.BuilderType;
                     break;
                 }
             }
 
             // BindingSource
-            foreach (var buildingSourceMetadata in attributes.OfType<IBuildingTargetMetadata>())
+            foreach (var buildingSourceMetadata in attributes.OfType<IBuilderTargetMetadata>())
             {
                 isBuildingInfoPresent = true;
                 if (buildingSourceMetadata.BuildingTarget != null)

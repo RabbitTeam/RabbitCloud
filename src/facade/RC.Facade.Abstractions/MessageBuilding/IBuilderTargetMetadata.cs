@@ -1,6 +1,6 @@
 ﻿namespace Rabbit.Cloud.Facade.Abstractions.MessageBuilding
 {
-    public interface IBuildingTargetMetadata
+    public interface IBuilderTargetMetadata
     {
         BuildingTarget BuildingTarget { get; }
     }

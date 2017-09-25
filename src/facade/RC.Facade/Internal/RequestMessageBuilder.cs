@@ -34,9 +34,9 @@ namespace Rabbit.Cloud.Facade.Internal
 
             var requestMessage = rabbitContext.Request.RequestMessage;
 
-            var parameterQuerys = GetValues(context, BuildingTarget.Query);
-            var parameterHeaders = GetValues(context, BuildingTarget.Header);
-            var forms = GetValues(context, BuildingTarget.Form);
+            var parameterQuerys = await GetValuesAsync(context, BuildingTarget.Query);
+            var parameterHeaders = await GetValuesAsync(context, BuildingTarget.Header);
+            var forms = await GetValuesAsync(context, BuildingTarget.Form);
             var body = serviceDescriptor.Parameters.LastOrDefault(i =>
                 i.BuildingInfo.BuildingTarget == BuildingTarget.Body);
 
@@ -124,7 +124,7 @@ namespace Rabbit.Cloud.Facade.Internal
             }
         }
 
-        private static IEnumerable<KeyValuePair<string, IEnumerable<string>>> GetValues(RequestMessageBuilderContext context, BuildingTarget buildingTarget)
+        private static async Task<IEnumerable<KeyValuePair<string, IEnumerable<string>>>> GetValuesAsync(RequestMessageBuilderContext context, BuildingTarget buildingTarget)
         {
             var serviceRequestContext = context.ServiceRequestContext;
             var serviceDescriptor = serviceRequestContext.ServiceDescriptor;
@@ -135,21 +135,16 @@ namespace Rabbit.Cloud.Facade.Internal
                 var key = parameterDescriptor.BuildingInfo.BuildingModelName ?? parameterDescriptor.Name;
                 var argument = serviceRequestContext.GetArgument(parameterDescriptor.Name);
 
-                AppendParameters(key, argument, items);
+                await AppendParametersAsync(key, argument, items, context);
             }
 
-            return items.GroupBy(i => i.Key)
-                .Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.Select(z => z.Value)));
+            return items.GroupBy(i => i.Key).Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.Select(z => z.Value)));
         }
 
-        private static void AppendParameters(string prefix, object value, ICollection<KeyValuePair<string, string>> items)
+        private static async Task AppendParametersAsync(string prefix, object value, ICollection<KeyValuePair<string, string>> items, RequestMessageBuilderContext context)
         {
-            //todo value is null is add item?
             if (value == null)
-            {
-                items.Add(new KeyValuePair<string, string>(prefix, string.Empty));
                 return;
-            }
             var valueType = value.GetType();
             switch (Type.GetTypeCode(valueType))
             {
@@ -160,14 +155,23 @@ namespace Rabbit.Cloud.Facade.Internal
                         foreach (var item in enumerable)
                         {
                             index++;
-                            AppendParameters($"{prefix}[{index}]", item, items);
+                            await AppendParametersAsync($"{prefix}[{index}]", item, items, context);
                         }
                     }
                     else
                     {
                         foreach (var propertyInfo in valueType.GetProperties())
                         {
-                            AppendParameters(prefix + "." + propertyInfo.Name, propertyInfo.GetValue(value), items);
+                            foreach (var builderTypeProviderMetadata in propertyInfo.GetCustomAttributes(false).OfType<IBuilderTypeProviderMetadata>())
+                            {
+                                var builderType = builderTypeProviderMetadata.BuilderType;
+                                if (!typeof(IRequestMessageBuilder).IsAssignableFrom(builderType))
+                                    throw new NotSupportedException($"BuilderType '{builderType}' not {nameof(IRequestMessageBuilder)} type.");
+                                var requestMessageBuilder =
+                                    (IRequestMessageBuilder)Activator.CreateInstance(builderType);
+                                await requestMessageBuilder.BuildAsync(context);
+                            }
+                            await AppendParametersAsync(prefix + "." + propertyInfo.Name, propertyInfo.GetValue(value), items, context);
                         }
                     }
                     break;

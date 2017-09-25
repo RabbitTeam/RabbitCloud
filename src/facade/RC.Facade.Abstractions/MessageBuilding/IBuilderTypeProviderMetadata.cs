@@ -2,8 +2,8 @@
 
 namespace Rabbit.Cloud.Facade.Abstractions.MessageBuilding
 {
-    public interface IBuildingTypeProviderMetadata
+    public interface IBuilderTypeProviderMetadata
     {
-        Type BuildingType { get; }
+        Type BuilderType { get; }
     }
 }

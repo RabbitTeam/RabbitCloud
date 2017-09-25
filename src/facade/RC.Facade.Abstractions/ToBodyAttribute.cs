@@ -4,7 +4,7 @@ using System;
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class ToBodyAttribute : Attribute, IBuildingTargetMetadata
+    public class ToBodyAttribute : Attribute, IBuilderTargetMetadata
     {
 /*        public ToBodyAttribute()
         {

@@ -1,6 +1,6 @@
 ﻿namespace Rabbit.Cloud.Facade.Abstractions.MessageBuilding
 {
-    public interface IBuildingModelNameProvider
+    public interface IBuilderModelNameProvider
     {
         string Name { get; }
     }
