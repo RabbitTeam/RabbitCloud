@@ -124,15 +124,13 @@ namespace Rabbit.Cloud.Facade.Internal
             }
         }
 
-        private static IEnumerable<KeyValuePair<string, IEnumerable<string>>> GetValues(
-            RequestMessageBuilderContext context, BuildingTarget buildingTarget)
+        private static IEnumerable<KeyValuePair<string, IEnumerable<string>>> GetValues(RequestMessageBuilderContext context, BuildingTarget buildingTarget)
         {
             var serviceRequestContext = context.ServiceRequestContext;
             var serviceDescriptor = serviceRequestContext.ServiceDescriptor;
 
             var items = new List<KeyValuePair<string, string>>();
-            foreach (var parameterDescriptor in serviceDescriptor.Parameters.Where(i =>
-                i.BuildingInfo.BuildingTarget == buildingTarget))
+            foreach (var parameterDescriptor in serviceDescriptor.Parameters.Where(i => i.BuildingInfo.BuildingTarget == buildingTarget))
             {
                 var key = parameterDescriptor.BuildingInfo.BuildingModelName ?? parameterDescriptor.Name;
                 var argument = serviceRequestContext.GetArgument(parameterDescriptor.Name);
@@ -144,9 +142,14 @@ namespace Rabbit.Cloud.Facade.Internal
                 .Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.Select(z => z.Value)));
         }
 
-        private static void AppendParameters(string prefix, object value,
-            ICollection<KeyValuePair<string, string>> items)
+        private static void AppendParameters(string prefix, object value, ICollection<KeyValuePair<string, string>> items)
         {
+            //todo value is null is add item?
+            if (value == null)
+            {
+                items.Add(new KeyValuePair<string, string>(prefix, string.Empty));
+                return;
+            }
             var valueType = value.GetType();
             switch (Type.GetTypeCode(valueType))
             {

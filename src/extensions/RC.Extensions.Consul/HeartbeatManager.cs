@@ -22,14 +22,16 @@ namespace Rabbit.Cloud.Extensions.Consul
             logger = logger ?? NullLogger<HeartbeatManager>.Instance;
             _logger = logger;
 
-            _timer = new Timer(async s =>
+            _timer = new Timer(s =>
             {
                 var checkEntries = _checkEntries.Values.Where(i => i.NeedTtl()).ToArray();
-
-                var nodeName = await consulClient.Agent.GetNodeName();
+                if (!checkEntries.Any())
+                    return;
+                var nodeName = consulClient.Agent.GetNodeName();
                 Parallel.ForEach(checkEntries, async entry =>
                 {
-                    await PassTtl(entry.CheckId, nodeName);
+                    if (await PassTtl(entry.CheckId, await nodeName))
+                        entry.Ttl();
                 });
             }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
         }
@@ -62,7 +64,7 @@ namespace Rabbit.Cloud.Extensions.Consul
 
         #region Private Method
 
-        private async Task PassTtl(string id, string nodeName = null)
+        private async Task<bool> PassTtl(string id, string nodeName = null)
         {
             if (nodeName == null)
                 nodeName = await _consulClient.Agent.GetNodeName();
@@ -72,12 +74,14 @@ namespace Rabbit.Cloud.Extensions.Consul
                 try
                 {
                     await _consulClient.Agent.PassTTL(id, nodeName);
+                    return true;
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(0, exception, $"pass TTL failure.id:{id},try count:{i + 1}");
                 }
             }
+            return false;
         }
 
         #endregion Private Method
@@ -94,8 +98,13 @@ namespace Rabbit.Cloud.Extensions.Consul
             }
 
             public string CheckId { get; }
-            private DateTime LatestTtlTime { get; }
+            private DateTime LatestTtlTime { get; set; }
             private TimeSpan Interval { get; }
+
+            public void Ttl()
+            {
+                LatestTtlTime = DateTime.Now;
+            }
 
             public bool NeedTtl()
             {
