@@ -92,6 +92,10 @@ namespace Rabbit.Cloud.Extensions.Consul
         {
             public CheckEntry(string serviceId, TimeSpan interval)
             {
+                interval = interval.Subtract(TimeSpan.FromSeconds(2));
+                if (interval < TimeSpan.FromSeconds(1))
+                    interval = TimeSpan.FromSeconds(1);
+
                 Interval = interval;
                 LatestTtlTime = DateTime.Now;
                 CheckId = "service:" + serviceId;

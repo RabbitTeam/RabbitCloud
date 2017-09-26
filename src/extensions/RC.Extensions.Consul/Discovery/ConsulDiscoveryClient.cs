@@ -39,21 +39,24 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
                 //watcher
                 while (!Disposed)
                 {
-                    var result = await healthEndpoint.State(HealthStatus.Passing, new QueryOptions { WaitIndex = index });
-                    var response = result.Response;
+                    var result = await healthEndpoint.State(HealthStatus.Critical, new QueryOptions { WaitIndex = index });
 
-                    //timeout ignore or _instances no data ignore
-                    if (index == result.LastIndex || !_instances.Any())
+                    //timeout ignore
+                    if (index == result.LastIndex)
+                        continue;
+                    index = result.LastIndex;
+
+                    var response = result.Response;
+                    //_instances no data ignore
+                    if (!_instances.Any())
                         continue;
 
-                    // expired to delete
-                    var expiredServices = response.GroupBy(i => i.ServiceName).Select(i => i.Key).ToArray();
+                    // critical to delete
+                    var criticalServices = response.GroupBy(i => i.ServiceName).Select(i => i.Key).ToArray();
                     if (logger.IsEnabled(LogLevel.Debug))
-                        logger.LogDebug($"ready delete expired service info ,{string.Join(",", expiredServices)}");
-                    foreach (var serviceName in expiredServices)
+                        logger.LogDebug($"ready delete critical service info ,{string.Join(",", criticalServices)}");
+                    foreach (var serviceName in criticalServices)
                         _instances.TryRemove(serviceName, out var _);
-
-                    index = result.LastIndex;
                 }
             });
             Task.Factory.StartNew(async () =>
@@ -65,15 +68,15 @@ namespace Rabbit.Cloud.Extensions.Consul.Discovery
                 while (!Disposed)
                 {
                     var result = await catalogEndpoint.Services(new QueryOptions { WaitIndex = index });
-                    var response = result.Response;
 
                     //timeout ignore
                     if (index == result.LastIndex)
                         continue;
 
-                    Services = response.Where(i => i.Value.Contains(ConsulUtil.ServicePrefix)).Select(i => i.Key).ToArray();
-
                     index = result.LastIndex;
+
+                    var response = result.Response;
+                    Services = response.Where(i => i.Value.Contains(ConsulUtil.ServicePrefix)).Select(i => i.Key).ToArray();
                 }
             });
         }

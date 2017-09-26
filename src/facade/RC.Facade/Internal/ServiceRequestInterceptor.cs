@@ -107,7 +107,6 @@ namespace Rabbit.Cloud.Facade.Internal
             }
             catch (Exception e)
             {
-                exceptionContext.Exception = e;
                 exceptionContext.ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e);
             }
             finally
@@ -122,7 +121,6 @@ namespace Rabbit.Cloud.Facade.Internal
 
                 exceptionContext.ExceptionHandled = requestExecutedContext.ExceptionHandled;
                 exceptionContext.ExceptionDispatchInfo = requestExecutedContext.ExceptionDispatchInfo;
-                exceptionContext.Exception = requestExecutedContext.Exception;
             }
         }
 
@@ -134,37 +132,38 @@ namespace Rabbit.Cloud.Facade.Internal
             var resultExecutingContext = context.ResultExecutingContext;
             var resultExecutedContext = context.ResultExecutedContext;
             var returnType = context.ReturnType;
-
             try
             {
-                var responseMessage = rabbitContext.Response.ResponseMessage;
-
-                OnResultExecuting(resultExecutingContext);
-
-                responseMessage.EnsureSuccessStatusCode();
-
-                using (var stream = await responseMessage.Content.ReadAsStreamAsync())
+                if (exceptionContext.ExceptionHandled || exceptionContext.ExceptionDispatchInfo == null)
                 {
-                    var formatterContext = new OutputFormatterContext(rabbitContext, returnType, stream);
+                    var responseMessage = rabbitContext.Response.ResponseMessage;
 
-                    var formatters = _facadeOptions.OutputFormatters.Where(f => f.CanWriteResult(formatterContext)).ToArray();
+                    OnResultExecuting(resultExecutingContext);
 
-                    if (!formatters.Any())
-                        throw new NotSupportedException("not find formatter.");
+                    responseMessage.EnsureSuccessStatusCode();
 
-                    foreach (var formatter in formatters)
+                    using (var stream = await responseMessage.Content.ReadAsStreamAsync())
                     {
-                        var result = await formatter.WriteAsync(formatterContext);
-                        if (!result.IsModelSet)
-                            continue;
-                        resultExecutedContext.Result = result.Model;
-                        break;
+                        var formatterContext = new OutputFormatterContext(rabbitContext, returnType, stream);
+
+                        var formatters = _facadeOptions.OutputFormatters.Where(f => f.CanWriteResult(formatterContext)).ToArray();
+
+                        if (!formatters.Any())
+                            throw new NotSupportedException("not find formatter.");
+
+                        foreach (var formatter in formatters)
+                        {
+                            var result = await formatter.WriteAsync(formatterContext);
+                            if (!result.IsModelSet)
+                                continue;
+                            resultExecutedContext.Result = result.Model;
+                            break;
+                        }
                     }
                 }
             }
             catch (Exception e)
             {
-                exceptionContext.Exception = e;
                 exceptionContext.ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e);
             }
             finally
@@ -178,7 +177,6 @@ namespace Rabbit.Cloud.Facade.Internal
 
                 exceptionContext.ExceptionHandled = resultExecutedContext.ExceptionHandled;
                 exceptionContext.ExceptionDispatchInfo = resultExecutedContext.ExceptionDispatchInfo;
-                exceptionContext.Exception = resultExecutedContext.Exception;
             }
             if (!exceptionContext.ExceptionHandled)
             {
