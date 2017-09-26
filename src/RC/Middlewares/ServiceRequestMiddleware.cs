@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Cloud.Abstractions;
-using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -18,8 +17,8 @@ namespace Rabbit.Cloud.Middlewares
             var request = context.Request;
             var responseMessage = context.Response.ResponseMessage = await httpClient.SendAsync(request.RequestMessage);
 
-            if (!responseMessage.IsSuccessStatusCode)
-                throw new Exception(responseMessage.ToString());
+            if ((int)responseMessage.StatusCode >= 500)
+                responseMessage.EnsureSuccessStatusCode();
         }
     }
 }
