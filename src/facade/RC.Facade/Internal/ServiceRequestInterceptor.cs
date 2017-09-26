@@ -1,9 +1,11 @@
 ﻿using Castle.DynamicProxy;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Features;
-using Rabbit.Cloud.Facade.Utilities;
+using Rabbit.Cloud.Facade.Utilities.Extensions;
 using Rabbit.Cloud.Internal;
 using System;
 using System.Collections.Generic;
@@ -19,6 +21,7 @@ namespace Rabbit.Cloud.Facade.Internal
         #region Field
 
         private readonly RabbitRequestDelegate _rabbitRequestDelegate;
+        private readonly IServiceProvider _services;
         private readonly FacadeOptions _facadeOptions;
         private static readonly MethodInfo HandleAsyncMethodInfo = typeof(ServiceRequestInterceptor).GetMethod(nameof(HandleAsync), BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static);
 
@@ -26,10 +29,11 @@ namespace Rabbit.Cloud.Facade.Internal
 
         #region Constructor
 
-        public ServiceRequestInterceptor(RabbitRequestDelegate rabbitRequestDelegate, FacadeOptions facadeOptions)
+        public ServiceRequestInterceptor(RabbitRequestDelegate rabbitRequestDelegate, IServiceProvider services)
         {
             _rabbitRequestDelegate = rabbitRequestDelegate;
-            _facadeOptions = facadeOptions;
+            _services = services;
+            _facadeOptions = _services.GetRequiredService<IOptions<FacadeOptions>>().Value;
         }
 
         #endregion Constructor
@@ -72,29 +76,33 @@ namespace Rabbit.Cloud.Facade.Internal
             var context = GetRabbitContext(invocation);
 
             var method = invocation.Method;
-            var serviceRequestInterceptorContext = new ServiceRequestInterceptorContext(context, method.GetFilters<IExceptionFilter>(context.RequestServices).OfType<IFilterMetadata>().ToArray());
+
+            var serviceRequestInterceptorContext = new ServiceRequestInterceptorContext(method, context, returnType);
             // send service request
-            await RequestAsync(method, serviceRequestInterceptorContext);
+            await RequestAsync(serviceRequestInterceptorContext);
 
             // read result from resposne
-            return await ReturnAsync(method, serviceRequestInterceptorContext, returnType);
+            return await ReturnAsync(serviceRequestInterceptorContext);
         }
 
-        private static RabbitContext GetRabbitContext(IInvocation invocation)
+        private RabbitContext GetRabbitContext(IInvocation invocation)
         {
             var context = new DefaultRabbitContext();
             context.Features.Set<IInvocationFeature>(new InvocationFeature(invocation));
+            var serviceDescriptor = _services.GetRequiredService<IServiceDescriptorCollectionProvider>().ServiceDescriptors.GetServiceDescriptor(invocation.Method.GetHashCode());
+            context.Features.Set<IServiceDescriptorFeature>(new ServiceDescriptorFeature(serviceDescriptor));
             return context;
         }
 
-        private async Task RequestAsync(MethodInfo method, ServiceRequestInterceptorContext context)
+        private async Task RequestAsync(ServiceRequestInterceptorContext context)
         {
             var rabbitContext = context.RabbitContext;
             var exceptionContext = context.ExceptionContext;
-            var requestFilters = method.GetFilters<IRequestFilter>(rabbitContext.RequestServices).Cast<IFilterMetadata>().ToArray();
+            var requestExecutingContext = context.RequestExecutingContext;
+            var requestExecutedContext = context.RequestExecutedContext;
             try
             {
-                OnRequestExecuting(new RequestExecutingContext(rabbitContext, requestFilters, new Dictionary<string, object>()));
+                OnRequestExecuting(requestExecutingContext);
                 await _rabbitRequestDelegate(rabbitContext);
             }
             catch (Exception e)
@@ -104,7 +112,6 @@ namespace Rabbit.Cloud.Facade.Internal
             }
             finally
             {
-                var requestExecutedContext = new RequestExecutedContext(rabbitContext, requestFilters);
                 if (!exceptionContext.ExceptionHandled && exceptionContext.Exception != null)
                 {
                     requestExecutedContext.Exception = exceptionContext.Exception;
@@ -119,14 +126,14 @@ namespace Rabbit.Cloud.Facade.Internal
             }
         }
 
-        private async Task<object> ReturnAsync(MethodInfo method, ServiceRequestInterceptorContext context, Type returnType)
+        private async Task<object> ReturnAsync(ServiceRequestInterceptorContext context)
         {
             var rabbitContext = context.RabbitContext;
             var exceptionContext = context.ExceptionContext;
-            var resultFilters = method.GetFilters<IResultFilter>(rabbitContext.RequestServices).Cast<IFilterMetadata>().ToArray();
 
-            var resultExecutingContext = new ResultExecutingContext(rabbitContext, resultFilters, returnType);
-            var resultExecutedContext = new ResultExecutedContext(rabbitContext, resultFilters, returnType);
+            var resultExecutingContext = context.ResultExecutingContext;
+            var resultExecutedContext = context.ResultExecutedContext;
+            var returnType = context.ReturnType;
 
             try
             {
@@ -233,15 +240,37 @@ namespace Rabbit.Cloud.Facade.Internal
 
         public class ServiceRequestInterceptorContext
         {
+            public MethodInfo MethodInfo { get; }
             public RabbitContext RabbitContext { get; }
+            public Abstractions.ServiceDescriptor ServiceDescriptor { get; }
+            public Type ReturnType { get; }
 
-            public ServiceRequestInterceptorContext(RabbitContext rabbitContext, IList<IFilterMetadata> exceptionFilters)
+            public ServiceRequestInterceptorContext(MethodInfo methodInfo, RabbitContext rabbitContext, Type returnType)
             {
+                MethodInfo = methodInfo;
                 RabbitContext = rabbitContext;
-                ExceptionContext = new ExceptionContext(rabbitContext, exceptionFilters);
+                ServiceDescriptor = rabbitContext.Features.Get<IServiceDescriptorFeature>().ServiceDescriptor;
+                ReturnType = returnType;
+
+                IList<IFilterMetadata> GetFilters<T>() where T : IFilterMetadata
+                {
+                    return ServiceDescriptor.FilterDescriptors.OrderBy(i => i.Order).Select(i => i.Filter).OfType<T>()
+                        .OfType<IFilterMetadata>().ToArray();
+                }
+                ExceptionContext = new ExceptionContext(rabbitContext, GetFilters<IExceptionFilter>());
+                var requestFilters = GetFilters<IRequestFilter>();
+                RequestExecutingContext = new RequestExecutingContext(rabbitContext, requestFilters, new Dictionary<string, object>());
+                RequestExecutedContext = new RequestExecutedContext(rabbitContext, requestFilters);
+                var resultFilters = GetFilters<IResultFilter>();
+                ResultExecutingContext = new ResultExecutingContext(rabbitContext, resultFilters, returnType);
+                ResultExecutedContext = new ResultExecutedContext(rabbitContext, resultFilters, returnType);
             }
 
             public ExceptionContext ExceptionContext { get; }
+            public RequestExecutingContext RequestExecutingContext { get; }
+            public RequestExecutedContext RequestExecutedContext { get; }
+            public ResultExecutingContext ResultExecutingContext { get; }
+            public ResultExecutedContext ResultExecutedContext { get; }
         }
 
         #endregion Help Type

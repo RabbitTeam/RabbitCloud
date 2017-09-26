@@ -3,7 +3,6 @@ using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Features;
 using Rabbit.Cloud.Facade.Internal;
-using Rabbit.Cloud.Facade.Utilities.Extensions;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,13 +12,11 @@ namespace Rabbit.Cloud.Facade.Middlewares
     {
         private readonly RabbitRequestDelegate _next;
         private readonly IRequestMessageBuilder _requestMessageBuilder;
-        private readonly IServiceDescriptorCollectionProvider _serviceDescriptorCollectionProvider;
 
-        public FacadeMiddleware(RabbitRequestDelegate next, IRequestMessageBuilder requestMessageBuilder, IServiceDescriptorCollectionProvider serviceDescriptorCollectionProvider)
+        public FacadeMiddleware(RabbitRequestDelegate next, IRequestMessageBuilder requestMessageBuilder)
         {
             _next = next;
             _requestMessageBuilder = requestMessageBuilder;
-            _serviceDescriptorCollectionProvider = serviceDescriptorCollectionProvider;
         }
 
         public async Task Invoke(RabbitContext context)
@@ -32,9 +29,7 @@ namespace Rabbit.Cloud.Facade.Middlewares
             }
             var invocation = invocationFeature.Invocation;
 
-            var serviceDescriptor =
-                _serviceDescriptorCollectionProvider.ServiceDescriptors.GetServiceDescriptor(invocation.Method
-                    .GetHashCode());
+            var serviceDescriptor = context.Features.Get<IServiceDescriptorFeature>().ServiceDescriptor;
 
             var arguments = new Dictionary<string, object>();
             var parameters = invocation.Method.GetParameters();

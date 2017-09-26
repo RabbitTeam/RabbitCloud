@@ -37,7 +37,7 @@ namespace Rabbit.Cloud.Facade.Models.Internal
                     Template = (facadeClientAttribute.Url ?? facadeClientAttribute.Name).TrimEnd('/') + "/" + request.RouteUrl.TrimStart('/')
                 },
                 DisplayName = request.RouteUrl,
-                FilterDescriptors = request.Filters.Select(i => new FilterDescriptor(i)).ToArray(),
+                FilterDescriptors = request.Service.Filters.Concat(request.Filters).Select(i => new FilterDescriptor(i)).ToArray(),
                 Parameters = request.Parameters.Select(CreateParameterDescriptor).ToArray()
             };
 
