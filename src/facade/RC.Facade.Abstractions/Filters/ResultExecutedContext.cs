@@ -42,6 +42,8 @@ namespace Rabbit.Cloud.Facade.Abstractions.Filters
             }
         }
 
+        public virtual bool ExceptionHandled { get; set; } = false;
+
         public virtual bool Canceled { get; set; }
     }
 }

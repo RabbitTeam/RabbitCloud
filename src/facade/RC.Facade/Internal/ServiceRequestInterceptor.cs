@@ -72,12 +72,12 @@ namespace Rabbit.Cloud.Facade.Internal
             var context = GetRabbitContext(invocation);
 
             var method = invocation.Method;
-
+            var serviceRequestInterceptorContext = new ServiceRequestInterceptorContext(context, method.GetFilters<IExceptionFilter>(context.RequestServices).OfType<IFilterMetadata>().ToArray());
             // send service request
-            await RequestAsync(method, context);
+            await RequestAsync(method, serviceRequestInterceptorContext);
 
             // read result from resposne
-            return await ReturnAsync(method, context, returnType);
+            return await ReturnAsync(method, serviceRequestInterceptorContext, returnType);
         }
 
         private static RabbitContext GetRabbitContext(IInvocation invocation)
@@ -87,26 +87,24 @@ namespace Rabbit.Cloud.Facade.Internal
             return context;
         }
 
-        private async Task RequestAsync(MethodInfo method, RabbitContext context)
+        private async Task RequestAsync(MethodInfo method, ServiceRequestInterceptorContext context)
         {
-            var requestFilters = method.GetFilters<IRequestFilter>(context.RequestServices).Cast<IFilterMetadata>().ToArray();
-            var exceptionFilters = method.GetFilters<IExceptionFilter>(context.RequestServices).Cast<IFilterMetadata>().ToArray();
-
-            var exceptionContext = new ExceptionContext(context, exceptionFilters);
+            var rabbitContext = context.RabbitContext;
+            var exceptionContext = context.ExceptionContext;
+            var requestFilters = method.GetFilters<IRequestFilter>(rabbitContext.RequestServices).Cast<IFilterMetadata>().ToArray();
             try
             {
-                OnRequestExecuting(new RequestExecutingContext(context, requestFilters, new Dictionary<string, object>()));
-                await _rabbitRequestDelegate(context);
+                OnRequestExecuting(new RequestExecutingContext(rabbitContext, requestFilters, new Dictionary<string, object>()));
+                await _rabbitRequestDelegate(rabbitContext);
             }
             catch (Exception e)
             {
                 exceptionContext.Exception = e;
                 exceptionContext.ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e);
-                OnException(exceptionContext);
             }
             finally
             {
-                var requestExecutedContext = new RequestExecutedContext(context, requestFilters);
+                var requestExecutedContext = new RequestExecutedContext(rabbitContext, requestFilters);
                 if (!exceptionContext.ExceptionHandled && exceptionContext.Exception != null)
                 {
                     requestExecutedContext.Exception = exceptionContext.Exception;
@@ -114,30 +112,33 @@ namespace Rabbit.Cloud.Facade.Internal
                 }
 
                 OnRequestExecuted(requestExecutedContext);
-            }
 
-            if (!exceptionContext.ExceptionHandled && exceptionContext.Exception != null)
-                exceptionContext.ExceptionDispatchInfo.Throw();
+                exceptionContext.ExceptionHandled = requestExecutedContext.ExceptionHandled;
+                exceptionContext.ExceptionDispatchInfo = requestExecutedContext.ExceptionDispatchInfo;
+                exceptionContext.Exception = requestExecutedContext.Exception;
+            }
         }
 
-        private async Task<object> ReturnAsync(MethodInfo method, RabbitContext context, Type returnType)
+        private async Task<object> ReturnAsync(MethodInfo method, ServiceRequestInterceptorContext context, Type returnType)
         {
-            var exceptionFilters = method.GetFilters<IExceptionFilter>(context.RequestServices).Cast<IFilterMetadata>().ToArray();
-            var resultFilters = method.GetFilters<IResultFilter>(context.RequestServices).Cast<IFilterMetadata>().ToArray();
+            var rabbitContext = context.RabbitContext;
+            var exceptionContext = context.ExceptionContext;
+            var resultFilters = method.GetFilters<IResultFilter>(rabbitContext.RequestServices).Cast<IFilterMetadata>().ToArray();
 
-            var exceptionContext = new ExceptionContext(context, exceptionFilters);
-            var resultExecutingContext = new ResultExecutingContext(context, resultFilters, returnType);
-            var resultExecutedContext = new ResultExecutedContext(context, resultFilters, returnType);
+            var resultExecutingContext = new ResultExecutingContext(rabbitContext, resultFilters, returnType);
+            var resultExecutedContext = new ResultExecutedContext(rabbitContext, resultFilters, returnType);
 
             try
             {
-                var responseMessage = context.Response.ResponseMessage;
+                var responseMessage = rabbitContext.Response.ResponseMessage;
 
                 OnResultExecuting(resultExecutingContext);
 
+                responseMessage.EnsureSuccessStatusCode();
+
                 using (var stream = await responseMessage.Content.ReadAsStreamAsync())
                 {
-                    var formatterContext = new OutputFormatterContext(context, returnType, stream);
+                    var formatterContext = new OutputFormatterContext(rabbitContext, returnType, stream);
 
                     var formatters = _facadeOptions.OutputFormatters.Where(f => f.CanWriteResult(formatterContext)).ToArray();
 
@@ -157,6 +158,7 @@ namespace Rabbit.Cloud.Facade.Internal
             catch (Exception e)
             {
                 exceptionContext.Exception = e;
+                exceptionContext.ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e);
             }
             finally
             {
@@ -166,10 +168,17 @@ namespace Rabbit.Cloud.Facade.Internal
                     resultExecutedContext.ExceptionDispatchInfo = exceptionContext.ExceptionDispatchInfo;
                 }
                 OnResultExecuted(resultExecutedContext);
-            }
 
-            if (!exceptionContext.ExceptionHandled && exceptionContext.Exception != null)
-                exceptionContext.ExceptionDispatchInfo.Throw();
+                exceptionContext.ExceptionHandled = resultExecutedContext.ExceptionHandled;
+                exceptionContext.ExceptionDispatchInfo = resultExecutedContext.ExceptionDispatchInfo;
+                exceptionContext.Exception = resultExecutedContext.Exception;
+            }
+            if (!exceptionContext.ExceptionHandled)
+            {
+                OnException(exceptionContext);
+            }
+            if (!exceptionContext.ExceptionHandled)
+                exceptionContext.ExceptionDispatchInfo?.Throw();
 
             return resultExecutedContext.Result;
         }
@@ -219,5 +228,22 @@ namespace Rabbit.Cloud.Facade.Internal
         }
 
         #endregion Private Method
+
+        #region Help Type
+
+        public class ServiceRequestInterceptorContext
+        {
+            public RabbitContext RabbitContext { get; }
+
+            public ServiceRequestInterceptorContext(RabbitContext rabbitContext, IList<IFilterMetadata> exceptionFilters)
+            {
+                RabbitContext = rabbitContext;
+                ExceptionContext = new ExceptionContext(rabbitContext, exceptionFilters);
+            }
+
+            public ExceptionContext ExceptionContext { get; }
+        }
+
+        #endregion Help Type
     }
 }

@@ -39,5 +39,7 @@ namespace Rabbit.Cloud.Facade.Abstractions.Filters
                 _exceptionDispatchInfo = value;
             }
         }
+
+        public virtual bool ExceptionHandled { get; set; } = false;
     }
 }

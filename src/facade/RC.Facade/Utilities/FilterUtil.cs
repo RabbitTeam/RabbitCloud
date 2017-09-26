@@ -15,7 +15,7 @@ namespace Rabbit.Cloud.Facade.Utilities
 
         public static IEnumerable<T> GetFilters<T>(object[] attributes) where T : IFilterMetadata
         {
-            return attributes.OfType<IFilterMetadata>().Cast<T>();
+            return attributes.OfType<IFilterMetadata>().OfType<T>();
         }
     }
 }
