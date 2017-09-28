@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿/*
+using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Facade.Abstractions.Filters
 {
@@ -7,3 +8,4 @@ namespace Rabbit.Cloud.Facade.Abstractions.Filters
         Task OnResultExecutionAsync(ResultExecutingContext context, ResultExecutionDelegate next);
     }
 }
+*/
