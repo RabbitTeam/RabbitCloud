@@ -1,6 +1,5 @@
 ﻿using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
-using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -41,22 +40,7 @@ namespace Rabbit.Cloud.Facade.Models.Internal
                 Parameters = request.Parameters.Select(CreateParameterDescriptor).ToArray()
             };
 
-            AddDefaultHeaders(serviceDescriptor, attributes.OfType<ToHeaderAttribute>());
-            AddDefaultQuerys(serviceDescriptor, attributes.OfType<ToQueryAttribute>());
-
             return serviceDescriptor;
-        }
-
-        private static void AddDefaultHeaders(ServiceDescriptor service, IEnumerable<ToHeaderAttribute> toHeaderAttributes)
-        {
-            var headers = toHeaderAttributes.GroupBy(i => i.Name).Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.Select(z => z.Value?.ToString()))).ToArray();
-            service.Headers = service.Headers == null ? headers : service.Headers.Concat(headers);
-        }
-
-        private static void AddDefaultQuerys(ServiceDescriptor service, IEnumerable<ToQueryAttribute> toQueryAttributes)
-        {
-            var querys = toQueryAttributes.GroupBy(i => i.Name).Select(i => new KeyValuePair<string, IEnumerable<string>>(i.Key, i.Select(z => z.Value?.ToString()))).ToArray();
-            service.Querys = service.Querys == null ? querys : service.Querys.Concat(querys);
         }
 
         private static IEnumerable<object> GetServiceAndRequestAttributes(RequestModel request)
@@ -78,8 +62,8 @@ namespace Rabbit.Cloud.Facade.Models.Internal
             var descriptor = new ParameterDescriptor
             {
                 Name = model.ParameterName,
-                ParameterType = model.ParameterInfo.ParameterType,
-                BuildingInfo = BuildingInfo.GetBuildingInfo(model.Attributes)
+                ParameterType = model.ParameterInfo?.ParameterType,
+                BuildingInfo = model.BuildingInfo
             };
             return descriptor;
         }

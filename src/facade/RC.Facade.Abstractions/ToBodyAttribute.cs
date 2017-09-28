@@ -6,7 +6,7 @@ namespace Rabbit.Cloud.Facade.Abstractions
     [AttributeUsage(AttributeTargets.Parameter)]
     public class ToBodyAttribute : Attribute, IBuilderTargetMetadata
     {
-/*        public ToBodyAttribute()
+        public ToBodyAttribute()
         {
         }
 
@@ -15,7 +15,7 @@ namespace Rabbit.Cloud.Facade.Abstractions
             Formatter = formatter;
         }
 
-        public string Formatter { get; set; }*/
+        public string Formatter { get; set; }
 
         #region Implementation of IBuildingTargetMetadata
 

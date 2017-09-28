@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Rabbit.Cloud.Facade.Models
@@ -9,7 +10,7 @@ namespace Rabbit.Cloud.Facade.Models
         {
             ParameterInfo = parameterInfo;
             Attributes = attributes;
-            ParameterName = parameterInfo.Name;
+            ParameterName = parameterInfo?.Name;
         }
 
         public IReadOnlyList<object> Attributes { get; }
@@ -17,5 +18,6 @@ namespace Rabbit.Cloud.Facade.Models
 
         public string ParameterName { get; set; }
         public RequestModel Request { get; set; }
+        public BuildingInfo BuildingInfo { get; set; }
     }
 }

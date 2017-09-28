@@ -10,10 +10,16 @@ namespace Rabbit.Cloud.Facade.Abstractions
         {
         }
 
-        public ToHeaderAttribute(string name, string value = null)
+        public ToHeaderAttribute(string name)
+        {
+            Name = name;
+        }
+
+        public ToHeaderAttribute(string name, string value)
         {
             Name = name;
             Value = value;
+            BuildingTarget = BuildingTarget.Custom;
         }
 
         #region Implementation of IBuildingTargetMetadata

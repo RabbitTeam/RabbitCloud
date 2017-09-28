@@ -48,9 +48,8 @@ namespace Rabbit.Cloud.Facade.Models.Internal
             AddFilters(serviceModel.Filters, serviceModel.Attributes);
             EnsureFacadeClientAttribute(serviceModel);
 
-            foreach (var requestModel in GetRequestModels(serviceTypeInfo))
+            foreach (var requestModel in GetRequestModels(serviceModel, serviceTypeInfo))
             {
-                requestModel.Service = serviceModel;
                 serviceModel.Requests.Add(requestModel);
             }
 
@@ -75,14 +74,17 @@ namespace Rabbit.Cloud.Facade.Models.Internal
             serviceModel.ServiceName = facadeClientAttribute.Name;
         }
 
-        private static IEnumerable<RequestModel> GetRequestModels(Type serviceTypeInfo)
+        private static IEnumerable<RequestModel> GetRequestModels(ServiceModel serviceModel, Type serviceTypeInfo)
         {
-            return serviceTypeInfo.GetMethods().Select(GetRequestModel).Where(i => i != null);
+            return serviceTypeInfo.GetMethods().Select(method => GetRequestModel(serviceModel, method)).Where(i => i != null);
         }
 
-        private static RequestModel GetRequestModel(MethodInfo methodInfo)
+        private static RequestModel GetRequestModel(ServiceModel serviceModel, MethodInfo methodInfo)
         {
-            var requestModel = new RequestModel(methodInfo, methodInfo.GetCustomAttributes(false));
+            var requestModel = new RequestModel(methodInfo, methodInfo.GetCustomAttributes(false))
+            {
+                Service = serviceModel
+            };
             AddFilters(requestModel.Filters, requestModel.Attributes);
 
             var requestMappingAttribute = requestModel.Attributes.OfType<RequestMappingAttribute>().LastOrDefault();
@@ -101,26 +103,53 @@ namespace Rabbit.Cloud.Facade.Models.Internal
 
             requestModel.RouteUrl = requestMappingAttribute.Value;
 
-            foreach (var parameterModel in GetParameterModels(methodInfo, requestMappingAttribute.Method))
+            foreach (var parameterModel in GetParameterModels(requestModel, methodInfo, requestMappingAttribute.Method))
             {
-                parameterModel.Request = requestModel;
                 requestModel.Parameters.Add(parameterModel);
             }
 
             return requestModel;
         }
 
-        private static IEnumerable<ParameterModel> GetParameterModels(MethodBase methodInfo, HttpMethod httpMethod)
+        private static IEnumerable<ParameterModel> GetParameterModels(RequestModel requestModel, MethodBase methodInfo, HttpMethod httpMethod)
         {
-            return methodInfo.GetParameters().Select(i => GetParameterModel(i, httpMethod));
+            var builderTargets = GetServiceAndRequestAttributes(requestModel).OfType<IBuilderTargetMetadata>();
+
+            foreach (var customBuilderTarget in builderTargets.Where(i => i.BuildingTarget.Id == BuildingTarget.Custom.Id))
+            {
+                var customBuilderTargets = new[] { customBuilderTarget };
+                var defaultParameterModel = new ParameterModel(null, customBuilderTargets)
+                {
+                    Request = requestModel,
+                    BuildingInfo = BuildingInfo.GetBuildingInfo(customBuilderTargets)
+                };
+                yield return defaultParameterModel;
+            }
+            foreach (var parameterModel in methodInfo.GetParameters().Select(i => GetParameterModel(i, httpMethod)))
+            {
+                yield return parameterModel;
+            }
+        }
+
+        private static IEnumerable<object> GetServiceAndRequestAttributes(RequestModel request)
+        {
+            if (request.Service.Attributes != null)
+                foreach (var attribute in request.Service.Attributes)
+                {
+                    yield return attribute;
+                }
+            if (request.Attributes != null)
+                foreach (var attribute in request.Attributes)
+                {
+                    yield return attribute;
+                }
         }
 
         private static ParameterModel GetParameterModel(ParameterInfo parameterInfo, HttpMethod httpMethod)
         {
             var attributes = parameterInfo.GetCustomAttributes(false).ToList();
 
-            var buildingTargetMetadata = attributes.OfType<IBuilderTargetMetadata>().LastOrDefault();
-            if (buildingTargetMetadata == null)
+            if (!attributes.OfType<IBuilderTargetMetadata>().Any())
             {
                 var haveBody = httpMethod.HaveBody();
                 var isForm = haveBody;
@@ -130,15 +159,18 @@ namespace Rabbit.Cloud.Facade.Models.Internal
 
                 if (isForm)
                 {
-                    attributes.Add(new ToFormAttribute(parameterInfo.Name));
+                    attributes.Add(new ToFormAttribute());
                 }
                 else
                 {
-                    attributes.Add(new ToQueryAttribute(parameterInfo.Name));
+                    attributes.Add(new ToQueryAttribute());
                 }
             }
 
-            return new ParameterModel(parameterInfo, attributes);
+            return new ParameterModel(parameterInfo, attributes)
+            {
+                BuildingInfo = BuildingInfo.GetBuildingInfo(attributes)
+            };
         }
 
         private static void AddFilters(ICollection<IFilterMetadata> filters, IEnumerable attributes)

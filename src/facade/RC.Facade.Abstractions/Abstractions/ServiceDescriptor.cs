@@ -18,9 +18,6 @@ namespace Rabbit.Cloud.Facade.Abstractions
 
         public ServiceRouteInfo ServiceRouteInfo { get; set; }
 
-        public IEnumerable<KeyValuePair<string, IEnumerable<string>>> Headers { get; set; }
-        public IEnumerable<KeyValuePair<string,IEnumerable<string>>> Querys { get; set; }
-
         public IList<ParameterDescriptor> Parameters { get; set; }
         public IList<FilterDescriptor> FilterDescriptors { get; set; }
         public virtual string DisplayName { get; set; }

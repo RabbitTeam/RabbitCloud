@@ -6,6 +6,7 @@
         public static readonly BuildingTarget Form = new BuildingTarget("Form", false, true);
         public static readonly BuildingTarget Header = new BuildingTarget("Header", true, true);
         public static readonly BuildingTarget Query = new BuildingTarget("Query", false, true);
+        public static readonly BuildingTarget Custom = new BuildingTarget("Custom", true, true);
 
         public BuildingTarget(string id, bool isGreedy, bool isToRequest) : this(id, id, isGreedy, isToRequest)
         {

@@ -10,10 +10,16 @@ namespace Rabbit.Cloud.Facade.Abstractions
         {
         }
 
-        public ToFormAttribute(string name, string value = null)
+        public ToFormAttribute(string name)
+        {
+            Name = name;
+        }
+
+        public ToFormAttribute(string name, string value)
         {
             Name = name;
             Value = value;
+            BuildingTarget = BuildingTarget.Custom;
         }
 
         #region Implementation of IBuildingTargetMetadata

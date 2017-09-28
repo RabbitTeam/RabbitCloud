@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace Rabbit.Cloud.Facade.Abstractions.MessageBuilding
 {
     public class BuildingInfo
     {
-        public BuildingTarget BuildingTarget { get; set; }
         public string BuildingModelName { get; set; }
-        public Type BuilderType { get; set; }
-        public IEnumerable<IBuilderTargetMetadata> Metadatas { get; set; }
+        public IBuilderTargetMetadata BuildingTarget { get; set; }
 
         public static BuildingInfo GetBuildingInfo(IReadOnlyCollection<object> attributes)
         {
-            var buildingInfo = new BuildingInfo
-            {
-                Metadatas = attributes.OfType<IBuilderTargetMetadata>().ToArray()
-            };
+            var buildingInfo = new BuildingInfo();
             var isBuildingInfoPresent = false;
 
             // BinderModelName
@@ -30,24 +24,13 @@ namespace Rabbit.Cloud.Facade.Abstractions.MessageBuilding
                 }
             }
 
-            // BinderType
-            foreach (var builderTypeProviderMetadata in attributes.OfType<IBuilderTypeProviderMetadata>())
-            {
-                isBuildingInfoPresent = true;
-                if (builderTypeProviderMetadata.BuilderType != null)
-                {
-                    buildingInfo.BuilderType = builderTypeProviderMetadata.BuilderType;
-                    break;
-                }
-            }
-
-            // BindingSource
+            // BuilderTarget
             foreach (var buildingSourceMetadata in attributes.OfType<IBuilderTargetMetadata>())
             {
                 isBuildingInfoPresent = true;
                 if (buildingSourceMetadata.BuildingTarget != null)
                 {
-                    buildingInfo.BuildingTarget = buildingSourceMetadata.BuildingTarget;
+                    buildingInfo.BuildingTarget = buildingSourceMetadata;
                     break;
                 }
             }

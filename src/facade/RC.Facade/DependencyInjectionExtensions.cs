@@ -4,7 +4,9 @@ using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Abstractions;
+using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using Rabbit.Cloud.Facade.Internal;
+using Rabbit.Cloud.Facade.MessageBuilding.Builders;
 using Rabbit.Cloud.Facade.Models;
 using Rabbit.Cloud.Facade.Models.Internal;
 using System.Buffers;
@@ -22,6 +24,8 @@ namespace Rabbit.Cloud.Facade
                 .AddSingleton<IServiceDescriptorCollectionProvider, ServiceDescriptorCollectionProvider>()
                 .AddSingleton<IServiceDescriptorProvider, ApplicationServiceDescriptorProvider>()
                 .AddSingleton<IApplicationModelProvider, DefaultApplicationModelProvider>()
+                .AddSingleton<IMessageBuilder, BasicMessageBuilder>()
+                .AddSingleton<IMessageBuilder, ToBodyMessageBuilder>()
                 .AddSingleton<IRequestMessageBuilder, RequestMessageBuilder>()
                 .AddSingleton<IProxyFactory, ProxyFactory>();
 
