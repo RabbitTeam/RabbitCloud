@@ -16,6 +16,7 @@ namespace Rabbit.Cloud.Cluster
         public static IRabbitApplicationBuilder UseLoadBalance(this IRabbitApplicationBuilder app)
         {
             return app
+                .UseMiddleware<ServiceInstanceChooseMiddleware>()
                 .UseMiddleware<LoadBalanceMiddleware>();
         }
     }

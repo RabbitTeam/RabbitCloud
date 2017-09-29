@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Cluster.Abstractions.LoadBalance;
+using Rabbit.Cloud.Cluster.LoadBalance.Features;
 using System;
 using System.Threading.Tasks;
 
@@ -30,8 +30,8 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
 
             try
             {
-                var uri = await LookupServiceAsync(current,
-                    context.RequestServices.GetRequiredService<IServiceInstanceChoose>());
+                var serviceInstanceChoose = context.Features.Get<ILoadBalanceFeature>().ServiceInstanceChoose;
+                var uri = await LookupServiceAsync(current, serviceInstanceChoose);
                 request.RequestUri = new Uri(uri, request.RequestUri.PathAndQuery);
                 await _next(context);
             }

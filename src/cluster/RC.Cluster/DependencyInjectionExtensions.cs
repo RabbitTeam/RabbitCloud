@@ -3,6 +3,7 @@ using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Cluster.Abstractions.LoadBalance;
 using Rabbit.Cloud.Cluster.HighAvailability;
 using Rabbit.Cloud.Cluster.LoadBalance;
+using Rabbit.Extensions.DependencyInjection.Builder;
 using System;
 
 namespace Rabbit.Cloud.Cluster
@@ -16,21 +17,17 @@ namespace Rabbit.Cloud.Cluster
             return builder;
         }
 
-        public static IRabbitBuilder AddRandomServiceInstanceChoose(this IRabbitBuilder builder)
+        public static IRabbitBuilder AddServiceInstanceChoose(this IRabbitBuilder builder)
         {
-            return builder.AddServiceInstanceChoose<RandomServiceInstanceChoose>();
-        }
+            var containerBuilder = new RabbitContainerBuilder();
+            containerBuilder.RegisterType<RandomServiceInstanceChoose>()
+                .As<IServiceInstanceChoose>()
+                .Named<IServiceInstanceChoose>("Random");
+            containerBuilder.RegisterType<RoundRobinServiceInstanceChoose>()
+                .Named<IServiceInstanceChoose>("RoundRobin");
 
-        public static IRabbitBuilder AddRoundRobinServiceInstanceChoose(this IRabbitBuilder builder)
-        {
-            return builder.AddServiceInstanceChoose<RoundRobinServiceInstanceChoose>();
-        }
+            containerBuilder.Build(builder.Services);
 
-        public static IRabbitBuilder AddServiceInstanceChoose<T>(this IRabbitBuilder builder) where T : class, IServiceInstanceChoose
-        {
-            builder.Services
-                .AddSingleton<T>()
-                .AddSingleton<IServiceInstanceChoose, T>();
             return builder;
         }
     }

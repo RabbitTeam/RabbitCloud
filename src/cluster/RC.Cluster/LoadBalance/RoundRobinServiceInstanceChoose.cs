@@ -27,9 +27,9 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
             var index = Interlocked.Increment(ref _index);
 
             if (index > maxIndex || index < 0)
-                index = Interlocked.Exchange(ref index, 0);
+                Interlocked.Exchange(ref _index, 0);
 
-            return instances.ElementAt(index);
+            return instances.ElementAt(_index);
         }
 
         #endregion Overrides of ServiceInstanceChoose
