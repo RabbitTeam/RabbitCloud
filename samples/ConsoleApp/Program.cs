@@ -12,6 +12,7 @@ using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Builder;
 using Rabbit.Cloud.Facade.Formatters.Json;
 using Rabbit.Extensions.Configuration;
+using Rabbit.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
 
@@ -64,7 +65,7 @@ namespace ConsoleApp
     }
 
     [FacadeClient("userService")]
-    [ToHeader("interface", "IUserService"), ToHeader("service", "userService")]
+    [ToHeader("interface", "IUserService"), ToHeader("service", "userService"), ToHeader("rabbit.chooser", "RoundRobin")]
     public interface IUserService
     {
         [RequestMapping("api/User/{id}")]
@@ -96,11 +97,11 @@ namespace ConsoleApp
                         .AddRabbitCloudClient()
                         .AddConsulDiscovery(configuration)
                         .AddHighAvailability()
-                        .AddRandomServiceInstanceChoose()
+                        .AddServiceInstanceChoose()
                         .AddFacadeCore()
                         .AddJsonFormatters()
                         .Services
-                        .BuildServiceProvider(),
+                        .BuildRabbitServiceProvider(),
                     app =>
                     {
                         app
@@ -115,7 +116,7 @@ namespace ConsoleApp
 
             Console.WriteLine(await response.Content.ReadAsStringAsync());
 
-            var services = serviceCollection.InjectionFacadeClient(rabbitCloudClient).BuildServiceProvider();
+            var services = serviceCollection.InjectionFacadeClient(rabbitCloudClient).BuildRabbitServiceProvider();
 
             var userService = services.GetRequiredService<IUserService>();
 
