@@ -5,6 +5,7 @@ using Rabbit.Cloud.Facade.Features;
 using Rabbit.Cloud.Facade.Internal;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Rabbit.Cloud.Client.Abstractions;
 
 namespace Rabbit.Cloud.Facade.Middlewares
 {

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Client.Http</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Client.Http</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RC.Client\RC.Client.csproj" />
+  </ItemGroup>
+
+</Project>

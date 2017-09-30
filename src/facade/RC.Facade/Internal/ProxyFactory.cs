@@ -2,6 +2,7 @@
 using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions;
 using System;
+using Rabbit.Cloud.Client.Abstractions;
 
 namespace Rabbit.Cloud.Facade.Internal
 {

@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Rabbit.Cloud.Client.Abstractions;
 
 namespace Rabbit.Cloud.Facade.Internal
 {

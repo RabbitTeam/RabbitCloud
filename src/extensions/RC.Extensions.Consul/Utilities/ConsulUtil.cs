@@ -32,7 +32,7 @@ namespace Rabbit.Cloud.Extensions.Consul.Utilities
                 Tags = tags.Distinct().ToArray(),
                 Check = new AgentServiceCheck
                 {
-                    TTL = TimeUtil.GetTimeSpanBySimple(options.HealthCheckInterval),
+                    TTL = TimeUtilities.GetTimeSpanBySimple(options.HealthCheckInterval),
                     Status = HealthStatus.Passing
                 }
             });
