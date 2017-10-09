@@ -1,30 +1,29 @@
 ﻿using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
-using Rabbit.Cloud.Client.Http.Features;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Rabbit.Cloud.Client.Http
+namespace Rabbit.Cloud.Client
 {
-    public class HttpRabbitResponse : RabbitResponse<HttpRabbitContext>
+    public class DefaultRabbitResponse : RabbitResponse
     {
-        private static readonly Func<IFeatureCollection, IHttpResponseFeature> NullResponseFeature = f => null;
+        private static readonly Func<IFeatureCollection, IResponseFeature> NullResponseFeature = f => null;
         private FeatureReferences<FeatureInterfaces> _features;
 
-        public HttpRabbitResponse(HttpRabbitContext context)
+        public DefaultRabbitResponse(RabbitContext context)
         {
             RabbitContext = context;
             _features = new FeatureReferences<FeatureInterfaces>(context.Features);
         }
 
-        private IHttpResponseFeature ResponseFeature =>
+        private IResponseFeature ResponseFeature =>
             _features.Fetch(ref _features.Cache.Response, NullResponseFeature);
 
         #region Overrides of RabbitResponse
 
-        public override HttpRabbitContext RabbitContext { get; }
+        public override RabbitContext RabbitContext { get; }
 
         public override int StatusCode
         {
@@ -32,19 +31,19 @@ namespace Rabbit.Cloud.Client.Http
             set => ResponseFeature.StatusCode = value;
         }
 
+        public override IDictionary<string, StringValues> Headers => ResponseFeature.Headers;
+
         public override Stream Body
         {
             get => ResponseFeature.Body;
             set => ResponseFeature.Body = value;
         }
 
-        public IDictionary<string, StringValues> Headers => ResponseFeature.Headers;
-
         #endregion Overrides of RabbitResponse
 
         private struct FeatureInterfaces
         {
-            public IHttpResponseFeature Response;
+            public IResponseFeature Response;
         }
     }
 }

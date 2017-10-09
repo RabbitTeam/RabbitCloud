@@ -15,19 +15,19 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
 
         private static readonly MethodInfo GetServiceInfo = typeof(UseMiddlewareExtensions).GetMethod(nameof(GetService), BindingFlags.NonPublic | BindingFlags.Static);
 
-        public static IRabbitApplicationBuilder<TContext> UseMiddleware<TContext, TRequest, TResponse, TMiddleware>(this IRabbitApplicationBuilder<TContext> app, params object[] args) where TContext : RabbitContext<TRequest, TResponse>
+        public static IRabbitApplicationBuilder UseMiddleware<TMiddleware>(this IRabbitApplicationBuilder app, params object[] args)
         {
-            return app.UseMiddleware<TContext, TRequest, TResponse>(typeof(TMiddleware), args);
+            return app.UseMiddleware(typeof(TMiddleware), args);
         }
 
-        public static IRabbitApplicationBuilder<TContext> UseMiddleware<TContext, TRequest, TResponse>(this IRabbitApplicationBuilder<TContext> app, Type middleware, params object[] args) where TContext : RabbitContext<TRequest, TResponse>
+        public static IRabbitApplicationBuilder UseMiddleware(this IRabbitApplicationBuilder app, Type middleware, params object[] args)
         {
-            if (typeof(IRabbitMiddleware<>).GetTypeInfo().IsAssignableFrom(middleware.GetTypeInfo()))
+            if (typeof(IRabbitMiddleware).GetTypeInfo().IsAssignableFrom(middleware.GetTypeInfo()))
             {
                 if (args.Length > 0)
-                    throw new NotSupportedException($"{typeof(IRabbitMiddleware<>)} not supported args.");
+                    throw new NotSupportedException($"{typeof(IRabbitMiddleware)} not supported args.");
 
-                return UseMiddlewareInterface<TContext, TRequest, TResponse>(app, middleware);
+                return UseMiddlewareInterface(app, middleware);
             }
 
             var applicationServices = app.ApplicationServices;
@@ -56,9 +56,9 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
                 }
 
                 var parameters = methodinfo.GetParameters();
-                if (parameters.Length == 0 || parameters[0].ParameterType != typeof(RabbitContext<TRequest, TResponse>))
+                if (parameters.Length == 0 || parameters[0].ParameterType != typeof(RabbitContext))
                 {
-                    throw new InvalidOperationException($"UseMiddlewareNoParameters({InvokeMethodName}, {InvokeAsyncMethodName}, {nameof(RabbitContext<TRequest, TResponse>)})");
+                    throw new InvalidOperationException($"UseMiddlewareNoParameters({InvokeMethodName}, {InvokeAsyncMethodName}, {nameof(RabbitContext)})");
                 }
 
                 var ctorArgs = new object[args.Length + 1];
@@ -67,10 +67,10 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
                 var instance = ActivatorUtilities.CreateInstance(app.ApplicationServices, middleware, ctorArgs);
                 if (parameters.Length == 1)
                 {
-                    return (RabbitRequestDelegate<TContext>)methodinfo.CreateDelegate(typeof(RabbitRequestDelegate<TContext>), instance);
+                    return (RabbitRequestDelegate)methodinfo.CreateDelegate(typeof(RabbitRequestDelegate), instance);
                 }
 
-                var factory = Compile<object, TContext>(methodinfo, parameters);
+                var factory = Compile<object>(methodinfo, parameters);
 
                 return context =>
                 {
@@ -87,13 +87,13 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
 
         #region Private Method
 
-        private static IRabbitApplicationBuilder<TContext> UseMiddlewareInterface<TContext, TRequest, TResponse>(IRabbitApplicationBuilder<TContext> app, Type middlewareType) where TContext : RabbitContext<TRequest, TResponse>
+        private static IRabbitApplicationBuilder UseMiddlewareInterface(IRabbitApplicationBuilder app, Type middlewareType)
         {
             return app.Use(next =>
             {
                 return async context =>
                 {
-                    var middleware = (IRabbitMiddleware<TContext>)context.RequestServices.GetService(middlewareType);
+                    var middleware = (IRabbitMiddleware)context.RequestServices.GetService(middlewareType);
                     if (middleware == null)
                     {
                         throw new InvalidOperationException($"UseMiddlewareUnableToCreateMiddleware {middlewareType}");
@@ -104,11 +104,11 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
             });
         }
 
-        private static Func<T, TContext, IServiceProvider, Task> Compile<T, TContext>(MethodInfo methodinfo, IReadOnlyList<ParameterInfo> parameters)
+        private static Func<T, RabbitContext, IServiceProvider, Task> Compile<T>(MethodInfo methodinfo, IReadOnlyList<ParameterInfo> parameters)
         {
             var middleware = typeof(T);
 
-            var httpContextArg = Expression.Parameter(typeof(TContext), "rabbitContext");
+            var httpContextArg = Expression.Parameter(typeof(RabbitContext), "rabbitContext");
             var providerArg = Expression.Parameter(typeof(IServiceProvider), "serviceProvider");
             var instanceArg = Expression.Parameter(middleware, "middleware");
 
@@ -142,7 +142,7 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
             var body = Expression.Call(middlewareInstanceArg, methodinfo, methodArguments);
 
             var lambda =
-                Expression.Lambda<Func<T, TContext, IServiceProvider, Task>>(body, instanceArg, httpContextArg,
+                Expression.Lambda<Func<T, RabbitContext, IServiceProvider, Task>>(body, instanceArg, httpContextArg,
                     providerArg);
 
             return lambda.Compile();

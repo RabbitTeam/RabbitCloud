@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client
 {
-    public class RabbitApplicationBuilder<TContext> : IRabbitApplicationBuilder<TContext>
+    public class RabbitApplicationBuilder : IRabbitApplicationBuilder
     {
-        private readonly IList<Func<RabbitRequestDelegate<TContext>, RabbitRequestDelegate<TContext>>> _components = new List<Func<RabbitRequestDelegate<TContext>, RabbitRequestDelegate<TContext>>>();
+        private readonly IList<Func<RabbitRequestDelegate, RabbitRequestDelegate>> _components = new List<Func<RabbitRequestDelegate, RabbitRequestDelegate>>();
 
         #region Constructor
 
@@ -18,7 +18,7 @@ namespace Rabbit.Cloud.Client
             ApplicationServices = serviceProvider;
         }
 
-        private RabbitApplicationBuilder(IRabbitApplicationBuilder<TContext> builder)
+        private RabbitApplicationBuilder(IRabbitApplicationBuilder builder)
         {
             Properties = new Dictionary<string, object>(builder.Properties, StringComparer.Ordinal);
         }
@@ -35,9 +35,9 @@ namespace Rabbit.Cloud.Client
 
         public IDictionary<string, object> Properties { get; }
 
-        public RabbitRequestDelegate<TContext> Build()
+        public RabbitRequestDelegate Build()
         {
-            RabbitRequestDelegate<TContext> app = context => Task.CompletedTask;
+            RabbitRequestDelegate app = context => Task.CompletedTask;
 
             foreach (var component in _components.Reverse())
             {
@@ -47,12 +47,12 @@ namespace Rabbit.Cloud.Client
             return app;
         }
 
-        public IRabbitApplicationBuilder<TContext> New()
+        public IRabbitApplicationBuilder New()
         {
-            return new RabbitApplicationBuilder<TContext>(this);
+            return new RabbitApplicationBuilder(this);
         }
 
-        public IRabbitApplicationBuilder<TContext> Use(Func<RabbitRequestDelegate<TContext>, RabbitRequestDelegate<TContext>> middleware)
+        public IRabbitApplicationBuilder Use(Func<RabbitRequestDelegate, RabbitRequestDelegate> middleware)
         {
             _components.Add(middleware);
             return this;
