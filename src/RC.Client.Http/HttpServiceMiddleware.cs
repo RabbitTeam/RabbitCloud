@@ -21,26 +21,35 @@ namespace Rabbit.Cloud.Client.Http
         public async Task Invoke(RabbitContext context)
         {
             var request = context.Request;
-            var requestMessage = new HttpRequestMessage(HttpMethodExtensions.GetHttpMethod(request.Method, HttpMethod.Get), request.RequestUri);
+            var requestMessage = new HttpRequestMessage(HttpMethodExtensions.GetHttpMethod(request.Method, HttpMethod.Get), request.RequestUri)
+            {
+                Content = new StreamContent(request.Body)
+            };
+
+            var requestContent = requestMessage.Content;
 
             foreach (var requestHeader in request.Headers)
             {
-                requestMessage.Headers.Add(requestHeader.Key, requestHeader.Value.ToArray());
+                requestContent.Headers.Add(requestHeader.Key, requestHeader.Value.ToArray());
             }
-            requestMessage.Content = new StreamContent(request.Body);
 
             var httpClient = new HttpClient();
             var httpResponse = await httpClient.SendAsync(requestMessage);
-            var responseContent = httpResponse.Content;
 
+            var responseContent = httpResponse.Content;
             var response = context.Response;
+            response.StatusCode = (int)httpResponse.StatusCode;
+
+            if (response.StatusCode >= 500)
+            {
+                httpResponse.EnsureSuccessStatusCode();
+            }
 
             response.Body = await httpResponse.Content.ReadAsStreamAsync();
             foreach (var httpResponseHeader in responseContent.Headers)
             {
                 response.Headers.Add(httpResponseHeader.Key, new StringValues(httpResponseHeader.Value.ToArray()));
             }
-            response.StatusCode = (int)httpResponse.StatusCode;
         }
     }
 }

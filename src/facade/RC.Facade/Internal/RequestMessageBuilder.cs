@@ -69,7 +69,11 @@ namespace Rabbit.Cloud.Facade.Internal
             foreach (var item in headers)
                 request.Headers.Add(item.Key, item.Value);
             if (forms != null && forms.Any())
-                await new FormUrlEncodedContent(forms).CopyToAsync(request.Body);
+            {
+                var formUrlEncodedContent = new FormUrlEncodedContent(forms);
+                request.Headers["Content-Type"] = formUrlEncodedContent.Headers.ContentType.MediaType;
+                request.Body = await formUrlEncodedContent.ReadAsStreamAsync();
+            }
 
             // resolve url
             var routeTemplate = serviceDescriptor.ServiceRouteInfo.Template;
