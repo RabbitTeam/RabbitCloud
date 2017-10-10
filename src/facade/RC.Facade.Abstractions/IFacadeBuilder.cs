@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Rabbit.Cloud.Client.Abstractions;
 
 namespace Rabbit.Cloud.Facade.Abstractions
 {
     public interface IFacadeBuilder
     {
-        IServiceCollection Services { get; }
+        IRabbitBuilder RabbitBuilder { get; }
     }
 }

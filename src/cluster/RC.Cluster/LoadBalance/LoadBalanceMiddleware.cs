@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Cluster.Abstractions.LoadBalance;
 using Rabbit.Cloud.Cluster.LoadBalance.Features;
 using System;
@@ -20,7 +20,7 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
 
         public async Task Invoke(RabbitContext context)
         {
-            var request = context.Request.RequestMessage;
+            var request = context.Request;
             var current = request.RequestUri;
             if (!current.IsDefaultPort)
             {
@@ -33,6 +33,7 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
                 var serviceInstanceChoose = context.Features.Get<ILoadBalanceFeature>().ServiceInstanceChoose;
                 var uri = await LookupServiceAsync(current, serviceInstanceChoose);
                 request.RequestUri = new Uri(uri, request.RequestUri.PathAndQuery);
+                //todo whether handle Query?
                 await _next(context);
             }
             finally

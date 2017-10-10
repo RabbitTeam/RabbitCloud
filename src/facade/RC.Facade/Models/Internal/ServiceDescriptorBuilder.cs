@@ -30,7 +30,7 @@ namespace Rabbit.Cloud.Facade.Models.Internal
 
             var serviceDescriptor = new ServiceDescriptor(request.Method.GetHashCode().ToString())
             {
-                HttpMethod = requestMappingAttribute.Method,
+                HttpMethod = requestMappingAttribute.Method.Method,
                 ServiceRouteInfo = new ServiceRouteInfo
                 {
                     Template = (facadeClientAttribute.Url ?? facadeClientAttribute.Name).TrimEnd('/') + "/" + request.RouteUrl.TrimStart('/')

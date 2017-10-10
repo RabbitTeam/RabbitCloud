@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Primitives;
-using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
 using System;
 
 namespace Rabbit.Cloud.Facade.Abstractions.Formatters

@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\extensions\RC.Extensions.Consul\RC.Extensions.Consul.csproj" />
-    <ProjectReference Include="..\..\src\RC\RC.csproj" />
+    <ProjectReference Include="..\..\src\RC.Client\RC.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>

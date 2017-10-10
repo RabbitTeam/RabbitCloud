@@ -1,5 +1,5 @@
-﻿using Rabbit.Cloud.Abstractions;
-using Rabbit.Cloud.Abstractions.Extensions;
+﻿using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Client.Abstractions.Extensions;
 using Rabbit.Cloud.Cluster.HighAvailability;
 using Rabbit.Cloud.Cluster.LoadBalance;
 

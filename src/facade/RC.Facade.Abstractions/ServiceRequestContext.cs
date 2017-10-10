@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Routing;
-using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
 using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Facade.Abstractions

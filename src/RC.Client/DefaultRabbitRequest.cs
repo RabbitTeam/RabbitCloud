@@ -10,11 +10,9 @@ namespace Rabbit.Cloud.Client
     public class DefaultRabbitRequest : RabbitRequest
     {
         private static readonly Func<IFeatureCollection, IRequestFeature> NullRequestFeature = f => null;
-        private static readonly Func<IFeatureCollection, IQueryFeature> NewQueryFeature = f => new QueryFeature(f);
         private FeatureReferences<FeatureInterfaces> _features;
 
         private IRequestFeature RequestFeature => _features.Fetch(ref _features.Cache.Request, NullRequestFeature);
-        private IQueryFeature QueryFeature => _features.Fetch(ref _features.Cache.Query, NewQueryFeature);
 
         public DefaultRabbitRequest(RabbitContext rabbitContext)
         {
@@ -26,34 +24,16 @@ namespace Rabbit.Cloud.Client
 
         public override RabbitContext RabbitContext { get; }
 
-        public override string ServiceName
+        public override string Method
         {
-            get => RequestFeature.ServiceName;
-            set => RequestFeature.ServiceName = value;
+            get => RequestFeature.Method;
+            set => RequestFeature.Method = value;
         }
 
-        public override string Scheme
+        public override Uri RequestUri
         {
-            get => RequestFeature.Scheme;
-            set => RequestFeature.Scheme = value;
-        }
-
-        public override string Path
-        {
-            get => RequestFeature.Path;
-            set => RequestFeature.Path = value;
-        }
-
-        public override string QueryString
-        {
-            get => RequestFeature.QueryString;
-            set => RequestFeature.QueryString = value;
-        }
-
-        public override IDictionary<string, StringValues> Query
-        {
-            get => QueryFeature.Query;
-            set => QueryFeature.Query = value;
+            get => RequestFeature.RequestUri;
+            set => RequestFeature.RequestUri = value;
         }
 
         public override IDictionary<string, StringValues> Headers => RequestFeature.Headers;
@@ -71,7 +51,6 @@ namespace Rabbit.Cloud.Client
         private struct FeatureInterfaces
         {
             public IRequestFeature Request;
-            public IQueryFeature Query;
         }
 
         #endregion Help Type

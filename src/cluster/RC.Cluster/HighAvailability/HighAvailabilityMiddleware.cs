@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Cluster.HighAvailability
@@ -40,8 +39,6 @@ namespace Rabbit.Cloud.Cluster.HighAvailability
                                 _logger.LogError(e, $"HighAvailability try count {i + 1}.");
                                 if (!isLast)
                                 {
-                                    context.Request.RequestMessage = CreateHttpRequestMessage(context.Request.RequestMessage);
-
                                     continue;
                                 }
                                 _logger.LogError(e, "service invoke failure.");
@@ -55,26 +52,6 @@ namespace Rabbit.Cloud.Cluster.HighAvailability
                     await _next(context);
                     break;
             }
-        }
-
-        private static HttpRequestMessage CreateHttpRequestMessage(HttpRequestMessage requestMessage)
-        {
-            var newRequestMessage =
-                new HttpRequestMessage(requestMessage.Method, requestMessage.RequestUri)
-                {
-                    Content = requestMessage.Content
-                };
-
-            foreach (var header in requestMessage.Headers)
-            {
-                newRequestMessage.Headers.Add(header.Key, header.Value);
-            }
-            foreach (var property in requestMessage.Properties)
-            {
-                newRequestMessage.Properties.Add(property.Key, property.Value);
-            }
-            newRequestMessage.Version = requestMessage.Version;
-            return newRequestMessage;
         }
     }
 }

@@ -32,14 +32,17 @@ namespace Rabbit.Cloud.Facade.Formatters.Json
 
         public bool CanWriteResult(OutputFormatterContext context)
         {
-            var response = context.RabbitContext.Response.ResponseMessage;
-            var contentType = response.Content.Headers.ContentType;
+            var response = context.RabbitContext.Response;
+            var contentType = response.Headers["Content-Type"].ToString();
 
-            if (contentType == null)
+            if (string.IsNullOrEmpty(contentType))
                 return false;
 
-            return new[] { "application/json", "text/json" }.Contains(contentType.MediaType,
-                StringComparer.OrdinalIgnoreCase);
+            var endIndex = contentType.IndexOf(';');
+            if (endIndex != -1)
+                contentType = contentType.Substring(0, endIndex);
+
+            return new[] { "application/json", "text/json" }.Contains(contentType, StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task<OutputFormatterResult> WriteAsync(OutputFormatterContext context)

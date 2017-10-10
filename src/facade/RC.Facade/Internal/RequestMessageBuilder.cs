@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
-using Rabbit.Cloud.Facade.Abstractions.Utilities.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,10 +55,10 @@ namespace Rabbit.Cloud.Facade.Internal
             var requestContext = context.ServiceRequestContext;
             var serviceDescriptor = requestContext.ServiceDescriptor;
             var rabbitContext = requestContext.RabbitContext;
-            var requestMessage = rabbitContext.Request.RequestMessage;
+            var request = rabbitContext.Request;
 
             // set httpMethod
-            requestMessage.Method = serviceDescriptor.HttpMethod;
+            request.Method = serviceDescriptor.HttpMethod;
 
             var messageBuilderContext = await MessageBuildAsync(requestContext);
 
@@ -68,9 +67,9 @@ namespace Rabbit.Cloud.Facade.Internal
             var headers = messageBuilderContext.Headers;
             var forms = messageBuilderContext.Forms;
             foreach (var item in headers)
-                requestMessage.Headers.Add(item.Key, item.Value);
-            if (requestMessage.Method.HaveBody() && requestMessage.Content == null && forms != null && forms.Any())
-                requestMessage.Content = new FormUrlEncodedContent(forms);
+                request.Headers.Add(item.Key, item.Value);
+            if (forms != null && forms.Any())
+                await new FormUrlEncodedContent(forms).CopyToAsync(request.Body);
 
             // resolve url
             var routeTemplate = serviceDescriptor.ServiceRouteInfo.Template;
@@ -90,7 +89,7 @@ namespace Rabbit.Cloud.Facade.Internal
             if (finallyQuerys.Any())
                 url = QueryHelpers.AddQueryString(url, finallyQuerys.ToDictionary(i => i.Key, i => i.Value ?? string.Empty));
 
-            requestMessage.RequestUri = new Uri(url);
+            request.RequestUri = new Uri(url);
         }
 
         #endregion Implementation of IRequestMessageBuilder

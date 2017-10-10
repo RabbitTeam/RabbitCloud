@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
-using Rabbit.Cloud.Abstractions;
-using Rabbit.Cloud.Abstractions.Features;
+using Microsoft.Extensions.Primitives;
+using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Cluster.Abstractions.LoadBalance;
 using Rabbit.Cloud.Cluster.LoadBalance.Features;
 using Rabbit.Extensions.DependencyInjection;
@@ -28,7 +29,6 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
 
             var feature = context.Features.GetOrAdd<ILoadBalanceFeature>(() => new LoadBalanceFeature());
             feature.ServiceInstanceChoose = serviceInstanceChoose;
-            Console.WriteLine(serviceInstanceChoose);
 
             await _next(context);
         }
@@ -40,18 +40,18 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
 
         private static IEnumerable<string> GetChooserNames(RabbitContext context)
         {
-            var message = context.Request.RequestMessage;
-            var querys = QueryHelpers.ParseNullableQuery(message.RequestUri.Query);
+            var request = context.Request;
+            var query = QueryHelpers.ParseNullableQuery(request.RequestUri.Query);
 
             const string key = LoadBalanceConstants.ChooserKey;
 
-            IEnumerable<string> items = querys?.FirstOrDefault(i => key.Equals(i.Key, StringComparison.OrdinalIgnoreCase)).Value;
-            if (items != null)
+            var items = query?.FirstOrDefault(i => key.Equals(i.Key, StringComparison.OrdinalIgnoreCase)).Value ?? StringValues.Empty;
+            if (!StringValues.IsNullOrEmpty(items))
                 foreach (var value in items)
                     yield return value;
 
-            items = message.Headers.FirstOrDefault(i => key.Equals(i.Key, StringComparison.OrdinalIgnoreCase)).Value;
-            if (items == null) yield break;
+            items = request.Headers.FirstOrDefault(i => key.Equals(i.Key, StringComparison.OrdinalIgnoreCase)).Value;
+            if (StringValues.IsNullOrEmpty(items)) yield break;
             foreach (var value in items)
                 yield return value;
         }

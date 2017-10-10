@@ -57,6 +57,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Client.Features", "src\R
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "client", "client", "{8BCEFBEF-2CD7-495D-8752-C52AEA8C7434}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Client.Http", "src\RC.Client.Http\RC.Client.Http.csproj", "{8BF8A157-A772-4736-A637-A76E1690B56C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -123,6 +125,10 @@ Global
 		{EF662A76-DCA9-43AE-A0A4-5466634045C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF662A76-DCA9-43AE-A0A4-5466634045C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF662A76-DCA9-43AE-A0A4-5466634045C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BF8A157-A772-4736-A637-A76E1690B56C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BF8A157-A772-4736-A637-A76E1690B56C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BF8A157-A772-4736-A637-A76E1690B56C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BF8A157-A772-4736-A637-A76E1690B56C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -149,6 +155,7 @@ Global
 		{1FB84FEE-7AEC-49CB-A0EB-5E05ACB2918A} = {8BCEFBEF-2CD7-495D-8752-C52AEA8C7434}
 		{EF662A76-DCA9-43AE-A0A4-5466634045C4} = {8BCEFBEF-2CD7-495D-8752-C52AEA8C7434}
 		{8BCEFBEF-2CD7-495D-8752-C52AEA8C7434} = {850A43C4-8B62-4732-95F9-A769981A59E5}
+		{8BF8A157-A772-4736-A637-A76E1690B56C} = {8BCEFBEF-2CD7-495D-8752-C52AEA8C7434}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {36EA6FDA-5082-43F0-932E-8E204636C432}

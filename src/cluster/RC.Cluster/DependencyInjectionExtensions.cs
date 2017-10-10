@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Cluster.Abstractions.LoadBalance;
 using Rabbit.Cloud.Cluster.HighAvailability;
 using Rabbit.Cloud.Cluster.LoadBalance;

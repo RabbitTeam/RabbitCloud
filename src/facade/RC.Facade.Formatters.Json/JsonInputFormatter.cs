@@ -3,8 +3,6 @@ using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using System;
 using System.Buffers;
 using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Facade.Formatters.Json
@@ -30,19 +28,14 @@ namespace Rabbit.Cloud.Facade.Formatters.Json
 
         public async Task WriteAsync(InputFormatterWriteContext context)
         {
-            var request = context.RabbitContext.Request.RequestMessage;
+            var request = context.RabbitContext.Request;
 
-            using (var memoryStream = new MemoryStream())
+            using (var streamWriter = new StreamWriter(request.Body))
             {
-                using (var streamWriter = new StreamWriter(memoryStream))
-                {
-                    WriteObject(streamWriter, context.Object);
-                    await streamWriter.FlushAsync();
+                WriteObject(streamWriter, context.Object);
+                await streamWriter.FlushAsync();
 
-                    var content = new ByteArrayContent(memoryStream.ToArray());
-                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    request.Content = content;
-                }
+                request.Headers["Content-Type"] = "application/json";
             }
         }
 

@@ -1,19 +1,18 @@
 ﻿using Castle.DynamicProxy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Client;
+using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Features;
 using Rabbit.Cloud.Facade.Utilities.Extensions;
-using Rabbit.Cloud.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
-using Rabbit.Cloud.Client.Abstractions;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
@@ -137,13 +136,11 @@ namespace Rabbit.Cloud.Facade.Internal
             {
                 if (exceptionContext.ExceptionHandled || exceptionContext.ExceptionDispatchInfo == null)
                 {
-                    var responseMessage = rabbitContext.Response.ResponseMessage;
+                    var response = rabbitContext.Response;
 
                     OnResultExecuting(resultExecutingContext);
 
-                    responseMessage.EnsureSuccessStatusCode();
-
-                    using (var stream = await responseMessage.Content.ReadAsStreamAsync())
+                    using (var stream = response.Body)
                     {
                         var formatterContext = new OutputFormatterContext(rabbitContext, returnType, stream);
 

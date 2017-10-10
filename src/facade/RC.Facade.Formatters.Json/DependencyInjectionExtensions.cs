@@ -13,7 +13,7 @@ namespace Rabbit.Cloud.Facade.Formatters.Json
         public static IFacadeBuilder AddJsonFormatters(this IFacadeBuilder builder,
             Action<FacadeJsonOptions> setupAction = null)
         {
-            var services = builder.Services;
+            var services = builder.RabbitBuilder.Services;
 
             services.TryAddEnumerable(
                 ServiceDescriptor.Transient<IConfigureOptions<FacadeOptions>, FacadeJsonFacadeOptionsSetup>());

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.ObjectPool;
-using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Abstractions;
@@ -29,11 +28,11 @@ namespace Rabbit.Cloud.Facade
                 .AddSingleton<IRequestMessageBuilder, RequestMessageBuilder>()
                 .AddSingleton<IProxyFactory, ProxyFactory>();
 
-            var facadeBuilder = new FacadeBuilder(services);
+            var facadeBuilder = new FacadeBuilder(builder);
             return facadeBuilder;
         }
 
-        public static IServiceCollection InjectionFacadeClient(this IServiceCollection services, IRabbitCloudClient rabbitCloudClient)
+/*        public static IServiceCollection InjectionFacadeClient(this IServiceCollection services, IRabbitCloudClient rabbitCloudClient)
         {
             var rabbitServices = rabbitCloudClient.Services;
 
@@ -44,6 +43,6 @@ namespace Rabbit.Cloud.Facade
             }
 
             return services;
-        }
+        }*/
     }
 }

@@ -1,18 +1,18 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions;
 
 namespace Rabbit.Cloud.Facade.Internal
 {
     internal class FacadeBuilder : IFacadeBuilder
     {
-        public FacadeBuilder(IServiceCollection services)
+        public FacadeBuilder(IRabbitBuilder rabbitBuilder)
         {
-            Services = services;
+            RabbitBuilder = rabbitBuilder;
         }
 
         #region Implementation of IFacadeBuilder
 
-        public IServiceCollection Services { get; }
+        public IRabbitBuilder RabbitBuilder { get; }
 
         #endregion Implementation of IFacadeBuilder
     }

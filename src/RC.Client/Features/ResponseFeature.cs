@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Primitives;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -9,6 +10,7 @@ namespace Rabbit.Cloud.Client.Features
         public ResponseFeature()
         {
             StatusCode = 200;
+            Headers = new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase);
             Body = Stream.Null;
         }
 

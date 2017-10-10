@@ -2,7 +2,6 @@
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
-using Rabbit.Cloud.Facade.Abstractions.Utilities.Extensions;
 using Rabbit.Cloud.Facade.Utilities.Extensions;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,8 +21,7 @@ namespace Rabbit.Cloud.Facade.MessageBuilding.Builders
 
         protected override Task BuildAsync(MessageBuilderContext context)
         {
-            var requestMessage = context.ServiceRequestContext.RabbitContext.Request.RequestMessage;
-            if (requestMessage.Content != null || !requestMessage.Method.HaveBody())
+            if (context.ServiceRequestContext.RabbitContext.Request.Body.Length > 0)
                 return Task.CompletedTask;
 
             var parameterDescriptor = context.ParameterDescriptor;

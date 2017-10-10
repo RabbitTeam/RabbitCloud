@@ -14,7 +14,7 @@ namespace Rabbit.Cloud.Facade.Abstractions
         }
 
         public string Id { get; }
-        public HttpMethod HttpMethod { get; set; }
+        public string HttpMethod { get; set; }
 
         public ServiceRouteInfo ServiceRouteInfo { get; set; }
 

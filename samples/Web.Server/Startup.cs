@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Rabbit.Cloud;
+using Rabbit.Cloud.Client;
 using Rabbit.Cloud.Extensions.Consul;
 using Rabbit.Extensions.Configuration;
 
