@@ -15,10 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\discovery\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
+    <ProjectReference Include="..\..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
     <ProjectReference Include="..\..\RC.Abstractions\RC.Abstractions.csproj" />
     <ProjectReference Include="..\..\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
-    <ProjectReference Include="..\..\registry\RC.Registry.Abstractions\RC.Registry.Abstractions.csproj" />
+    <ProjectReference Include="..\..\RC.Registry.Abstractions\RC.Registry.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
