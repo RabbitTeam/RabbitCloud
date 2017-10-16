@@ -22,7 +22,7 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
             _next = next;
         }
 
-        public async Task Invoke(RabbitContext context)
+        public async Task Invoke(IRabbitContext context)
         {
             var serviceInstanceChoose = GetChoosers(context).FirstOrDefault(i => i != null) ??
                                         context.RequestServices.GetRequiredService<IServiceInstanceChoose>();
@@ -33,12 +33,12 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
             await _next(context);
         }
 
-        private static IEnumerable<IServiceInstanceChoose> GetChoosers(RabbitContext context)
+        private static IEnumerable<IServiceInstanceChoose> GetChoosers(IRabbitContext context)
         {
             return GetChooserNames(context).Where(i => !string.IsNullOrEmpty(i)).Select(name => context.RequestServices.GetRequiredNamedService<IServiceInstanceChoose>(name));
         }
 
-        private static IEnumerable<string> GetChooserNames(RabbitContext context)
+        private static IEnumerable<string> GetChooserNames(IRabbitContext context)
         {
             var request = context.Request;
             var query = QueryHelpers.ParseNullableQuery(request.RequestUri.Query);

@@ -17,7 +17,7 @@ namespace Rabbit.Cloud.Client.Middlewares
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
         }
 
-        public async Task Invoke(RabbitContext rabbitContext)
+        public async Task Invoke(IRabbitContext rabbitContext)
         {
             // local cache for virtual disptach result
             var features = rabbitContext.Features;

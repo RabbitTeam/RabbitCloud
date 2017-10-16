@@ -4,6 +4,6 @@ namespace Rabbit.Cloud.Client.Abstractions
 {
     public interface IRabbitMiddleware
     {
-        Task InvokeAsync(RabbitContext context, RabbitRequestDelegate next);
+        Task InvokeAsync(IRabbitContext context, RabbitRequestDelegate next);
     }
 }

@@ -56,9 +56,9 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
                 }
 
                 var parameters = methodinfo.GetParameters();
-                if (parameters.Length == 0 || parameters[0].ParameterType != typeof(RabbitContext))
+                if (parameters.Length == 0 || parameters[0].ParameterType != typeof(IRabbitContext))
                 {
-                    throw new InvalidOperationException($"UseMiddlewareNoParameters({InvokeMethodName}, {InvokeAsyncMethodName}, {nameof(RabbitContext)})");
+                    throw new InvalidOperationException($"UseMiddlewareNoParameters({InvokeMethodName}, {InvokeAsyncMethodName}, {nameof(IRabbitContext)})");
                 }
 
                 var ctorArgs = new object[args.Length + 1];
@@ -104,11 +104,11 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
             });
         }
 
-        private static Func<T, RabbitContext, IServiceProvider, Task> Compile<T>(MethodInfo methodinfo, IReadOnlyList<ParameterInfo> parameters)
+        private static Func<T, IRabbitContext, IServiceProvider, Task> Compile<T>(MethodInfo methodinfo, IReadOnlyList<ParameterInfo> parameters)
         {
             var middleware = typeof(T);
 
-            var httpContextArg = Expression.Parameter(typeof(RabbitContext), "rabbitContext");
+            var httpContextArg = Expression.Parameter(typeof(IRabbitContext), "rabbitContext");
             var providerArg = Expression.Parameter(typeof(IServiceProvider), "serviceProvider");
             var instanceArg = Expression.Parameter(middleware, "middleware");
 
@@ -142,7 +142,7 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
             var body = Expression.Call(middlewareInstanceArg, methodinfo, methodArguments);
 
             var lambda =
-                Expression.Lambda<Func<T, RabbitContext, IServiceProvider, Task>>(body, instanceArg, httpContextArg,
+                Expression.Lambda<Func<T, IRabbitContext, IServiceProvider, Task>>(body, instanceArg, httpContextArg,
                     providerArg);
 
             return lambda.Compile();

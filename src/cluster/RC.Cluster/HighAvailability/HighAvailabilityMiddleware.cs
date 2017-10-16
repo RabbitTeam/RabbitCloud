@@ -19,7 +19,7 @@ namespace Rabbit.Cloud.Cluster.HighAvailability
             _logger = logger;
         }
 
-        public async Task Invoke(RabbitContext context)
+        public async Task Invoke(IRabbitContext context)
         {
             switch (_highAvailabilityOptions.Strategy)
             {

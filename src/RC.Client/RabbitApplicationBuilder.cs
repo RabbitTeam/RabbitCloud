@@ -62,12 +62,12 @@ namespace Rabbit.Cloud.Client
 
         #region Private Method
 
-        private T GetProperty<T>(string key)
+        private TK GetProperty<TK>(string key)
         {
-            return Properties.TryGetValue(key, out var value) ? (T)value : default(T);
+            return Properties.TryGetValue(key, out var value) ? (TK)value : default(TK);
         }
 
-        private void SetProperty<T>(string key, T value)
+        private void SetProperty<TK>(string key, TK value)
         {
             Properties[key] = value;
         }

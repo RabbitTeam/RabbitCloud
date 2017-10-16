@@ -18,7 +18,7 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
             _logger = logger;
         }
 
-        public async Task Invoke(RabbitContext context)
+        public async Task Invoke(IRabbitContext context)
         {
             var request = context.Request;
             var current = request.RequestUri;

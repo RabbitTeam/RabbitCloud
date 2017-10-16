@@ -1,34 +1,37 @@
 ﻿using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
+using Rabbit.Cloud.Client.Http.Features;
 using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Client
+namespace Rabbit.Cloud.Client.Http
 {
-    public class DefaultRabbitContext : RabbitContext
+    public class HttpRabbitContext : IRabbitContext
     {
         private static readonly Func<IFeatureCollection, IItemsFeature> NewItemsFeature = f => new ItemsFeature();
         private static readonly Func<IFeatureCollection, IServiceProvidersFeature> NewServiceProvidersFeature = f => new ServiceProvidersFeature();
 
         private FeatureReferences<FeatureInterfaces> _features;
 
-        public DefaultRabbitContext()
+        public HttpRabbitContext()
             : this(new FeatureCollection())
         {
-            Features.Set<IRequestFeature>(new RequestFeature());
-            Features.Set<IResponseFeature>(new ResponseFeature());
+            Features.Set<IHttpRequestFeature>(new HttpRequestFeature());
+            Features.Set<IHttpResponseFeature>(new HttpResponseFeature());
+            Features.Set<IRequestFeature>(Features.Get<IHttpRequestFeature>());
+            Features.Set<IResponseFeature>(Features.Get<IHttpResponseFeature>());
         }
 
-        public DefaultRabbitContext(IFeatureCollection features)
+        public HttpRabbitContext(IFeatureCollection features)
         {
             _features = new FeatureReferences<FeatureInterfaces>(features);
             Request = InitializeHttpRequest();
             Response = InitializeHttpResponse();
         }
 
-        private RabbitRequest InitializeHttpRequest() => new DefaultRabbitRequest(this);
+        private HttpRabbitRequest InitializeHttpRequest() => new HttpRabbitRequest(this);
 
-        private RabbitResponse InitializeHttpResponse() => new DefaultRabbitResponse(this);
+        private HttpRabbitResponse InitializeHttpResponse() => new HttpRabbitResponse(this);
 
         private IItemsFeature ItemsFeature =>
             _features.Fetch(ref _features.Cache.Items, NewItemsFeature);
@@ -38,18 +41,20 @@ namespace Rabbit.Cloud.Client
 
         #region Overrides of RabbitContext
 
-        public override IFeatureCollection Features => _features.Collection;
-        public override RabbitRequest Request { get; }
+        public IFeatureCollection Features => _features.Collection;
+        public HttpRabbitRequest Request { get; }
+        IRabbitRequest IRabbitContext.Request => Request;
 
-        public override RabbitResponse Response { get; }
+        IRabbitResponse IRabbitContext.Response => Response;
+        public HttpRabbitResponse Response { get; }
 
-        public override IDictionary<object, object> Items
+        public IDictionary<object, object> Items
         {
             get => ItemsFeature.Items;
             set => ItemsFeature.Items = value;
         }
 
-        public override IServiceProvider RequestServices
+        public IServiceProvider RequestServices
         {
             get => ServiceProvidersFeature.RequestServices;
             set => ServiceProvidersFeature.RequestServices = value;

@@ -19,19 +19,19 @@ namespace Rabbit.Cloud.Client.Http
             _logger = logger;
         }
 
-        public async Task Invoke(RabbitContext context)
+        public async Task Invoke(IRabbitContext context)
         {
-            var requestMessage = CreateHttpRequestMessage(context);
+            var requestMessage = CreateHttpRequestMessage((HttpRabbitContext)context);
 
-            await RequestAsync(requestMessage, context);
+            await RequestAsync(requestMessage, (HttpRabbitContext)context);
 
             await _next(context);
         }
 
-        private static HttpRequestMessage CreateHttpRequestMessage(RabbitContext context)
+        private static HttpRequestMessage CreateHttpRequestMessage(HttpRabbitContext context)
         {
             var request = context.Request;
-            var requestMessage = new HttpRequestMessage(HttpMethodExtensions.GetHttpMethod(request.Method, HttpMethod.Get), request.RequestUri)
+            var requestMessage = new HttpRequestMessage(request.Method, request.RequestUri)
             {
                 Content = new StreamContent(request.Body)
             };
@@ -46,7 +46,7 @@ namespace Rabbit.Cloud.Client.Http
             return requestMessage;
         }
 
-        private static async Task RequestAsync(HttpRequestMessage requestMessage, RabbitContext context)
+        private static async Task RequestAsync(HttpRequestMessage requestMessage, HttpRabbitContext context)
         {
             var httpResponse = await HttpClient.SendAsync(requestMessage);
 

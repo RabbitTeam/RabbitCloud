@@ -1,44 +1,48 @@
 ﻿using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
+using Rabbit.Cloud.Client.Http.Features;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 
-namespace Rabbit.Cloud.Client
+namespace Rabbit.Cloud.Client.Http
 {
-    public class DefaultRabbitRequest : RabbitRequest
+    public class HttpRabbitRequest : IRabbitRequest
     {
-        private static readonly Func<IFeatureCollection, IRequestFeature> NullRequestFeature = f => null;
+        private static readonly Func<IFeatureCollection, IHttpRequestFeature> NullRequestFeature = f => null;
         private FeatureReferences<FeatureInterfaces> _features;
 
-        private IRequestFeature RequestFeature => _features.Fetch(ref _features.Cache.Request, NullRequestFeature);
+        private IHttpRequestFeature RequestFeature => _features.Fetch(ref _features.Cache.Request, NullRequestFeature);
 
-        public DefaultRabbitRequest(RabbitContext rabbitContext)
+        public HttpRabbitRequest(HttpRabbitContext rabbitContext)
         {
             RabbitContext = rabbitContext;
+
             _features = new FeatureReferences<FeatureInterfaces>(rabbitContext.Features);
         }
 
         #region Overrides of RabbitRequest
 
-        public override RabbitContext RabbitContext { get; }
+        IRabbitContext IRabbitRequest.RabbitContext => RabbitContext;
+        public HttpRabbitContext RabbitContext { get; }
 
-        public override string Method
+        public HttpMethod Method
         {
             get => RequestFeature.Method;
             set => RequestFeature.Method = value;
         }
 
-        public override Uri RequestUri
+        public Uri RequestUri
         {
             get => RequestFeature.RequestUri;
             set => RequestFeature.RequestUri = value;
         }
 
-        public override IDictionary<string, StringValues> Headers => RequestFeature.Headers;
+        public IDictionary<string, StringValues> Headers => RequestFeature.Headers;
 
-        public override Stream Body
+        public Stream Body
         {
             get => RequestFeature.Body;
             set => RequestFeature.Body = value;
@@ -50,7 +54,7 @@ namespace Rabbit.Cloud.Client
 
         private struct FeatureInterfaces
         {
-            public IRequestFeature Request;
+            public IHttpRequestFeature Request;
         }
 
         #endregion Help Type

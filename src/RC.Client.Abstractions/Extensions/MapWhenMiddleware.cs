@@ -14,7 +14,7 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task Invoke(RabbitContext context)
+        public async Task Invoke(IRabbitContext context)
         {
             if (context == null)
             {

@@ -22,9 +22,9 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
         /// <summary>
         /// Executes the middleware.
         /// </summary>
-        /// <param name="context">The <see cref="RabbitContext"/> for the current request.</param>
+        /// <param name="context">The <see cref="IRabbitContext"/> for the current request.</param>
         /// <returns>A task that represents the execution of this middleware.</returns>
-        public async Task Invoke(RabbitContext context)
+        public async Task Invoke(IRabbitContext context)
         {
             if (context == null)
             {
