@@ -1,4 +1,4 @@
-﻿namespace Rabbit.Cloud.Cluster.LoadBalance.Features
+﻿namespace Rabbit.Cloud.Cluster.LoadBalance
 {
     public class LoadBalanceConstants
     {
