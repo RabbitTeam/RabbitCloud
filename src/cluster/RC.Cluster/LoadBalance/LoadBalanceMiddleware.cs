@@ -16,13 +16,11 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
     {
         private readonly RabbitRequestDelegate _next;
         private readonly ILogger<LoadBalanceMiddleware> _logger;
-        private readonly LoadBalanceOptions _options;
 
-        public LoadBalanceMiddleware(RabbitRequestDelegate next, ILogger<LoadBalanceMiddleware> logger, LoadBalanceOptions options)
+        public LoadBalanceMiddleware(RabbitRequestDelegate next, ILogger<LoadBalanceMiddleware> logger)
         {
             _next = next;
             _logger = logger;
-            _options = options;
         }
 
         public async Task Invoke(IRabbitContext context)
@@ -68,18 +66,6 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
 
         private IServiceInstanceChoose GetChoose(IRabbitContext context)
         {
-            IServiceInstanceChoose GetChoose(string strategy, bool rquired)
-            {
-                var services = context.RequestServices;
-                return rquired ? services.GetRequiredNamedService<IServiceInstanceChoose>(strategy) : services.GetNamedService<IServiceInstanceChoose>(strategy);
-            }
-            if (string.IsNullOrEmpty(_options.StrategyName))
-            {
-            }
-            else
-            {
-                return context.RequestServices.GetRequiredNamedService<IServiceInstanceChoose>(_options.StrategyName);
-            }
             return GetChoosers(context).FirstOrDefault(i => i != null) ?? context.RequestServices.GetRequiredService<IServiceInstanceChoose>();
         }
 
@@ -90,8 +76,6 @@ namespace Rabbit.Cloud.Cluster.LoadBalance
 
         private IEnumerable<string> GetChooserNames(IRabbitContext context)
         {
-            yield return _options.StrategyName;
-
             var request = context.Request;
             var query = QueryHelpers.ParseNullableQuery(request.RequestUri.Query);
 

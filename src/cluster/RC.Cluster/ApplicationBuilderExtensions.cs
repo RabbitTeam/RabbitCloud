@@ -5,11 +5,6 @@ using Rabbit.Cloud.Cluster.LoadBalance;
 
 namespace Rabbit.Cloud.Cluster
 {
-    public class LoadBalanceOptions
-    {
-        public string StrategyName { get; set; }
-    }
-
     public static class ApplicationBuilderExtensions
     {
         public static IRabbitApplicationBuilder UseHighAvailability(this IRabbitApplicationBuilder app)
