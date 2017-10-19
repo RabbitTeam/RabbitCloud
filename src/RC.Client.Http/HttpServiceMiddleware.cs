@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Client.Abstractions;
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -11,7 +12,11 @@ namespace Rabbit.Cloud.Client.Http
     {
         private readonly RabbitRequestDelegate _next;
         private readonly ILogger<HttpServiceMiddleware> _logger;
-        private static readonly HttpClient HttpClient = new HttpClient();
+
+        private static readonly HttpClient HttpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(5)
+        };
 
         public HttpServiceMiddleware(RabbitRequestDelegate next, ILogger<HttpServiceMiddleware> logger)
         {
