@@ -23,6 +23,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\cluster\RC.Cluster\RC.Cluster.csproj" />
     <ProjectReference Include="..\..\src\extensions\RC.Extensions.Consul\RC.Extensions.Consul.csproj" />
+    <ProjectReference Include="..\..\src\facade\RC.Facade.Formatters.Json\RC.Facade.Formatters.Json.csproj" />
+    <ProjectReference Include="..\..\src\facade\RC.Facade\RC.Facade.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Http\RC.Client.Http.csproj" />
   </ItemGroup>
 

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Client;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Extensions;
@@ -8,20 +7,24 @@ using Rabbit.Cloud.Client.Http;
 using Rabbit.Cloud.Client.Middlewares;
 using Rabbit.Cloud.Cluster;
 using Rabbit.Cloud.Extensions.Consul;
+using Rabbit.Cloud.Facade.Abstractions;
+using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Extensions.Configuration;
 using Rabbit.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Rabbit.Cloud.Facade;
+using Rabbit.Cloud.Facade.Builder;
+using Rabbit.Cloud.Facade.Formatters.Json;
+using Rabbit.Cloud.Facade.Internal;
 
 namespace ConsoleApp
 {
-    /*    public class UserMode
+    public class UserMode
         {
             public string Name { get; set; }
             public ushort Age { get; set; }
@@ -78,7 +81,7 @@ namespace ConsoleApp
 
             [RequestMapping("api/User/{id}", "PUT")]
             Task<object> PutUserAsync(long id, UserMode model);
-        }*/
+        }
 
     public class Program
     {
@@ -96,6 +99,9 @@ namespace ConsoleApp
                 .AddRabbitCloudCore()
                 .AddConsulDiscovery(configuration)
                 .AddServiceInstanceChoose()
+                .AddFacadeCore()
+                .AddJsonFormatters()
+                .RabbitBuilder
                 .Services
                 .AddServiceExtensions()
                 .BuildRabbitServiceProvider();
@@ -108,44 +114,63 @@ namespace ConsoleApp
                     await next();
                 })
                 .UseMiddleware<RequestServicesContainerMiddleware>()
+                .UseFacade()
                 .UseHighAvailability()
                 .UseLoadBalance()
                 .UseMiddleware<HttpServiceMiddleware>();
 
             var invoker = app.Build();
 
-            var client = new HttpClient(new RabbitHttpClientHandler(invoker));
-
-            //            Console.WriteLine(await client.GetStringAsync("http://userService/api/User/1"));
-
-            var content=await client.PutAsync("http://userService/api/User/1", new FormUrlEncodedContent(new[]
+            async Task Client()
             {
-                new KeyValuePair<string, string>("name", "mj"),
-            }));
-            Console.WriteLine(await content.Content.ReadAsStringAsync());
+                var client = new HttpClient(new RabbitHttpClientHandler(invoker));
+
+                //            Console.WriteLine(await client.GetStringAsync("http://userService/api/User/1"));
+
+                var content = await client.PutAsync("http://userService/api/User/1", new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("name", "mj"),
+                }));
+                Console.WriteLine(await content.Content.ReadAsStringAsync());
+            }
+
+            async Task Default()
+            {
+                var rabbitContext = new HttpRabbitContext();
+
+                var request = rabbitContext.Request;
+                request.RequestUri = new Uri("http://userService/api/User/1");
+                /*            request.Method = "PUT";
+                            var content = new FormUrlEncodedContent(new[]
+                            {
+                                new KeyValuePair<string, string>("name", "test"),
+                            });
+                            request.Body = await content.ReadAsStreamAsync();
+                            foreach (var httpContentHeader in content.Headers)
+                            {
+                                request.Headers[httpContentHeader.Key] = new StringValues(httpContentHeader.Value.ToArray());
+                            }*/
+
+                await invoker(rabbitContext);
+
+                var response = rabbitContext.Response;
+
+                Console.WriteLine(new StreamReader(response.Body).ReadToEnd());
+            }
+
+            await Client();
+//            await Default();
+
+            var proxyFactory = new ProxyFactory(services);
+
+            var userService = proxyFactory.GetProxy<IUserService>(invoker);
+
+            var model = await userService.GetUserAsync(1);
+
+            Console.WriteLine(JsonConvert.SerializeObject(model));
 
             return;
 
-            var rabbitContext = new HttpRabbitContext();
-
-            var request = rabbitContext.Request;
-            request.RequestUri = new Uri("http://userService/api/User/1");
-            /*            request.Method = "PUT";
-                        var content = new FormUrlEncodedContent(new[]
-                        {
-                            new KeyValuePair<string, string>("name", "test"),
-                        });
-                        request.Body = await content.ReadAsStreamAsync();
-                        foreach (var httpContentHeader in content.Headers)
-                        {
-                            request.Headers[httpContentHeader.Key] = new StringValues(httpContentHeader.Value.ToArray());
-                        }*/
-
-            await invoker(rabbitContext);
-
-            var response = rabbitContext.Response;
-
-            Console.WriteLine(new StreamReader(response.Body).ReadToEnd());
             /*var proxyFactory = new ProxyFactory(services);
 
             var userService = proxyFactory.GetProxy<IUserService>(invoker);
