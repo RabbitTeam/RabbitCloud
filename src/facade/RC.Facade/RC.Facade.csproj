@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\RC.Client.Http\RC.Client.Http.csproj" />
     <ProjectReference Include="..\..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
     <ProjectReference Include="..\..\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
     <ProjectReference Include="..\..\RC\RC.csproj" />

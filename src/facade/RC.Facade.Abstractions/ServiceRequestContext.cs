@@ -10,7 +10,7 @@ namespace Rabbit.Cloud.Facade.Abstractions
         {
         }
 
-        public ServiceRequestContext(RabbitContext rabbitContext, IDictionary<string, object> arguments, RouteData routeData, ServiceDescriptor serviceDescriptor)
+        public ServiceRequestContext(IRabbitContext rabbitContext, IDictionary<string, object> arguments, RouteData routeData, ServiceDescriptor serviceDescriptor)
         {
             RabbitContext = rabbitContext;
             Arguments = arguments;
@@ -20,7 +20,7 @@ namespace Rabbit.Cloud.Facade.Abstractions
 
         public IDictionary<string, object> Arguments { get; set; }
         public ServiceDescriptor ServiceDescriptor { get; set; }
-        public RabbitContext RabbitContext { get; set; }
+        public IRabbitContext RabbitContext { get; set; }
         public RouteData RouteData { get; set; }
     }
 }

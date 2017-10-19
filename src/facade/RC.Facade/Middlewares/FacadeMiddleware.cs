@@ -20,7 +20,7 @@ namespace Rabbit.Cloud.Facade.Middlewares
             _requestMessageBuilder = requestMessageBuilder;
         }
 
-        public async Task Invoke(RabbitContext context)
+        public async Task Invoke(IRabbitContext context)
         {
             var invocationFeature = context.Features.Get<IInvocationFeature>();
             if (invocationFeature == null)

@@ -10,7 +10,7 @@ namespace Rabbit.Cloud.Facade.Abstractions.Filters
         private Exception _exception;
         private ExceptionDispatchInfo _exceptionDispatchInfo;
 
-        public ExceptionContext(RabbitContext rabbitContext, IList<IFilterMetadata> filters) : base(rabbitContext, filters)
+        public ExceptionContext(IRabbitContext rabbitContext, IList<IFilterMetadata> filters) : base(rabbitContext, filters)
         {
         }
 

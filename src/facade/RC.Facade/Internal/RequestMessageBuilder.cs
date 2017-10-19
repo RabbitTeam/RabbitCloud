@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
+using Rabbit.Cloud.Client.Http;
 using Rabbit.Cloud.Facade.Abstractions;
 using Rabbit.Cloud.Facade.Abstractions.MessageBuilding;
 using System;
@@ -55,10 +56,10 @@ namespace Rabbit.Cloud.Facade.Internal
             var requestContext = context.ServiceRequestContext;
             var serviceDescriptor = requestContext.ServiceDescriptor;
             var rabbitContext = requestContext.RabbitContext;
-            var request = rabbitContext.Request;
+            var request = (HttpRabbitRequest)rabbitContext.Request;
 
             // set httpMethod
-            request.Method = serviceDescriptor.HttpMethod;
+            request.Method = HttpMethodExtensions.GetHttpMethod(serviceDescriptor.HttpMethod, HttpMethod.Get);
 
             var messageBuilderContext = await MessageBuildAsync(requestContext);
 

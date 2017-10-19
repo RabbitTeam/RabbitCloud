@@ -1,8 +1,8 @@
 ﻿using Castle.DynamicProxy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Client;
 using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Client.Http;
 using Rabbit.Cloud.Facade.Abstractions.Filters;
 using Rabbit.Cloud.Facade.Abstractions.Formatters;
 using Rabbit.Cloud.Facade.Features;
@@ -85,9 +85,9 @@ namespace Rabbit.Cloud.Facade.Internal
             return await ReturnAsync(serviceRequestInterceptorContext);
         }
 
-        private RabbitContext GetRabbitContext(IInvocation invocation)
+        private IRabbitContext GetRabbitContext(IInvocation invocation)
         {
-            var context = new DefaultRabbitContext();
+            var context = new HttpRabbitContext();
             context.Features.Set<IInvocationFeature>(new InvocationFeature(invocation));
             var serviceDescriptor = _services.GetRequiredService<IServiceDescriptorCollectionProvider>().ServiceDescriptors.GetServiceDescriptor(invocation.Method.GetHashCode());
             context.Features.Set<IServiceDescriptorFeature>(new ServiceDescriptorFeature(serviceDescriptor));
@@ -237,11 +237,11 @@ namespace Rabbit.Cloud.Facade.Internal
         public class ServiceRequestInterceptorContext
         {
             public MethodInfo MethodInfo { get; }
-            public RabbitContext RabbitContext { get; }
+            public IRabbitContext RabbitContext { get; }
             public Abstractions.ServiceDescriptor ServiceDescriptor { get; }
             public Type ReturnType { get; }
 
-            public ServiceRequestInterceptorContext(MethodInfo methodInfo, RabbitContext rabbitContext, Type returnType)
+            public ServiceRequestInterceptorContext(MethodInfo methodInfo, IRabbitContext rabbitContext, Type returnType)
             {
                 MethodInfo = methodInfo;
                 RabbitContext = rabbitContext;

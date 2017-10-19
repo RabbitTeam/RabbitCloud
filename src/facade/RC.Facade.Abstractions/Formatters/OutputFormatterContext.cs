@@ -6,7 +6,7 @@ namespace Rabbit.Cloud.Facade.Abstractions.Formatters
 {
     public class OutputFormatterContext
     {
-        public OutputFormatterContext(RabbitContext rabbitContext, Type modelType, Stream stream, bool treatEmptyInputAsDefaultValue = false)
+        public OutputFormatterContext(IRabbitContext rabbitContext, Type modelType, Stream stream, bool treatEmptyInputAsDefaultValue = false)
         {
             RabbitContext = rabbitContext;
             ModelType = modelType;
@@ -15,7 +15,7 @@ namespace Rabbit.Cloud.Facade.Abstractions.Formatters
         }
 
         public bool TreatEmptyInputAsDefaultValue { get; }
-        public RabbitContext RabbitContext { get; }
+        public IRabbitContext RabbitContext { get; }
         public Type ModelType { get; }
         public Stream Stream { get; }
     }

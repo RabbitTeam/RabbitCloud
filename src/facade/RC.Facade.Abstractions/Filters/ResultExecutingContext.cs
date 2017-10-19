@@ -6,7 +6,7 @@ namespace Rabbit.Cloud.Facade.Abstractions.Filters
 {
     public class ResultExecutingContext : FilterContext
     {
-        public ResultExecutingContext(RabbitContext rabbitContext, IList<IFilterMetadata> filters, Type returnType) : base(rabbitContext, filters)
+        public ResultExecutingContext(IRabbitContext rabbitContext, IList<IFilterMetadata> filters, Type returnType) : base(rabbitContext, filters)
         {
             ReturnType = returnType;
         }
