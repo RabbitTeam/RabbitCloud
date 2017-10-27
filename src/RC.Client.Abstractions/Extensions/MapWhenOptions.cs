@@ -2,14 +2,14 @@
 
 namespace Rabbit.Cloud.Client.Abstractions.Extensions
 {
-    public class MapWhenOptions
+    public class MapWhenOptions<TContext>
     {
-        private Func<IRabbitContext, bool> _predicate;
+        private Func<TContext, bool> _predicate;
 
         /// <summary>
         /// The user callback that determines if the branch should be taken.
         /// </summary>
-        public Func<IRabbitContext, bool> Predicate
+        public Func<TContext, bool> Predicate
         {
             get => _predicate;
             set => _predicate = value ?? throw new ArgumentNullException(nameof(value));
@@ -18,6 +18,6 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
         /// <summary>
         /// The branch taken for a positive match.
         /// </summary>
-        public RabbitRequestDelegate Branch { get; set; }
+        public RabbitRequestDelegate<TContext> Branch { get; set; }
     }
 }

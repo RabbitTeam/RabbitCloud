@@ -6,6 +6,7 @@ namespace Rabbit.Cloud.Discovery.Abstractions
     public interface IDiscoveryClient : IDisposable
     {
         string Description { get; }
+
         /// <summary>
         /// all serviceId
         /// </summary>

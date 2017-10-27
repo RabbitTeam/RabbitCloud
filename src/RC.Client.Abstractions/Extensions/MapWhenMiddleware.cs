@@ -3,18 +3,18 @@ using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Abstractions.Extensions
 {
-    public class MapWhenMiddleware
+    public class MapWhenMiddleware<TContext>
     {
-        private readonly RabbitRequestDelegate _next;
-        private readonly MapWhenOptions _options;
+        private readonly RabbitRequestDelegate<TContext> _next;
+        private readonly MapWhenOptions<TContext> _options;
 
-        public MapWhenMiddleware(RabbitRequestDelegate next, MapWhenOptions options)
+        public MapWhenMiddleware(RabbitRequestDelegate<TContext> next, MapWhenOptions<TContext> options)
         {
             _next = next ?? throw new ArgumentNullException(nameof(next));
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
-        public async Task Invoke(IRabbitContext context)
+        public async Task Invoke(TContext context)
         {
             if (context == null)
             {

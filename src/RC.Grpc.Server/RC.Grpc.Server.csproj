@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Grpc.Server</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Grpc.Server</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+      <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="Grpc" Version="1.6.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.4.1" />
+  </ItemGroup>
+
+</Project>

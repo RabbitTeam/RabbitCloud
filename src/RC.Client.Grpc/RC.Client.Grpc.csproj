@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Client.Grpc</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Client.Grpc</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

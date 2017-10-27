@@ -4,7 +4,7 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
 {
     public static class MapWhenExtensions
     {
-        public static IRabbitApplicationBuilder MapWhen<T>(this IRabbitApplicationBuilder app, Predicate<T> predicate, Action<IRabbitApplicationBuilder> configuration) where T : IRabbitContext
+        public static IRabbitApplicationBuilder<TContext> MapWhen<TContext>(this IRabbitApplicationBuilder<TContext> app, Predicate<TContext> predicate, Action<IRabbitApplicationBuilder<TContext>> configuration)
         {
             if (app == null)
             {
@@ -27,12 +27,12 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
             var branch = branchBuilder.Build();
 
             // put middleware in pipeline
-            var options = new MapWhenOptions
+            var options = new MapWhenOptions<TContext>
             {
-                Predicate = context => predicate((T)context),
+                Predicate = context => predicate(context),
                 Branch = branch,
             };
-            return app.Use(next => new MapWhenMiddleware(next, options).Invoke);
+            return app.Use(next => new MapWhenMiddleware<TContext>(next, options).Invoke);
         }
     }
 }
