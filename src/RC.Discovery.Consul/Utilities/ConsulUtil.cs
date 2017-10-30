@@ -12,6 +12,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Utilities
     {
         public const string ServicePrefix = "rabbitcloud";
         public static readonly TimeSpan TtlInterval = TimeSpan.FromSeconds(30);
+        private static readonly Dictionary<string, string> EmptyMetadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         #region Public  Method
 
@@ -47,7 +48,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Utilities
                 ServiceId = agentService.Service,
                 Host = agentService.Address.ToLower(),
                 Port = agentService.Port,
-                Metadata = new Dictionary<string, string>()
+                Metadata = EmptyMetadata
             };
 
             return instance;
