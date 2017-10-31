@@ -2,10 +2,8 @@
 
 namespace RC.Client.LoadBalance
 {
-    public interface ILoadBalanceStrategy<out T>
+    public interface ILoadBalanceStrategy<in TKey, TItem>
     {
-        IReadOnlyCollection<T> Items { get; }
-
-        T Choose();
+        TItem Choose(TKey key, IReadOnlyCollection<TItem> items);
     }
 }

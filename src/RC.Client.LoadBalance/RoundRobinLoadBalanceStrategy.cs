@@ -1,31 +1,26 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace RC.Client.LoadBalance
 {
-    public class RoundRobinLoadBalanceStrategy<T> : LoadBalanceStrategy<T>
+    public class RoundRobinLoadBalanceStrategy<TKey, TItem> : LoadBalanceStrategy<TKey, TItem>
     {
-        private int _index = -1;
+        private readonly ConcurrentDictionary<TKey, short> _sequences = new ConcurrentDictionary<TKey, short>();
 
-        public RoundRobinLoadBalanceStrategy(IReadOnlyCollection<T> items) : base(items)
+        #region Overrides of LoadBalanceStrategy<TKey,TItem>
+
+        protected override TItem DoChoose(TKey key, IReadOnlyCollection<TItem> items)
         {
+            var index = _sequences.AddOrUpdate(key, k => 0, (k, i) =>
+              {
+                  if (i == short.MaxValue)
+                      return 0;
+                  return (short)(i + 1);
+              });
+            return items.ElementAt(index % items.Count);
         }
 
-        #region Overrides of LoadBalanceStrategy<T>
-
-        protected override T DoChoose()
-        {
-            var maxIndex = Items.Count - 1;
-
-            var index = Interlocked.Increment(ref _index);
-
-            if (index > maxIndex || index < 0)
-                Interlocked.Exchange(ref _index, 0);
-
-            return Items.ElementAt(_index);
-        }
-
-        #endregion Overrides of LoadBalanceStrategy<T>
+        #endregion Overrides of LoadBalanceStrategy<TKey,TItem>
     }
 }

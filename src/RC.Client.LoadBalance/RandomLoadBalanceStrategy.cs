@@ -9,23 +9,16 @@ namespace RC.Client.LoadBalance
         public static readonly Random Random = new Random();
     }
 
-    public class RandomLoadBalanceStrategy<T> : LoadBalanceStrategy<T>
+    public class RandomLoadBalanceStrategy<TKey, TItem> : LoadBalanceStrategy<TKey, TItem>
     {
-        public RandomLoadBalanceStrategy(IReadOnlyCollection<T> items) : base(items)
+        #region Overrides of LoadBalanceStrategy<TKey,TItem>
+
+        protected override TItem DoChoose(TKey key, IReadOnlyCollection<TItem> items)
         {
+            var index = RandomStatic.Random.Next(items.Count);
+            return items.ElementAt(index);
         }
 
-        #region Overrides of LoadBalanceStrategy<T>
-
-        protected override T DoChoose()
-        {
-            if (Items.Count == 1)
-                return Items.ElementAt(0);
-
-            var index = RandomStatic.Random.Next(Items.Count);
-            return Items.ElementAt(index);
-        }
-
-        #endregion Overrides of LoadBalanceStrategy<T>
+        #endregion Overrides of LoadBalanceStrategy<TKey,TItem>
     }
 }

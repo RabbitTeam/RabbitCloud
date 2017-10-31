@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿/*using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Cloud.Client.Abstractions;
 
 namespace Rabbit.Cloud.Client
@@ -24,4 +24,4 @@ namespace Rabbit.Cloud.Client
             return new RabbitBuilder(services);
         }
     }
-}
+}*/

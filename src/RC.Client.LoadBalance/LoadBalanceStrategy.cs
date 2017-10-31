@@ -1,30 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace RC.Client.LoadBalance
 {
-    public abstract class LoadBalanceStrategy<T> : ILoadBalanceStrategy<T>
+    public abstract class LoadBalanceStrategy<TKey, TItem> : ILoadBalanceStrategy<TKey, TItem>
     {
-        protected LoadBalanceStrategy(IReadOnlyCollection<T> items)
+        #region Implementation of ILoadBalanceStrategy<in TKey,TItem>
+
+        public TItem Choose(TKey key, IReadOnlyCollection<TItem> items)
         {
-            Items = items ?? throw new ArgumentNullException(nameof(items));
+            if (items == null || !items.Any())
+                return default(TItem);
+
+            return items.Count == 1 ? items.ElementAt(0) : DoChoose(key, items);
         }
 
-        #region Implementation of ILoadBalanceStrategy<out T>
+        #endregion Implementation of ILoadBalanceStrategy<in TKey,TItem>
 
-        public IReadOnlyCollection<T> Items { get; }
-
-        public T Choose()
-        {
-            if (Items == null || !Items.Any())
-                return default(T);
-
-            return Items.Count == 1 ? Items.ElementAt(0) : DoChoose();
-        }
-
-        #endregion Implementation of ILoadBalanceStrategy<out T>
-
-        protected abstract T DoChoose();
+        protected abstract TItem DoChoose(TKey key, IReadOnlyCollection<TItem> items);
     }
 }

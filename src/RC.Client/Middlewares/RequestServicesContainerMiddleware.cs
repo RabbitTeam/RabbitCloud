@@ -8,10 +8,10 @@ namespace Rabbit.Cloud.Client.Middlewares
 {
     public class RequestServicesContainerMiddleware
     {
-        private readonly RabbitRequestDelegate _next;
+        private readonly RabbitRequestDelegate<IRabbitContext> _next;
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public RequestServicesContainerMiddleware(RabbitRequestDelegate next, IServiceScopeFactory scopeFactory)
+        public RequestServicesContainerMiddleware(RabbitRequestDelegate<IRabbitContext> next, IServiceScopeFactory scopeFactory)
         {
             _next = next ?? throw new ArgumentNullException(nameof(next));
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));

@@ -2,7 +2,7 @@
 using Rabbit.Cloud.Client.Features;
 using System;
 
-namespace RC.Client.Grpc
+namespace Rabbit.Cloud.Client.Grpc
 {
     public class ServiceProvidersFeature : IServiceProvidersFeature
     {
@@ -11,6 +11,15 @@ namespace RC.Client.Grpc
 
     public class GrpcRabbitContext : IRabbitContext
     {
+        public GrpcRabbitContext() : this(new FeatureCollection())
+        {
+        }
+
+        public GrpcRabbitContext(IFeatureCollection features)
+        {
+            _features = new FeatureReferences<FeatureInterfaces>(features);
+        }
+
         private static readonly Func<IFeatureCollection, IServiceProvidersFeature> NewServiceProvidersFeature = f => new ServiceProvidersFeature();
         private FeatureReferences<FeatureInterfaces> _features;
 
