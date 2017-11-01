@@ -1,4 +1,5 @@
 ﻿using Consul;
+using Google.Protobuf;
 using Grpc.Core;
 using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +11,10 @@ using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.LoadBalance;
 using Rabbit.Cloud.Client.LoadBalance.Builder;
 using Rabbit.Cloud.Client.Proxy;
+using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Discovery.Consul;
+using Rabbit.Cloud.Discovery.Consul.Registry;
+using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Abstractions.Method;
 using Rabbit.Cloud.Grpc.Abstractions.Utilities;
@@ -19,6 +23,7 @@ using Rabbit.Cloud.Grpc.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -75,16 +80,16 @@ namespace ConsoleApp
                     .AddSingleton<IServerServiceDefinitionProvider, DefaultServerServiceDefinitionProvider>()
                     .BuildServiceProvider();
 
-                /*                var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
+                var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
 
-                                await registryService.RegisterAsync(ConsulUtil.Create(new RabbitConsulOptions.DiscoveryOptions
-                                {
-                                    HealthCheckInterval = "10s",
-                                    HostName = "localhost",
-                                    InstanceId = "localhost_9907",
-                                    Port = 9907,
-                                    ServiceName = "ConsoleApp"
-                                }));*/
+                await registryService.RegisterAsync(ConsulUtil.Create(new RabbitConsulOptions.DiscoveryOptions
+                {
+                    HealthCheckInterval = "10s",
+                    HostName = "localhost",
+                    InstanceId = "localhost_9907",
+                    Port = 9907,
+                    ServiceName = "ConsoleApp"
+                }));
 
                 var serverServiceDefinitionProvider = services.GetRequiredService<IServerServiceDefinitionProvider>();
 
@@ -123,9 +128,30 @@ namespace ConsoleApp
                 {
                     options.Types = new[] { typeof(TestService) };
 
-                    options.MarshallerFactory = type => MarshallerUtilities.CreateMarshaller(type,
-                        model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
-                        data => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), type));
+                    var helloRequestFactory = Expression.Lambda<Func<HelloRequest>>(Expression.New(typeof(HelloRequest))).Compile();
+                    var helloReplyFactory = Expression.Lambda<Func<HelloReply>>(Expression.New(typeof(HelloReply))).Compile();
+
+                    options.MarshallerFactory = type =>
+                    {
+                        return
+                            MarshallerUtilities.CreateMarshaller(type,
+                                model => typeof(IMessage).IsAssignableFrom(type) ? ((IMessage)model).ToByteArray() : Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
+                                data =>
+                                {
+                                    if (!typeof(IMessage).IsAssignableFrom(type))
+                                        return JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), type);
+
+                                    IMessage message = null;
+                                    if (type == typeof(HelloRequest))
+                                        message = helloRequestFactory();
+                                    else if (type == typeof(HelloReply))
+                                        message = helloReplyFactory();
+
+                                    message.MergeFrom(data);
+
+                                    return message;
+                                });
+                    };
                 })
                 .BuildServiceProvider();
 
@@ -158,7 +184,7 @@ namespace ConsoleApp
                 var invoker = app
                     .Use(async (context, next) =>
                     {
-                        context.Request.Url.Host = "TestService";
+                        context.Request.Url.Host = "ConsoleApp";
                         await next();
                     })
                     .UseLoadBalance()
