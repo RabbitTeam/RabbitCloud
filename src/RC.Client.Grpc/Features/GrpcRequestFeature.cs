@@ -21,16 +21,7 @@ namespace Rabbit.Cloud.Client.Grpc.Features
 
         public object Request { get; set; }
 
-        public string Host
-        {
-            get => ServiceUrl?.Host;
-            set
-            {
-                if (ServiceUrl == null)
-                    ServiceUrl = new ServiceUrl();
-                ServiceUrl.Host = value;
-            }
-        }
+        public string Host { get; set; }
 
         public Metadata Headers { get; set; }
         public DateTime? Deadline { get; set; }

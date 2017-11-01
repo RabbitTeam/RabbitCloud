@@ -21,8 +21,6 @@ namespace Rabbit.Cloud.Discovery.Consul.Utilities
             var tags = options.Tags ?? Enumerable.Empty<string>();
 
             tags = tags.Concat(new[] { ServicePrefix });
-            if (options.IsSecure)
-                tags = tags.Concat(new[] { "https" });
 
             return new ConsulRegistration(new AgentServiceRegistration
             {

@@ -4,7 +4,6 @@ using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Grpc.Abstractions;
-using Rabbit.Cloud.Grpc.Abstractions.Method;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +15,60 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 {
     public class GrpcProxyInterceptor : RabbitProxyInterceptor
     {
+        private static readonly Type[] IgnoreGenericTypes = { typeof(AsyncServerStreamingCall<>), typeof(AsyncDuplexStreamingCall<,>) };
+
+        public GrpcProxyInterceptor(RabbitRequestDelegate invoker) : base(invoker)
+        {
+        }
+
+        #region Overrides of RabbitProxyInterceptor
+
+        protected override IRabbitContext CreateRabbitContext(IInvocation invocation)
+        {
+            var descriptor = GrpcServiceDescriptor.Create(invocation.Method);
+
+            var context = new GrpcRabbitContext();
+
+            context.Request.Url = new ServiceUrl
+            {
+                Scheme = "grpc",
+                Path = descriptor.ServiceId
+            };
+            context.Request.Request = invocation.Arguments[0];
+
+            return context;
+        }
+
+        protected override async Task<object> ConvertReturnValue(IInvocation invocation, IRabbitContext rabbitContext)
+        {
+            var response = ((GrpcRabbitContext)rabbitContext).Response.Response;
+
+            var returnType = invocation.Method.ReturnType;
+
+            if (returnType == typeof(void))
+                return null;
+
+            var responseType = response.GetType();
+            if (IgnoreGenericTypes.Contains(responseType.GetGenericTypeDefinition()))
+                return response;
+
+            if (!typeof(Task).IsAssignableFrom(returnType))
+                return response;
+
+            var responseAsyncPropertyAccessor = Cache.GetResponseAsyncAccessor(responseType);
+            var responseAsync = (Task)responseAsyncPropertyAccessor.DynamicInvoke(response);
+
+            if (!returnType.IsGenericType)
+                return responseAsync;
+
+            await responseAsync;
+
+            var taskResultAccessor = Cache.GetTaskResultAccessor(responseAsync);
+            return taskResultAccessor.DynamicInvoke(responseAsync);
+        }
+
+        #endregion Overrides of RabbitProxyInterceptor
+
         #region Help Type
 
         private static class Cache
@@ -90,60 +143,5 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
         }
 
         #endregion Help Type
-
-        private readonly IMethodCollection _methodCollection;
-
-        private static readonly Type[] IgnoreGenericTypes = { typeof(AsyncServerStreamingCall<>), typeof(AsyncDuplexStreamingCall<,>) };
-
-        public GrpcProxyInterceptor(RabbitRequestDelegate invoker, IMethodCollection methodCollection) : base(invoker)
-        {
-            _methodCollection = methodCollection;
-        }
-
-        #region Overrides of RabbitProxyInterceptor
-
-        protected override IRabbitContext CreateRabbitContext(IInvocation invocation)
-        {
-            var descriptor = GrpcServiceDescriptor.Create(invocation.Method);
-
-            var context = new GrpcRabbitContext();
-
-            var method = _methodCollection.Get(descriptor.ServiceId);
-
-            context.Request.Url = new ServiceUrl($"grpc://TestService{method.FullName}");
-            context.Request.Request = invocation.Arguments[0];
-
-            return context;
-        }
-
-        protected override async Task<object> ConvertReturnValue(IInvocation invocation, IRabbitContext rabbitContext)
-        {
-            var response = ((GrpcRabbitContext)rabbitContext).Response.Response;
-
-            var returnType = invocation.Method.ReturnType;
-
-            if (returnType == typeof(void))
-                return null;
-
-            var responseType = response.GetType();
-            if (IgnoreGenericTypes.Contains(responseType.GetGenericTypeDefinition()))
-                return response;
-
-            if (!typeof(Task).IsAssignableFrom(returnType))
-                return response;
-
-            var responseAsyncPropertyAccessor = Cache.GetResponseAsyncAccessor(responseType);
-            var responseAsync = (Task)responseAsyncPropertyAccessor.DynamicInvoke(response);
-
-            if (!returnType.IsGenericType)
-                return responseAsync;
-
-            await responseAsync;
-
-            var taskResultAccessor = Cache.GetTaskResultAccessor(responseAsync);
-            return taskResultAccessor.DynamicInvoke(responseAsync);
-        }
-
-        #endregion Overrides of RabbitProxyInterceptor
     }
 }

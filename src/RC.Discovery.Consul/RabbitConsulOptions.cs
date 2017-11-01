@@ -16,7 +16,6 @@ namespace Rabbit.Cloud.Discovery.Consul
             public string ServiceName { get; set; }
             public string HostName { get; set; }
             public int Port { get; set; }
-            public bool IsSecure { get; set; }
             public string HealthCheckInterval { get; set; }
             public string[] Tags { get; set; }
         }

@@ -1,8 +1,10 @@
-﻿using Grpc.Core;
+﻿using Consul;
+using Grpc.Core;
 using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rabbit.Cloud.Client;
+using Rabbit.Cloud.Client.Abstractions.Extensions;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.LoadBalance;
@@ -56,12 +58,13 @@ namespace ConsoleApp
             Task<HelloReply> HelloAsync3(HelloRequest request);
         }
 
-        private static void StartServer(IMethodCollection methodCollection)
+        private static async Task StartServer(IMethodCollection methodCollection)
         {
             {
                 var services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
+                    .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri("http://192.168.1.150:8500")))
                     .AddSingleton(methodCollection)
                     .AddSingleton(
                         new DefaultServerServiceDefinitionProviderOptions
@@ -71,6 +74,17 @@ namespace ConsoleApp
                         })
                     .AddSingleton<IServerServiceDefinitionProvider, DefaultServerServiceDefinitionProvider>()
                     .BuildServiceProvider();
+
+                /*                var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
+
+                                await registryService.RegisterAsync(ConsulUtil.Create(new RabbitConsulOptions.DiscoveryOptions
+                                {
+                                    HealthCheckInterval = "10s",
+                                    HostName = "localhost",
+                                    InstanceId = "localhost_9907",
+                                    Port = 9907,
+                                    ServiceName = "ConsoleApp"
+                                }));*/
 
                 var serverServiceDefinitionProvider = services.GetRequiredService<IServerServiceDefinitionProvider>();
 
@@ -127,7 +141,7 @@ namespace ConsoleApp
         private static async Task Main(string[] args)
         {
             var methodCollection = GetMethodCollection();
-            StartServer(methodCollection);
+            await StartServer(methodCollection);
             {
                 //client
                 var services = new ServiceCollection()
@@ -142,13 +156,19 @@ namespace ConsoleApp
                 var app = new RabbitApplicationBuilder(services);
 
                 var invoker = app
+                    .Use(async (context, next) =>
+                    {
+                        context.Request.Url.Host = "TestService";
+                        await next();
+                    })
                     .UseLoadBalance()
                     .UseGrpc()
                     .Build();
 
-                var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker, methodCollection);
+                var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker);
+                var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
 
-                var service = (ITestService)new ProxyFactory(rabbitProxyInterceptor).CreateInterfaceProxy(typeof(ITestService));
+                var service = proxyFactory.CreateInterfaceProxy<ITestService>();
                 while (true)
                 {
                     var t = await service.HelloAsync(new HelloRequest { Name = "test" });
