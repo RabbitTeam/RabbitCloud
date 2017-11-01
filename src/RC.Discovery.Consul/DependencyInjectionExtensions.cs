@@ -32,6 +32,14 @@ namespace Rabbit.Cloud.Discovery.Consul
             return services;
         }
 
+        public static IServiceCollection AddConsulDiscovery(this IServiceCollection services, IConsulClient consulClient)
+        {
+            services
+                .AddSingleton<IDiscoveryClient>(s => new ConsulDiscoveryClient(consulClient, s.GetRequiredService<ILogger<ConsulDiscoveryClient>>()));
+
+            return services;
+        }
+
         public static IServiceCollection AddConsulRegistry(this IServiceCollection services, ConsulClient consulClient = null)
         {
             if (consulClient == null)

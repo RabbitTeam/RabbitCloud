@@ -3,7 +3,7 @@ using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Concurrent;
 
-namespace Rabbit.Cloud.Client.Grpc.Internal
+namespace Rabbit.Cloud.Grpc.Client.Internal
 {
     public class CallInvokerPool
     {

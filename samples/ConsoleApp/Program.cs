@@ -3,15 +3,16 @@ using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rabbit.Cloud.Client;
-using Rabbit.Cloud.Client.Abstractions.Extensions;
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Grpc;
-using Rabbit.Cloud.Client.Grpc.Features;
-using Rabbit.Cloud.Client.Grpc.Internal;
+using Rabbit.Cloud.Client.Grpc.Builder;
+using Rabbit.Cloud.Discovery.Consul;
 using Rabbit.Cloud.Grpc.Abstractions;
+using Rabbit.Cloud.Grpc.Abstractions.Method;
 using Rabbit.Cloud.Grpc.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Client;
-using Rabbit.Cloud.Grpc.Client.Internal;
+using RC.Client.LoadBalance;
+using RC.Client.LoadBalance.Builder;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -37,9 +38,26 @@ namespace ConsoleApp
             }
         }
 
-        private static async Task Main(string[] args)
+        private static void StartServer()
         {
             {
+                /*                var services = new ServiceCollection()
+                                    .AddLogging()
+                                    .AddConsulRegistry(new ConsulClient(c => c.Address = new Uri("http://192.168.1.150:8500")))
+                                    .BuildServiceProvider();
+
+                                var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
+                                var consulRegistration = new ConsulRegistration(new AgentServiceRegistration
+                                {
+                                    Address = "localhost",
+                                    ID = "rabbitcloud:test_localhost_9908",
+                                    Name = "testservice",
+                                    Port = 9908
+                                });
+                                await registryService.RegisterAsync(consulRegistration);
+                                consulRegistration.AgentServiceRegistration.ID = "rabbitcloud:test_localhost_9907";
+                                consulRegistration.AgentServiceRegistration.Port = 9907;
+                                await registryService.RegisterAsync(consulRegistration);*/
                 //server
                 var methodInfo = typeof(TestService).GetMethod(nameof(TestService.SayHello));
                 var descriptor = GrpcServiceDescriptor.Create(methodInfo);
@@ -55,34 +73,45 @@ namespace ConsoleApp
 
                 var builder = ServerServiceDefinition.CreateBuilder();
                 builder.AddMethod(methodDef, new TestService().SayHello);
-                var server = new Server
+                var serverServiceDefinition = builder.Build();
                 {
-                    Services = { builder.Build() },
-                    Ports = { new ServerPort("localhost", 9908, ServerCredentials.Insecure) }
-                };
-                server.Start();
+                    var server = new Server
+                    {
+                        Services = { serverServiceDefinition },
+                        Ports = { new ServerPort("localhost", 9908, ServerCredentials.Insecure) }
+                    };
+                    server.Start();
+                }
+                {
+                    var server = new Server
+                    {
+                        Services = { serverServiceDefinition },
+                        Ports = { new ServerPort("localhost", 9907, ServerCredentials.Insecure) }
+                    };
+                    server.Start();
+                }
             }
-            //            var requestMarshaller = Marshallers.Create(model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)), data => JsonConvert.DeserializeObject<HelloRequest>(Encoding.UTF8.GetString(data)));
-            //            var responseMarshaller = Marshallers.Create(model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)), data => JsonConvert.DeserializeObject<HelloReply>(Encoding.UTF8.GetString(data)));
+        }
+
+        private static async Task Main(string[] args)
+        {
+            StartServer();
             {
                 //client
-
                 var services = new ServiceCollection()
+                    .AddLogging()
                     .AddOptions()
-                    .Configure<DefaultMethodProviderOptions>(o =>
+                    .AddGrpcCore(options =>
                     {
-                        o.Types = new[] { typeof(TestService) };
+                        options.Types = new[] { typeof(TestService) };
 
-                        o.MarshallerFactory = type => MarshallerUtilities.CreateMarshaller(type,
+                        options.MarshallerFactory = type => MarshallerUtilities.CreateMarshaller(type,
                             model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
                             data => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), type));
                     })
-                    .AddSingleton<IMethodCollection, MethodCollection>()
-                    .AddSingleton<IMethodProvider, DefaultMethodProvider>()
-                    .AddSingleton<ChannelPool>()
-                    .AddSingleton<CallInvokerPool>()
-                    //                    .AddSingleton(requestMarshaller)
-                    //                    .AddSingleton(responseMarshaller)
+                    .AddGrpcClient()
+                    .AddConsulDiscovery(c => c.Address = "http://192.168.1.150:8500")
+                    .AddLoadBalance()
                     .BuildServiceProvider();
 
                 var methodCollection = services.GetRequiredService<IMethodCollection>();
@@ -91,30 +120,28 @@ namespace ConsoleApp
                     methodProvider.Collect(methodCollection);
                 }
 
-                var context = new GrpcRabbitContext(new FeatureCollection());
-                context.Features.Set<IRequestFeature>(new RequestFeature
+                var context = new GrpcRabbitContext();
+                context.Request.Url = new ServiceUrl("grpc://TestService/consoleapp.TestService/test");
+                context.Request.Request = new HelloRequest
                 {
-                    ServiceUrl = new ServiceUrl("grpc://localhost:9908/consoleapp.TestService/test")
-                });
+                    Name = "test"
+                };
 
-                context.Features.Set<IGrpcRequestFeature>(new GrpcRequestFeature
-                {
-                    Request = new HelloRequest
-                    {
-                        Name = "test"
-                    }
-                });
-
-                var app = new RabbitApplicationBuilder<GrpcRabbitContext>(services);
+                var app = new RabbitApplicationBuilder(services);
 
                 var invoker = app
-                    .UseMiddleware<GrpcRabbitContext, GrpcMiddleware>()
+                    .UseLoadBalance()
+                    .UseGrpc()
                     .Build();
 
-                await invoker(context);
-                var response = context.Features.Get<IGrpcResponseFeature>().Response;
-                var t = (AsyncUnaryCall<HelloReply>)response;
-                Console.WriteLine((await t).Message);
+                while (true)
+                {
+                    await invoker(context);
+                    var response = context.Response.Response;
+                    var t = (AsyncUnaryCall<HelloReply>)response;
+                    Console.WriteLine((await t).Message);
+                    Console.ReadLine();
+                }
             }
         }
     }

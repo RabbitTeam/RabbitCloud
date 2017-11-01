@@ -51,6 +51,6 @@ namespace Rabbit.Cloud.Client.Features
 
     public interface IRequestFeature
     {
-        ServiceUrl ServiceUrl { get; }
+        ServiceUrl ServiceUrl { get; set; }
     }
 }

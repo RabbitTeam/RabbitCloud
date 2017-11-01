@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Grpc.Abstractions;
+using Rabbit.Cloud.Grpc.Abstractions.Method;
 using System;
 using System.Reflection;
 
-namespace Rabbit.Cloud.Grpc.Client.Internal
+namespace Rabbit.Cloud.Grpc.Abstractions.Internal
 {
     public class DefaultMethodProviderOptions
     {

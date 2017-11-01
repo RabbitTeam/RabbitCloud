@@ -1,4 +1,4 @@
-﻿namespace Rabbit.Cloud.Grpc.Client
+﻿namespace Rabbit.Cloud.Grpc.Abstractions.Method
 {
     public interface IMethodProvider
     {

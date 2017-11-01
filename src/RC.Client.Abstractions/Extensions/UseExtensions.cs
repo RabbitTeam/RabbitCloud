@@ -5,14 +5,15 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
 {
     public static class UseExtensions
     {
-        public static IRabbitApplicationBuilder<TContext> Use<TContext>(this IRabbitApplicationBuilder<TContext> app, Func<TContext, Func<Task>, Task> middleware)
+        public static IRabbitApplicationBuilder Use<TContext>(this IRabbitApplicationBuilder app, Func<TContext, Func<Task>, Task> middleware)
+            where TContext : IRabbitContext
         {
             return app.Use(next =>
             {
                 return context =>
                 {
                     Task SimpleNext() => next(context);
-                    return middleware(context, SimpleNext);
+                    return middleware((TContext)context, SimpleNext);
                 };
             });
         }

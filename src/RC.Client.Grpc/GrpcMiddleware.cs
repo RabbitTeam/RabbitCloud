@@ -1,27 +1,27 @@
 ﻿using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
-using Rabbit.Cloud.Client.Grpc.Internal;
-using Rabbit.Cloud.Grpc.Client;
+using Rabbit.Cloud.Grpc.Abstractions.Method;
 using Rabbit.Cloud.Grpc.Client.Extensions;
+using Rabbit.Cloud.Grpc.Client.Internal;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Grpc
 {
     public class GrpcMiddleware
     {
-        private readonly RabbitRequestDelegate<GrpcRabbitContext> _next;
+        private readonly RabbitRequestDelegate _next;
         private readonly CallInvokerPool _callInvokerPool;
         private readonly IMethodCollection _methodCollection;
 
-        public GrpcMiddleware(RabbitRequestDelegate<GrpcRabbitContext> next, CallInvokerPool callInvokerPool, IMethodCollection methodCollection)
+        public GrpcMiddleware(RabbitRequestDelegate next, CallInvokerPool callInvokerPool, IMethodCollection methodCollection)
         {
             _next = next;
             _callInvokerPool = callInvokerPool;
             _methodCollection = methodCollection;
         }
 
-        public async Task Invoke(GrpcRabbitContext context)
+        public async Task Invoke(IRabbitContext context)
         {
             var grpcRequestFeature = context.Features.Get<IGrpcRequestFeature>();
 

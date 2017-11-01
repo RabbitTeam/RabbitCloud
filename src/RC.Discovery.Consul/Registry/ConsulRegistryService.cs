@@ -32,7 +32,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Registry
 
             await ConsulClient.Agent.ServiceRegister(serviceRegistration);
 
-            if (serviceRegistration.Check.TTL.HasValue)
+            if (serviceRegistration.Check?.TTL != null)
                 await _heartbeatManager.AddHeartbeat(serviceRegistration.ID, serviceRegistration.Check.TTL.Value);
         }
 

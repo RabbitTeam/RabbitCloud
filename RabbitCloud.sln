@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{850A43C4-8B62-4732-95F9-A769981A59E5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Web.Server", "samples\Web.Server\Web.Server.csproj", "{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Abstractions", "src\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj", "{1A4BE30C-802F-4AB9-B75C-9B2354120A8F}"
 EndProject
@@ -59,10 +57,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1A4BE30C-802F-4AB9-B75C-9B2354120A8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1A4BE30C-802F-4AB9-B75C-9B2354120A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1A4BE30C-802F-4AB9-B75C-9B2354120A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -128,7 +122,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{5656CDC6-DBE1-42DB-B665-701ACA0F8DA4} = {B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}
 		{1A4BE30C-802F-4AB9-B75C-9B2354120A8F} = {9907A079-3A91-42AE-8798-695B10148989}
 		{5A4C5ADC-13EA-43C4-9224-D5E3E41B67C3} = {B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}
 		{66DE5CE8-3953-47E7-9FEE-8CD475601E21} = {850A43C4-8B62-4732-95F9-A769981A59E5}

@@ -4,7 +4,8 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
 {
     public static class MapWhenExtensions
     {
-        public static IRabbitApplicationBuilder<TContext> MapWhen<TContext>(this IRabbitApplicationBuilder<TContext> app, Predicate<TContext> predicate, Action<IRabbitApplicationBuilder<TContext>> configuration)
+        public static IRabbitApplicationBuilder MapWhen<TContext>(this IRabbitApplicationBuilder app, Predicate<TContext> predicate, Action<IRabbitApplicationBuilder> configuration)
+            where TContext : IRabbitContext
         {
             if (app == null)
             {
@@ -32,7 +33,13 @@ namespace Rabbit.Cloud.Client.Abstractions.Extensions
                 Predicate = context => predicate(context),
                 Branch = branch,
             };
-            return app.Use(next => new MapWhenMiddleware<TContext>(next, options).Invoke);
+            return app.Use(next =>
+            {
+                return async context =>
+                {
+                    await new MapWhenMiddleware<TContext>(next, options).Invoke((TContext)context);
+                };
+            });
         }
     }
 }

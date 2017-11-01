@@ -1,10 +1,11 @@
 ﻿using Grpc.Core;
+using Rabbit.Cloud.Client.Features;
 using System;
 using System.Threading;
 
 namespace Rabbit.Cloud.Client.Grpc.Features
 {
-    public interface IGrpcRequestFeature
+    public interface IGrpcRequestFeature : IRequestFeature
     {
         object Request { get; set; }
         string Host { get; set; }
@@ -13,6 +14,7 @@ namespace Rabbit.Cloud.Client.Grpc.Features
         CallOptions CallOptions { get; set; }
         CancellationToken CancellationToken { get; set; }
     }
+
     public class GrpcRequestFeature : IGrpcRequestFeature
     {
         #region Implementation of IGrpcRequestFeature
@@ -25,5 +27,11 @@ namespace Rabbit.Cloud.Client.Grpc.Features
         public CancellationToken CancellationToken { get; set; }
 
         #endregion Implementation of IGrpcRequestFeature
+
+        #region Implementation of IRequestFeature
+
+        public ServiceUrl ServiceUrl { get; set; }
+
+        #endregion Implementation of IRequestFeature
     }
 }

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Client.Grpc.Internal
+namespace Rabbit.Cloud.Grpc.Client.Internal
 {
     public class ChannelPool
     {

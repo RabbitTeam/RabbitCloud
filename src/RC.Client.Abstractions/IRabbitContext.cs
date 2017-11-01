@@ -7,5 +7,6 @@ namespace Rabbit.Cloud.Client.Abstractions
     {
         IFeatureCollection Features { get; }
         IServiceProvider RequestServices { get; set; }
+        IRabbitRequest Request { get; }
     }
 }

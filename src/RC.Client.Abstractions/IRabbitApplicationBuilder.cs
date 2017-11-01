@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Client.Abstractions
 {
-    public interface IRabbitApplicationBuilder<TContext>
+    public interface IRabbitApplicationBuilder
     {
         IServiceProvider ApplicationServices { get; set; }
         IDictionary<string, object> Properties { get; }
 
-        RabbitRequestDelegate<TContext> Build();
+        RabbitRequestDelegate Build();
 
-        IRabbitApplicationBuilder<TContext> New();
+        IRabbitApplicationBuilder New();
 
-        IRabbitApplicationBuilder<TContext> Use(Func<RabbitRequestDelegate<TContext>, RabbitRequestDelegate<TContext>> middleware);
+        IRabbitApplicationBuilder Use(Func<RabbitRequestDelegate, RabbitRequestDelegate> middleware);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Grpc.Core;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Grpc.Client
+namespace Rabbit.Cloud.Grpc.Abstractions.Method
 {
     public interface IMethodCollection : IEnumerable<IMethod>
     {

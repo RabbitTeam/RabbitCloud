@@ -3,7 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Grpc.Client
+namespace Rabbit.Cloud.Grpc.Abstractions.Method
 {
     public class MethodCollection : IMethodCollection
     {
