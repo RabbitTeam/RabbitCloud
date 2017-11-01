@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace RC.Client.LoadBalance
+namespace Rabbit.Cloud.Client.LoadBalance
 {
     public class LoadBalanceOptions
     {

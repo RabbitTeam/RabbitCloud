@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RC.Abstractions\RC.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\RC.Client.Grpc.Proxy\RC.Client.Grpc.Proxy.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Grpc\RC.Client.Grpc.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.LoadBalance\RC.Client.LoadBalance.csproj" />
     <ProjectReference Include="..\..\src\RC.Client\RC.Client.csproj" />

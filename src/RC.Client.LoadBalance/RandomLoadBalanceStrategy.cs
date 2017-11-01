@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RC.Client.LoadBalance
+namespace Rabbit.Cloud.Client.LoadBalance
 {
     internal class RandomStatic
     {

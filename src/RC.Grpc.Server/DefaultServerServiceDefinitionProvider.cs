@@ -1,13 +1,11 @@
-﻿using Google.Protobuf;
-using Grpc.Core;
+﻿using Grpc.Core;
+using Rabbit.Cloud.Grpc.Abstractions;
+using Rabbit.Cloud.Grpc.Abstractions.Method;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace Rabbit.Cloud.Grpc.Server
 {
@@ -18,101 +16,26 @@ namespace Rabbit.Cloud.Grpc.Server
         public Func<Type, object> Factory { get; set; }
     }
 
-    public class MarshallerFactory
-    {
-        private readonly IDictionary<Type, object> _marshallers = new Dictionary<Type, object>();
-
-        public object GetMarshaller(Type type)
-        {
-            if (_marshallers.TryGetValue(type, out var marshaller))
-                return marshaller;
-
-            return _marshallers[type] = CreateMarshaller(type);
-        }
-
-        private object CreateMarshaller(Type type)
-        {
-            var createMethod = typeof(Marshallers).GetMethod("Create").MakeGenericMethod(type);
-
-            var serializerDelegate = Delegate.CreateDelegate(typeof(Func<,>).MakeGenericType(type, typeof(byte[])), this, GetType().GetMethod(nameof(Serializer)).MakeGenericMethod(type));
-            var deserializerDelegate = Delegate.CreateDelegate(typeof(Func<,>).MakeGenericType(typeof(byte[]), type), this, GetType().GetMethod(nameof(Deserializer)).MakeGenericMethod(type));
-
-            var marshaller = createMethod.Invoke(null, new object[] { serializerDelegate, deserializerDelegate });
-            return marshaller;
-        }
-
-        public byte[] Serializer<T>(T request)
-        {
-            return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request));
-            if (request is IMessage message)
-            {
-                return message.ToByteArray();
-            }
-            return null;
-        }
-
-        public T Deserializer<T>(byte[] bytes)
-        {
-            return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(bytes));
-            var messageParserType = typeof(MessageParser<>).MakeGenericType(typeof(T));
-
-            var newExpression = Expression.New(typeof(T));
-            var delegateType = typeof(Func<>).MakeGenericType(typeof(T));
-
-            var createInstanceExpression = Expression.Lambda(delegateType, newExpression);
-
-            var createInstanceFactory = (Func<T>)createInstanceExpression.Compile();
-
-            var ms = (MessageParser)Activator.CreateInstance(messageParserType, createInstanceFactory);
-
-            return (T)ms.ParseFrom(bytes);
-        }
-    }
-
-    public class MethodFactory
-    {
-        private readonly MarshallerFactory _marshallerFactory;
-
-        public MethodFactory(MarshallerFactory marshallerFactory)
-        {
-            _marshallerFactory = marshallerFactory;
-        }
-
-        private readonly IDictionary<MethodInfo, IMethod> _methods = new Dictionary<MethodInfo, IMethod>();
-
-        public object GetMethod(MethodInfo methodInfo, Type requesType, Type responseType)
-        {
-            if (_methods.TryGetValue(methodInfo, out var method))
-                return method;
-            return _methods[methodInfo] = CreateMethod(methodInfo, requesType, responseType);
-        }
-
-        private IMethod CreateMethod(MethodInfo method, Type requesType, Type responseType)
-        {
-            var type = method.DeclaringType;
-            var serviceName = $"{type.Namespace.ToLower()}.{type.Name}";
-            var methodName = method.Name;
-
-            var responseMarshaller = _marshallerFactory.GetMarshaller(responseType);
-            var requesTypeMarshaller = _marshallerFactory.GetMarshaller(requesType);
-
-            var methodType = typeof(Method<,>).MakeGenericType(requesType, responseType);
-            var methodInstance = (IMethod)Activator.CreateInstance(methodType, MethodType.Unary, serviceName, methodName, requesTypeMarshaller, responseMarshaller);
-
-            return methodInstance;
-        }
-    }
-
     public class DefaultServerServiceDefinitionProvider : IServerServiceDefinitionProvider
     {
-        private readonly DefaultServerServiceDefinitionProviderOptions _options;
+        #region Field
 
-        public DefaultServerServiceDefinitionProvider(DefaultServerServiceDefinitionProviderOptions options)
+        private readonly DefaultServerServiceDefinitionProviderOptions _options;
+        private readonly IMethodCollection _methodCollection;
+
+        #endregion Field
+
+        #region Constructor
+
+        public DefaultServerServiceDefinitionProvider(DefaultServerServiceDefinitionProviderOptions options, IMethodCollection methodCollection)
         {
             _options = options;
+            _methodCollection = methodCollection;
         }
 
-        private readonly MethodFactory _methodFactory = new MethodFactory(new MarshallerFactory());
+        #endregion Constructor
+
+        #region Implementation of IServerServiceDefinitionProvider
 
         public IEnumerable<ServerServiceDefinition> GetDefinitions()
         {
@@ -120,41 +43,109 @@ namespace Rabbit.Cloud.Grpc.Server
             foreach (var type in _options.Types)
             {
                 var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                foreach (var method in methods)
+                foreach (var methodInfo in methods)
                 {
-                    var responseType = method.ReturnType;
+                    var descriptor = GrpcServiceDescriptor.Create(methodInfo);
 
-                    if (typeof(Task).IsAssignableFrom(responseType) && responseType.IsGenericType)
-                    {
-                        responseType = responseType.GetGenericArguments()[0];
-                    }
+                    var method = _methodCollection.Get(descriptor.ServiceId);
+                    var requestType = descriptor.RequesType;
+                    var responseType = descriptor.ResponseType;
 
-                    var requesType = method.GetParameters().FirstOrDefault()?.ParameterType;
+                    var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
 
-                    var grpcMethod = _methodFactory.GetMethod(method, requesType, responseType);
-
-                    var delegateType = typeof(UnaryServerMethod<,>).MakeGenericType(requesType, responseType);
-                    var requestParameter = Expression.Parameter(requesType, "request");
-                    var contextParameter = Expression.Parameter(typeof(ServerCallContext), "context");
-
-                    var factory = _options.Factory;
-
-                    var instancExpression = Expression.Invoke(Expression.Constant(factory), Expression.Constant(type));
-                    var serviceInstanceExpression = Expression.Convert(instancExpression, type);
-
-                    //                    var callExpression = Expression.Call(serviceInstanceExpression, type.GetMethod(method.Name), requestParameter, contextParameter);
-                    var callExpression = Expression.Call(serviceInstanceExpression, type.GetMethod(method.Name), requestParameter);
-
-                    var func = Expression.Lambda(delegateType, callExpression, requestParameter, contextParameter).Compile();
-
-                    var addMethodInfo = builder.GetType().GetMethods().First(i => i.Name == "AddMethod")
-                        .MakeGenericMethod(requesType, responseType);
-
-                    addMethodInfo.Invoke(builder, new[] { grpcMethod, func });
+                    var addMethod = Cache.GetAddMethod(delegateType, method.GetType(), requestType, responseType);
+                    var methodDelegate = Cache.GetMethodDelegate(methodInfo, delegateType, _options.Factory);
+                    addMethod.DynamicInvoke(builder, method, methodDelegate);
                 }
             }
 
             yield return builder.Build();
         }
+
+        #endregion Implementation of IServerServiceDefinitionProvider
+
+        #region Help Type
+
+        private static class Cache
+        {
+            #region Field
+
+            private static readonly IDictionary<object, object> Caches = new Dictionary<object, object>();
+
+            #endregion Field
+
+            public static Type GetUnaryServerDelegateType(Type requestType, Type responseType)
+            {
+                var key = ("UnaryServerDelegateType", requestType, responseType);
+                return GetCache(key, () => typeof(UnaryServerMethod<,>).MakeGenericType(requestType, responseType));
+            }
+
+            public static Delegate GetAddMethod(Type delegateType, Type methodType, Type requestType, Type responseType)
+            {
+                var key = ("AddMethod", delegateType);
+
+                return GetCache(key, () =>
+                {
+                    var builderParameterExpression = GetParameterExpression(typeof(ServerServiceDefinition.Builder));
+                    var methodParameterExpression = GetParameterExpression(methodType);
+                    var delegateParameterExpression = GetParameterExpression(delegateType);
+
+                    var callExpression = Expression.Call(builderParameterExpression, "AddMethod",
+                        new[] { requestType, responseType },
+                        methodParameterExpression, delegateParameterExpression);
+
+                    return Expression.Lambda(callExpression, builderParameterExpression, methodParameterExpression, delegateParameterExpression).Compile();
+                });
+            }
+
+            public static Delegate GetMethodDelegate(MethodInfo methodInfo, Type delegateType, Func<Type, object> instanceFactory)
+            {
+                var key = ("MethodDelegate", delegateType);
+                return GetCache(key, () =>
+                {
+                    var type = methodInfo.DeclaringType;
+                    var parameterExpressions = methodInfo.GetParameters().Select(i => GetParameterExpression(i.ParameterType)).ToArray();
+
+                    var instanceExpression = GetInstanceExpression(type, instanceFactory);
+                    var callExpression = Expression.Call(instanceExpression, methodInfo, parameterExpressions.Cast<Expression>());
+                    var methodDelegate = Expression.Lambda(delegateType, callExpression, parameterExpressions).Compile();
+                    return methodDelegate;
+                });
+            }
+
+            #region Private Method
+
+            private static T GetCache<T>(object key, Func<T> factory)
+            {
+                if (Caches.TryGetValue(key, out var cache))
+                {
+                    return (T)cache;
+                }
+                return (T)(Caches[key] = factory());
+            }
+
+            private static ParameterExpression GetParameterExpression(Type type)
+            {
+                var key = ("Parameter", type);
+
+                return GetCache(key, () => Expression.Parameter(type));
+            }
+
+            private static Expression GetInstanceExpression(Type type, Func<Type, object> factory)
+            {
+                var key = ("instanceFactory", type);
+                return GetCache(key, () =>
+                {
+                    var instancExpression = Expression.Invoke(Expression.Constant(factory), Expression.Constant(type));
+                    var serviceInstanceExpression = Expression.Convert(instancExpression, type);
+
+                    return Expression.Invoke(Expression.Lambda(serviceInstanceExpression));
+                });
+            }
+
+            #endregion Private Method
+        }
+
+        #endregion Help Type
     }
 }

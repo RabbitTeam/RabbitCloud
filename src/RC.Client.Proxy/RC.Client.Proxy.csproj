@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Client.Proxy</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Client.Proxy</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" Version="4.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RC.Abstractions\RC.Abstractions.csproj" />
+    <ProjectReference Include="..\RC.Client\RC.Client.csproj" />
+  </ItemGroup>
+
+</Project>

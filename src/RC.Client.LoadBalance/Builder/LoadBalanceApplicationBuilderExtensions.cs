@@ -1,7 +1,7 @@
 ﻿using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Extensions;
 
-namespace RC.Client.LoadBalance.Builder
+namespace Rabbit.Cloud.Client.LoadBalance.Builder
 {
     public static class LoadBalanceApplicationBuilderExtensions
     {

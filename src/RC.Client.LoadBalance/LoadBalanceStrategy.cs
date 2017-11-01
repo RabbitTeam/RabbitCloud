@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace RC.Client.LoadBalance
+namespace Rabbit.Cloud.Client.LoadBalance
 {
     public abstract class LoadBalanceStrategy<TKey, TItem> : ILoadBalanceStrategy<TKey, TItem>
     {

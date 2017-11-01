@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RC.Client.LoadBalance
+namespace Rabbit.Cloud.Client.LoadBalance
 {
     public class RoundRobinLoadBalanceStrategy<TKey, TItem> : LoadBalanceStrategy<TKey, TItem>
     {

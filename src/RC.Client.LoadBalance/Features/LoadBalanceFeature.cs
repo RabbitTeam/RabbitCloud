@@ -1,4 +1,4 @@
-﻿namespace RC.Client.LoadBalance.Features
+﻿namespace Rabbit.Cloud.Client.LoadBalance.Features
 {
     public interface ILoadBalanceFeature
     {

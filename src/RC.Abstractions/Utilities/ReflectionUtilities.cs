@@ -14,7 +14,7 @@ namespace Rabbit.Cloud.Abstractions.Utilities
             return GetRealType(method.ReturnType);
         }
 
-        private static Type GetRealType(Type type)
+        public static Type GetRealType(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException(nameof(type));

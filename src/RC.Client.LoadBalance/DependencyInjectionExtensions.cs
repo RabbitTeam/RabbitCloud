@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Cloud.Discovery.Abstractions;
 
-namespace RC.Client.LoadBalance
+namespace Rabbit.Cloud.Client.LoadBalance
 {
     public static class DependencyInjectionExtensions
     {

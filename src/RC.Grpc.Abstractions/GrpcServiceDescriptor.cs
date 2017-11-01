@@ -8,6 +8,7 @@ namespace Rabbit.Cloud.Grpc.Abstractions
 {
     public struct GrpcServiceDescriptor
     {
+        public string ServiceId { get; private set; }
         public string ServiceName { get; private set; }
         public string MethodName { get; private set; }
         public MethodType MethodType { get; private set; }
@@ -57,6 +58,7 @@ namespace Rabbit.Cloud.Grpc.Abstractions
 
             return new GrpcServiceDescriptor
             {
+                ServiceId = $"/{serviceName}/{methodName}",
                 ServiceName = serviceName,
                 MethodName = methodName,
                 MethodType = methodInfo.GetMethodType(),

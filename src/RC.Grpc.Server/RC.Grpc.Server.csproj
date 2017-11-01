@@ -13,4 +13,8 @@
     <PackageReference Include="Google.Protobuf" Version="3.4.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj" />
+  </ItemGroup>
+
 </Project>

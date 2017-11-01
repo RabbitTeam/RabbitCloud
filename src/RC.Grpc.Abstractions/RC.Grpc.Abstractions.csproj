@@ -17,4 +17,8 @@
     <ProjectReference Include="..\RC.Abstractions\RC.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Server\" />
+  </ItemGroup>
+
 </Project>

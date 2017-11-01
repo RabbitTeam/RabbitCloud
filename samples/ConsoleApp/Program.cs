@@ -3,18 +3,20 @@ using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rabbit.Cloud.Client;
-using Rabbit.Cloud.Client.Features;
-using Rabbit.Cloud.Client.Grpc;
 using Rabbit.Cloud.Client.Grpc.Builder;
+using Rabbit.Cloud.Client.Grpc.Proxy;
+using Rabbit.Cloud.Client.LoadBalance;
+using Rabbit.Cloud.Client.LoadBalance.Builder;
+using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Discovery.Consul;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Abstractions.Method;
 using Rabbit.Cloud.Grpc.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Client;
-using RC.Client.LoadBalance;
-using RC.Client.LoadBalance.Builder;
+using Rabbit.Cloud.Grpc.Server;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -38,94 +40,104 @@ namespace ConsoleApp
             }
         }
 
-        private static void StartServer()
+        [GrpcService(ServiceName = "consoleapp.TestService")]
+        public interface ITestService
+        {
+            [GrpcService(MethodName = "test")]
+            AsyncUnaryCall<HelloReply> HelloAsync(HelloRequest request);
+
+            [GrpcService(MethodName = "test")]
+            void Hello(HelloRequest request);
+
+            [GrpcService(MethodName = "test")]
+            Task HelloAsync2(HelloRequest request);
+
+            [GrpcService(MethodName = "test")]
+            Task<HelloReply> HelloAsync3(HelloRequest request);
+        }
+
+        private static void StartServer(IMethodCollection methodCollection)
         {
             {
-                /*                var services = new ServiceCollection()
-                                    .AddLogging()
-                                    .AddConsulRegistry(new ConsulClient(c => c.Address = new Uri("http://192.168.1.150:8500")))
-                                    .BuildServiceProvider();
+                var services = new ServiceCollection()
+                    .AddLogging()
+                    .AddOptions()
+                    .AddSingleton(methodCollection)
+                    .AddSingleton(
+                        new DefaultServerServiceDefinitionProviderOptions
+                        {
+                            Factory = t => new TestService(),
+                            Types = new[] { typeof(TestService) }
+                        })
+                    .AddSingleton<IServerServiceDefinitionProvider, DefaultServerServiceDefinitionProvider>()
+                    .BuildServiceProvider();
 
-                                var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
-                                var consulRegistration = new ConsulRegistration(new AgentServiceRegistration
-                                {
-                                    Address = "localhost",
-                                    ID = "rabbitcloud:test_localhost_9908",
-                                    Name = "testservice",
-                                    Port = 9908
-                                });
-                                await registryService.RegisterAsync(consulRegistration);
-                                consulRegistration.AgentServiceRegistration.ID = "rabbitcloud:test_localhost_9907";
-                                consulRegistration.AgentServiceRegistration.Port = 9907;
-                                await registryService.RegisterAsync(consulRegistration);*/
-                //server
-                var methodInfo = typeof(TestService).GetMethod(nameof(TestService.SayHello));
-                var descriptor = GrpcServiceDescriptor.Create(methodInfo);
+                var serverServiceDefinitionProvider = services.GetRequiredService<IServerServiceDefinitionProvider>();
 
-                var methodDef = (Method<HelloRequest, HelloReply>)MethodUtilities.CreateMethod(descriptor.ServiceName,
-                    "test", descriptor.MethodType, descriptor.RequesType, descriptor.ResponseType,
-                    MarshallerUtilities.CreateMarshaller(typeof(HelloRequest),
-                        model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
-                        data => JsonConvert.DeserializeObject<HelloRequest>(Encoding.UTF8.GetString(data))),
-                    MarshallerUtilities.CreateMarshaller(typeof(HelloReply),
-                        model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
-                        data => JsonConvert.DeserializeObject<HelloReply>(Encoding.UTF8.GetString(data))));
-
-                var builder = ServerServiceDefinition.CreateBuilder();
-                builder.AddMethod(methodDef, new TestService().SayHello);
-                var serverServiceDefinition = builder.Build();
+                var definitions = serverServiceDefinitionProvider.GetDefinitions().ToArray();
                 {
                     var server = new Server
                     {
-                        Services = { serverServiceDefinition },
-                        Ports = { new ServerPort("localhost", 9908, ServerCredentials.Insecure) }
+                        Ports = { new ServerPort("localhost", 9907, ServerCredentials.Insecure) }
                     };
+                    foreach (var definition in definitions)
+                    {
+                        server.Services.Add(definition);
+                    }
                     server.Start();
                 }
                 {
                     var server = new Server
                     {
-                        Services = { serverServiceDefinition },
-                        Ports = { new ServerPort("localhost", 9907, ServerCredentials.Insecure) }
+                        Ports = { new ServerPort("localhost", 9908, ServerCredentials.Insecure) }
                     };
+                    foreach (var definition in definitions)
+                    {
+                        server.Services.Add(definition);
+                    }
                     server.Start();
                 }
             }
         }
 
+        private static IMethodCollection GetMethodCollection()
+        {
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddOptions()
+                .AddGrpcCore(options =>
+                {
+                    options.Types = new[] { typeof(TestService) };
+
+                    options.MarshallerFactory = type => MarshallerUtilities.CreateMarshaller(type,
+                        model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
+                        data => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), type));
+                })
+                .BuildServiceProvider();
+
+            var methodCollection = services.GetRequiredService<IMethodCollection>();
+            foreach (var methodProvider in services.GetRequiredService<IEnumerable<IMethodProvider>>())
+            {
+                methodProvider.Collect(methodCollection);
+            }
+
+            return methodCollection;
+        }
+
         private static async Task Main(string[] args)
         {
-            StartServer();
+            var methodCollection = GetMethodCollection();
+            StartServer(methodCollection);
             {
                 //client
                 var services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
-                    .AddGrpcCore(options =>
-                    {
-                        options.Types = new[] { typeof(TestService) };
-
-                        options.MarshallerFactory = type => MarshallerUtilities.CreateMarshaller(type,
-                            model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
-                            data => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), type));
-                    })
+                    .AddSingleton(methodCollection)
                     .AddGrpcClient()
                     .AddConsulDiscovery(c => c.Address = "http://192.168.1.150:8500")
                     .AddLoadBalance()
                     .BuildServiceProvider();
-
-                var methodCollection = services.GetRequiredService<IMethodCollection>();
-                foreach (var methodProvider in services.GetRequiredService<IEnumerable<IMethodProvider>>())
-                {
-                    methodProvider.Collect(methodCollection);
-                }
-
-                var context = new GrpcRabbitContext();
-                context.Request.Url = new ServiceUrl("grpc://TestService/consoleapp.TestService/test");
-                context.Request.Request = new HelloRequest
-                {
-                    Name = "test"
-                };
 
                 var app = new RabbitApplicationBuilder(services);
 
@@ -134,12 +146,18 @@ namespace ConsoleApp
                     .UseGrpc()
                     .Build();
 
+                var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker, methodCollection);
+
+                var service = (ITestService)new ProxyFactory(rabbitProxyInterceptor).CreateInterfaceProxy(typeof(ITestService));
                 while (true)
                 {
-                    await invoker(context);
-                    var response = context.Response.Response;
-                    var t = (AsyncUnaryCall<HelloReply>)response;
-                    Console.WriteLine((await t).Message);
+                    var t = await service.HelloAsync(new HelloRequest { Name = "test" });
+                    Console.WriteLine(t.Message);
+                    service.Hello(new HelloRequest { Name = "test" });
+                    await service.HelloAsync2(new HelloRequest { Name = "test" });
+                    var tt = await service.HelloAsync3(new HelloRequest { Name = "test" });
+                    Console.WriteLine(tt.Message);
+
                     Console.ReadLine();
                 }
             }

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace RC.Client.LoadBalance
+namespace Rabbit.Cloud.Client.LoadBalance
 {
     public interface ILoadBalanceStrategy<in TKey, TItem>
     {
