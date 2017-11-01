@@ -42,6 +42,8 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
         protected override async Task<object> ConvertReturnValue(IInvocation invocation, IRabbitContext rabbitContext)
         {
             var response = ((GrpcRabbitContext)rabbitContext).Response.Response;
+            if (response == null)
+                return null;
 
             var returnType = invocation.Method.ReturnType;
 

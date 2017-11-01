@@ -3,7 +3,6 @@ using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
 using System;
-using System.Threading;
 
 namespace Rabbit.Cloud.Client.Grpc
 {
@@ -44,28 +43,10 @@ namespace Rabbit.Cloud.Client.Grpc
             set => RequestFeature.Host = value;
         }
 
-        public Metadata Headers
-        {
-            get => RequestFeature.Headers;
-            set => RequestFeature.Headers = value;
-        }
-
-        public DateTime? Deadline
-        {
-            get => RequestFeature.Deadline;
-            set => RequestFeature.Deadline = value;
-        }
-
         public CallOptions CallOptions
         {
             get => RequestFeature.CallOptions;
             set => RequestFeature.CallOptions = value;
-        }
-
-        public CancellationToken CancellationToken
-        {
-            get => RequestFeature.CancellationToken;
-            set => RequestFeature.CancellationToken = value;
         }
 
         #endregion Property

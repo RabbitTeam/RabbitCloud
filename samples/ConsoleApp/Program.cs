@@ -4,8 +4,11 @@ using Grpc.Core;
 using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Polly;
 using Rabbit.Cloud.Client;
 using Rabbit.Cloud.Client.Abstractions.Extensions;
+using Rabbit.Cloud.Client.Breaker;
+using Rabbit.Cloud.Client.Breaker.Features;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.LoadBalance;
@@ -24,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -63,13 +67,15 @@ namespace ConsoleApp
             Task<HelloReply> HelloAsync3(HelloRequest request);
         }
 
+        private const string ConsulUrl = "http://localhost:8500";
+
         private static async Task StartServer(IMethodCollection methodCollection)
         {
             {
                 var services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
-                    .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri("http://192.168.1.150:8500")))
+                    .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri(ConsulUrl)))
                     .AddSingleton(methodCollection)
                     .AddSingleton(
                         new DefaultServerServiceDefinitionProviderOptions
@@ -88,6 +94,14 @@ namespace ConsoleApp
                     HostName = "localhost",
                     InstanceId = "localhost_9907",
                     Port = 9907,
+                    ServiceName = "ConsoleApp"
+                }));
+                await registryService.RegisterAsync(ConsulUtil.Create(new RabbitConsulOptions.DiscoveryOptions
+                {
+                    HealthCheckInterval = "10s",
+                    HostName = "localhost",
+                    InstanceId = "localhost_9908",
+                    Port = 9908,
                     ServiceName = "ConsoleApp"
                 }));
 
@@ -138,6 +152,8 @@ namespace ConsoleApp
                                 model => typeof(IMessage).IsAssignableFrom(type) ? ((IMessage)model).ToByteArray() : Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
                                 data =>
                                 {
+                                    if (data == null)
+                                        return null;
                                     if (!typeof(IMessage).IsAssignableFrom(type))
                                         return JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), type);
 
@@ -175,7 +191,7 @@ namespace ConsoleApp
                     .AddOptions()
                     .AddSingleton(methodCollection)
                     .AddGrpcClient()
-                    .AddConsulDiscovery(c => c.Address = "http://192.168.1.150:8500")
+                    .AddConsulDiscovery(c => c.Address = ConsulUrl)
                     .AddLoadBalance()
                     .BuildServiceProvider();
 
@@ -187,6 +203,41 @@ namespace ConsoleApp
                         context.Request.Url.Host = "ConsoleApp";
                         await next();
                     })
+                    .Use(async (context, next) =>
+                    {
+                        var policy = Policy
+                            .Handle<TargetInvocationException>(e =>
+                            {
+                                if (e.InnerException is RpcException rpcException)
+                                {
+                                    var statusCode = rpcException.Status.StatusCode;
+
+                                    switch (statusCode)
+                                    {
+                                        case StatusCode.Unavailable:
+                                        case StatusCode.DeadlineExceeded:
+                                            return true;
+                                    }
+
+                                    return false;
+                                }
+                                return false;
+                            })
+                            .WaitAndRetryAsync(new[]
+                            {
+                                TimeSpan.FromSeconds(1),
+                                TimeSpan.FromSeconds(1),
+                                TimeSpan.FromSeconds(1),
+                                TimeSpan.FromSeconds(1),
+                                TimeSpan.FromSeconds(1)
+                            });
+                        context.Features.Set<IBreakerFeature>(new BreakerFeature
+                        {
+                            Policy = policy
+                        });
+                        await next();
+                    })
+                    .UseMiddleware<BreakerMiddleware>()
                     .UseLoadBalance()
                     .UseGrpc()
                     .Build();
@@ -197,12 +248,12 @@ namespace ConsoleApp
                 var service = proxyFactory.CreateInterfaceProxy<ITestService>();
                 while (true)
                 {
-                    var t = await service.HelloAsync(new HelloRequest { Name = "test" });
-                    Console.WriteLine(t.Message);
-                    service.Hello(new HelloRequest { Name = "test" });
+                    var t = await service.HelloAsync3(new HelloRequest { Name = "test" });
+                    Console.WriteLine(t?.Message ?? "null");
+                    /*service.Hello(new HelloRequest { Name = "test" });
                     await service.HelloAsync2(new HelloRequest { Name = "test" });
                     var tt = await service.HelloAsync3(new HelloRequest { Name = "test" });
-                    Console.WriteLine(tt.Message);
+                    Console.WriteLine(tt.Message);*/
 
                     Console.ReadLine();
                 }
