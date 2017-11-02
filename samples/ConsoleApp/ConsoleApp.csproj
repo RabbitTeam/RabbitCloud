@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.4.1" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.0.0" />
@@ -21,16 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\RC.Abstractions\RC.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Breaker\RC.Client.Breaker.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Grpc.Proxy\RC.Client.Grpc.Proxy.csproj" />
-    <ProjectReference Include="..\..\src\RC.Client.Grpc\RC.Client.Grpc.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.LoadBalance\RC.Client.LoadBalance.csproj" />
-    <ProjectReference Include="..\..\src\RC.Client\RC.Client.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
-    <ProjectReference Include="..\..\src\RC.Discovery.Memory\RC.Discovery.Memory.csproj" />
-    <ProjectReference Include="..\..\src\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj" />
-    <ProjectReference Include="..\..\src\RC.Grpc.Client\RC.Grpc.Client.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Server\RC.Grpc.Server.csproj" />
   </ItemGroup>
 

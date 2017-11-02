@@ -1,14 +1,16 @@
-﻿using Polly;
-
-namespace Rabbit.Cloud.Client.Breaker.Features
+﻿namespace Rabbit.Cloud.Client.Breaker.Features
 {
     public interface IBreakerFeature
     {
-        Policy Policy { get; set; }
+        string Strategy { get; set; }
     }
 
     public class BreakerFeature : IBreakerFeature
     {
-        public Policy Policy { get; set; }
+        #region Implementation of IBreakerFeature
+
+        public string Strategy { get; set; }
+
+        #endregion Implementation of IBreakerFeature
     }
 }

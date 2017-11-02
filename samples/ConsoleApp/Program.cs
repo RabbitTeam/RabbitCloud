@@ -1,14 +1,12 @@
 ﻿using Consul;
-using Google.Protobuf;
 using Grpc.Core;
 using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using Polly;
 using Rabbit.Cloud.Client;
 using Rabbit.Cloud.Client.Abstractions.Extensions;
 using Rabbit.Cloud.Client.Breaker;
-using Rabbit.Cloud.Client.Breaker.Features;
+using Rabbit.Cloud.Client.Breaker.Builder;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.LoadBalance;
@@ -20,15 +18,12 @@ using Rabbit.Cloud.Discovery.Consul.Registry;
 using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Abstractions.Method;
-using Rabbit.Cloud.Grpc.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -67,7 +62,7 @@ namespace ConsoleApp
             Task<HelloReply> HelloAsync3(HelloRequest request);
         }
 
-        private const string ConsulUrl = "http://localhost:8500";
+        private const string ConsulUrl = "http://192.168.1.150:8500";
 
         private static async Task StartServer(IMethodCollection methodCollection)
         {
@@ -138,37 +133,7 @@ namespace ConsoleApp
             var services = new ServiceCollection()
                 .AddLogging()
                 .AddOptions()
-                .AddGrpcCore(options =>
-                {
-                    options.Types = new[] { typeof(TestService) };
-
-                    var helloRequestFactory = Expression.Lambda<Func<HelloRequest>>(Expression.New(typeof(HelloRequest))).Compile();
-                    var helloReplyFactory = Expression.Lambda<Func<HelloReply>>(Expression.New(typeof(HelloReply))).Compile();
-
-                    options.MarshallerFactory = type =>
-                    {
-                        return
-                            MarshallerUtilities.CreateMarshaller(type,
-                                model => typeof(IMessage).IsAssignableFrom(type) ? ((IMessage)model).ToByteArray() : Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
-                                data =>
-                                {
-                                    if (data == null)
-                                        return null;
-                                    if (!typeof(IMessage).IsAssignableFrom(type))
-                                        return JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), type);
-
-                                    IMessage message = null;
-                                    if (type == typeof(HelloRequest))
-                                        message = helloRequestFactory();
-                                    else if (type == typeof(HelloReply))
-                                        message = helloReplyFactory();
-
-                                    message.MergeFrom(data);
-
-                                    return message;
-                                });
-                    };
-                })
+                .AddGrpcCore(typeof(TestService))
                 .BuildServiceProvider();
 
             var methodCollection = services.GetRequiredService<IMethodCollection>();
@@ -192,18 +157,7 @@ namespace ConsoleApp
                     .AddSingleton(methodCollection)
                     .AddGrpcClient()
                     .AddConsulDiscovery(c => c.Address = ConsulUrl)
-                    .AddLoadBalance()
-                    .BuildServiceProvider();
-
-                var app = new RabbitApplicationBuilder(services);
-
-                var invoker = app
-                    .Use(async (context, next) =>
-                    {
-                        context.Request.Url.Host = "ConsoleApp";
-                        await next();
-                    })
-                    .Use(async (context, next) =>
+                    .AddBreaker(options =>
                     {
                         var policy = Policy
                             .Handle<TargetInvocationException>(e =>
@@ -231,13 +185,19 @@ namespace ConsoleApp
                                 TimeSpan.FromSeconds(1),
                                 TimeSpan.FromSeconds(1)
                             });
-                        context.Features.Set<IBreakerFeature>(new BreakerFeature
-                        {
-                            Policy = policy
-                        });
+                        options.DefaultPolicy = policy;
+                    })
+                    .AddLoadBalance()
+                    .BuildServiceProvider();
+
+                var app = new RabbitApplicationBuilder(services);
+                var invoker = app
+                    .Use(async (context, next) =>
+                    {
+                        context.Request.Url.Host = "ConsoleApp";
                         await next();
                     })
-                    .UseMiddleware<BreakerMiddleware>()
+                    .UseBreaker()
                     .UseLoadBalance()
                     .UseGrpc()
                     .Build();
