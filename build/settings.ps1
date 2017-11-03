@@ -9,14 +9,18 @@ $nuget_apiKey = "xxxxxx"
 $projects = @(
     @{ Name = "Rabbit.Cloud.Abstractions"; SourceDir = "$source_dir\RC.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud"; SourceDir = "$source_dir\RC"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Client.Features"; SourceDir = "$source_dir\RC.Client.Features"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud.Client.Abstractions"; SourceDir = "$source_dir\RC.Client.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud.Client"; SourceDir = "$source_dir\RC.Client"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Registry.Abstractions"; SourceDir = "$source_dir\RC.Registry.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Client.Proxy"; SourceDir = "$source_dir\RC.Client.Proxy"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud.Discovery.Abstractions"; SourceDir = "$source_dir\RC.Discovery.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Cluster.Abstractions"; SourceDir = "$source_dir\cluster\RC.Cluster.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Cluster"; SourceDir = "$source_dir\cluster\RC.Cluster"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Facade.Abstractions"; SourceDir = "$source_dir\facade\RC.Facade.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Facade"; SourceDir = "$source_dir\facade\RC.Facade"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Facade.Formatters.Json"; SourceDir = "$source_dir\facade\RC.Facade.Formatters.Json"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Extensions.Consul"; SourceDir = "$source_dir\extensions\RC.Extensions.Consul"; ExternalNuGetDependencies = $null; UseMSBuild = $False; }
+    @{ Name = "Rabbit.Cloud.Discovery.Consul"; SourceDir = "$source_dir\RC.Discovery.Consul"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Discovery.Memory"; SourceDir = "$source_dir\RC.Discovery.Memory"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Client.Grpc"; SourceDir = "$source_dir\RC.Client.Grpc"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Client.Grpc.Proxy"; SourceDir = "$source_dir\RC.Client.Grpc.Proxy"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Grpc.Abstractions"; SourceDir = "$source_dir\RC.Grpc.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Grpc.Client"; SourceDir = "$source_dir\RC.Grpc.Client"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Grpc.Server"; SourceDir = "$source_dir\RC.Grpc.Server"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Client.Breaker"; SourceDir = "$source_dir\RC.Client.Breaker"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Client.LoadBalance"; SourceDir = "$source_dir\RC.Client.LoadBalance"; ExternalNuGetDependencies = $null; UseMSBuild = $False; }
 )
