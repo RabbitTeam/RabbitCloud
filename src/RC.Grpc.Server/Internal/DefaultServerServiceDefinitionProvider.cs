@@ -99,10 +99,19 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
                 return GetCache(key, () =>
                 {
                     var type = methodInfo.DeclaringType;
-                    var parameterExpressions = methodInfo.GetParameters().Select(i => GetParameterExpression(i.ParameterType)).ToArray();
+                    var parameters = methodInfo.GetParameters();
+
+                    IList<ParameterExpression> parameterExpressions = parameters.Select(i => GetParameterExpression(i.ParameterType)).ToList();
+
+                    var missServerCallContext = parameters.All(i => i.ParameterType != typeof(ServerCallContext));
 
                     var instanceExpression = GetInstanceExpression(type, services, instanceFactory);
-                    var callExpression = Expression.Call(instanceExpression, methodInfo, parameterExpressions.Cast<Expression>());
+                    var callExpression = Expression.Call(instanceExpression, methodInfo, parameterExpressions);
+
+                    //todo:需要考虑非 UnaryServerMethod<> 委托类型的参数选择
+                    if (missServerCallContext)
+                        parameterExpressions.Add(GetParameterExpression(typeof(ServerCallContext)));
+
                     var methodDelegate = Expression.Lambda(delegateType, callExpression, parameterExpressions).Compile();
                     return methodDelegate;
                 });
