@@ -21,8 +21,6 @@ using Rabbit.Cloud.Grpc.Abstractions.Method;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Server;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -30,6 +28,7 @@ namespace ConsoleApp
 {
     public class Program
     {
+        [GrpcService]
         public class TestService
         {
             /// <summary>
@@ -38,7 +37,7 @@ namespace ConsoleApp
             /// <param name="request">The request received from the client.</param>
             /// <param name="context">The context of the server-side call handler being invoked.</param>
             /// <returns>The response to send back to the client (wrapped by a task).</returns>
-            [GrpcService(MethodName = "test")]
+            [GrpcMethod("test")]
             public Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
             {
                 Console.WriteLine(context.Host);
@@ -46,19 +45,19 @@ namespace ConsoleApp
             }
         }
 
-        [GrpcService(ServiceName = "consoleapp.TestService")]
+        [GrpcClient]
         public interface ITestService
         {
-            [GrpcService(MethodName = "test")]
+            [GrpcMethod("test", ResponseType = typeof(HelloReply))]
             AsyncUnaryCall<HelloReply> HelloAsync(HelloRequest request);
 
-            [GrpcService(MethodName = "test")]
+            [GrpcMethod("test", ResponseType = typeof(HelloReply))]
             void Hello(HelloRequest request);
 
-            [GrpcService(MethodName = "test")]
+            [GrpcMethod("test", ResponseType = typeof(HelloReply))]
             Task HelloAsync2(HelloRequest request);
 
-            [GrpcService(MethodName = "test")]
+            [GrpcMethod("test")]
             Task<HelloReply> HelloAsync3(HelloRequest request);
         }
 
@@ -72,13 +71,7 @@ namespace ConsoleApp
                     .AddOptions()
                     .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri(ConsulUrl)))
                     .AddSingleton(methodCollection)
-                    .AddSingleton(
-                        new DefaultServerServiceDefinitionProviderOptions
-                        {
-                            Factory = t => new TestService(),
-                            Types = new[] { typeof(TestService) }
-                        })
-                    .AddSingleton<IServerServiceDefinitionProvider, DefaultServerServiceDefinitionProvider>()
+                    .AddGrpcServer()
                     .BuildServiceProvider();
 
                 var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
@@ -100,9 +93,7 @@ namespace ConsoleApp
                     ServiceName = "ConsoleApp"
                 }));
 
-                var serverServiceDefinitionProvider = services.GetRequiredService<IServerServiceDefinitionProvider>();
-
-                var definitions = serverServiceDefinitionProvider.GetDefinitions().ToArray();
+                var definitions = services.GetRequiredService<IServiceDefinitionCollection>();
                 {
                     var server = new Server
                     {
@@ -133,14 +124,10 @@ namespace ConsoleApp
             var services = new ServiceCollection()
                 .AddLogging()
                 .AddOptions()
-                .AddGrpcCore(typeof(TestService))
+                .AddGrpcCore()
                 .BuildServiceProvider();
 
             var methodCollection = services.GetRequiredService<IMethodCollection>();
-            foreach (var methodProvider in services.GetRequiredService<IEnumerable<IMethodProvider>>())
-            {
-                methodProvider.Collect(methodCollection);
-            }
 
             return methodCollection;
         }
@@ -210,10 +197,10 @@ namespace ConsoleApp
                 {
                     var t = await service.HelloAsync3(new HelloRequest { Name = "test" });
                     Console.WriteLine(t?.Message ?? "null");
-                    /*service.Hello(new HelloRequest { Name = "test" });
+                    service.Hello(new HelloRequest { Name = "test" });
                     await service.HelloAsync2(new HelloRequest { Name = "test" });
                     var tt = await service.HelloAsync3(new HelloRequest { Name = "test" });
-                    Console.WriteLine(tt.Message);*/
+                    Console.WriteLine(tt.Message);
 
                     Console.ReadLine();
                 }

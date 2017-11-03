@@ -1,5 +1,4 @@
 ﻿using Grpc.Core;
-using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions.Utilities;
 using System;
 using System.Reflection;
@@ -39,7 +38,7 @@ namespace Rabbit.Cloud.Grpc.Abstractions
         public static GrpcServiceDescriptor Create(MethodInfo methodInfo, Func<Type, object> marshallerFactory)
         {
             var requestType = methodInfo.GetRequestType();
-            var responseType = methodInfo.GetRealReturnType();
+            var responseType = methodInfo.GetResponseType();
 
             return Create(methodInfo, requestType, responseType, marshallerFactory(requestType), marshallerFactory(responseType));
         }
@@ -47,7 +46,7 @@ namespace Rabbit.Cloud.Grpc.Abstractions
         public static GrpcServiceDescriptor Create(MethodInfo methodInfo, object requestMarshaller = null, object responseMarshaller = null)
         {
             var requestType = methodInfo.GetRequestType();
-            var responseType = methodInfo.GetRealReturnType();
+            var responseType = methodInfo.GetResponseType();
 
             return Create(methodInfo, requestType, responseType, requestMarshaller, responseMarshaller);
         }

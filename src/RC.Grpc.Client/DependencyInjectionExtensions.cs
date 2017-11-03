@@ -8,7 +8,7 @@ namespace Rabbit.Cloud.Grpc.Client
 {
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddGrpcClient(this IServiceCollection services, Action<DefaultMethodProviderOptions> configure)
+        public static IServiceCollection AddGrpcClient(this IServiceCollection services, Action<MethodProviderOptions> configure)
         {
             return services
                 .AddGrpcCore(configure)

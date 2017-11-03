@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using Rabbit.Cloud.Abstractions.Utilities;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -42,7 +43,7 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Utilities
             return MethodType.Unary;
         }
 
-        private static MethodType GetServerMethodType(MethodInfo methodInfo)
+        private static MethodType GetServerMethodType(MethodBase methodInfo)
         {
             var parameters = methodInfo.GetParameters();
             var parameterTypes = parameters.Select(i => i.ParameterType);
@@ -81,27 +82,22 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Utilities
 
         public static Type GetRequestType(this MethodInfo method)
         {
-            var parameters = method.GetParameters();
+            var provider = method.GetTypeAttribute<IGrpcMethodProvider>();
+            var requestType = provider?.RequestType;
+            return requestType ?? method.GetParameters().First().ParameterType;
+        }
 
-            Type defaultParameterType = null;
-            foreach (var parameter in parameters)
-            {
-                var parameterType = parameter.ParameterType;
-                var grpcRequestAttribute = parameter.GetCustomAttribute<GrpcRequestAttribute>();
-                if (grpcRequestAttribute != null)
-                    return parameterType;
-
-                if (defaultParameterType == null)
-                    defaultParameterType = parameterType;
-            }
-
-            return defaultParameterType;
+        public static Type GetResponseType(this MethodInfo method)
+        {
+            var provider = method.GetTypeAttribute<IGrpcMethodProvider>();
+            var responseType = provider?.ResponseType;
+            return responseType ?? method.GetRealReturnType();
         }
 
         public static string GetServiceName(this Type type)
         {
-            var grpcServiceAttribute = type.GetCustomAttribute<GrpcServiceAttribute>();
-            var serviceName = grpcServiceAttribute?.ServiceName;
+            var provider = type.GetTypeAttribute<IGrpcServiceNameProvider>();
+            var serviceName = provider?.ServiceName;
             if (string.IsNullOrEmpty(serviceName))
                 serviceName = $"{type.Namespace.ToLower()}.{type.Name}";
 
@@ -110,16 +106,16 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Utilities
 
         public static (string serviceName, string methodName) GetServiceNames(this MethodInfo method)
         {
-            var grpcServiceAttribute = method.GetCustomAttribute<GrpcServiceAttribute>();
+            var provider = method.GetTypeAttribute<IGrpcMethodProvider>();
 
-            if (!string.IsNullOrEmpty(grpcServiceAttribute?.FullName))
-                return ResolveServiceNames(grpcServiceAttribute?.FullName);
+            if (!string.IsNullOrEmpty(provider?.FullName))
+                return ResolveServiceNames(provider?.FullName);
 
-            var serviceName = grpcServiceAttribute?.ServiceName;
+            var serviceName = provider?.ServiceName;
             if (string.IsNullOrEmpty(serviceName))
                 serviceName = method.DeclaringType?.GetServiceName();
 
-            var methodName = grpcServiceAttribute?.MethodName;
+            var methodName = provider?.MethodName;
             if (string.IsNullOrEmpty(methodName))
                 methodName = method.Name;
 

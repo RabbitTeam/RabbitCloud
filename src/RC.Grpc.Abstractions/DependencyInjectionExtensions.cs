@@ -1,12 +1,16 @@
 ﻿using Google.Protobuf;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyModel;
 using Newtonsoft.Json;
+using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions.Internal;
 using Rabbit.Cloud.Grpc.Abstractions.Method;
 using Rabbit.Cloud.Grpc.Abstractions.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 namespace Rabbit.Cloud.Grpc.Abstractions
@@ -58,26 +62,51 @@ namespace Rabbit.Cloud.Grpc.Abstractions
 
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddGrpcCore(this IServiceCollection services, params Type[] types)
+        public static IServiceCollection AddGrpcCore(this IServiceCollection services, Func<AssemblyName, bool> assemblyPredicate = null, Func<MethodInfo, bool> methodPredicate = null, Func<Type, bool> typePredicate = null)
         {
-            if (types == null)
-                throw new ArgumentNullException(nameof(types));
+            var assemblyNames = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default));
+            if (assemblyPredicate != null)
+                assemblyNames = assemblyNames.Where(assemblyPredicate).ToArray();
+            var assemblies = assemblyNames.Select(i => Assembly.Load(new AssemblyName(i.Name))).ToArray();
+
+            var types = assemblies.SelectMany(i => i.GetExportedTypes());
+            if (typePredicate != null)
+                types = types.Where(typePredicate);
+
+            var methodInfos = types
+                .Where(i => i.GetTypeAttribute<IGrpcDefinitionProvider>() != null)
+                .SelectMany(i => i.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+
+            if (methodPredicate != null)
+                methodInfos = methodInfos.Where(methodPredicate);
 
             return services
-                .Configure<DefaultMethodProviderOptions>(options =>
+                .AddGrpcCore(options =>
                 {
-                    options.Types = types;
-                    options.MarshallerFactory = MarshallerFactory.CreateMarshaller;
-                })
-                .AddSingleton<IMethodCollection, MethodCollection>()
-                .AddSingleton<IMethodProvider, DefaultMethodProvider>();
+                    options.MethodInfos = methodInfos.ToArray();
+                });
         }
 
-        public static IServiceCollection AddGrpcCore(this IServiceCollection services, Action<DefaultMethodProviderOptions> configure)
+        public static IServiceCollection AddGrpcCore(this IServiceCollection services, Action<MethodProviderOptions> configure)
         {
             return services
-                .AddGrpcCore()
-                .Configure(configure);
+                .Configure<MethodProviderOptions>(options =>
+                {
+                    options.MarshallerFactory = MarshallerFactory.CreateMarshaller;
+                    configure?.Invoke(options);
+                })
+                .AddSingleton<IMethodProvider, DefaultMethodProvider>()
+                .AddSingleton<IMethodCollection>(s =>
+                {
+                    var providers = s.GetRequiredService<IEnumerable<IMethodProvider>>();
+                    var methods = new MethodCollection();
+
+                    foreach (var provider in providers)
+                    {
+                        provider.Collect(methods);
+                    }
+                    return methods;
+                });
         }
     }
 }

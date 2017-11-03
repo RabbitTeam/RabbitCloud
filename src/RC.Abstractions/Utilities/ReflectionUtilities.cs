@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -24,6 +26,19 @@ namespace Rabbit.Cloud.Abstractions.Utilities
                 return type.GenericTypeArguments[0];
             }
             return type;
+        }
+
+        public static T GetTypeAttribute<T>(this MemberInfo memberInfo)
+        {
+            return memberInfo.GetTypeAttributes<T>().FirstOrDefault();
+        }
+
+        public static IEnumerable<T> GetTypeAttributes<T>(this MemberInfo memberInfo)
+        {
+            if (memberInfo == null)
+                throw new ArgumentNullException(nameof(memberInfo));
+
+            return memberInfo.GetCustomAttributes().OfType<T>();
         }
     }
 }

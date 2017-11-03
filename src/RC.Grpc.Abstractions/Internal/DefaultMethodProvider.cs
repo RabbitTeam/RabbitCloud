@@ -1,21 +1,22 @@
 ﻿using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Grpc.Abstractions.Method;
 using System;
+using System.Linq;
 using System.Reflection;
 
 namespace Rabbit.Cloud.Grpc.Abstractions.Internal
 {
-    public class DefaultMethodProviderOptions
+    public class MethodProviderOptions
     {
-        public Type[] Types { get; set; }
+        public MethodInfo[] MethodInfos { get; set; }
         public Func<Type, object> MarshallerFactory { get; set; }
     }
 
     public class DefaultMethodProvider : IMethodProvider
     {
-        private readonly DefaultMethodProviderOptions _options;
+        private readonly MethodProviderOptions _options;
 
-        public DefaultMethodProvider(IOptions<DefaultMethodProviderOptions> options)
+        public DefaultMethodProvider(IOptions<MethodProviderOptions> options)
         {
             _options = options.Value;
         }
@@ -24,14 +25,23 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Internal
 
         public void Collect(IMethodCollection methods)
         {
-            foreach (var type in _options.Types)
+            if (_options.MethodInfos == null || !_options.MethodInfos.Any())
+                return;
+
+            foreach (var methodInfo in _options.MethodInfos)
             {
-                var methodInfos = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                foreach (var methodInfo in methodInfos)
-                {
-                    var descriptor = GrpcServiceDescriptor.Create(methodInfo, _options.MarshallerFactory);
-                    methods.Set(descriptor.CreateMethod());
-                }
+                var descriptor = GrpcServiceDescriptor.Create(methodInfo);
+
+                var item = methods.Get(descriptor.ServiceId);
+                if (item != null)
+                    continue;
+
+                descriptor.RequestMarshaller = _options.MarshallerFactory(descriptor.RequesType);
+                descriptor.ResponseMarshaller = _options.MarshallerFactory(descriptor.ResponseType);
+
+                item = descriptor.CreateMethod();
+
+                methods.Set(item);
             }
         }
 
