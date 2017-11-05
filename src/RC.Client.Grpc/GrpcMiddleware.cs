@@ -5,7 +5,9 @@ using Rabbit.Cloud.Grpc.Abstractions.Method;
 using Rabbit.Cloud.Grpc.Client.Extensions;
 using Rabbit.Cloud.Grpc.Client.Internal;
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Grpc
@@ -41,17 +43,31 @@ namespace Rabbit.Cloud.Client.Grpc
 
             context.Features.Get<IGrpcResponseFeature>().Response = response;
 
-            var getAwaiterMethod = response.GetType().GetMethod("GetAwaiter");
-
-            if (getAwaiterMethod != null)
-            {
-                var getResult = Expression.Lambda(Expression.Call(Expression.Call(Expression.Constant(response), getAwaiterMethod),
-                    "GetResult", null)).Compile();
-
-                getResult.DynamicInvoke();
-            }
+            var awaiterDelegate = Cache.GetAwaiterDelegate(response.GetType());
+            awaiterDelegate.DynamicInvoke(response);
 
             await _next(context);
         }
+
+        #region Help Type
+
+        private static class Cache
+        {
+            private static readonly IDictionary<Type, Delegate> Caches = new Dictionary<Type, Delegate>();
+
+            public static Delegate GetAwaiterDelegate(Type type)
+            {
+                if (Caches.TryGetValue(type, out var action))
+                    return action;
+
+                var getAwaiterMethod = type.GetMethod(nameof(Task.GetAwaiter));
+                var parameterExpression = Expression.Parameter(type);
+                var callExpression = Expression.Call(Expression.Call(parameterExpression, getAwaiterMethod), nameof(TaskAwaiter.GetResult), null);
+
+                return Caches[type] = Expression.Lambda(callExpression, parameterExpression).Compile();
+            }
+        }
+
+        #endregion Help Type
     }
 }
