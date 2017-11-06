@@ -66,7 +66,7 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
 
                     var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
 
-                    var methodDelegate = Cache.GetMethodDelegate(methodInfo, delegateType, _services, _options.Factory);
+                    var methodDelegate = Cache.GetMethodDelegate(type, methodInfo, delegateType, _services, _options.Factory);
 
                     serverMethods.Set(new ServiceMethod
                     {
@@ -97,19 +97,18 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
                 return GetCache(key, () => typeof(UnaryServerMethod<,>).MakeGenericType(requestType, responseType));
             }
 
-            public static Delegate GetMethodDelegate(MethodInfo methodInfo, Type delegateType, IServiceProvider services, Func<IServiceProvider, Type, object> instanceFactory)
+            public static Delegate GetMethodDelegate(Type serviceType, MethodInfo methodInfo, Type delegateType, IServiceProvider services, Func<IServiceProvider, Type, object> instanceFactory)
             {
                 var key = ("MethodDelegate", delegateType);
                 return GetCache(key, () =>
                 {
-                    var type = methodInfo.DeclaringType;
                     var parameters = methodInfo.GetParameters();
 
                     IList<ParameterExpression> parameterExpressions = parameters.Select(i => GetParameterExpression(i.ParameterType)).ToList();
 
                     var missServerCallContext = parameters.All(i => i.ParameterType != typeof(ServerCallContext));
 
-                    var instanceExpression = GetInstanceExpression(type, services, instanceFactory);
+                    var instanceExpression = GetInstanceExpression(serviceType, services, instanceFactory);
                     var callExpression = Expression.Call(instanceExpression, methodInfo, parameterExpressions);
 
                     //todo:需要考虑非 UnaryServerMethod<> 委托类型的参数选择
