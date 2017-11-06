@@ -99,7 +99,8 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
 
             public static Delegate GetMethodDelegate(Type serviceType, MethodInfo methodInfo, Type delegateType, IServiceProvider services, Func<IServiceProvider, Type, object> instanceFactory)
             {
-                var key = ("MethodDelegate", delegateType);
+                //todo: 考虑优化，MethodDelegate是固定的，服务实例不是固定的
+                var key = ("MethodDelegate", serviceType, delegateType);
                 return GetCache(key, () =>
                 {
                     var parameters = methodInfo.GetParameters();
