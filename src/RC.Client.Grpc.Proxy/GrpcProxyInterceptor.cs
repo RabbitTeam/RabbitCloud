@@ -25,7 +25,9 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
         protected override IRabbitContext CreateRabbitContext(IInvocation invocation)
         {
-            var descriptor = GrpcServiceDescriptor.Create(invocation.Method);
+            //todo: this is fixed,Think of a more reliable way
+            var type = invocation.Proxy.GetType().GetInterfaces().Reverse().Skip(1).FirstOrDefault();
+            var descriptor = GrpcServiceDescriptor.Create(type, invocation.Method);
 
             var context = new GrpcRabbitContext();
 

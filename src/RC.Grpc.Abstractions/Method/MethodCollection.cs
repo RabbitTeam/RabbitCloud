@@ -17,7 +17,7 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Method
         /// <returns>An enumerator that can be used to iterate through the collection.</returns>
         public IEnumerator<IMethod> GetEnumerator()
         {
-            return _methods.Values.GetEnumerator();
+            return _methods?.Values?.GetEnumerator();
         }
 
         /// <inheritdoc />

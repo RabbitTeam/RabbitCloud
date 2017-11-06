@@ -13,26 +13,23 @@ namespace Rabbit.Cloud.Grpc.Server
     {
         public static IServiceCollection AddGrpcServer(this IServiceCollection services, Func<AssemblyName, bool> assemblyPredicate = null, Func<MethodInfo, bool> methodPredicate = null, Func<Type, bool> typePredicate = null)
         {
+            var assemblyNames = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default));
+            if (assemblyPredicate != null)
+                assemblyNames = assemblyNames.Where(assemblyPredicate).ToArray();
+            var assemblies = assemblyNames.Select(i => Assembly.Load(new AssemblyName(i.Name))).ToArray();
+
+            var types = assemblies.SelectMany(i => i.GetExportedTypes());
+            if (typePredicate != null)
+                types = types.Where(typePredicate);
+
+            types = types.Where(t => t.GetTypeAttribute<IGrpcDefinitionProvider>() != null);
+
+            var entries = types.ToDictionary(t => t, t => t.GetMethods().Where(m => m.DeclaringType != typeof(object) && (methodPredicate == null || methodPredicate(m))).ToArray());
+
             return services
                 .AddGrpcServer(options =>
                 {
-                    var assemblyNames = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default));
-                    if (assemblyPredicate != null)
-                        assemblyNames = assemblyNames.Where(assemblyPredicate).ToArray();
-                    var assemblies = assemblyNames.Select(i => Assembly.Load(new AssemblyName(i.Name))).ToArray();
-
-                    var types = assemblies.SelectMany(i => i.GetExportedTypes());
-                    if (typePredicate != null)
-                        types = types.Where(typePredicate);
-
-                    var methodInfos = types.Where(i => i.GetTypeAttribute<IGrpcDefinitionProvider>() != null)
-                        .SelectMany(i =>
-                            i.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-
-                    if (methodPredicate != null)
-                        methodInfos = methodInfos.Where(methodPredicate);
-
-                    options.MethodInfos = methodInfos.ToArray();
+                    options.Entries = entries;
                 });
         }
 

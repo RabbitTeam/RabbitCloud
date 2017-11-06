@@ -12,7 +12,7 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
 {
     public class ServerServiceDefinitionProviderOptions
     {
-        public MethodInfo[] MethodInfos { get; set; }
+        public IDictionary<Type, MethodInfo[]> Entries { get; set; }
 
         public Func<IServiceProvider, Type, object> Factory { get; set; }
     }
@@ -42,36 +42,40 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
 
         public void Collect(IServerMethodCollection serverMethods)
         {
-            if (_options.MethodInfos == null || !_options.MethodInfos.Any())
+            if (_options.Entries == null || !_options.Entries.Any())
                 return;
 
-            foreach (var methodInfo in _options.MethodInfos)
+            foreach (var entry in _options.Entries)
             {
-                var descriptor = GrpcServiceDescriptor.Create(methodInfo);
-
-                var serviceMethod = serverMethods.Get(descriptor.ServiceId);
-                // ignore repeated additions
-                if (serviceMethod != null)
-                    continue;
-
-                var method = _methodCollection.Get(descriptor.ServiceId);
-                var requestType = descriptor.RequesType;
-                var responseType = descriptor.ResponseType;
-
-                if (method.GetType().GenericTypeArguments.Last() != responseType)
-                    continue;
-
-                var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
-
-                var methodDelegate = Cache.GetMethodDelegate(methodInfo, delegateType, _services, _options.Factory);
-
-                serverMethods.Set(new ServiceMethod
+                var type = entry.Key;
+                foreach (var methodInfo in entry.Value)
                 {
-                    Delegate = methodDelegate,
-                    Method = method,
-                    RequestType = requestType,
-                    ResponseType = responseType
-                });
+                    var descriptor = GrpcServiceDescriptor.Create(type, methodInfo);
+
+                    var serviceMethod = serverMethods.Get(descriptor.ServiceId);
+                    // ignore repeated additions
+                    if (serviceMethod != null)
+                        continue;
+
+                    var method = _methodCollection.Get(descriptor.ServiceId);
+                    var requestType = descriptor.RequesType;
+                    var responseType = descriptor.ResponseType;
+
+                    if (method.GetType().GenericTypeArguments.Last() != responseType)
+                        continue;
+
+                    var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
+
+                    var methodDelegate = Cache.GetMethodDelegate(methodInfo, delegateType, _services, _options.Factory);
+
+                    serverMethods.Set(new ServiceMethod
+                    {
+                        Delegate = methodDelegate,
+                        Method = method,
+                        RequestType = requestType,
+                        ResponseType = responseType
+                    });
+                }
             }
         }
 

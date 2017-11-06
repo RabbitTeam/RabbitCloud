@@ -73,17 +73,14 @@ namespace Rabbit.Cloud.Grpc.Abstractions
             if (typePredicate != null)
                 types = types.Where(typePredicate);
 
-            var methodInfos = types
-                .Where(i => i.GetTypeAttribute<IGrpcDefinitionProvider>() != null)
-                .SelectMany(i => i.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+            types = types.Where(t => t.GetTypeAttribute<IGrpcDefinitionProvider>() != null);
 
-            if (methodPredicate != null)
-                methodInfos = methodInfos.Where(methodPredicate);
+            var entries = types.ToDictionary(t => t, t => t.GetMethods().Where(m => m.DeclaringType != typeof(object) && (methodPredicate == null || methodPredicate(m))).ToArray());
 
             return services
                 .AddGrpcCore(options =>
                 {
-                    options.MethodInfos = methodInfos.ToArray();
+                    options.Entries = entries;
                 });
         }
 

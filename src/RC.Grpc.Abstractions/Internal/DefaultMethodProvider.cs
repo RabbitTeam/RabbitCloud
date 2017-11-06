@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Grpc.Abstractions.Method;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -8,7 +9,7 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Internal
 {
     public class MethodProviderOptions
     {
-        public MethodInfo[] MethodInfos { get; set; }
+        public IDictionary<Type, MethodInfo[]> Entries { get; set; }
         public Func<Type, object> MarshallerFactory { get; set; }
     }
 
@@ -25,23 +26,27 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Internal
 
         public void Collect(IMethodCollection methods)
         {
-            if (_options.MethodInfos == null || !_options.MethodInfos.Any())
+            if (_options.Entries == null || !_options.Entries.Any())
                 return;
 
-            foreach (var methodInfo in _options.MethodInfos)
+            foreach (var entry in _options.Entries)
             {
-                var descriptor = GrpcServiceDescriptor.Create(methodInfo);
+                var type = entry.Key;
+                foreach (var methodInfo in entry.Value)
+                {
+                    var descriptor = GrpcServiceDescriptor.Create(type, methodInfo);
 
-                var item = methods.Get(descriptor.ServiceId);
-                if (item != null)
-                    continue;
+                    var item = methods.Get(descriptor.ServiceId);
+                    if (item != null)
+                        continue;
 
-                descriptor.RequestMarshaller = _options.MarshallerFactory(descriptor.RequesType);
-                descriptor.ResponseMarshaller = _options.MarshallerFactory(descriptor.ResponseType);
+                    descriptor.RequestMarshaller = _options.MarshallerFactory(descriptor.RequesType);
+                    descriptor.ResponseMarshaller = _options.MarshallerFactory(descriptor.ResponseType);
 
-                item = descriptor.CreateMethod();
+                    item = descriptor.CreateMethod();
 
-                methods.Set(item);
+                    methods.Set(item);
+                }
             }
         }
 

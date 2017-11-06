@@ -104,8 +104,13 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Utilities
             return serviceName;
         }
 
-        public static (string serviceName, string methodName) GetServiceNames(this MethodInfo method)
+        public static (string serviceName, string methodName) GetServiceNames(Type serviceType, MethodInfo method)
         {
+            if (serviceType == null)
+                throw new ArgumentNullException(nameof(serviceType));
+            if (method == null)
+                throw new ArgumentNullException(nameof(method));
+
             var provider = method.GetTypeAttribute<IGrpcMethodProvider>();
 
             if (!string.IsNullOrEmpty(provider?.FullName))
@@ -113,7 +118,7 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Utilities
 
             var serviceName = provider?.ServiceName;
             if (string.IsNullOrEmpty(serviceName))
-                serviceName = method.DeclaringType?.GetServiceName();
+                serviceName = serviceType.GetServiceName();
 
             var methodName = provider?.MethodName;
             if (string.IsNullOrEmpty(methodName))

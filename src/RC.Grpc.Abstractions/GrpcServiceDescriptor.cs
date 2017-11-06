@@ -35,25 +35,25 @@ namespace Rabbit.Cloud.Grpc.Abstractions
                 RequestMarshaller, ResponseMarshaller);
         }
 
-        public static GrpcServiceDescriptor Create(MethodInfo methodInfo, Func<Type, object> marshallerFactory)
+        public static GrpcServiceDescriptor Create(Type serviceType, MethodInfo methodInfo, Func<Type, object> marshallerFactory)
         {
             var requestType = methodInfo.GetRequestType();
             var responseType = methodInfo.GetResponseType();
 
-            return Create(methodInfo, requestType, responseType, marshallerFactory(requestType), marshallerFactory(responseType));
+            return Create(serviceType, methodInfo, requestType, responseType, marshallerFactory(requestType), marshallerFactory(responseType));
         }
 
-        public static GrpcServiceDescriptor Create(MethodInfo methodInfo, object requestMarshaller = null, object responseMarshaller = null)
+        public static GrpcServiceDescriptor Create(Type serviceType, MethodInfo methodInfo, object requestMarshaller = null, object responseMarshaller = null)
         {
             var requestType = methodInfo.GetRequestType();
             var responseType = methodInfo.GetResponseType();
 
-            return Create(methodInfo, requestType, responseType, requestMarshaller, responseMarshaller);
+            return Create(serviceType, methodInfo, requestType, responseType, requestMarshaller, responseMarshaller);
         }
 
-        private static GrpcServiceDescriptor Create(MethodInfo methodInfo, Type requestType, Type responseType, object requestMarshaller = null, object responseMarshaller = null)
+        public static GrpcServiceDescriptor Create(Type serviceType, MethodInfo methodInfo, Type requestType, Type responseType, object requestMarshaller = null, object responseMarshaller = null)
         {
-            (string serviceName, string methodName) = methodInfo.GetServiceNames();
+            (string serviceName, string methodName) = ReflectionUtilities.GetServiceNames(serviceType, methodInfo);
 
             return new GrpcServiceDescriptor
             {
