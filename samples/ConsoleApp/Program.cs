@@ -23,6 +23,8 @@ using Rabbit.Cloud.Grpc.Server;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using Rabbit.Cloud.Grpc.Abstractions.ApplicationModels;
+using Rabbit.Cloud.Grpc.Abstractions.Utilities;
 
 namespace ConsoleApp
 {
@@ -164,6 +166,8 @@ namespace ConsoleApp
 
         private static async Task Main(string[] args)
         {
+            var mr=MarshallerUtilities2.CreateMarshaller(typeof(HelloRequest), new JsonCodec());
+            return;
             var methodCollection = GetMethodCollection();
             await StartServer(methodCollection);
             {
