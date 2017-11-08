@@ -6,60 +6,6 @@ using System.Linq.Expressions;
 
 namespace Rabbit.Cloud.Grpc.Abstractions.Adapter
 {
-    public struct CallInvocationDetails
-    {
-        public CallInvocationDetails(Channel channel, string method, string host, Marshaller requestMarshaller, Marshaller responseMarshaller, CallOptions options)
-        {
-            Channel = channel;
-            Method = method;
-            Host = host;
-            RequestMarshaller = requestMarshaller;
-            ResponseMarshaller = responseMarshaller;
-            Options = options;
-        }
-
-        /// <summary>
-        /// Get channel associated with this call.
-        /// </summary>
-        public Channel Channel { get; }
-
-        /// <summary>
-        /// Gets name of method to be called.
-        /// </summary>
-        public string Method { get; }
-
-        /// <summary>
-        /// Get name of host.
-        /// </summary>
-        public string Host { get; }
-
-        /// <summary>
-        /// Gets marshaller used to serialize requests.
-        /// </summary>
-        public Marshaller RequestMarshaller { get; }
-
-        /// <summary>
-        /// Gets marshaller used to deserialized responses.
-        /// </summary>
-        public Marshaller ResponseMarshaller { get; }
-
-        /// <summary>
-        /// Gets the call options.
-        /// </summary>
-        public CallOptions Options { get; private set; }
-
-        /// <summary>
-        /// Returns new instance of <see cref="CallInvocationDetails{TRequest, TResponse}"/> with
-        /// <c>Options</c> set to the value provided. Values of all other fields are preserved.
-        /// </summary>
-        public CallInvocationDetails WithOptions(CallOptions options)
-        {
-            var newDetails = this;
-            newDetails.Options = options;
-            return newDetails;
-        }
-    }
-
     public class Method : IMethod
     {
         public Method(MethodType type, string fullName, Marshaller requestMarshaller, Marshaller responseMarshaller)
@@ -224,67 +170,12 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Adapter
                     Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(Method.Type)).First()),
                     Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(Method.ServiceName)).First()),
                     Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(Method.Name)).First()),
-                    Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { requestType }, Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(CallInvocationDetails.RequestMarshaller)).First())),
-                    Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { responseType }, Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(CallInvocationDetails.ResponseMarshaller)).First())));
+                    Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { requestType }, Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(Method.RequestMarshaller)).First())),
+                    Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { responseType }, Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(Method.ResponseMarshaller)).First())));
 
                 var factory = Expression.Lambda(newExpression, methodParameterExpression).Compile();
 
                 return new Func<Method, IMethod>(details => (IMethod)factory.DynamicInvoke(details));
-            });
-        }
-
-        #endregion Private Method
-
-        #region Help Type
-
-        internal class Cache
-        {
-            private static readonly IDictionary<object, object> Caches = new Dictionary<object, object>();
-
-            public static T GetCache<T>(object key, Func<T> factory)
-            {
-                if (Caches.TryGetValue(key, out var cache))
-                    return (T)cache;
-                return (T)(Caches[key] = factory());
-            }
-        }
-
-        #endregion Help Type
-    }
-
-    public static class CallInvocationDetailsExtensions
-    {
-        public static object CreateGenericCallInvocationDetails(this CallInvocationDetails details)
-        {
-            var requestType = details.RequestMarshaller.Type;
-            var responseType = details.ResponseMarshaller.Type;
-
-            var factory = GetCallInvocationDetailsFactory(requestType, responseType);
-            return factory(details);
-        }
-
-        #region Private Method
-
-        private static Func<CallInvocationDetails, object> GetCallInvocationDetailsFactory(Type requestType, Type responseType)
-        {
-            return Cache.GetCache(("CallInvocationDetailsFactory", requestType, responseType), () =>
-            {
-                var detailsGenericType = typeof(CallInvocationDetails<,>).MakeGenericType(requestType, responseType);
-
-                var detailsType = typeof(CallInvocationDetails);
-                var detailsParameterExpression = Expression.Parameter(detailsType);
-
-                var newExpression = Expression.New(detailsGenericType.GetConstructors().Last(),
-                    Expression.MakeMemberAccess(detailsParameterExpression, detailsType.GetMember(nameof(CallInvocationDetails.Channel)).First()),
-                    Expression.MakeMemberAccess(detailsParameterExpression, detailsType.GetMember(nameof(CallInvocationDetails.Method)).First()),
-                    Expression.MakeMemberAccess(detailsParameterExpression, detailsType.GetMember(nameof(CallInvocationDetails.Host)).First()),
-                    Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { requestType }, Expression.MakeMemberAccess(detailsParameterExpression, detailsType.GetMember(nameof(CallInvocationDetails.RequestMarshaller)).First())),
-                    Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { responseType }, Expression.MakeMemberAccess(detailsParameterExpression, detailsType.GetMember(nameof(CallInvocationDetails.ResponseMarshaller)).First())),
-                    Expression.MakeMemberAccess(detailsParameterExpression, detailsType.GetMember(nameof(CallInvocationDetails.Options)).First()));
-
-                var factory = Expression.Lambda(newExpression, detailsParameterExpression).Compile();
-
-                return new Func<CallInvocationDetails, object>(details => factory.DynamicInvoke(details));
             });
         }
 
