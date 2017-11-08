@@ -1,7 +1,9 @@
-﻿using Rabbit.Cloud.Client.Abstractions;
+﻿using Grpc.Core;
+using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
-using Rabbit.Cloud.Grpc.Abstractions.Method;
+using Rabbit.Cloud.Grpc.Abstractions.Adapter;
+using Rabbit.Cloud.Grpc.Abstractions.ApplicationModels;
 using Rabbit.Cloud.Grpc.Client.Extensions;
 using Rabbit.Cloud.Grpc.Client.Internal;
 using System;
@@ -16,13 +18,13 @@ namespace Rabbit.Cloud.Client.Grpc
     {
         private readonly RabbitRequestDelegate _next;
         private readonly CallInvokerPool _callInvokerPool;
-        private readonly IMethodCollection _methodCollection;
+        private readonly IGrpcServiceDescriptorCollection _grpcServiceDescriptorCollection;
 
-        public GrpcMiddleware(RabbitRequestDelegate next, CallInvokerPool callInvokerPool, IMethodCollection methodCollection)
+        public GrpcMiddleware(RabbitRequestDelegate next, CallInvokerPool callInvokerPool, IGrpcServiceDescriptorCollection grpcServiceDescriptorCollection)
         {
             _next = next;
             _callInvokerPool = callInvokerPool;
-            _methodCollection = methodCollection;
+            _grpcServiceDescriptorCollection = grpcServiceDescriptorCollection;
         }
 
         public async Task Invoke(IRabbitContext context)
@@ -43,12 +45,17 @@ namespace Rabbit.Cloud.Client.Grpc
             var callInvoker = _callInvokerPool.GetCallInvoker(serviceUrl.Host, serviceUrl.Port);
 
             var serviceId = serviceUrl.Path;
-            var method = _methodCollection.Get(serviceId);
+            var serviceDescriptor = _grpcServiceDescriptorCollection.Get(serviceId);
 
-            if (method == null)
+            if (serviceDescriptor == null)
                 throw new Exception($"Can not find service '{serviceId}'.");
 
-            var response = callInvoker.Call(method, grpcRequestFeature.Host, grpcRequestFeature.CallOptions, grpcRequestFeature.Request);
+            var method = new Method(MethodType.Unary, serviceDescriptor.ServiceId, serviceDescriptor.RequestMarshaller,
+                serviceDescriptor.ResponseMarshaller);
+
+            var grpcMethod = method.CreateGenericMethod();
+
+            var response = callInvoker.Call(grpcMethod, grpcRequestFeature.Host, grpcRequestFeature.CallOptions, grpcRequestFeature.Request);
 
             context.Features.Get<IGrpcResponseFeature>().Response = response;
 

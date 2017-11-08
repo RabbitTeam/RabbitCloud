@@ -1,4 +1,4 @@
-﻿using Grpc.Core;
+﻿/*using Grpc.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,4 +61,4 @@ namespace Rabbit.Cloud.Grpc.Abstractions.Utilities
 
         #endregion Help Type
     }
-}
+}*/

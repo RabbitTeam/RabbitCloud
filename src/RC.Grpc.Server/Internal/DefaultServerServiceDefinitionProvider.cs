@@ -1,7 +1,7 @@
 ﻿using Grpc.Core;
 using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Grpc.Abstractions;
-using Rabbit.Cloud.Grpc.Abstractions.Method;
+using Rabbit.Cloud.Grpc.Abstractions.Adapter;
+using Rabbit.Cloud.Grpc.Abstractions.ApplicationModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,14 +22,14 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
         #region Field
 
         private readonly ServerServiceDefinitionProviderOptions _options;
-        private readonly IMethodCollection _methodCollection;
+        private readonly IGrpcServiceDescriptorCollection _methodCollection;
         private readonly IServiceProvider _services;
 
         #endregion Field
 
         #region Constructor
 
-        public DefaultServerServiceDefinitionProvider(IOptions<ServerServiceDefinitionProviderOptions> options, IMethodCollection methodCollection, IServiceProvider services)
+        public DefaultServerServiceDefinitionProvider(IOptions<ServerServiceDefinitionProviderOptions> options, IGrpcServiceDescriptorCollection methodCollection, IServiceProvider services)
         {
             _options = options.Value;
             _methodCollection = methodCollection;
@@ -58,11 +58,8 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
                         continue;
 
                     var method = _methodCollection.Get(descriptor.ServiceId);
-                    var requestType = descriptor.RequesType;
-                    var responseType = descriptor.ResponseType;
-
-                    if (method.GetType().GenericTypeArguments.Last() != responseType)
-                        continue;
+                    var requestType = method.RequestMarshaller.Type;
+                    var responseType = method.ResponseMarshaller.Type;
 
                     var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
 
@@ -71,7 +68,7 @@ namespace Rabbit.Cloud.Grpc.Server.Internal
                     serverMethods.Set(new ServiceMethod
                     {
                         Delegate = methodDelegate,
-                        Method = method,
+                        Method = new Method(MethodType.Unary, method.ServiceId, method.RequestMarshaller, method.ResponseMarshaller).CreateGenericMethod(),
                         RequestType = requestType,
                         ResponseType = responseType
                     });

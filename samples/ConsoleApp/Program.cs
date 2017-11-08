@@ -17,14 +17,12 @@ using Rabbit.Cloud.Discovery.Consul;
 using Rabbit.Cloud.Discovery.Consul.Registry;
 using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
-using Rabbit.Cloud.Grpc.Abstractions.Method;
+using Rabbit.Cloud.Grpc.Abstractions.ApplicationModels;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Server;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using Rabbit.Cloud.Grpc.Abstractions.ApplicationModels;
-using Rabbit.Cloud.Grpc.Abstractions.Utilities;
 
 namespace ConsoleApp
 {
@@ -95,7 +93,7 @@ namespace ConsoleApp
 
         private const string ConsulUrl = "http://192.168.1.150:8500";
 
-        private static async Task StartServer(IMethodCollection methodCollection)
+        private static async Task StartServer(IGrpcServiceDescriptorCollection methodCollection)
         {
             {
                 var services = new ServiceCollection()
@@ -151,7 +149,7 @@ namespace ConsoleApp
             }
         }
 
-        private static IMethodCollection GetMethodCollection()
+        private static IGrpcServiceDescriptorCollection GetMethodCollection()
         {
             var services = new ServiceCollection()
                 .AddLogging()
@@ -159,15 +157,13 @@ namespace ConsoleApp
                 .AddGrpcCore()
                 .BuildServiceProvider();
 
-            var methodCollection = services.GetRequiredService<IMethodCollection>();
+            var methodCollection = services.GetRequiredService<IGrpcServiceDescriptorCollection>();
 
             return methodCollection;
         }
 
         private static async Task Main(string[] args)
         {
-            var mr=MarshallerUtilities2.CreateMarshaller(typeof(HelloRequest), new JsonCodec());
-            return;
             var methodCollection = GetMethodCollection();
             await StartServer(methodCollection);
             {

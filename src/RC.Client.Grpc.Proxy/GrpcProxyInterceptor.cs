@@ -3,7 +3,7 @@ using Grpc.Core;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Proxy;
-using Rabbit.Cloud.Grpc.Abstractions;
+using Rabbit.Cloud.Grpc.Abstractions.ApplicationModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
