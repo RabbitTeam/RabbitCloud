@@ -17,8 +17,8 @@ using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Fluent;
+using Rabbit.Cloud.Grpc.Server;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -88,7 +88,7 @@ namespace ConsoleApp
                     Task<HelloReply> HelloAsync3(HelloRequest request);
                 }*/
 
-        private const string ConsulUrl = "http://192.168.1.150:8500";
+        private const string ConsulUrl = "http://localhost:8500";
 
         private static async Task StartServer()
         {
@@ -98,6 +98,7 @@ namespace ConsoleApp
                     .AddOptions()
                     .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri(ConsulUrl)))
                     .AddGrpcCore()
+                    .AddGrpcServer()
                     .AddGrpcFluent()
                     .BuildServiceProvider();
 
@@ -112,17 +113,18 @@ namespace ConsoleApp
                     ServiceName = "ConsoleApp"
                 }));
 
+                var serverServiceDefinitionTable = services.GetRequiredService<IServerServiceDefinitionTableProvider>().ServerServiceDefinitionTable;
+
                 {
                     var server = new Server
                     {
                         Ports = { new ServerPort("localhost", 9908, ServerCredentials.Insecure) }
                     };
-                    var builder = new ServerServiceDefinition.Builder();
 
-                    var method = (Method<HelloRequest, HelloReply>)services.GetRequiredService<IMethodTableProvider>().MethodTable.First();
-                    builder.AddMethod(method, (r, c) => new ServiceImpl().SendAsync(r));
-
-                    server.Services.Add(builder.Build());
+                    foreach (var definition in serverServiceDefinitionTable)
+                    {
+                        server.Services.Add(definition);
+                    }
                     server.Start();
                 }
             }

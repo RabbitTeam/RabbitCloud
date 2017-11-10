@@ -1,6 +1,7 @@
 ﻿using Grpc.Core;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 {
@@ -26,6 +27,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
     public class MethodModel
     {
+        //        public MethodInfo MethodInfo { get; set; }
         public ServiceModel ServiceModel { get; set; }
 
         /// <summary>
@@ -51,12 +53,29 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
     public class ServiceModel
     {
+        //        public TypeInfo ServiceType { get; set; }
         public string ServiceName { get; set; }
+
         public ICollection<MethodModel> Methods { get; } = new List<MethodModel>();
+    }
+
+    public class ServerMethodModel
+    {
+        public ServerServiceModel ServerService { get; set; }
+        public MethodModel Method { get; set; }
+        public MethodInfo MethodInfo { get; set; }
+    }
+
+    public class ServerServiceModel
+    {
+        public string ServiceName { get; set; }
+        public Type Type { get; set; }
+        public ICollection<ServerMethodModel> ServerMethods { get; } = new List<ServerMethodModel>();
     }
 
     public class ApplicationModel
     {
         public ICollection<ServiceModel> Services { get; } = new List<ServiceModel>();
+        public ICollection<ServerServiceModel> ServerServices { get; } = new List<ServerServiceModel>();
     }
 }

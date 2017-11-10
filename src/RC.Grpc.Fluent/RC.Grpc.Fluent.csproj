@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\RC.Abstractions\RC.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj" />
+    <ProjectReference Include="..\RC.Grpc.Server\RC.Grpc.Server.csproj" />
   </ItemGroup>
 
 </Project>

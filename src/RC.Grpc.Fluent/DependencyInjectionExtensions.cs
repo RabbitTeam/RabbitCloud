@@ -4,6 +4,7 @@ using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
 using Rabbit.Cloud.Grpc.Fluent.Internal;
+using Rabbit.Cloud.Grpc.Server;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -13,7 +14,7 @@ namespace Rabbit.Cloud.Grpc.Fluent
     public static class DependencyInjectionExtensions
     {
         public static IServiceCollection AddGrpcFluent(this IServiceCollection services,
-            Action<ApplicationModelMethodProviderOptions> configure)
+            Action<ApplicationModelOptions> configure)
         {
             return services
                 .Configure(configure)
@@ -46,7 +47,9 @@ namespace Rabbit.Cloud.Grpc.Fluent
         {
             return services
                 .AddSingleton<IApplicationModelProvider, DefaultApplicationModelProvider>()
-                .AddSingleton<IMethodProvider, ApplicationModelMethodProvider>();
+                .AddSingleton<ApplicationModelHolder, ApplicationModelHolder>()
+                .AddSingleton<IMethodProvider, MethodProvider>()
+                .AddSingleton<IServerServiceDefinitionProvider, ServerServiceDefinitionProvider>();
         }
     }
 }

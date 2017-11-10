@@ -1,8 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using Google.Protobuf;
+using Newtonsoft.Json;
+using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
 using Rabbit.Cloud.Grpc.Fluent.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Rabbit.Cloud.Grpc.Fluent.Internal
@@ -20,41 +24,38 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
             {
                 var serviceName = FluentUtilities.GetServiceName(type);
 
+                var isServerService = type.GetTypeAttribute<GrpcServiceAttribute>() != null;
+
                 var serviceModel = new ServiceModel { ServiceName = serviceName };
                 applicationModel.Services.Add(serviceModel);
 
-                var methods = type.IsInterface ? type.GetInterfaces().SelectMany(i => i.GetMethods()).ToArray() : type.GetMethods().Where(i => i.DeclaringType != typeof(object)).ToArray();
-
-                foreach (var methodInfo in methods)
+                ServerServiceModel serverService = null;
+                if (isServerService)
                 {
-                    var methodName = FluentUtilities.GetMethodName(methodInfo);
-                    var methodModel = new MethodModel
+                    serverService = new ServerServiceModel
                     {
-                        Name = methodName,
-                        RequestMarshaller = null,
-                        ResponseMarshaller = null,
-                        ServiceModel = serviceModel,
-                        Type = FluentUtilities.GetMethodType(methodInfo)
+                        ServiceName = serviceName,
+                        Type = type
+                    };
+                    applicationModel.ServerServices.Add(serverService);
+                }
+
+                foreach (var methodInfo in GetMethodInfos(type))
+                {
+                    var methodModel = CreateMethodModel(serviceModel, methodInfo);
+                    serviceModel.Methods.Add(methodModel);
+
+                    if (!isServerService)
+                        continue;
+
+                    var serverMethod = new ServerMethodModel
+                    {
+                        Method = methodModel,
+                        MethodInfo = methodInfo,
+                        ServerService = serverService
                     };
 
-                    MarshallerModel CreateMarshallerModel(Type marshallerType)
-                    {
-                        return new MarshallerModel
-                        {
-                            Deserializer = data => JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), marshallerType),
-                            MethodModel = methodModel,
-                            Serializer = model => Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model)),
-                            Type = marshallerType
-                        };
-                    }
-
-                    var requestMarshallerModel = CreateMarshallerModel(FluentUtilities.GetRequestType(methodInfo));
-                    var responseMarshallerModel = CreateMarshallerModel(FluentUtilities.GetResponseType(methodInfo));
-
-                    methodModel.RequestMarshaller = requestMarshallerModel;
-                    methodModel.ResponseMarshaller = responseMarshallerModel;
-
-                    serviceModel.Methods.Add(methodModel);
+                    serverService.ServerMethods.Add(serverMethod);
                 }
             }
         }
@@ -64,5 +65,67 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
         }
 
         #endregion Implementation of IApplicationModelProvider
+
+        #region Private Method
+
+        private static IEnumerable<MethodInfo> GetMethodInfos(Type type)
+        {
+            return type.IsInterface ? type.GetInterfaces().SelectMany(i => i.GetMethods()).ToArray() : type.GetMethods().Where(i => i.DeclaringType != typeof(object)).ToArray();
+        }
+
+        private static MethodModel CreateMethodModel(ServiceModel serviceModel, MethodInfo methodInfo)
+        {
+            var methodName = FluentUtilities.GetMethodName(methodInfo);
+            var methodModel = new MethodModel
+            {
+                Name = methodName,
+                RequestMarshaller = null,
+                ResponseMarshaller = null,
+                ServiceModel = serviceModel,
+                Type = FluentUtilities.GetMethodType(methodInfo)
+            };
+
+            var requestMarshallerModel = CreateMarshallerModel(methodModel, FluentUtilities.GetRequestType(methodInfo));
+            var responseMarshallerModel = CreateMarshallerModel(methodModel, FluentUtilities.GetResponseType(methodInfo));
+
+            methodModel.RequestMarshaller = requestMarshallerModel;
+            methodModel.ResponseMarshaller = responseMarshallerModel;
+
+            return methodModel;
+        }
+
+        private static MarshallerModel CreateMarshallerModel(MethodModel methodModel, Type marshallerType)
+        {
+            //todo: 考虑动态实现 
+            return new MarshallerModel
+            {
+                Deserializer = data =>
+                {
+                    if (data == null)
+                        return null;
+                    if (!typeof(IMessage).IsAssignableFrom(marshallerType))
+                        return JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), marshallerType);
+                    var message = (IMessage)Activator.CreateInstance(marshallerType);
+                    message.MergeFrom(data);
+                    return message;
+                },
+                MethodModel = methodModel,
+                Serializer = model =>
+                {
+                    switch (model)
+                    {
+                        case null:
+                            return null;
+
+                        case IMessage message:
+                            return message.ToByteArray();
+                    }
+                    return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model));
+                },
+                Type = marshallerType
+            };
+        }
+
+        #endregion Private Method
     }
 }
