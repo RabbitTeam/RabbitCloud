@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Grpc.Client.Internal
 {
+    //todo: 考虑长时间未使用Channel进行资源释放
     public class ChannelPool
     {
         private readonly ConcurrentDictionary<IServiceInstance, Lazy<Channel>> _channels = new ConcurrentDictionary<IServiceInstance, Lazy<Channel>>(ChannelServiceInstanceComparer.Instance);

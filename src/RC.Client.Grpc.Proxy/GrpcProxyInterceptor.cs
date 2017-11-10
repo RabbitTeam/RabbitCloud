@@ -3,7 +3,7 @@ using Grpc.Core;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Proxy;
-using Rabbit.Cloud.Grpc.Abstractions.ApplicationModels;
+using Rabbit.Cloud.Grpc.Fluent.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,15 +28,16 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
             var proxyType = invocation.Proxy.GetType();
             var proxyTypeName = proxyType.Name.Substring(0, proxyType.Name.Length - 5);
             proxyType = proxyType.GetInterface(proxyTypeName);
+
             //todo: think of a more reliable way
-            var descriptor = GrpcServiceDescriptor.Create(proxyType, invocation.Method);
+            var fullServiceName = FluentUtilities.GetFullServiceName(proxyType, invocation.Method);
 
             var context = new GrpcRabbitContext();
 
             context.Request.Url = new ServiceUrl
             {
                 Scheme = "grpc",
-                Path = descriptor.ServiceId
+                Path = fullServiceName
             };
             context.Request.Request = invocation.Arguments[0];
 

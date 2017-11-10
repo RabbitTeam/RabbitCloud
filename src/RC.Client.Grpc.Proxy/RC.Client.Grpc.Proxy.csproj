@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\RC.Client.Grpc\RC.Client.Grpc.csproj" />
     <ProjectReference Include="..\RC.Client.Proxy\RC.Client.Proxy.csproj" />
+    <ProjectReference Include="..\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
   </ItemGroup>
 
 </Project>

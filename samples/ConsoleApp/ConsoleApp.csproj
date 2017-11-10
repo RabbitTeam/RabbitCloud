@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\RC.Client.Grpc.Proxy\RC.Client.Grpc.Proxy.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.LoadBalance\RC.Client.LoadBalance.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
+    <ProjectReference Include="..\..\src\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Server\RC.Grpc.Server.csproj" />
   </ItemGroup>
 

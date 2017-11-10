@@ -1,13 +1,11 @@
 ﻿using System;
 
-namespace Rabbit.Cloud.Grpc.Abstractions
+namespace Rabbit.Cloud.Grpc.Fluent
 {
     public interface IGrpcServiceNameProvider
     {
         string ServiceName { get; }
     }
-
-    public interface IGrpcDefinitionProvider : IGrpcServiceNameProvider { }
 
     public interface IGrpcMethodProvider : IGrpcServiceNameProvider
     {
@@ -16,6 +14,8 @@ namespace Rabbit.Cloud.Grpc.Abstractions
         Type RequestType { get; }
         Type ResponseType { get; }
     }
+
+    public interface IGrpcDefinitionProvider : IGrpcServiceNameProvider { }
 
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Method)]
     public class GrpcServiceAttribute : Attribute, IGrpcDefinitionProvider
@@ -78,20 +78,10 @@ namespace Rabbit.Cloud.Grpc.Abstractions
 
         #endregion Implementation of IGrpcServiceNameProvider
 
-        #region Implementation of IGrpcMethodNameProvider
-
-        public string MethodName { get; set; }
-
-        #endregion Implementation of IGrpcMethodNameProvider
-
-        #region Implementation of IGrpcFullNameProvider
-
-        public string FullName { get; set; }
-
-        #endregion Implementation of IGrpcFullNameProvider
-
         #region Implementation of IGrpcMethodProvider
 
+        public string FullName { get; set; }
+        public string MethodName { get; set; }
         public Type RequestType { get; set; }
         public Type ResponseType { get; set; }
 

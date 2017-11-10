@@ -3,18 +3,18 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>Rabbit.Cloud.Grpc.Server</AssemblyName>
-    <RootNamespace>Rabbit.Cloud.Grpc.Server</RootNamespace>
+    <AssemblyName>Rabbit.Cloud.Grpc.Fluent</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Grpc.Fluent</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Grpc" Version="1.6.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RC.Abstractions\RC.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj" />
-    <ProjectReference Include="..\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
   </ItemGroup>
 
 </Project>

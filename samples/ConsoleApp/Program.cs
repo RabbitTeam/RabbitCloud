@@ -2,10 +2,8 @@
 using Grpc.Core;
 using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
-using Polly;
 using Rabbit.Cloud.Client;
 using Rabbit.Cloud.Client.Abstractions.Extensions;
-using Rabbit.Cloud.Client.Breaker;
 using Rabbit.Cloud.Client.Breaker.Builder;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
@@ -17,11 +15,10 @@ using Rabbit.Cloud.Discovery.Consul;
 using Rabbit.Cloud.Discovery.Consul.Registry;
 using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
-using Rabbit.Cloud.Grpc.Abstractions.ApplicationModels;
 using Rabbit.Cloud.Grpc.Client;
-using Rabbit.Cloud.Grpc.Server;
+using Rabbit.Cloud.Grpc.Fluent;
 using System;
-using System.Reflection;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -93,27 +90,19 @@ namespace ConsoleApp
 
         private const string ConsulUrl = "http://192.168.1.150:8500";
 
-        private static async Task StartServer(IGrpcServiceDescriptorCollection methodCollection)
+        private static async Task StartServer()
         {
             {
                 var services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
                     .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri(ConsulUrl)))
-                    .AddSingleton(methodCollection)
-                    .AddGrpcServer()
+                    .AddGrpcCore()
+                    .AddGrpcFluent()
                     .BuildServiceProvider();
 
                 var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
 
-                await registryService.RegisterAsync(ConsulUtil.Create(new RabbitConsulOptions.DiscoveryOptions
-                {
-                    HealthCheckInterval = "10s",
-                    HostName = "localhost",
-                    InstanceId = "localhost_9907",
-                    Port = 9907,
-                    ServiceName = "ConsoleApp"
-                }));
                 await registryService.RegisterAsync(ConsulUtil.Create(new RabbitConsulOptions.DiscoveryOptions
                 {
                     HealthCheckInterval = "10s",
@@ -123,87 +112,35 @@ namespace ConsoleApp
                     ServiceName = "ConsoleApp"
                 }));
 
-                var definitions = services.GetRequiredService<IServiceDefinitionCollection>();
-                {
-                    var server = new Server
-                    {
-                        Ports = { new ServerPort("localhost", 9907, ServerCredentials.Insecure) }
-                    };
-                    foreach (var definition in definitions)
-                    {
-                        server.Services.Add(definition);
-                    }
-                    server.Start();
-                }
                 {
                     var server = new Server
                     {
                         Ports = { new ServerPort("localhost", 9908, ServerCredentials.Insecure) }
                     };
-                    foreach (var definition in definitions)
-                    {
-                        server.Services.Add(definition);
-                    }
+                    var builder = new ServerServiceDefinition.Builder();
+
+                    var method = (Method<HelloRequest, HelloReply>)services.GetRequiredService<IMethodTableProvider>().MethodTable.First();
+                    builder.AddMethod(method, (r, c) => new ServiceImpl().SendAsync(r));
+
+                    server.Services.Add(builder.Build());
                     server.Start();
                 }
             }
         }
 
-        private static IGrpcServiceDescriptorCollection GetMethodCollection()
-        {
-            var services = new ServiceCollection()
-                .AddLogging()
-                .AddOptions()
-                .AddGrpcCore()
-                .BuildServiceProvider();
-
-            var methodCollection = services.GetRequiredService<IGrpcServiceDescriptorCollection>();
-
-            return methodCollection;
-        }
-
         private static async Task Main(string[] args)
         {
-            var methodCollection = GetMethodCollection();
-            await StartServer(methodCollection);
+            await StartServer();
+
             {
                 //client
                 var services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
-                    .AddSingleton(methodCollection)
+                    .AddGrpcCore()
                     .AddGrpcClient()
+                    .AddGrpcFluent()
                     .AddConsulDiscovery(c => c.Address = ConsulUrl)
-                    .AddBreaker(options =>
-                    {
-                        var policy = Policy
-                            .Handle<TargetInvocationException>(e =>
-                            {
-                                if (e.InnerException is RpcException rpcException)
-                                {
-                                    var statusCode = rpcException.Status.StatusCode;
-
-                                    switch (statusCode)
-                                    {
-                                        case StatusCode.Unavailable:
-                                        case StatusCode.DeadlineExceeded:
-                                            return true;
-                                    }
-
-                                    return false;
-                                }
-                                return false;
-                            })
-                            .WaitAndRetryAsync(new[]
-                            {
-                                TimeSpan.FromSeconds(1),
-                                TimeSpan.FromSeconds(1),
-                                TimeSpan.FromSeconds(1),
-                                TimeSpan.FromSeconds(1),
-                                TimeSpan.FromSeconds(1)
-                            });
-                        options.DefaultPolicy = policy;
-                    })
                     .AddLoadBalance()
                     .BuildServiceProvider();
 
@@ -234,6 +171,9 @@ namespace ConsoleApp
                     Console.ReadLine();
                 }
             }
+            /*var methodCollection = GetMethodCollection();
+            await StartServer(methodCollection);
+           */
         }
     }
 }
