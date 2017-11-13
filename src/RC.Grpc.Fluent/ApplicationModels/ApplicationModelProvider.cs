@@ -110,6 +110,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
         #region Implementation of IServerServiceDefinitionProvider
 
         int IServerServiceDefinitionProvider.Order { get; } = 10;
+
         //todo: 考虑优化实现
         public void OnProvidersExecuting(ServerServiceDefinitionProviderContext context)
         {
@@ -120,9 +121,12 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
             {
                 foreach (var serverServiceMethod in serverService.ServerMethods)
                 {
-                    var grpcMethod = _methodTable.Get($"/{serverService.ServiceName}/{serverServiceMethod.Method.Name}");
+                    var serviceId = $"/{serverService.ServiceName}/{serverServiceMethod.Method.Name}";
+
+                    var grpcMethod = _methodTable.Get(serviceId);
                     var requestType = serverServiceMethod.Method.RequestMarshaller.Type;
                     var responseType = serverServiceMethod.Method.ResponseMarshaller.Type;
+
                     var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
                     var methodDelegate = Cache.GetMethodDelegate(serverService.Type, serverServiceMethod.MethodInfo, delegateType, _services, (s, type) => Activator.CreateInstance(type));
                     var addMethodDelegate = Cache.GetAddMethod(delegateType, grpcMethod.GetType(), requestType, responseType);
