@@ -27,7 +27,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
     public class MethodModel
     {
-        //        public MethodInfo MethodInfo { get; set; }
+        public MethodInfo MethodInfo { get; set; }
         public ServiceModel ServiceModel { get; set; }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
     public class ServiceModel
     {
-        //        public TypeInfo ServiceType { get; set; }
+        public TypeInfo ServiceType { get; set; }
         public string ServiceName { get; set; }
 
         public ICollection<MethodModel> Methods { get; } = new List<MethodModel>();

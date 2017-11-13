@@ -128,7 +128,12 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
                     var responseType = serverServiceMethod.Method.ResponseMarshaller.Type;
 
                     var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
-                    var methodDelegate = Cache.GetMethodDelegate(serverService.Type, serverServiceMethod.MethodInfo, delegateType, _services, (s, type) => Activator.CreateInstance(type));
+                    var methodDelegate = Cache.GetMethodDelegate(serverService.Type, serverServiceMethod.MethodInfo, delegateType, _services,
+                        (s, type) =>
+                        {
+                            var instance = s.GetService(type);
+                            return instance ?? Activator.CreateInstance(type);
+                        });
                     var addMethodDelegate = Cache.GetAddMethod(delegateType, grpcMethod.GetType(), requestType, responseType);
 
                     addMethodDelegate.DynamicInvoke(builder, grpcMethod, methodDelegate);
