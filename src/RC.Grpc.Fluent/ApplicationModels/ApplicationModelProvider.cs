@@ -134,9 +134,8 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
                             var instance = s.GetService(type);
                             return instance ?? Activator.CreateInstance(type);
                         });
-                    var addMethodDelegate = Cache.GetAddMethod(delegateType, grpcMethod.GetType(), requestType, responseType);
-
-                    addMethodDelegate.DynamicInvoke(builder, grpcMethod, methodDelegate);
+                    var addMethodInvoker = Cache.GetAddMethod(delegateType, grpcMethod.GetType(), requestType, responseType);
+                    addMethodInvoker(builder, grpcMethod, methodDelegate);
                 }
             }
             context.Results.Add(builder.Build());
@@ -158,21 +157,21 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
             #endregion Field
 
-            public static Delegate GetAddMethod(Type delegateType, Type methodType, Type requestType, Type responseType)
+            public static Func<ServerServiceDefinition.Builder, object, object, ServerServiceDefinition.Builder> GetAddMethod(Type delegateType, Type methodType, Type requestType, Type responseType)
             {
                 var key = ("AddMethod", delegateType);
 
                 return GetCache(key, () =>
                 {
-                    var builderParameterExpression = GetParameterExpression(typeof(ServerServiceDefinition.Builder));
-                    var methodParameterExpression = GetParameterExpression(methodType);
-                    var delegateParameterExpression = GetParameterExpression(delegateType);
+                    var builderParameterExpression = Expression.Parameter(typeof(ServerServiceDefinition.Builder));
+                    var methodParameterExpression = Expression.Parameter(typeof(object));
+                    var delegateParameterExpression = Expression.Parameter(typeof(object));
 
                     var callExpression = Expression.Call(builderParameterExpression, "AddMethod",
                         new[] { requestType, responseType },
-                        methodParameterExpression, delegateParameterExpression);
+                        Expression.Convert(methodParameterExpression, methodType), Expression.Convert(delegateParameterExpression, delegateType));
 
-                    return Expression.Lambda(callExpression, builderParameterExpression, methodParameterExpression, delegateParameterExpression).Compile();
+                    return Expression.Lambda<Func<ServerServiceDefinition.Builder, object, object, ServerServiceDefinition.Builder>>(callExpression, builderParameterExpression, methodParameterExpression, delegateParameterExpression).Compile();
                 });
             }
 

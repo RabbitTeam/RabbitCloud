@@ -27,26 +27,24 @@ namespace Rabbit.Cloud.Grpc.Fluent.Utilities
             var dataParameterExpression = Expression.Parameter(typeof(byte[]), "data");
             var deserializerDelegate = Expression.Lambda(Expression.Convert(Expression.Invoke(deserializerConstantExpression, dataParameterExpression), marshaller.Type), dataParameterExpression).Compile();
 
-            var createMarshallerDelegate = GetCreateMarshallerDelegate(marshaller.Type);
-            return createMarshallerDelegate.DynamicInvoke(serializerDelegate, deserializerDelegate);
+            var createMarshallerFactory = GetCreateMarshallerFactory(marshaller.Type);
+            return createMarshallerFactory(serializerDelegate, deserializerDelegate);
         }
 
         #region Private Method
 
-        private static Delegate GetCreateMarshallerDelegate(Type type)
+        private static Func<object, object, object> GetCreateMarshallerFactory(Type type)
         {
             return Cache.GetCache(("CreateMarshaller", type), () =>
             {
                 var serializerFuncType = Expression.GetFuncType(type, typeof(byte[]));
-                var serializerFuncParameterExpression = Expression.Parameter(serializerFuncType);
+                var serializerFuncParameterExpression = Expression.Parameter(typeof(object));
 
                 var deserializerFuncType = Expression.GetFuncType(typeof(byte[]), type);
-                var deserializerFuncParameterExpression = Expression.Parameter(deserializerFuncType);
+                var deserializerFuncParameterExpression = Expression.Parameter(typeof(object));
 
-                var createCallExpression = Expression.Call(typeof(Marshallers), nameof(Marshallers.Create),
-                    new[] { type }, serializerFuncParameterExpression, deserializerFuncParameterExpression);
-                return Expression.Lambda(createCallExpression, serializerFuncParameterExpression,
-                    deserializerFuncParameterExpression).Compile();
+                var createCallExpression = Expression.Call(typeof(Marshallers), nameof(Marshallers.Create), new[] { type }, Expression.Convert(serializerFuncParameterExpression, serializerFuncType), Expression.Convert(deserializerFuncParameterExpression, deserializerFuncType));
+                return Expression.Lambda<Func<object, object, object>>(createCallExpression, serializerFuncParameterExpression, deserializerFuncParameterExpression).Compile();
             });
         }
 
@@ -103,9 +101,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.Utilities
                     Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { requestType }, Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(MethodModel.RequestMarshaller)).First())),
                     Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { responseType }, Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(MethodModel.ResponseMarshaller)).First())));
 
-                var factory = Expression.Lambda(newExpression, methodParameterExpression).Compile();
-
-                return new Func<MethodModel, IMethod>(details => (IMethod)factory.DynamicInvoke(details));
+                return Expression.Lambda<Func<MethodModel, IMethod>>(newExpression, methodParameterExpression).Compile();
             });
         }
 

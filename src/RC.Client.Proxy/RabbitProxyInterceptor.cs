@@ -42,14 +42,14 @@ namespace Rabbit.Cloud.Client.Proxy
 
             #endregion Constructor
 
-            public static Delegate GetHandleDelegate(Type returnType)
+            public static Func<RabbitProxyInterceptor, IInvocation, Task> GetHandler(Type returnType)
             {
                 var key = ("HandleDelegate", returnType);
 
                 return GetCache(key, () =>
                 {
                     var callExpression = Expression.Call(InstanceParameterExpression, nameof(HandleAsync), new[] { returnType }, InvocationParameterExpression);
-                    return Expression.Lambda(callExpression, InstanceParameterExpression, InvocationParameterExpression).Compile();
+                    return Expression.Lambda<Func<RabbitProxyInterceptor, IInvocation, Task>>(callExpression, InstanceParameterExpression, InvocationParameterExpression).Compile();
                 });
             }
 
@@ -78,10 +78,10 @@ namespace Rabbit.Cloud.Client.Proxy
 
             if (isTask)
             {
-                returnType = Rabbit.Cloud.Abstractions.Utilities.ReflectionUtilities.GetRealType(returnType);
-                var handleDelegate = Cache.GetHandleDelegate(returnType);
+                returnType = Cloud.Abstractions.Utilities.ReflectionUtilities.GetRealType(returnType);
+                var handler = Cache.GetHandler(returnType);
 
-                invocation.ReturnValue = handleDelegate.DynamicInvoke(this, invocation);
+                invocation.ReturnValue = handler(this, invocation);
             }
             else
             {

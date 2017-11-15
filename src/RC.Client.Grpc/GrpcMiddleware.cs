@@ -52,8 +52,8 @@ namespace Rabbit.Cloud.Client.Grpc
 
             context.Features.Get<IGrpcResponseFeature>().Response = response;
 
-            var awaiterDelegate = Cache.GetAwaiterDelegate(response.GetType());
-            awaiterDelegate.DynamicInvoke(response);
+            var awaiterAction = Cache.GetAwaiterAction(response.GetType());
+            awaiterAction(response);
 
             await _next(context);
         }
@@ -62,18 +62,18 @@ namespace Rabbit.Cloud.Client.Grpc
 
         private static class Cache
         {
-            private static readonly IDictionary<Type, Delegate> Caches = new Dictionary<Type, Delegate>();
+            private static readonly IDictionary<Type, Action<object>> Caches = new Dictionary<Type, Action<object>>();
 
-            public static Delegate GetAwaiterDelegate(Type type)
+            public static Action<object> GetAwaiterAction(Type type)
             {
                 if (Caches.TryGetValue(type, out var action))
                     return action;
 
                 var getAwaiterMethod = type.GetMethod(nameof(Task.GetAwaiter));
-                var parameterExpression = Expression.Parameter(type);
-                var callExpression = Expression.Call(Expression.Call(parameterExpression, getAwaiterMethod), nameof(TaskAwaiter.GetResult), null);
+                var parameterExpression = Expression.Parameter(typeof(object));
+                var callExpression = Expression.Call(Expression.Call(Expression.Convert(parameterExpression, type), getAwaiterMethod), nameof(TaskAwaiter.GetResult), null);
 
-                return Caches[type] = Expression.Lambda(callExpression, parameterExpression).Compile();
+                return Caches[type] = Expression.Lambda<Action<object>>(callExpression, parameterExpression).Compile();
             }
         }
 
