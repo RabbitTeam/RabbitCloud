@@ -63,7 +63,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
                 return response;
 
             var responseAsyncPropertyAccessor = Cache.GetResponseAsyncAccessor(responseType);
-            var responseAsync = (Task)responseAsyncPropertyAccessor.DynamicInvoke(response);
+            var responseAsync = responseAsyncPropertyAccessor(response);
 
             if (!returnType.IsGenericType)
                 return responseAsync;
@@ -71,7 +71,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
             await responseAsync;
 
             var taskResultAccessor = Cache.GetTaskResultAccessor(responseAsync);
-            return taskResultAccessor.DynamicInvoke(responseAsync);
+            return taskResultAccessor(responseAsync);
         }
 
         #endregion Overrides of RabbitProxyInterceptor
@@ -86,19 +86,19 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
             #endregion Field
 
-            public static Delegate GetResponseAsyncAccessor(Type type)
+            public static Func<object, Task> GetResponseAsyncAccessor(Type type)
             {
                 var key = ("ResponseAsyncAccessor", type);
 
                 return GetCache(key, () =>
                 {
-                    var parameterExpression = GetParameterExpression(type);
-                    var responseAsyncPropertyExpression = GetResponseAsyncExpression(parameterExpression);
-                    return Expression.Lambda(responseAsyncPropertyExpression, parameterExpression).Compile();
+                    var parameterExpression = GetParameterExpression(typeof(object));
+                    var responseAsyncPropertyExpression = GetResponseAsyncExpression(Expression.Convert(parameterExpression, type));
+                    return Expression.Lambda<Func<object, Task>>(responseAsyncPropertyExpression, parameterExpression).Compile();
                 });
             }
 
-            public static Delegate GetTaskResultAccessor(Task task)
+            public static Func<Task, object> GetTaskResultAccessor(Task task)
             {
                 var type = task.GetType();
                 if (!type.IsGenericType)
@@ -108,19 +108,19 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
                 return GetCache(key, () =>
                 {
-                    var parameterExpression = Expression.Parameter(type);
+                    var parameterExpression = Expression.Parameter(typeof(object));
 
                     var getAwaiterMethodInfo = type.GetMethod(nameof(Task<object>.GetAwaiter));
 
-                    var callExpression = Expression.Call(Expression.Call(parameterExpression, getAwaiterMethodInfo), nameof(TaskAwaiter.GetResult), null);
+                    var callExpression = Expression.Call(Expression.Call(Expression.Convert(parameterExpression, type), getAwaiterMethodInfo), nameof(TaskAwaiter.GetResult), null);
 
-                    return Expression.Lambda(callExpression, parameterExpression).Compile();
+                    return Expression.Lambda<Func<Task, object>>(callExpression, parameterExpression).Compile();
                 });
             }
 
             #region Private Method
 
-            private static MemberExpression GetResponseAsyncExpression(ParameterExpression parameterExpression)
+            private static MemberExpression GetResponseAsyncExpression(Expression parameterExpression)
             {
                 var key = ("ResponseAsyncExpression", parameterExpression.Type);
 
