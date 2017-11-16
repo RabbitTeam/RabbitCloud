@@ -76,7 +76,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
         {
             var methods = new List<MethodInfo>();
             GetMethodInfos(type, methods);
-            return methods;
+            return methods.Where(i => i.IsPublic && i.GetParameters().Any() && i.ReturnType != typeof(void) && i.GetTypeAttribute<IGrpcIgnoreProvider>() == null);
         }
 
         private static void GetMethodInfos(Type type, List<MethodInfo> methods)

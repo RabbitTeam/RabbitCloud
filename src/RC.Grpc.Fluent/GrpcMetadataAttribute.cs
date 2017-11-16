@@ -87,4 +87,9 @@ namespace Rabbit.Cloud.Grpc.Fluent
 
         #endregion Implementation of IGrpcMethodProvider
     }
+
+    public interface IGrpcIgnoreProvider { }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonGrpcMethodAttribute : Attribute, IGrpcIgnoreProvider { }
 }
