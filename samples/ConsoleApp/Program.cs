@@ -17,6 +17,8 @@ using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Fluent;
+using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
+using Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal;
 using Rabbit.Cloud.Grpc.Server;
 using System;
 using System.Threading.Tasks;
@@ -100,6 +102,8 @@ namespace ConsoleApp
                     .AddGrpcCore()
                     .AddGrpcServer()
                     .AddGrpcFluent()
+                    .AddSingleton<ServiceImpl, ServiceImpl>()
+                    .AddSingleton<IServerMethodInvokerFactory, ServerMethodInvokerFactory>()
                     .BuildServiceProvider();
 
                 var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();

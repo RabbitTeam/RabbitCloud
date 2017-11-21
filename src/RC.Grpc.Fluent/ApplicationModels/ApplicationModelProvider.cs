@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Fluent.Utilities;
@@ -127,15 +128,37 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
                     var requestType = serverServiceMethod.Method.RequestMarshaller.Type;
                     var responseType = serverServiceMethod.Method.ResponseMarshaller.Type;
 
-                    var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
-                    var methodDelegate = Cache.GetMethodDelegate(serverService.Type, serverServiceMethod.MethodInfo, delegateType, _services,
-                        (s, type) =>
-                        {
-                            var instance = s.GetService(type);
-                            return instance ?? Activator.CreateInstance(type);
-                        });
-                    var addMethodInvoker = Cache.GetAddMethod(delegateType, grpcMethod.GetType(), requestType, responseType);
-                    addMethodInvoker(builder, grpcMethod, methodDelegate);
+                    switch (serverServiceMethod.Method.Type)
+                    {
+                        case MethodType.Unary:
+                            var invoker = _services.GetRequiredService<IServerMethodInvokerFactory>().CreateInvoker(serverServiceMethod);
+
+                            var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
+
+                            var requestParameterExpression = Expression.Parameter(requestType);
+                            var callContextParameterExpression = Expression.Parameter(typeof(ServerCallContext));
+
+                            var methodCallExpression = Expression.Call(Expression.Constant(invoker),
+                                nameof(IServerMethodInvoker.UnaryServerMethod), new[] { requestType, responseType }, requestParameterExpression, callContextParameterExpression);
+
+                            var methodDelegate = Expression.Lambda(delegateType, Expression.Convert(methodCallExpression, serverServiceMethod.MethodInfo.ReturnType), requestParameterExpression, callContextParameterExpression).Compile();
+
+                            var addMethodInvoker = Cache.GetAddMethod(delegateType, grpcMethod.GetType(), requestType, responseType);
+                            addMethodInvoker(builder, grpcMethod, methodDelegate);
+                            break;
+
+                        case MethodType.ClientStreaming:
+                            break;
+
+                        case MethodType.ServerStreaming:
+                            break;
+
+                        case MethodType.DuplexStreaming:
+                            break;
+
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
             }
             context.Results.Add(builder.Build());
@@ -181,30 +204,6 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
                 return GetCache(key, () => typeof(UnaryServerMethod<,>).MakeGenericType(requestType, responseType));
             }
 
-            public static Delegate GetMethodDelegate(Type serviceType, MethodInfo methodInfo, Type delegateType, IServiceProvider services, Func<IServiceProvider, Type, object> instanceFactory)
-            {
-                //todo: 考虑优化，MethodDelegate是固定的，服务实例不是固定的
-                var key = ("MethodDelegate", serviceType, delegateType);
-                return GetCache(key, () =>
-                {
-                    var parameters = methodInfo.GetParameters();
-
-                    IList<ParameterExpression> parameterExpressions = parameters.Select(i => GetParameterExpression(i.ParameterType)).ToList();
-
-                    var missServerCallContext = parameters.All(i => i.ParameterType != typeof(ServerCallContext));
-
-                    var instanceExpression = GetInstanceExpression(serviceType, services, instanceFactory);
-                    var callExpression = Expression.Call(instanceExpression, methodInfo, parameterExpressions);
-
-                    //todo:需要考虑非 UnaryServerMethod<> 委托类型的参数选择
-                    if (missServerCallContext)
-                        parameterExpressions.Add(GetParameterExpression(typeof(ServerCallContext)));
-
-                    var methodDelegate = Expression.Lambda(delegateType, callExpression, parameterExpressions).Compile();
-                    return methodDelegate;
-                });
-            }
-
             #region Private Method
 
             private static T GetCache<T>(object key, Func<T> factory)
@@ -214,25 +213,6 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
                     return (T)cache;
                 }
                 return (T)(Caches[key] = factory());
-            }
-
-            private static ParameterExpression GetParameterExpression(Type type)
-            {
-                var key = ("Parameter", type);
-
-                return GetCache(key, () => Expression.Parameter(type));
-            }
-
-            private static Expression GetInstanceExpression(Type type, IServiceProvider serviceProvider, Func<IServiceProvider, Type, object> factory)
-            {
-                var key = ("instanceFactory", type);
-                return GetCache(key, () =>
-                {
-                    var instancExpression = Expression.Invoke(Expression.Constant(factory), Expression.Constant(serviceProvider), Expression.Constant(type));
-                    var serviceInstanceExpression = Expression.Convert(instancExpression, type);
-
-                    return Expression.Invoke(Expression.Lambda(serviceInstanceExpression));
-                });
             }
 
             #endregion Private Method

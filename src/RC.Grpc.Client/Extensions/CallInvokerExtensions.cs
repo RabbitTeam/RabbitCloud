@@ -39,7 +39,7 @@ namespace Rabbit.Cloud.Grpc.Client.Extensions
         public static object Call(this CallInvoker callInvoker, string callMethodName, IMethod method, string host, CallOptions callOptions, object request)
         {
             var invoker = Cache.GetInvoker(method, callMethodName);
-            return invoker.DynamicInvoke(callInvoker, method, host, callOptions, request);
+            return invoker(callInvoker, method, host, callOptions, request);
         }
 
         #region Private Method
@@ -82,17 +82,15 @@ namespace Rabbit.Cloud.Grpc.Client.Extensions
                 return (T)(Caches[key] = factory());
             }
 
-            public static Delegate GetInvoker(IMethod method, string callMethodName)
+            public static Func<CallInvoker, IMethod, string, CallOptions, object, object> GetInvoker(IMethod method, string callMethodName)
             {
                 var key = ("invoker", method.FullName, callMethodName);
                 return GetCache(key, () =>
                 {
                     var typeArguments = method.GetType().GenericTypeArguments;
                     var requestType = typeArguments[0];
-                    var responseType = typeArguments[1];
-                    var requestParameterExpression = GetRequestParameter(requestType);
-
-                    var methodParameterExpression = GetMethodParameter(requestType, responseType);
+                    var requestParameterExpression = Expression.Parameter(typeof(object));
+                    var methodParameterExpression = Expression.Parameter(typeof(IMethod));
 
                     Expression[] parameterExpressions;
                     IEnumerable<ParameterExpression> lambdaParameterExpressions;
@@ -119,10 +117,10 @@ namespace Rabbit.Cloud.Grpc.Client.Extensions
                         default:
                             parameterExpressions = new Expression[]
                             {
-                                methodParameterExpression,
+                                Expression.Convert(methodParameterExpression,method.GetType()),
                                 HostParameterExpression,
                                 CallOptionsParameterExpression,
-                                requestParameterExpression
+                                Expression.Convert(requestParameterExpression,requestType)
                             };
                             lambdaParameterExpressions = new[]
                             {
@@ -137,21 +135,9 @@ namespace Rabbit.Cloud.Grpc.Client.Extensions
 
                     var callExpression = Expression.Call(CallInvokerParameterExpression, callMethodName, typeArguments, parameterExpressions);
 
-                    var lambda = Expression.Lambda(callExpression, lambdaParameterExpressions);
+                    var lambda = Expression.Lambda<Func<CallInvoker, IMethod, string, CallOptions, object, object>>(callExpression, lambdaParameterExpressions);
                     return lambda.Compile();
                 });
-            }
-
-            private static ParameterExpression GetMethodParameter(Type requestType, Type responseType)
-            {
-                var key = ("methodParameter", requestType, responseType);
-                return GetCache(key, () => Expression.Parameter(typeof(Method<,>).MakeGenericType(requestType, responseType)));
-            }
-
-            private static ParameterExpression GetRequestParameter(Type requestType)
-            {
-                var key = ("requestParameter", requestType);
-                return GetCache(key, () => Expression.Parameter(requestType));
             }
         }
 
