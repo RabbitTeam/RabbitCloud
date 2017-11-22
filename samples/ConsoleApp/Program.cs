@@ -17,8 +17,6 @@ using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Fluent;
-using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
-using Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal;
 using Rabbit.Cloud.Grpc.Server;
 using System;
 using System.Threading.Tasks;
@@ -58,38 +56,6 @@ namespace ConsoleApp
 
     public class Program
     {
-        /*        [GrpcService]
-                public class TestService
-                {
-                    /// <summary>
-                    /// Sends a greeting
-                    /// </summary>
-                    /// <param name="request">The request received from the client.</param>
-                    /// <param name="context">The context of the server-side call handler being invoked.</param>
-                    /// <returns>The response to send back to the client (wrapped by a task).</returns>
-                    [GrpcMethod("test")]
-                    public Task<HelloReply> SayHello(HelloRequest request)
-                    {
-                        return Task.FromResult(new HelloReply { Message = "hello " + request.Name });
-                    }
-                }
-
-                [GrpcClient]
-                public interface ITestService
-                {
-                    /*[GrpcMethod("test", ResponseType = typeof(HelloReply))]
-                    AsyncUnaryCall<HelloReply> HelloAsync(HelloRequest request);
-
-                    [GrpcMethod("test", ResponseType = typeof(HelloReply))]
-                    void Hello(HelloRequest request);
-
-                    [GrpcMethod("test", ResponseType = typeof(HelloReply))]
-                    Task HelloAsync2(HelloRequest request);#1#
-
-                    [GrpcMethod("test")]
-                    Task<HelloReply> HelloAsync3(HelloRequest request);
-                }*/
-
         private const string ConsulUrl = "http://localhost:8500";
 
         private static async Task StartServer()
@@ -103,7 +69,6 @@ namespace ConsoleApp
                     .AddGrpcServer()
                     .AddGrpcFluent()
                     .AddSingleton<ServiceImpl, ServiceImpl>()
-                    .AddSingleton<IServerMethodInvokerFactory, ServerMethodInvokerFactory>()
                     .BuildServiceProvider();
 
                 var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
@@ -169,17 +134,9 @@ namespace ConsoleApp
                 {
                     var t = await service.SendAsync(new HelloRequest { Name = "test" });
                     Console.WriteLine(t?.Message ?? "null");
-                    //                    service.Hello(new HelloRequest { Name = "test" });
-                    //                    await service.HelloAsync2(new HelloRequest { Name = "test" });
-                    //                    var tt = await service.HelloAsync3(new HelloRequest { Name = "test" });
-                    //                    Console.WriteLine(tt.Message);
-
                     Console.ReadLine();
                 }
             }
-            /*var methodCollection = GetMethodCollection();
-            await StartServer(methodCollection);
-           */
         }
     }
 }
