@@ -112,6 +112,11 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
         int IServerServiceDefinitionProvider.Order { get; } = 10;
 
+        private IServerMethodInvoker GetServerMethodInvoker(ServerMethodModel serviceMethod)
+        {
+            return _services.GetRequiredService<IServerMethodInvokerFactory>().CreateInvoker(serviceMethod);
+        }
+
         //todo: 考虑优化实现
         public void OnProvidersExecuting(ServerServiceDefinitionProviderContext context)
         {
@@ -128,37 +133,10 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
                     var requestType = serverServiceMethod.Method.RequestMarshaller.Type;
                     var responseType = serverServiceMethod.Method.ResponseMarshaller.Type;
 
-                    switch (serverServiceMethod.Method.Type)
-                    {
-                        case MethodType.Unary:
-                            var invoker = _services.GetRequiredService<IServerMethodInvokerFactory>().CreateInvoker(serverServiceMethod);
+                    var methodDelegate = Cache.GetMethodDelegate(GetServerMethodInvoker(serverServiceMethod), serverServiceMethod);
 
-                            var delegateType = Cache.GetUnaryServerDelegateType(requestType, responseType);
-
-                            var requestParameterExpression = Expression.Parameter(requestType);
-                            var callContextParameterExpression = Expression.Parameter(typeof(ServerCallContext));
-
-                            var methodCallExpression = Expression.Call(Expression.Constant(invoker),
-                                nameof(IServerMethodInvoker.UnaryServerMethod), new[] { requestType, responseType }, requestParameterExpression, callContextParameterExpression);
-
-                            var methodDelegate = Expression.Lambda(delegateType, Expression.Convert(methodCallExpression, serverServiceMethod.MethodInfo.ReturnType), requestParameterExpression, callContextParameterExpression).Compile();
-
-                            var addMethodInvoker = Cache.GetAddMethod(delegateType, grpcMethod.GetType(), requestType, responseType);
-                            addMethodInvoker(builder, grpcMethod, methodDelegate);
-                            break;
-
-                        case MethodType.ClientStreaming:
-                            break;
-
-                        case MethodType.ServerStreaming:
-                            break;
-
-                        case MethodType.DuplexStreaming:
-                            break;
-
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
+                    var addMethodInvoker = Cache.GetAddMethod(methodDelegate.GetType(), grpcMethod.GetType(), requestType, responseType);
+                    addMethodInvoker(builder, grpcMethod, methodDelegate);
                 }
             }
             context.Results.Add(builder.Build());
@@ -179,6 +157,45 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
             private static readonly IDictionary<object, object> Caches = new Dictionary<object, object>();
 
             #endregion Field
+
+            public static Delegate GetMethodDelegate(IServerMethodInvoker serverMethodInvoker, ServerMethodModel serverMethod)
+            {
+                switch (serverMethod.Method.Type)
+                {
+                    case MethodType.Unary:
+                        return GetUnaryMethodDelegate(serverMethodInvoker, serverMethod);
+
+                    case MethodType.ClientStreaming:
+                    case MethodType.ServerStreaming:
+                    case MethodType.DuplexStreaming:
+                        throw new NotImplementedException();
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            private static Delegate GetUnaryMethodDelegate(IServerMethodInvoker serverMethodInvoker, ServerMethodModel serverMethod)
+            {
+                var key = ("Unary", serverMethod.MethodInfo);
+                return GetCache(key, () =>
+                {
+                    var requestType = serverMethod.Method.RequestMarshaller.Type;
+                    var responseType = serverMethod.Method.ResponseMarshaller.Type;
+                    var delegateType = GetUnaryServerDelegateType(requestType, responseType);
+
+                    var requestParameterExpression = Expression.Parameter(requestType);
+                    var callContextParameterExpression = Expression.Parameter(typeof(ServerCallContext));
+
+                    var methodCallExpression = Expression.Call(Expression.Constant(serverMethodInvoker),
+                        nameof(IServerMethodInvoker.UnaryServerMethod), new[] { requestType, responseType },
+                        requestParameterExpression, callContextParameterExpression);
+
+                    var methodDelegate = Expression.Lambda(delegateType,
+                        Expression.Convert(methodCallExpression, serverMethod.MethodInfo.ReturnType),
+                        requestParameterExpression, callContextParameterExpression).Compile();
+                    return methodDelegate;
+                });
+            }
 
             public static Func<ServerServiceDefinition.Builder, object, object, ServerServiceDefinition.Builder> GetAddMethod(Type delegateType, Type methodType, Type requestType, Type responseType)
             {

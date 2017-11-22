@@ -26,45 +26,23 @@ namespace Rabbit.Cloud.Client.Proxy
         {
             #region Field
 
-            private static readonly IDictionary<object, object> Caches = new Dictionary<object, object>();
-            private static readonly ParameterExpression InvocationParameterExpression;
-            private static readonly ParameterExpression InstanceParameterExpression;
+            private static readonly IDictionary<Type, Func<RabbitProxyInterceptor, IInvocation, Task>> Caches = new Dictionary<Type, Func<RabbitProxyInterceptor, IInvocation, Task>>();
 
             #endregion Field
 
-            #region Constructor
-
-            static Cache()
-            {
-                InvocationParameterExpression = Expression.Parameter(typeof(IInvocation));
-                InstanceParameterExpression = Expression.Parameter(typeof(RabbitProxyInterceptor), "instance");
-            }
-
-            #endregion Constructor
-
             public static Func<RabbitProxyInterceptor, IInvocation, Task> GetHandler(Type returnType)
             {
-                var key = ("HandleDelegate", returnType);
+                var key = returnType;
 
-                return GetCache(key, () =>
-                {
-                    var callExpression = Expression.Call(InstanceParameterExpression, nameof(HandleAsync), new[] { returnType }, InvocationParameterExpression);
-                    return Expression.Lambda<Func<RabbitProxyInterceptor, IInvocation, Task>>(callExpression, InstanceParameterExpression, InvocationParameterExpression).Compile();
-                });
+                if (Caches.TryGetValue(key, out var handler))
+                    return handler;
+
+                var invocationParameterExpression = Expression.Parameter(typeof(IInvocation));
+                var instanceParameterExpression = Expression.Parameter(typeof(RabbitProxyInterceptor), "instance");
+
+                var callExpression = Expression.Call(instanceParameterExpression, nameof(HandleAsync), new[] { returnType }, invocationParameterExpression);
+                return Caches[key] = Expression.Lambda<Func<RabbitProxyInterceptor, IInvocation, Task>>(callExpression, instanceParameterExpression, invocationParameterExpression).Compile();
             }
-
-            #region Private Method
-
-            private static T GetCache<T>(object key, Func<T> factory)
-            {
-                if (Caches.TryGetValue(key, out var cache))
-                {
-                    return (T)cache;
-                }
-                return (T)(Caches[key] = factory());
-            }
-
-            #endregion Private Method
         }
 
         #endregion Help Type

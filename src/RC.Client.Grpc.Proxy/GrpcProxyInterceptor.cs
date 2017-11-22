@@ -93,7 +93,9 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
                 return GetCache(key, () =>
                 {
                     var parameterExpression = GetParameterExpression(typeof(object));
-                    var responseAsyncPropertyExpression = GetResponseAsyncExpression(Expression.Convert(parameterExpression, type));
+                    var convertExpression = Expression.Convert(parameterExpression, type);
+
+                    var responseAsyncPropertyExpression = Expression.Property(convertExpression, nameof(AsyncUnaryCall<object>.ResponseAsync));
                     return Expression.Lambda<Func<object, Task>>(responseAsyncPropertyExpression, parameterExpression).Compile();
                 });
             }
@@ -119,17 +121,6 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
             }
 
             #region Private Method
-
-            private static MemberExpression GetResponseAsyncExpression(Expression parameterExpression)
-            {
-                var key = ("ResponseAsyncExpression", parameterExpression.Type);
-
-                return GetCache(key, () =>
-                {
-                    var propertyExpression = Expression.Property(parameterExpression, nameof(AsyncUnaryCall<object>.ResponseAsync));
-                    return propertyExpression;
-                });
-            }
 
             private static ParameterExpression GetParameterExpression(Type type)
             {

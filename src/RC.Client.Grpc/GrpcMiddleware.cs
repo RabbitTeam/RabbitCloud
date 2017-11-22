@@ -52,6 +52,7 @@ namespace Rabbit.Cloud.Client.Grpc
 
             context.Features.Get<IGrpcResponseFeature>().Response = response;
 
+            //todo: await result, may trigger exception.
             var awaiterAction = Cache.GetAwaiterAction(response.GetType());
             awaiterAction(response);
 
