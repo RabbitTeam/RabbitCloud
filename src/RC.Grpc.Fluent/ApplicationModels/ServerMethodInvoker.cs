@@ -1,5 +1,5 @@
 ﻿using Grpc.Core;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,11 +9,13 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 {
     public abstract class ServerMethodInvoker : IServerMethodInvoker
     {
+        private readonly ILogger _logger;
         protected virtual ServerMethodModel ServerMethod { get; }
         protected virtual IServiceProvider Services { get; }
 
-        protected ServerMethodInvoker(ServerMethodModel serverMethod, IServiceProvider services)
+        protected ServerMethodInvoker(ServerMethodModel serverMethod, IServiceProvider services, ILogger logger)
         {
+            _logger = logger;
             ServerMethod = serverMethod;
             Services = services;
         }
@@ -27,17 +29,25 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
                 if (_methodInvoker != null)
                     return _methodInvoker;
 
-                var parametersParameterExpression = Expression.Parameter(typeof(object[]));
+                try
+                {
+                    var parametersParameterExpression = Expression.Parameter(typeof(object[]));
 
-                var methodInfo = ServerMethod.MethodInfo;
+                    var methodInfo = ServerMethod.MethodInfo;
 
-                var parameterParameterExpressions = methodInfo.GetParameters().Select(p => Expression.Parameter(p.ParameterType));
+                    var parameterParameterExpressions = methodInfo.GetParameters().Select(p => Expression.Parameter(p.ParameterType));
 
-                var callExpressions = parameterParameterExpressions.Select((e, index) => Expression.Convert(Expression.ArrayIndex(parametersParameterExpression, Expression.Constant(index)), e.Type));
+                    var callExpressions = parameterParameterExpressions.Select((e, index) => Expression.Convert(Expression.ArrayIndex(parametersParameterExpression, Expression.Constant(index)), e.Type));
 
-                var callExpression = Expression.Call(Expression.Constant(GetServiceInstance()), ServerMethod.MethodInfo, callExpressions);
+                    var callExpression = Expression.Call(Expression.Constant(GetServiceInstance()), ServerMethod.MethodInfo, callExpressions);
 
-                return _methodInvoker = Expression.Lambda<Func<object[], object>>(callExpression, parametersParameterExpression).Compile();
+                    return _methodInvoker = Expression.Lambda<Func<object[], object>>(callExpression, parametersParameterExpression).Compile();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "generate MethodInvoker error.");
+                    throw;
+                }
             }
         }
 
@@ -57,8 +67,18 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
         protected virtual object GetServiceInstance()
         {
-            var serviceInstance = Services.GetRequiredService(ServerMethod.ServerService.Type);
-            return serviceInstance;
+            try
+            {
+                var serviceType = ServerMethod.ServerService.Type;
+                var serviceInstance = Services.GetService(serviceType);
+
+                return serviceInstance ?? Activator.CreateInstance(serviceType);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "get service instance error.");
+                throw;
+            }
         }
     }
 }
