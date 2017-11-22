@@ -3,12 +3,12 @@ using System;
 
 namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal
 {
-    public class ServerMethodInvokerFactory : IServerMethodInvokerFactory
+    public class DefaultServerMethodInvokerFactory : IServerMethodInvokerFactory
     {
         private readonly IServiceProvider _services;
         private readonly ILogger<DefaultServerMethodInvoker> _logger;
 
-        public ServerMethodInvokerFactory(IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger)
+        public DefaultServerMethodInvokerFactory(IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger)
         {
             _services = services;
             _logger = logger;

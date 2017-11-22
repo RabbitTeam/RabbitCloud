@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyModel;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
+using Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal;
 using Rabbit.Cloud.Grpc.Fluent.Internal;
 using Rabbit.Cloud.Grpc.Server;
 using System;
@@ -49,7 +50,8 @@ namespace Rabbit.Cloud.Grpc.Fluent
                 .AddSingleton<IApplicationModelProvider, DefaultApplicationModelProvider>()
                 .AddSingleton<ApplicationModelHolder, ApplicationModelHolder>()
                 .AddSingleton<IMethodProvider, MethodProvider>()
-                .AddSingleton<IServerServiceDefinitionProvider, ServerServiceDefinitionProvider>();
+                .AddSingleton<IServerServiceDefinitionProvider, ServerServiceDefinitionProvider>()
+                .AddSingleton<IServerMethodInvokerFactory, DefaultServerMethodInvokerFactory>();
         }
     }
 }
