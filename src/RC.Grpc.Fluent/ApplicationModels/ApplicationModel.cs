@@ -7,12 +7,23 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 {
     public class MarshallerModel
     {
+        public MarshallerModel(TypeInfo type, IReadOnlyList<object> attributes)
+        {
+            if (attributes == null)
+                throw new ArgumentNullException(nameof(attributes));
+
+            Type = type ?? throw new ArgumentNullException(nameof(type));
+            Attributes = new List<object>(attributes);
+        }
+
         public MethodModel MethodModel { get; set; }
 
         /// <summary>
         /// Target Type.
         /// </summary>
-        public Type Type { get; set; }
+        public TypeInfo Type { get; }
+
+        public IReadOnlyList<object> Attributes { get; }
 
         /// <summary>
         /// Gets the serializer function.
@@ -27,7 +38,17 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
     public class MethodModel
     {
-        public MethodInfo MethodInfo { get; set; }
+        public MethodModel(MethodInfo methodInfo, IReadOnlyList<object> attributes)
+        {
+            if (attributes == null)
+                throw new ArgumentNullException(nameof(attributes));
+
+            MethodInfo = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
+            Attributes = new List<object>(attributes);
+        }
+
+        public IReadOnlyList<object> Attributes { get; }
+        public MethodInfo MethodInfo { get; }
         public ServiceModel ServiceModel { get; set; }
 
         /// <summary>
@@ -53,29 +74,59 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
     public class ServiceModel
     {
-        public TypeInfo ServiceType { get; set; }
-        public string ServiceName { get; set; }
+        public ServiceModel(TypeInfo serviceType, IReadOnlyList<object> attributes)
+        {
+            if (attributes == null)
+                throw new ArgumentNullException(nameof(attributes));
 
-        public ICollection<MethodModel> Methods { get; } = new List<MethodModel>();
+            ServiceType = serviceType ?? throw new ArgumentNullException(nameof(serviceType));
+            Attributes = new List<object>(attributes);
+        }
+
+        public TypeInfo ServiceType { get; }
+        public string ServiceName { get; set; }
+        public IReadOnlyList<object> Attributes { get; }
+
+        public IList<MethodModel> Methods { get; } = new List<MethodModel>();
     }
 
     public class ServerMethodModel
     {
+        public ServerMethodModel(MethodInfo methodInfo, IReadOnlyList<object> attributes)
+        {
+            if (attributes == null)
+                throw new ArgumentNullException(nameof(attributes));
+
+            MethodInfo = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
+            Attributes = new List<object>(attributes);
+        }
+
+        public IReadOnlyList<object> Attributes { get; }
         public ServerServiceModel ServerService { get; set; }
         public MethodModel Method { get; set; }
-        public MethodInfo MethodInfo { get; set; }
+        public MethodInfo MethodInfo { get; }
     }
 
     public class ServerServiceModel
     {
+        public ServerServiceModel(TypeInfo type, IReadOnlyList<object> attributes)
+        {
+            if (attributes == null)
+                throw new ArgumentNullException(nameof(attributes));
+
+            Type = type ?? throw new ArgumentNullException(nameof(type));
+            Attributes = new List<object>(attributes);
+        }
+
+        public IReadOnlyList<object> Attributes { get; }
         public string ServiceName { get; set; }
-        public Type Type { get; set; }
-        public ICollection<ServerMethodModel> ServerMethods { get; } = new List<ServerMethodModel>();
+        public TypeInfo Type { get; }
+        public IList<ServerMethodModel> ServerMethods { get; } = new List<ServerMethodModel>();
     }
 
     public class ApplicationModel
     {
-        public ICollection<ServiceModel> Services { get; } = new List<ServiceModel>();
-        public ICollection<ServerServiceModel> ServerServices { get; } = new List<ServerServiceModel>();
+        public IList<ServiceModel> Services { get; } = new List<ServiceModel>();
+        public IList<ServerServiceModel> ServerServices { get; } = new List<ServerServiceModel>();
     }
 }

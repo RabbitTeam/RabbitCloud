@@ -25,10 +25,9 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
                 var serviceName = FluentUtilities.GetServiceName(type);
 
                 var isServerService = type.GetTypeAttribute<GrpcServiceAttribute>() != null;
-
-                var serviceModel = new ServiceModel
+                var typeAttributes = type.GetCustomAttributes(false);
+                var serviceModel = new ServiceModel(type, typeAttributes)
                 {
-                    ServiceType = type,
                     ServiceName = serviceName
                 };
                 applicationModel.Services.Add(serviceModel);
@@ -36,10 +35,9 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
                 ServerServiceModel serverService = null;
                 if (isServerService)
                 {
-                    serverService = new ServerServiceModel
+                    serverService = new ServerServiceModel(type, typeAttributes)
                     {
-                        ServiceName = serviceName,
-                        Type = type
+                        ServiceName = serviceName
                     };
                     applicationModel.ServerServices.Add(serverService);
                 }
@@ -52,10 +50,9 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
                     if (!isServerService)
                         continue;
 
-                    var serverMethod = new ServerMethodModel
+                    var serverMethod = new ServerMethodModel(methodInfo, methodInfo.GetCustomAttributes(false))
                     {
                         Method = methodModel,
-                        MethodInfo = methodInfo,
                         ServerService = serverService
                     };
 
@@ -105,9 +102,8 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
         private static MethodModel CreateMethodModel(ServiceModel serviceModel, MethodInfo methodInfo)
         {
             var methodName = FluentUtilities.GetMethodName(methodInfo);
-            var methodModel = new MethodModel
+            var methodModel = new MethodModel(methodInfo, methodInfo.GetCustomAttributes(false))
             {
-                MethodInfo = methodInfo,
                 Name = methodName,
                 RequestMarshaller = null,
                 ResponseMarshaller = null,
@@ -127,7 +123,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
         private static MarshallerModel CreateMarshallerModel(MethodModel methodModel, Type marshallerType)
         {
             //todo: 考虑动态实现
-            return new MarshallerModel
+            return new MarshallerModel(marshallerType.GetTypeInfo(), marshallerType.GetCustomAttributes(false))
             {
                 Deserializer = data =>
                 {
@@ -151,8 +147,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
                             return message.ToByteArray();
                     }
                     return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model));
-                },
-                Type = marshallerType
+                }
             };
         }
 

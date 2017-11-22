@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Grpc.Abstractions;
+using Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal;
 using Rabbit.Cloud.Grpc.Fluent.Utilities;
 using Rabbit.Cloud.Grpc.Server;
 using System;
@@ -15,6 +16,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
     public class ApplicationModelOptions
     {
         public ICollection<TypeInfo> Types { get; } = new List<TypeInfo>();
+        public IList<IApplicationModelConvention> Conventions { get; } = new List<IApplicationModelConvention>();
     }
 
     public class ApplicationModelHolder
@@ -22,8 +24,9 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
         private ApplicationModel _applicationModel;
         private readonly ApplicationModelOptions _options;
         private readonly IReadOnlyCollection<IApplicationModelProvider> _applicationModelProviders;
+        private readonly IEnumerable<IApplicationModelConvention> _conventions;
 
-        public ApplicationModelHolder(IEnumerable<IApplicationModelProvider> applicationModelProviders, IOptions<ApplicationModelOptions> options, IServiceProvider services)
+        public ApplicationModelHolder(IEnumerable<IApplicationModelProvider> applicationModelProviders, IOptions<ApplicationModelOptions> options)
         {
             if (applicationModelProviders == null)
                 throw new ArgumentNullException(nameof(applicationModelProviders));
@@ -32,6 +35,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
             _applicationModelProviders = applicationModelProviders.OrderBy(i => i.Order).ToArray();
             _options = options.Value;
+            _conventions = _options.Conventions;
         }
 
         public ApplicationModel GetApplicationModel()
@@ -39,12 +43,15 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
             if (_applicationModel != null)
                 return _applicationModel;
 
-            return _applicationModel = BuildApplicationModel();
+            _applicationModel = BuildApplicationModel();
+            ApplicationModelConventions.ApplyConventions(_applicationModel, _conventions);
+
+            return _applicationModel;
         }
 
         private ApplicationModel BuildApplicationModel()
         {
-            var applicationModelProviderContext = new ApplicationModelProviderContext(_options.Types);
+            var applicationModelProviderContext = new ApplicationModelProviderContext(_options.Types.Distinct());
 
             foreach (var applicationModelProvider in _applicationModelProviders)
             {
@@ -215,7 +222,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
                 });
             }
 
-            public static Type GetUnaryServerDelegateType(Type requestType, Type responseType)
+            private static Type GetUnaryServerDelegateType(Type requestType, Type responseType)
             {
                 var key = ("UnaryServerDelegateType", requestType, responseType);
                 return GetCache(key, () => typeof(UnaryServerMethod<,>).MakeGenericType(requestType, responseType));

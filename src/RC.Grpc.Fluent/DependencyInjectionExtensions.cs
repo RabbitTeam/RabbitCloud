@@ -7,6 +7,7 @@ using Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal;
 using Rabbit.Cloud.Grpc.Fluent.Internal;
 using Rabbit.Cloud.Grpc.Server;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -17,31 +18,30 @@ namespace Rabbit.Cloud.Grpc.Fluent
         public static IServiceCollection AddGrpcFluent(this IServiceCollection services,
             Action<ApplicationModelOptions> configure)
         {
+            if (configure == null)
+                throw new ArgumentNullException(nameof(configure));
+
             return services
-                .Configure(configure)
+                .Configure<ApplicationModelOptions>(options =>
+                {
+                    foreach (var type in GetTypes())
+                        options.Types.Add(type);
+                    configure(options);
+                })
                 .InternalAddGrpcFluent();
         }
 
         public static IServiceCollection AddGrpcFluent(this IServiceCollection services, Func<AssemblyName, bool> assemblyPredicate = null, Func<TypeInfo, bool> typePredicate = null)
         {
-            var assemblyNames = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default));
-            if (assemblyPredicate != null)
-                assemblyNames = assemblyNames.Where(assemblyPredicate).ToArray();
-            var assemblies = assemblyNames.Select(i => Assembly.Load(new AssemblyName(i.Name))).ToArray();
-
-            var types = assemblies.SelectMany(i => i.GetExportedTypes().Select(t => t.GetTypeInfo()));
-            if (typePredicate != null)
-                types = types.Where(typePredicate);
-
-            types = types.Where(t => t.GetTypeAttribute<IGrpcDefinitionProvider>() != null).ToArray();
-
-            return services.AddGrpcFluent(options =>
-            {
-                foreach (var type in types)
+            return services
+                .Configure<ApplicationModelOptions>(options =>
                 {
-                    options.Types.Add(type);
-                }
-            });
+                    foreach (var type in GetTypes(assemblyPredicate, typePredicate))
+                    {
+                        options.Types.Add(type);
+                    }
+                })
+                .InternalAddGrpcFluent();
         }
 
         private static IServiceCollection InternalAddGrpcFluent(this IServiceCollection services)
@@ -52,6 +52,20 @@ namespace Rabbit.Cloud.Grpc.Fluent
                 .AddSingleton<IMethodProvider, MethodProvider>()
                 .AddSingleton<IServerServiceDefinitionProvider, ServerServiceDefinitionProvider>()
                 .AddSingleton<IServerMethodInvokerFactory, DefaultServerMethodInvokerFactory>();
+        }
+
+        private static IEnumerable<TypeInfo> GetTypes(Func<AssemblyName, bool> assemblyPredicate = null, Func<TypeInfo, bool> typePredicate = null)
+        {
+            var assemblyNames = DependencyContext.Default.RuntimeLibraries.SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default));
+            if (assemblyPredicate != null)
+                assemblyNames = assemblyNames.Where(assemblyPredicate).ToArray();
+            var assemblies = assemblyNames.Select(i => Assembly.Load(new AssemblyName(i.Name))).ToArray();
+
+            var types = assemblies.SelectMany(i => i.GetExportedTypes().Select(t => t.GetTypeInfo()));
+            if (typePredicate != null)
+                types = types.Where(typePredicate);
+
+            return types.Where(t => t.GetTypeAttribute<IGrpcDefinitionProvider>() != null).ToArray();
         }
     }
 }
