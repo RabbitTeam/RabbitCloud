@@ -63,6 +63,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "client", "client", "{AEBCE5
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "server", "server", "{DC28871F-53A9-4A07-8CAF-0C8148B5DC83}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Server.Monitor", "src\RC.Server.Monitor\RC.Server.Monitor.csproj", "{CEE0F8FF-C4DD-4132-AABB-60D9D5E69E0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -145,6 +147,10 @@ Global
 		{8B90C480-B4D9-4A64-9F8D-52778775A94C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B90C480-B4D9-4A64-9F8D-52778775A94C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B90C480-B4D9-4A64-9F8D-52778775A94C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEE0F8FF-C4DD-4132-AABB-60D9D5E69E0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEE0F8FF-C4DD-4132-AABB-60D9D5E69E0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEE0F8FF-C4DD-4132-AABB-60D9D5E69E0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEE0F8FF-C4DD-4132-AABB-60D9D5E69E0B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -174,6 +180,7 @@ Global
 		{8B90C480-B4D9-4A64-9F8D-52778775A94C} = {DC28871F-53A9-4A07-8CAF-0C8148B5DC83}
 		{AEBCE587-6573-4400-BD7F-47D2766E65D2} = {90DE1B67-4552-4D3C-9A18-DC2A20A9DE1D}
 		{DC28871F-53A9-4A07-8CAF-0C8148B5DC83} = {90DE1B67-4552-4D3C-9A18-DC2A20A9DE1D}
+		{CEE0F8FF-C4DD-4132-AABB-60D9D5E69E0B} = {850A43C4-8B62-4732-95F9-A769981A59E5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {36EA6FDA-5082-43F0-932E-8E204636C432}
