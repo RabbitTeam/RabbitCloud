@@ -1,5 +1,5 @@
 ﻿using Grpc.Core;
-using Rabbit.Cloud.Client.Features;
+using Rabbit.Cloud.Application.Features;
 
 namespace Rabbit.Cloud.Client.Grpc.Features
 {

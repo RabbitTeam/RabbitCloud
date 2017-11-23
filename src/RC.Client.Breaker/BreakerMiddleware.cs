@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Breaker.Features;
 using System.Threading.Tasks;
 

@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Server\RC.Grpc.Server.csproj" />
+    <ProjectReference Include="..\..\src\RC.Server.Grpc\RC.Server.Grpc.csproj" />
   </ItemGroup>
 
 </Project>

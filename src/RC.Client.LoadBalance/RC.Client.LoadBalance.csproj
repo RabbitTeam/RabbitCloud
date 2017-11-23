@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
+    <ProjectReference Include="..\RC.Application.Abstractions\RC.Application.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
   </ItemGroup>
 

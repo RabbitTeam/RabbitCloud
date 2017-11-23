@@ -2,6 +2,6 @@
 {
     public interface IServerMethodInvokerFactory
     {
-        ServerMethodInvoker CreateInvoker(ServerMethodModel serverMethod);
+        IServerMethodInvoker CreateInvoker(ServerMethodModel serverMethod);
     }
 }

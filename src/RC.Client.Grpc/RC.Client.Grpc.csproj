@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RC.Client\RC.Client.csproj" />
+    <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
     <ProjectReference Include="..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Grpc.Client\RC.Grpc.Client.csproj" />
   </ItemGroup>

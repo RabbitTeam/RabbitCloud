@@ -1,4 +1,4 @@
-﻿using Rabbit.Cloud.Client.Features;
+﻿using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
 using System;
 

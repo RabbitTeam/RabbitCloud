@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Client.Abstractions;
-using Rabbit.Cloud.Client.Features;
+using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.LoadBalance.Features;
 using Rabbit.Cloud.Discovery.Abstractions;
 using System.Threading.Tasks;

@@ -1,5 +1,5 @@
 ﻿using Castle.DynamicProxy;
-using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Application.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;

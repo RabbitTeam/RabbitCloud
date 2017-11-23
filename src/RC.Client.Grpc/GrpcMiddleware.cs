@@ -1,5 +1,5 @@
-﻿using Rabbit.Cloud.Client.Abstractions;
-using Rabbit.Cloud.Client.Features;
+﻿using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client.Extensions;

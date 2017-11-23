@@ -1,7 +1,7 @@
 ﻿using Castle.DynamicProxy;
 using Grpc.Core;
-using Rabbit.Cloud.Client.Abstractions;
-using Rabbit.Cloud.Client.Features;
+using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Grpc.Fluent.Utilities;
 using System;

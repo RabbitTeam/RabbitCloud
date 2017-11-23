@@ -2,8 +2,8 @@
 using Grpc.Core;
 using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
-using Rabbit.Cloud.Client;
-using Rabbit.Cloud.Client.Abstractions.Extensions;
+using Rabbit.Cloud.Application;
+using Rabbit.Cloud.Application.Abstractions.Extensions;
 using Rabbit.Cloud.Client.Breaker.Builder;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
@@ -17,7 +17,9 @@ using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Fluent;
+using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
 using Rabbit.Cloud.Grpc.Server;
+using Rabbit.Cloud.Server.Grpc;
 using System;
 using System.Threading.Tasks;
 
@@ -56,12 +58,13 @@ namespace ConsoleApp
 
     public class Program
     {
-        private const string ConsulUrl = "http://localhost:8500";
+        private const string ConsulUrl = "http://192.168.100.150:8500";
 
         private static async Task StartServer()
         {
             {
-                var services = new ServiceCollection()
+                IServiceProvider services = null;
+                services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
                     .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri(ConsulUrl)))
@@ -69,6 +72,20 @@ namespace ConsoleApp
                     .AddGrpcServer()
                     .AddGrpcFluent()
                     .AddSingleton<ServiceImpl, ServiceImpl>()
+                    .AddSingleton<IServerMethodInvokerFactory, ServerMethodInvokerFactory>()
+                    .Configure<GrpcServerOptions>(options =>
+                    {
+                        var serverApp = new RabbitApplicationBuilder(services)
+                        .Use(async (context, next) =>
+                            {
+                               Console.WriteLine("method invoking");
+                                await next();
+                            })
+                        .UseMiddleware<GrpcServerMiddleware>()
+                        .Build();
+
+                        options.Invoker = serverApp;
+                    })
                     .BuildServiceProvider();
 
                 var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();

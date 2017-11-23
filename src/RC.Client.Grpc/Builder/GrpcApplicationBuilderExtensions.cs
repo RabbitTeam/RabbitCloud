@@ -1,5 +1,5 @@
-﻿using Rabbit.Cloud.Client.Abstractions;
-using Rabbit.Cloud.Client.Abstractions.Extensions;
+﻿using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Application.Abstractions.Extensions;
 
 namespace Rabbit.Cloud.Client.Grpc.Builder
 {

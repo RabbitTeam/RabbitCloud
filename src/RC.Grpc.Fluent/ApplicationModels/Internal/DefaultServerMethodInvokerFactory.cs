@@ -16,7 +16,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal
 
         #region Implementation of IServerMethodInvokerFactory
 
-        public ServerMethodInvoker CreateInvoker(ServerMethodModel serverMethod)
+        public IServerMethodInvoker CreateInvoker(ServerMethodModel serverMethod)
         {
             return new DefaultServerMethodInvoker(serverMethod, _services, _logger);
         }
