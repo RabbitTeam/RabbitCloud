@@ -17,7 +17,6 @@ using Rabbit.Cloud.Discovery.Consul.Utilities;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Fluent;
-using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
 using Rabbit.Cloud.Grpc.Server;
 using Rabbit.Cloud.Server.Grpc;
 using System;
@@ -72,17 +71,11 @@ namespace ConsoleApp
                     .AddGrpcServer()
                     .AddGrpcFluent()
                     .AddSingleton<ServiceImpl, ServiceImpl>()
-                    .AddSingleton<IServerMethodInvokerFactory, ServerMethodInvokerFactory>()
-                    .Configure<GrpcServerOptions>(options =>
+                    .AddServerGrpc(options =>
                     {
                         var serverApp = new RabbitApplicationBuilder(services)
-                        .Use(async (context, next) =>
-                            {
-                               Console.WriteLine("method invoking");
-                                await next();
-                            })
-                        .UseMiddleware<GrpcServerMiddleware>()
-                        .Build();
+                            .UseMiddleware<GrpcServerMiddleware>()
+                            .Build();
 
                         options.Invoker = serverApp;
                     })

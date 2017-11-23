@@ -1,10 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Application.Abstractions.Extensions;
 
 namespace Rabbit.Cloud.Server.Grpc.Builder
 {
-    public class GrpcServerApplicationBuilderExtensions
+    public static class GrpcServerApplicationBuilderExtensions
     {
+        public static IRabbitApplicationBuilder UseServerGrpc(this IRabbitApplicationBuilder app)
+        {
+            return app.UseMiddleware<GrpcServerMiddleware>();
+        }
     }
 }

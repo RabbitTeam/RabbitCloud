@@ -7,7 +7,7 @@ using Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal;
 using System;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Server.Grpc
+namespace Rabbit.Cloud.Server.Grpc.Internal
 {
     public class ServerMethodInvokerFactory : IServerMethodInvokerFactory
     {
@@ -49,7 +49,7 @@ namespace Rabbit.Cloud.Server.Grpc
                 context.Request.Request = request;
                 context.Request.ServerCallContext = callContext;
 
-                context.LogicInvoker = async () =>
+                context.Response.ResponseInvoker = async () =>
                 {
                     if (context.Response.Response != null)
                         return context.Response.Response;
