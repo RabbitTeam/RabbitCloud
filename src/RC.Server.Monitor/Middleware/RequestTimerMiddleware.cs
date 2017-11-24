@@ -2,7 +2,6 @@
 using App.Metrics.Timer;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Server.Monitor.Internal;
-using System;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Server.Monitor.Middleware
@@ -22,8 +21,11 @@ namespace Rabbit.Cloud.Server.Monitor.Middleware
 
         public async Task Invoke(IRabbitContext context)
         {
+            var timer = _requestTimer.NewContext();
+
             await _next(context);
-            using (_requestTimer as IDisposable)
+
+            using (timer)
             {
             }
         }

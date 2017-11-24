@@ -26,7 +26,7 @@ namespace Rabbit.Cloud.Server.Monitor.Middleware
             catch (Exception exception)
             {
                 var serviceId = context.GetServiceId();
-                _metrics.RecordHttpRequestError(serviceId, 500);
+                //                _metrics.RecordHttpRequestError(serviceId, 500);
                 _metrics.RecordException(serviceId, exception.GetType().FullName);
                 throw;
             }
