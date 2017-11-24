@@ -1,4 +1,6 @@
-﻿using Consul;
+﻿using App.Metrics;
+using App.Metrics.Scheduling;
+using Consul;
 using Grpc.Core;
 using Helloworld;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +21,8 @@ using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Fluent;
 using Rabbit.Cloud.Grpc.Server;
 using Rabbit.Cloud.Server.Grpc;
+using Rabbit.Cloud.Server.Grpc.Builder;
+using Rabbit.Cloud.Server.Monitor.Builder;
 using System;
 using System.Threading.Tasks;
 
@@ -36,6 +40,10 @@ namespace ConsoleApp
         [GrpcMethod]
         public Task<HelloReply> SendAsync(HelloRequest request)
         {
+            if (request.Name == "error")
+            {
+                throw new Exception("error");
+            }
             return Task.FromResult(new HelloReply
             {
                 Message = "hello " + request.Name
@@ -62,8 +70,27 @@ namespace ConsoleApp
         private static async Task StartServer()
         {
             {
-                IServiceProvider services = null;
-                services = new ServiceCollection()
+                var metrics = new MetricsBuilder()
+                    .Report.ToConsole()
+                    .Report.ToElasticsearch("http://192.168.100.150:9200", "appmetricssandbox")
+                    .Configuration.Configure(s =>
+                    {
+                        s.DefaultContextLabel = "RabbitCloud";
+                        s.Enabled = true;
+                        s.ReportingEnabled = true;
+                        s.AddEnvTag("stage").AddAppTag("RabbitConsole").AddServerTag("localhost");
+                    })
+                    .Build();
+
+                var scheduler = new AppMetricsTaskScheduler(
+                    TimeSpan.FromSeconds(3),
+                    async () =>
+                    {
+                        await Task.WhenAll(metrics.ReportRunner.RunAllAsync());
+                    });
+                scheduler.Start();
+
+                IServiceProvider services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
                     .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri(ConsulUrl)))
@@ -73,8 +100,13 @@ namespace ConsoleApp
                     .AddSingleton<ServiceImpl, ServiceImpl>()
                     .AddServerGrpc(options =>
                     {
-                        var serverApp = new RabbitApplicationBuilder(services)
-                            .UseMiddleware<GrpcServerMiddleware>()
+                        var serverServices = new ServiceCollection()
+                            .AddOptions()
+                            .AddSingleton<IMetrics>(metrics)
+                            .BuildServiceProvider();
+                        var serverApp = new RabbitApplicationBuilder(serverServices)
+                            .UseAllMonitor()
+                            .UseServerGrpc()
                             .Build();
 
                         options.Invoker = serverApp;
@@ -140,11 +172,24 @@ namespace ConsoleApp
                 var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker);
                 var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
                 var service = proxyFactory.CreateInterfaceProxy<ITestService>();
+                /*
+                                Parallel.For(0, 1000, async s =>
+                                {
+                                    await service.SendAsync(new HelloRequest {Name = "test"});
+                                });*/
+
+                string name = "test";
                 while (true)
                 {
-                    var t = await service.SendAsync(new HelloRequest { Name = "test" });
-                    Console.WriteLine(t?.Message ?? "null");
-                    Console.ReadLine();
+                    try
+                    {
+                        var t = await service.SendAsync(new HelloRequest { Name = name ?? "test" });
+                        //                        Console.WriteLine(t?.Message ?? "null");
+                        name = Console.ReadLine();
+                    }
+                    catch (Exception e)
+                    {
+                    }
                 }
             }
         }

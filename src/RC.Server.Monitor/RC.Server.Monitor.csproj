@@ -3,14 +3,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>Rabbit.Cloud.Monitor</AssemblyName>
-    <RootNamespace>Rabbit.Cloud.Monitor</RootNamespace>
+    <AssemblyName>Rabbit.Cloud.Server.Monitor</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Server.Monitor</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="App.Metrics.Reporting.Console" Version="2.0.0-alpha" />
     <PackageReference Include="App.Metrics.Reporting.TextFile" Version="2.0.0-alpha" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
+    <PackageReference Include="App.Metrics.AspNetCore.Tracking" Version="2.0.0-alpha" />
   </ItemGroup>
 
   <ItemGroup>

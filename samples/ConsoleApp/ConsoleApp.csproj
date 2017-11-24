@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.0.0" />
     <PackageReference Include="Rabbit.Extensions.Configuration" Version="1.0.0-preview1" />
+    <PackageReference Include="App.Metrics.Reporting.Elasticsearch" Version="2.0.0-alpha" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +29,7 @@
     <ProjectReference Include="..\..\src\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Server\RC.Grpc.Server.csproj" />
     <ProjectReference Include="..\..\src\RC.Server.Grpc\RC.Server.Grpc.csproj" />
+    <ProjectReference Include="..\..\src\RC.Server.Monitor\RC.Server.Monitor.csproj" />
   </ItemGroup>
 
 </Project>

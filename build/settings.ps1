@@ -24,5 +24,6 @@ $projects = @(
     @{ Name = "Rabbit.Cloud.Grpc.Fluent"; SourceDir = "$source_dir\RC.Grpc.Fluent"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud.Client.Breaker"; SourceDir = "$source_dir\RC.Client.Breaker"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud.Client.LoadBalance"; SourceDir = "$source_dir\RC.Client.LoadBalance"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Server.Grpc"; SourceDir = "$source_dir\RC.Server.Grpc"; ExternalNuGetDependencies = $null; UseMSBuild = $False; }
+    @{ Name = "Rabbit.Cloud.Server.Grpc"; SourceDir = "$source_dir\RC.Server.Grpc"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Server.Monitor"; SourceDir = "$source_dir\RC.Server.Monitor"; ExternalNuGetDependencies = $null; UseMSBuild = $False; }
 )
