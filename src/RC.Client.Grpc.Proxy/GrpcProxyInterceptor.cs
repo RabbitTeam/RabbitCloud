@@ -5,7 +5,7 @@ using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Grpc.Fluent.Utilities;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
@@ -82,7 +82,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
         {
             #region Field
 
-            private static readonly IDictionary<object, object> Caches = new Dictionary<object, object>();
+            private static readonly ConcurrentDictionary<object, Lazy<object>> Caches = new ConcurrentDictionary<object, Lazy<object>>();
 
             #endregion Field
 
@@ -92,7 +92,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
                 return GetCache(key, () =>
                 {
-                    var parameterExpression = GetParameterExpression(typeof(object));
+                    var parameterExpression = Expression.Parameter(typeof(object));
                     var convertExpression = Expression.Convert(parameterExpression, type);
 
                     var responseAsyncPropertyExpression = Expression.Property(convertExpression, nameof(AsyncUnaryCall<object>.ResponseAsync));
@@ -122,19 +122,10 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
             #region Private Method
 
-            private static ParameterExpression GetParameterExpression(Type type)
-            {
-                var key = ("Parameter", type);
-                return GetCache(key, () => Expression.Parameter(type));
-            }
-
             private static T GetCache<T>(object key, Func<T> factory)
             {
-                if (Caches.TryGetValue(key, out var cache))
-                {
-                    return (T)cache;
-                }
-                return (T)(Caches[key] = factory());
+                var item = Caches.GetOrAdd(key, new Lazy<object>(() => factory()));
+                return (T)item.Value;
             }
 
             #endregion Private Method

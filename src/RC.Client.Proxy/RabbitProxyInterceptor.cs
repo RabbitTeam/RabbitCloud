@@ -1,7 +1,7 @@
 ﻿using Castle.DynamicProxy;
 using Rabbit.Cloud.Application.Abstractions;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
@@ -26,7 +26,7 @@ namespace Rabbit.Cloud.Client.Proxy
         {
             #region Field
 
-            private static readonly IDictionary<Type, Func<RabbitProxyInterceptor, IInvocation, Task>> Caches = new Dictionary<Type, Func<RabbitProxyInterceptor, IInvocation, Task>>();
+            private static readonly ConcurrentDictionary<Type, Lazy<Func<RabbitProxyInterceptor, IInvocation, Task>>> Caches = new ConcurrentDictionary<Type, Lazy<Func<RabbitProxyInterceptor, IInvocation, Task>>>();
 
             #endregion Field
 
@@ -34,14 +34,14 @@ namespace Rabbit.Cloud.Client.Proxy
             {
                 var key = returnType;
 
-                if (Caches.TryGetValue(key, out var handler))
-                    return handler;
+                return Caches.GetOrAdd(key, new Lazy<Func<RabbitProxyInterceptor, IInvocation, Task>>(() =>
+                {
+                    var invocationParameterExpression = Expression.Parameter(typeof(IInvocation));
+                    var instanceParameterExpression = Expression.Parameter(typeof(RabbitProxyInterceptor), "instance");
 
-                var invocationParameterExpression = Expression.Parameter(typeof(IInvocation));
-                var instanceParameterExpression = Expression.Parameter(typeof(RabbitProxyInterceptor), "instance");
-
-                var callExpression = Expression.Call(instanceParameterExpression, nameof(HandleAsync), new[] { returnType }, invocationParameterExpression);
-                return Caches[key] = Expression.Lambda<Func<RabbitProxyInterceptor, IInvocation, Task>>(callExpression, instanceParameterExpression, invocationParameterExpression).Compile();
+                    var callExpression = Expression.Call(instanceParameterExpression, nameof(HandleAsync), new[] { returnType }, invocationParameterExpression);
+                    return Expression.Lambda<Func<RabbitProxyInterceptor, IInvocation, Task>>(callExpression, instanceParameterExpression, invocationParameterExpression).Compile();
+                })).Value;
             }
         }
 

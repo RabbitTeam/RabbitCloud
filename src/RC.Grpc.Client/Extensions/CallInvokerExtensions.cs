@@ -1,5 +1,6 @@
 ﻿using Grpc.Core;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
@@ -71,66 +72,66 @@ namespace Rabbit.Cloud.Grpc.Client.Extensions
 
         private static class Cache
         {
-            private static readonly IDictionary<string, Func<CallInvoker, IMethod, string, CallOptions, object, object>> Caches = new Dictionary<string, Func<CallInvoker, IMethod, string, CallOptions, object, object>>();
+            private static readonly ConcurrentDictionary<string, Lazy<Func<CallInvoker, IMethod, string, CallOptions, object, object>>> Caches = new ConcurrentDictionary<string, Lazy<Func<CallInvoker, IMethod, string, CallOptions, object, object>>>();
 
             public static Func<CallInvoker, IMethod, string, CallOptions, object, object> GetInvoker(IMethod method, string callMethodName)
             {
                 var key = method.FullName;
 
-                // by cache
-                if (Caches.TryGetValue(key, out var invoker))
-                    return invoker;
+                return Caches.GetOrAdd(key, k => new Lazy<Func<CallInvoker, IMethod, string, CallOptions, object, object>>(
+                    () =>
+                    {
+                        var typeArguments = method.GetType().GenericTypeArguments;
+                        var requestType = typeArguments[0];
+                        var requestParameterExpression = Expression.Parameter(typeof(object));
+                        var methodParameterExpression = Expression.Parameter(typeof(IMethod));
 
-                var typeArguments = method.GetType().GenericTypeArguments;
-                var requestType = typeArguments[0];
-                var requestParameterExpression = Expression.Parameter(typeof(object));
-                var methodParameterExpression = Expression.Parameter(typeof(IMethod));
+                        Expression[] parameterExpressions;
+                        IEnumerable<ParameterExpression> lambdaParameterExpressions;
 
-                Expression[] parameterExpressions;
-                IEnumerable<ParameterExpression> lambdaParameterExpressions;
-
-                switch (callMethodName)
-                {
-                    case nameof(CallInvoker.AsyncClientStreamingCall):
-                    case nameof(CallInvoker.AsyncDuplexStreamingCall):
-                        parameterExpressions = new Expression[]
+                        switch (callMethodName)
                         {
+                            case nameof(CallInvoker.AsyncClientStreamingCall):
+                            case nameof(CallInvoker.AsyncDuplexStreamingCall):
+                                parameterExpressions = new Expression[]
+                                {
                                 methodParameterExpression,
                                 HostParameterExpression,
                                 CallOptionsParameterExpression
-                        };
-                        lambdaParameterExpressions = new[]
-                        {
+                                };
+                                lambdaParameterExpressions = new[]
+                                {
                                 CallInvokerParameterExpression,
                                 methodParameterExpression,
                                 HostParameterExpression,
                                 CallOptionsParameterExpression
                             };
-                        break;
+                                break;
 
-                    default:
-                        parameterExpressions = new Expression[]
-                        {
+                            default:
+                                parameterExpressions = new Expression[]
+                                {
                                 Expression.Convert(methodParameterExpression,method.GetType()),
                                 HostParameterExpression,
                                 CallOptionsParameterExpression,
                                 Expression.Convert(requestParameterExpression,requestType)
-                        };
-                        lambdaParameterExpressions = new[]
-                        {
+                                };
+                                lambdaParameterExpressions = new[]
+                                {
                                 CallInvokerParameterExpression,
                                 methodParameterExpression,
                                 HostParameterExpression,
                                 CallOptionsParameterExpression,
                                 requestParameterExpression
                             };
-                        break;
-                }
+                                break;
+                        }
 
-                var callExpression = Expression.Call(CallInvokerParameterExpression, callMethodName, typeArguments, parameterExpressions);
+                        var callExpression = Expression.Call(CallInvokerParameterExpression, callMethodName, typeArguments, parameterExpressions);
 
-                var lambda = Expression.Lambda<Func<CallInvoker, IMethod, string, CallOptions, object, object>>(callExpression, lambdaParameterExpressions);
-                return Caches[key] = lambda.Compile();
+                        var lambda = Expression.Lambda<Func<CallInvoker, IMethod, string, CallOptions, object, object>>(callExpression, lambdaParameterExpressions);
+                        return lambda.Compile();
+                    })).Value;
             }
         }
 

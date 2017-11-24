@@ -5,7 +5,7 @@ using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client.Extensions;
 using Rabbit.Cloud.Grpc.Client.Internal;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -63,18 +63,25 @@ namespace Rabbit.Cloud.Client.Grpc
 
         private static class Cache
         {
-            private static readonly IDictionary<Type, Action<object>> Caches = new Dictionary<Type, Action<object>>();
+            private static readonly ConcurrentDictionary<Type, Lazy<Action<object>>> Caches = new ConcurrentDictionary<Type, Lazy<Action<object>>>();
 
             public static Action<object> GetAwaiterAction(Type type)
             {
-                if (Caches.TryGetValue(type, out var action))
-                    return action;
+                var item = Caches.GetOrAdd(type, k =>
+                  {
+                      return new Lazy<Action<object>>(() =>
+                      {
+                          var getAwaiterMethod = type.GetMethod(nameof(Task.GetAwaiter));
+                          var parameterExpression = Expression.Parameter(typeof(object));
+                          var callExpression =
+                              Expression.Call(
+                                  Expression.Call(Expression.Convert(parameterExpression, type), getAwaiterMethod),
+                                  nameof(TaskAwaiter.GetResult), null);
+                          return Expression.Lambda<Action<object>>(callExpression, parameterExpression).Compile();
+                      });
+                  });
 
-                var getAwaiterMethod = type.GetMethod(nameof(Task.GetAwaiter));
-                var parameterExpression = Expression.Parameter(typeof(object));
-                var callExpression = Expression.Call(Expression.Call(Expression.Convert(parameterExpression, type), getAwaiterMethod), nameof(TaskAwaiter.GetResult), null);
-
-                return Caches[type] = Expression.Lambda<Action<object>>(callExpression, parameterExpression).Compile();
+                return item.Value;
             }
         }
 
