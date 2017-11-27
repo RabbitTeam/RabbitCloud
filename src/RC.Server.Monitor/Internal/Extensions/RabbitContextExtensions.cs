@@ -6,7 +6,8 @@ namespace Rabbit.Cloud.Server.Monitor.Internal.Extensions
     {
         public static string GetServiceId(this IRabbitContext context)
         {
-            var serviceId = $"{context.Request.Url.Host.Replace(":", "_")}{context.Request.Url.Path}";
+            var url = context.Request.Url;
+            var serviceId = $"{url.Host}_{url.Port}_{url.Path}";
 
             return serviceId;
         }
