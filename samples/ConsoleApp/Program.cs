@@ -1,11 +1,11 @@
-﻿using App.Metrics;
-using App.Metrics.Scheduling;
-using Consul;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Helloworld;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions.Extensions;
+using Rabbit.Cloud.Client.Breaker;
 using Rabbit.Cloud.Client.Breaker.Builder;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
@@ -22,7 +22,7 @@ using Rabbit.Cloud.Grpc.Fluent;
 using Rabbit.Cloud.Grpc.Server;
 using Rabbit.Cloud.Server.Grpc;
 using Rabbit.Cloud.Server.Grpc.Builder;
-using Rabbit.Cloud.Server.Monitor.Builder;
+using Rabbit.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 
@@ -70,30 +70,11 @@ namespace ConsoleApp
         private static async Task StartServer()
         {
             {
-                var metrics = new MetricsBuilder()
-                    .Report.ToConsole()
-                    .Report.ToElasticsearch("http://192.168.100.150:9200", "appmetricssandbox")
-                    .Configuration.Configure(s =>
-                    {
-                        s.DefaultContextLabel = "RabbitCloud";
-                        s.Enabled = true;
-                        s.ReportingEnabled = true;
-                        s.AddEnvTag("stage").AddAppTag("RabbitConsole").AddServerTag("localhost");
-                    })
-                    .Build();
-
-                var scheduler = new AppMetricsTaskScheduler(
-                    TimeSpan.FromSeconds(3),
-                    async () =>
-                    {
-                        await Task.WhenAll(metrics.ReportRunner.RunAllAsync());
-                    });
-                scheduler.Start();
-
                 IServiceProvider services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
-                    .AddConsulRegistry(new ConsulClient(o => o.Address = new Uri(ConsulUrl)))
+                    .Configure<RabbitConsulOptions>(_configuration.GetSection("RabbitCloud:Consul"))
+                    .AddConsulRegistry()
                     .AddGrpcCore()
                     .AddGrpcServer()
                     .AddGrpcFluent()
@@ -102,10 +83,8 @@ namespace ConsoleApp
                     {
                         var serverServices = new ServiceCollection()
                             .AddOptions()
-                            .AddSingleton<IMetrics>(metrics)
                             .BuildServiceProvider();
                         var serverApp = new RabbitApplicationBuilder(serverServices)
-                            .UseAllMonitor()
                             .UseServerGrpc()
                             .Build();
 
@@ -115,21 +94,16 @@ namespace ConsoleApp
 
                 var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
 
-                await registryService.RegisterAsync(ConsulUtil.Create(new RabbitConsulOptions.DiscoveryOptions
-                {
-                    HealthCheckInterval = "10s",
-                    HostName = "localhost",
-                    InstanceId = "localhost_9908",
-                    Port = 9908,
-                    ServiceName = "ConsoleApp"
-                }));
+                var rabbitConsulOptions = services.GetRequiredService<IOptions<RabbitConsulOptions>>().Value;
+
+                await registryService.RegisterAsync(ConsulUtil.Create(rabbitConsulOptions.Discovery));
 
                 var serverServiceDefinitionTable = services.GetRequiredService<IServerServiceDefinitionTableProvider>().ServerServiceDefinitionTable;
 
                 {
                     var server = new Server
                     {
-                        Ports = { new ServerPort("localhost", 9908, ServerCredentials.Insecure) }
+                        Ports = { new ServerPort(rabbitConsulOptions.Discovery.HostName, rabbitConsulOptions.Discovery.Port, ServerCredentials.Insecure) }
                     };
 
                     foreach (var definition in serverServiceDefinitionTable)
@@ -141,10 +115,15 @@ namespace ConsoleApp
             }
         }
 
+        private static IConfiguration _configuration;
+
         private static async Task Main(string[] args)
         {
-            await StartServer();
-
+            _configuration = BuildConfiguration(args);
+            /*            await StartServer();
+                        Console.WriteLine("press key exit...");
+                        Console.ReadLine();
+                        return;*/
             {
                 //client
                 var services = new ServiceCollection()
@@ -153,7 +132,27 @@ namespace ConsoleApp
                     .AddGrpcCore()
                     .AddGrpcClient()
                     .AddGrpcFluent()
-                    .AddConsulDiscovery(c => c.Address = ConsulUrl)
+                    .AddConsulDiscovery(_configuration)
+                    .AddBreaker()
+                    .AddSingleton<FailureTable, FailureTable>()
+                    .Configure<BackoffOptions>(options =>
+                    {
+                        options.IsFailure = ctx =>
+                        {
+                            if (!(ctx.Exception is RpcException rpcException))
+                                return false;
+
+                            switch (rpcException.Status.StatusCode)
+                            {
+                                case StatusCode.DeadlineExceeded:
+                                case StatusCode.ResourceExhausted:
+                                case StatusCode.Unavailable:
+                                    return true;
+                            }
+
+                            return false;
+                        };
+                    })
                     .AddLoadBalance()
                     .BuildServiceProvider();
 
@@ -165,6 +164,7 @@ namespace ConsoleApp
                         await next();
                     })
                     .UseBreaker()
+                    .UseMiddleware<BackoffMiddleware>()
                     .UseLoadBalance()
                     .UseGrpc()
                     .Build();
@@ -172,26 +172,31 @@ namespace ConsoleApp
                 var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker);
                 var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
                 var service = proxyFactory.CreateInterfaceProxy<ITestService>();
-                /*
-                                Parallel.For(0, 1000, async s =>
-                                {
-                                    await service.SendAsync(new HelloRequest {Name = "test"});
-                                });*/
 
-                string name = "test";
+                var name = "test";
                 while (true)
                 {
                     try
                     {
                         var t = await service.SendAsync(new HelloRequest { Name = name ?? "test" });
-                        //                        Console.WriteLine(t?.Message ?? "null");
+                        Console.WriteLine(t?.Message ?? "null");
                         name = Console.ReadLine();
                     }
                     catch (Exception e)
                     {
+                        //                        Console.WriteLine(e.Message);
                     }
                 }
             }
+        }
+
+        private static IConfiguration BuildConfiguration(string[] args)
+        {
+            return new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .AddCommandLine(args)
+                .Build()
+                .EnableTemplateSupport();
         }
     }
 }
