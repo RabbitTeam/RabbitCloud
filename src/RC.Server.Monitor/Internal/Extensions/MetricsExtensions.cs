@@ -5,10 +5,11 @@ using App.Metrics.Timer;
 namespace Rabbit.Cloud.Server.Monitor.Internal.Extensions
 {
     internal static class MetricsExtensions
-    { /// <summary>
-      ///     Decrements the number of active web requests.
-      /// </summary>
-      /// <param name="metrics">The metrics.</param>
+    {
+        /// <summary>
+        ///     Decrements the number of active web requests.
+        /// </summary>
+        /// <param name="metrics">The metrics.</param>
         public static void DecrementActiveRequests(this IMetrics metrics)
         {
             metrics.Measure.Counter.Decrement(MetricsRegistry.Counters.ActiveRequestCount);
@@ -23,170 +24,94 @@ namespace Rabbit.Cloud.Server.Monitor.Internal.Extensions
             metrics.Measure.Counter.Increment(MetricsRegistry.Counters.ActiveRequestCount);
         }
 
-        /*/// <summary>
-        ///     Records metrics about a Clients HTTP request error, counts the total number of errors for each status code,
-        ///     measures the
-        ///     rate and percentage of HTTP error requests tagging by client id (if it exists) the endpoints route template and
-        ///     HTTP status code.
-        /// </summary>
-        /// <param name="metrics">The metrics.</param>
-        /// <param name="routeTemplate">The route template of the endpoint.</param>
-        /// <param name="httpStatusCode">The HTTP status code.</param>
-        /// <param name="clientId">The OAuth2 client identifier.</param>
-        public static void RecordClientHttpRequestError(
-            this IMetrics metrics,
-            string routeTemplate,
-            int httpStatusCode,
-            string clientId)
-        {
-            var tags = new MetricTags(
-                new[] { MiddlewareConstants.DefaultTagKeys.ClientId, MiddlewareConstants.DefaultTagKeys.Route, MiddlewareConstants.DefaultTagKeys.HttpStatusCode },
-                new[] { clientId, routeTemplate, httpStatusCode.ToString() });
-
-            metrics.Measure.Meter.Mark(OAuthRequestMetricsRegistry.Meters.ErrorRate, tags);
-        }
-
-        public static void RecordClientRequestRate(this IMetrics metrics, string routeTemplate, string clientId)
-        {
-            var tags = new MetricTags(new[] { MiddlewareConstants.DefaultTagKeys.ClientId, MiddlewareConstants.DefaultTagKeys.Route }, new[] { clientId, routeTemplate });
-
-            metrics.Measure.Meter.Mark(OAuthRequestMetricsRegistry.Meters.RequestRate, tags);
-        }*/
-
         /// <summary>
         ///     Records the time taken to execute an API's endpoint in nanoseconds. Tags metrics by OAuth2 client id (if it exists)
         ///     and the endpoints route template.
         /// </summary>
         /// <param name="metrics">The metrics.</param>
-        /// <param name="clientId">The OAuth2 client identifier, with track min/max durations by clientid.</param>
-        /// <param name="routeTemplate">The route template of the endpoint.</param>
+        /// <param name="clientId">The client identifier, with track min/max durations by clientid.</param>
+        /// <param name="serviceId">The serviceId of the endpoint.</param>
         /// <param name="elapsed">The time elapsed in executing the endpoints request.</param>
-        public static void RecordEndpointsRequestTime(this IMetrics metrics, string clientId, string routeTemplate, long elapsed)
+        public static void RecordEndpointsRequestTime(this IMetrics metrics, string clientId, string serviceId, long elapsed)
         {
-            metrics.EndpointRequestTimer(routeTemplate).
-                    Record(
-                        elapsed,
-                        TimeUnit.Nanoseconds,
-                        clientId.IsPresent() ? clientId : null);
+            metrics.EndpointRequestTimer(serviceId).
+                Record(
+                    elapsed,
+                    TimeUnit.Nanoseconds,
+                    !string.IsNullOrWhiteSpace(clientId) ? clientId : null);
         }
 
         /// <summary>
         ///     Records metrics around unhanded exceptions, counts the total number of errors for each exception type.
         /// </summary>
         /// <param name="metrics">The metrics.</param>
-        /// <param name="routeTemplate">The route template of the endpoint.</param>
+        /// <param name="serviceId">The serviceId of the endpoint.</param>
         /// <param name="exception">The type of exception.</param>
         public static void RecordException(
             this IMetrics metrics,
-            string routeTemplate,
+            string serviceId,
             string exception)
         {
             var tags = new MetricTags(
-                new[] { MiddlewareConstants.DefaultTagKeys.Route, MiddlewareConstants.DefaultTagKeys.Exception },
-                new[] { routeTemplate, exception });
+                new[] { MiddlewareConstants.DefaultTagKeys.ServiceId, MiddlewareConstants.DefaultTagKeys.Exception },
+                new[] { serviceId, exception });
             metrics.Measure.Counter.Increment(MetricsRegistry.Counters.UnhandledExceptionCount, tags);
         }
 
         /// <summary>
-        ///     Records metrics about an HTTP request error, counts the total number of errors for each status code, measures the
-        ///     rate and percentage of HTTP error requests tagging by client id (if it exists) the endpoints route template and
-        ///     HTTP status code.
+        ///     Records metrics about an request error, counts the total number of errors for each status code, measures the
+        ///     rate and percentage of error requests tagging by client id (if it exists) the endpoints route template and
+        ///     status code.
         /// </summary>
         /// <param name="metrics">The metrics.</param>
-        /// <param name="routeTemplate">The route template of the endpoint.</param>
-        /// <param name="httpStatusCode">The HTTP status code.</param>
-        public static void RecordHttpRequestError(
+        /// <param name="serviceId">The serviceId of the endpoint.</param>
+        /// <param name="statusCode">The status code.</param>
+        public static void RecordRequestError(
             this IMetrics metrics,
-            string routeTemplate,
-            int httpStatusCode)
+            string serviceId,
+            int statusCode)
         {
-            CountOverallErrorRequestsByHttpStatusCode(metrics, httpStatusCode);
+            CountOverallErrorRequestsByStatusCode(metrics, statusCode);
 
             metrics.Measure.Meter.Mark(MetricsRegistry.Meters.ErrorRequestRate);
 
-            RecordEndpointsHttpRequestErrors(metrics, routeTemplate, httpStatusCode);
+            RecordEndpointsRequestErrors(metrics, serviceId, statusCode);
             RecordOverallPercentageOfErrorRequests(metrics);
-            RecordEndpointsPercentageOfErrorRequests(metrics, routeTemplate);
+            RecordEndpointsPercentageOfErrorRequests(metrics, serviceId);
         }
 
-        /*/// <summary>
-        ///     Records a metric for the size of a HTTP POST requests.
-        /// </summary>
-        /// <param name="metrics">The metrics.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="clientId">The OAuth2 client identifier.</param>
-        /// <param name="routeTemplate">The route template of the endpoint.</param>
-        public static void UpdateClientPostRequestSize(this IMetrics metrics, long value, string clientId, string routeTemplate)
+        private static void CountOverallErrorRequestsByStatusCode(IMetrics metrics, int statusCode)
         {
-            var tags = new MetricTags(new[] { MiddlewareConstants.DefaultTagKeys.ClientId, MiddlewareConstants.DefaultTagKeys.Route }, new[] { clientId, routeTemplate });
-            metrics.Measure.Histogram.Update(OAuthRequestMetricsRegistry.Histograms.PostRequestSizeHistogram, tags, value);
-        }
-
-        /// <summary>
-        ///     Records a metric for the size of a HTTP PUT requests.
-        /// </summary>
-        /// <param name="metrics">The metrics.</param>
-        /// <param name="value">The value.</param>
-        /// <param name="clientId">The OAuth2 client identifier to tag the histogram values.</param>
-        /// <param name="routeTemplate">The route template of the endpoint.</param>
-        public static void UpdateClientPutRequestSize(this IMetrics metrics, long value, string clientId, string routeTemplate)
-        {
-            var tags = new MetricTags(new[] { MiddlewareConstants.DefaultTagKeys.ClientId, MiddlewareConstants.DefaultTagKeys.Route }, new[] { clientId, routeTemplate });
-            metrics.Measure.Histogram.Update(OAuthRequestMetricsRegistry.Histograms.PutRequestSizeHistogram, tags, value);
-        }*/
-
-        /// <summary>
-        ///     Records a metric for the size of a HTTP POST requests.
-        /// </summary>
-        /// <param name="metrics">The metrics.</param>
-        /// <param name="value">The value.</param>
-        public static void UpdatePostRequestSize(this IMetrics metrics, long value)
-        {
-            metrics.Measure.Histogram.Update(MetricsRegistry.Histograms.PostRequestSizeHistogram, value);
-        }
-
-        /// <summary>
-        ///     Records a metric for the size of a HTTP PUT requests.
-        /// </summary>
-        /// <param name="metrics">The metrics.</param>
-        /// <param name="value">The value.</param>
-        public static void UpdatePutRequestSize(this IMetrics metrics, long value)
-        {
-            metrics.Measure.Histogram.Update(MetricsRegistry.Histograms.PutRequestSizeHistogram, value);
-        }
-
-        private static void CountOverallErrorRequestsByHttpStatusCode(IMetrics metrics, int httpStatusCode)
-        {
-            var errorCounterTags = new MetricTags(MiddlewareConstants.DefaultTagKeys.HttpStatusCode, httpStatusCode.ToString());
+            var errorCounterTags = new MetricTags(MiddlewareConstants.DefaultTagKeys.StatusCode, statusCode.ToString());
             metrics.Measure.Counter.Increment(MetricsRegistry.Counters.TotalErrorRequestCount, errorCounterTags);
         }
 
-        private static ITimer EndpointRequestTimer(this IMetrics metrics, string routeTemplate)
+        private static ITimer EndpointRequestTimer(this IMetrics metrics, string serviceId)
         {
-            var tags = new MetricTags(MiddlewareConstants.DefaultTagKeys.Route, routeTemplate);
+            var tags = new MetricTags(MiddlewareConstants.DefaultTagKeys.ServiceId, serviceId);
             return metrics.Provider.Timer.Instance(MetricsRegistry.Timers.EndpointRequestTransactionDuration, tags);
         }
 
-        private static void RecordEndpointsHttpRequestErrors(IMetrics metrics, string routeTemplate, int httpStatusCode)
+        private static void RecordEndpointsRequestErrors(IMetrics metrics, string serviceId, int statusCode)
         {
-            var endpointErrorRequestTags = new MetricTags(MiddlewareConstants.DefaultTagKeys.Route, routeTemplate);
+            var endpointErrorRequestTags = new MetricTags(MiddlewareConstants.DefaultTagKeys.ServiceId, serviceId);
             metrics.Measure.Meter.Mark(MetricsRegistry.Meters.EndpointErrorRequestRate, endpointErrorRequestTags);
 
             var endpointErrorRequestPerStatusCodeTags = new MetricTags(
-                new[] { MiddlewareConstants.DefaultTagKeys.Route, MiddlewareConstants.DefaultTagKeys.HttpStatusCode },
-                new[] { routeTemplate, httpStatusCode.ToString() });
+                new[] { MiddlewareConstants.DefaultTagKeys.ServiceId, MiddlewareConstants.DefaultTagKeys.StatusCode },
+                new[] { serviceId, statusCode.ToString() });
 
             metrics.Measure.Meter.Mark(
                 MetricsRegistry.Meters.EndpointErrorRequestPerStatusCodeRate,
                 endpointErrorRequestPerStatusCodeTags);
         }
 
-        private static void RecordEndpointsPercentageOfErrorRequests(IMetrics metrics, string routeTemplate)
+        private static void RecordEndpointsPercentageOfErrorRequests(IMetrics metrics, string serviceId)
         {
-            var tags = new MetricTags(MiddlewareConstants.DefaultTagKeys.Route, routeTemplate);
+            var tags = new MetricTags(MiddlewareConstants.DefaultTagKeys.ServiceId, serviceId);
 
             var endpointsErrorRate = metrics.Provider.Meter.Instance(MetricsRegistry.Meters.EndpointErrorRequestRate, tags);
-            var endpointsRequestTransactionTime = metrics.EndpointRequestTimer(routeTemplate);
+            var endpointsRequestTransactionTime = metrics.EndpointRequestTimer(serviceId);
 
             metrics.Measure.Gauge.SetValue(
                 MetricsRegistry.Gauges.EndpointOneMinuteErrorPercentageRate,
