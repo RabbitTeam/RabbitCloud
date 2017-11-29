@@ -14,7 +14,7 @@ namespace Rabbit.Cloud.Client.Breaker
 {
     public class BackoffOptions
     {
-        public Func<FailureContext, bool> IsFailure { get; set; }
+        public Action<FailureContext> ErrorHandler { get; set; }
     }
 
     public class FailureContext
@@ -33,24 +33,28 @@ namespace Rabbit.Cloud.Client.Breaker
 
     public class FailureEntry
     {
-        public FailureEntry(IServiceInstance serviceInstance, TimeSpan tryInterval)
+        private readonly ILogger _logger;
+
+        public FailureEntry(IServiceInstance serviceInstance, ILogger logger)
         {
+            _logger = logger;
             ServiceInstance = serviceInstance;
-            TryInterval = tryInterval;
-            LastFailureTimeUtc = DateTime.UtcNow;
-            Count = 1;
         }
 
         public IServiceInstance ServiceInstance { get; }
         public int Count { get; private set; }
 
-        public TimeSpan TryInterval { get; }
+        public TimeSpan TryInterval { get; private set; }
         public DateTime LastFailureTimeUtc { get; private set; }
 
-        internal void Mark()
+        public void Mark(TimeSpan tryInterval)
         {
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation($"mark error,service instance:{FailureTable.ServiceInstanceToString(ServiceInstance)},tryInterval:{tryInterval.TotalSeconds}s.");
+
             Count = Count + 1;
             LastFailureTimeUtc = DateTime.UtcNow;
+            TryInterval = tryInterval;
         }
 
         internal bool IsAvailable()
@@ -65,41 +69,55 @@ namespace Rabbit.Cloud.Client.Breaker
         private readonly ConcurrentDictionary<IServiceInstance, FailureEntry> _failures = new ConcurrentDictionary<IServiceInstance, FailureEntry>();
         private readonly Timer _timer;
 
+        internal static string ServiceInstanceToString(IServiceInstance serviceInstance)
+        {
+            return $"serviceId:{serviceInstance.ServiceId},host:{serviceInstance.Host},port:{serviceInstance.Port}";
+        }
+
         public FailureTable(ILogger<FailureTable> logger)
         {
             _logger = logger;
             _timer = new Timer(s =>
-              {
-                  // no data ignore
-                  if (!_failures.Any())
-                      return;
+            {
+                Compression();
+            }, null, 1000 * 30, 1000 * 30);
+        }
 
-                  // remove available service instance
-                  foreach (var serviceInstance in _failures.Where(i => i.Value.IsAvailable()).Select(i => i.Key).ToArray())
-                      _failures.TryRemove(serviceInstance, out var _);
-              }, null, 1000 * 10, 1000 * 10);
+        private void Compression()
+        {
+            if (_logger.IsEnabled(LogLevel.Debug))
+                _logger.LogDebug("begin compression...");
+
+            // no data ignore
+            if (!_failures.Any())
+                return;
+
+            // remove available service instance
+            foreach (var serviceInstance in _failures.Where(i => i.Value.IsAvailable()).Select(i => i.Key).ToArray())
+            {
+                var result = _failures.TryRemove(serviceInstance, out var _);
+                if (_logger.IsEnabled(LogLevel.Debug))
+                    _logger.LogDebug($"remove service instance {ServiceInstanceToString(serviceInstance)}.success:{result}");
+            }
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+                _logger.LogDebug("end compression...");
         }
 
         public FailureEntry GetFailureEntry(IServiceInstance serviceInstance)
         {
-            return _failures.TryGetValue(serviceInstance, out var value) ? value : null;
+            return _failures.GetOrAdd(serviceInstance, k => new FailureEntry(serviceInstance, _logger));
         }
 
-        public void Mark(FailureEntry entry)
+        public void TryRemove(IServiceInstance serviceInstance)
         {
-            var isFirst = false;
-            var value = _failures.GetOrAdd(entry.ServiceInstance, k =>
-            {
-                isFirst = true;
-                return entry;
-            });
-            if (!isFirst)
-                value.Mark();
-        }
+            if (!_failures.Any())
+                return;
 
-        public void Remove(FailureEntry entry)
-        {
-            _failures.TryRemove(entry.ServiceInstance, out var _);
+            var success = _failures.TryRemove(serviceInstance, out var _);
+
+            if (_logger.IsEnabled(LogLevel.Information))
+                _logger.LogInformation($"remove failure,service instance:{ServiceInstanceToString(serviceInstance)}.success:{success}");
         }
 
         private IReadOnlyList<IServiceInstance> GetFailureServiceInstances()
@@ -107,13 +125,39 @@ namespace Rabbit.Cloud.Client.Breaker
             return _failures.Where(i => !i.Value.IsAvailable()).Select(i => i.Key).ToArray();
         }
 
-        public IReadOnlyList<IServiceInstance> GetHealthyServiceInstances(IReadOnlyList<IServiceInstance> serviceInstances)
+        public IReadOnlyCollection<IServiceInstance> GetHealthyServiceInstances(IReadOnlyCollection<IServiceInstance> serviceInstances)
         {
             if (!_failures.Any())
                 return serviceInstances;
 
             var unavailables = GetFailureServiceInstances();
-            return serviceInstances.Where(i => !unavailables.Contains(i)).ToArray();
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                using (_logger.BeginScope("unavailable service instances:"))
+                {
+                    foreach (var serviceInstance in unavailables)
+                    {
+                        _logger.LogDebug(ServiceInstanceToString(serviceInstance));
+                    }
+                }
+            }
+
+            // ignore failure service instance
+            serviceInstances = serviceInstances.Where(i => !unavailables.Contains(i)).ToArray();
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                using (_logger.BeginScope("available service instances:"))
+                {
+                    foreach (var serviceInstance in serviceInstances)
+                    {
+                        _logger.LogDebug(ServiceInstanceToString(serviceInstance));
+                    }
+                }
+            }
+
+            return serviceInstances;
         }
 
         #region IDisposable
@@ -145,7 +189,14 @@ namespace Rabbit.Cloud.Client.Breaker
 
         public async Task Invoke(IRabbitContext context)
         {
-            var isFailure = _options.IsFailure;
+            var errorHandler = _options.ErrorHandler;
+
+            if (errorHandler == null)
+            {
+                await _next(context);
+                return;
+            }
+
             var loadBalanceFeature = context.Features.Get<ILoadBalanceFeature>();
             if (loadBalanceFeature == null)
             {
@@ -153,19 +204,17 @@ namespace Rabbit.Cloud.Client.Breaker
                 context.Features.Set(loadBalanceFeature);
             }
 
-            if (isFailure == null)
-            {
-                await _next(context);
-                return;
-            }
-
             try
             {
                 var serviceName = context.Request.Url.Host;
+
+                // get all service instances
                 var serviceInstances = _discoveryClient.GetInstances(serviceName);
 
                 loadBalanceFeature.ServiceInstances.Clear();
-                foreach (var serviceInstance in _failureTable.GetHealthyServiceInstances(serviceInstances.ToArray()))
+
+                // get available service instances
+                foreach (var serviceInstance in _failureTable.GetHealthyServiceInstances(serviceInstances))
                     loadBalanceFeature.ServiceInstances.Add(serviceInstance);
 
                 await _next(context);
@@ -176,15 +225,12 @@ namespace Rabbit.Cloud.Client.Breaker
                 if (currentServiceInstance == null)
                     return;
 
-                var failureEntry = _failureTable.GetFailureEntry(currentServiceInstance) ?? new FailureEntry(currentServiceInstance, TimeSpan.FromSeconds(30));
+                _failureTable.TryRemove(currentServiceInstance);
 
+                var failureEntry = _failureTable.GetFailureEntry(currentServiceInstance);
                 var fastfailureContext = new FailureContext(failureEntry, context, e);
 
-                // ignore
-                if (!isFailure(fastfailureContext))
-                    return;
-
-                _failureTable.Mark(fastfailureContext.Entry);
+                errorHandler(fastfailureContext);
             }
         }
     }
