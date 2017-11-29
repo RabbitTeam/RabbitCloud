@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.LoadBalance.Features;
 using Rabbit.Cloud.Discovery.Abstractions;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,7 +31,7 @@ namespace Rabbit.Cloud.Client.LoadBalance
             var serviceInstances = feature != null && feature.ServiceInstances.Any() ? feature.ServiceInstances.ToArray() : _discoveryClient.GetInstances(serviceUrl.Host)?.ToArray();
 
             if (serviceInstances == null || !serviceInstances.Any())
-                throw new Exception($"according to url {serviceUrl}, can not find the service instance");
+                throw new RabbitRpcException(RabbitRpcExceptionCode.Forbidden, $"according to url {serviceUrl}, can not find the service instance");
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
@@ -75,10 +75,14 @@ namespace Rabbit.Cloud.Client.LoadBalance
 
                 var serviceInstances = FindServiceInstances(serviceUrl, loadBalanceFeature);
                 var serviceInstance = loadBalanceStrategy.Choose(host, serviceInstances);
-                loadBalanceFeature.SelectedServiceInstance = serviceInstance ?? throw new Exception($"according load balance strategy:'{loadBalanceStrategy.GetType().Name}',unable to choose service instance.");
+                loadBalanceFeature.SelectedServiceInstance =
+                    serviceInstance ??
+                    throw new RabbitRpcException(RabbitRpcExceptionCode.Forbidden,
+                        $"according load balance strategy:'{loadBalanceStrategy.GetType().Name}',unable to choose service instance.");
 
                 if (_logger.IsEnabled(LogLevel.Debug))
-                    _logger.LogDebug($"selected service instance serviceId:{serviceInstance.ServiceId},host:{serviceInstance.Host},port:{serviceInstance.Port}");
+                    _logger.LogDebug(
+                        $"selected service instance serviceId:{serviceInstance.ServiceId},host:{serviceInstance.Host},port:{serviceInstance.Port}");
 
                 requestFeature.ServiceUrl.Host = serviceInstance.Host;
                 requestFeature.ServiceUrl.Port = serviceInstance.Port;

@@ -114,10 +114,13 @@ namespace Rabbit.Cloud.Client.Breaker
             if (!_failures.Any())
                 return;
 
+            if (!_failures.ContainsKey(serviceInstance))
+                return;
+
             var success = _failures.TryRemove(serviceInstance, out var _);
 
             if (_logger.IsEnabled(LogLevel.Information))
-                _logger.LogInformation($"remove failure,service instance:{ServiceInstanceToString(serviceInstance)}.success:{success}");
+                _logger.LogInformation($"remove failure service instance:{ServiceInstanceToString(serviceInstance)}.success:{success}");
         }
 
         private IReadOnlyList<IServiceInstance> GetFailureServiceInstances()
@@ -218,19 +221,24 @@ namespace Rabbit.Cloud.Client.Breaker
                     loadBalanceFeature.ServiceInstances.Add(serviceInstance);
 
                 await _next(context);
-            }
-            catch (Exception e)
-            {
+
                 var currentServiceInstance = loadBalanceFeature.SelectedServiceInstance;
                 if (currentServiceInstance == null)
                     return;
 
                 _failureTable.TryRemove(currentServiceInstance);
+            }
+            catch (Exception e)
+            {
+                var currentServiceInstance = loadBalanceFeature.SelectedServiceInstance;
+                if (currentServiceInstance == null)
+                    throw;
 
                 var failureEntry = _failureTable.GetFailureEntry(currentServiceInstance);
                 var fastfailureContext = new FailureContext(failureEntry, context, e);
 
                 errorHandler(fastfailureContext);
+                throw;
             }
         }
     }

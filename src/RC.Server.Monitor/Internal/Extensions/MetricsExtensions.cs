@@ -59,30 +59,30 @@ namespace Rabbit.Cloud.Server.Monitor.Internal.Extensions
         }
 
         /// <summary>
-        ///     Records metrics about an request error, counts the total number of errors for each status code, measures the
+        ///     Records metrics about an request error, counts the total number of errors for each status, measures the
         ///     rate and percentage of error requests tagging by client id (if it exists) the endpoints route template and
-        ///     status code.
+        ///     status.
         /// </summary>
         /// <param name="metrics">The metrics.</param>
         /// <param name="serviceId">The serviceId of the endpoint.</param>
-        /// <param name="statusCode">The status code.</param>
+        /// <param name="status">The status.</param>
         public static void RecordRequestError(
             this IMetrics metrics,
             string serviceId,
-            int statusCode)
+            string status)
         {
-            CountOverallErrorRequestsByStatusCode(metrics, statusCode);
+            CountOverallErrorRequestsByStatus(metrics, status);
 
             metrics.Measure.Meter.Mark(MetricsRegistry.Meters.ErrorRequestRate);
 
-            RecordEndpointsRequestErrors(metrics, serviceId, statusCode);
+            RecordEndpointsRequestErrors(metrics, serviceId, status);
             RecordOverallPercentageOfErrorRequests(metrics);
             RecordEndpointsPercentageOfErrorRequests(metrics, serviceId);
         }
 
-        private static void CountOverallErrorRequestsByStatusCode(IMetrics metrics, int statusCode)
+        private static void CountOverallErrorRequestsByStatus(IMetrics metrics, string status)
         {
-            var errorCounterTags = new MetricTags(MiddlewareConstants.DefaultTagKeys.StatusCode, statusCode.ToString());
+            var errorCounterTags = new MetricTags(MiddlewareConstants.DefaultTagKeys.Status, status);
             metrics.Measure.Counter.Increment(MetricsRegistry.Counters.TotalErrorRequestCount, errorCounterTags);
         }
 
@@ -92,18 +92,18 @@ namespace Rabbit.Cloud.Server.Monitor.Internal.Extensions
             return metrics.Provider.Timer.Instance(MetricsRegistry.Timers.EndpointRequestTransactionDuration, tags);
         }
 
-        private static void RecordEndpointsRequestErrors(IMetrics metrics, string serviceId, int statusCode)
+        private static void RecordEndpointsRequestErrors(IMetrics metrics, string serviceId, string status)
         {
             var endpointErrorRequestTags = new MetricTags(MiddlewareConstants.DefaultTagKeys.ServiceId, serviceId);
             metrics.Measure.Meter.Mark(MetricsRegistry.Meters.EndpointErrorRequestRate, endpointErrorRequestTags);
 
-            var endpointErrorRequestPerStatusCodeTags = new MetricTags(
-                new[] { MiddlewareConstants.DefaultTagKeys.ServiceId, MiddlewareConstants.DefaultTagKeys.StatusCode },
-                new[] { serviceId, statusCode.ToString() });
+            var endpointErrorRequestPerStatusTags = new MetricTags(
+                new[] { MiddlewareConstants.DefaultTagKeys.ServiceId, MiddlewareConstants.DefaultTagKeys.Status },
+                new[] { serviceId, status });
 
             metrics.Measure.Meter.Mark(
-                MetricsRegistry.Meters.EndpointErrorRequestPerStatusCodeRate,
-                endpointErrorRequestPerStatusCodeTags);
+                MetricsRegistry.Meters.EndpointErrorRequestPerStatusRate,
+                endpointErrorRequestPerStatusTags);
         }
 
         private static void RecordEndpointsPercentageOfErrorRequests(IMetrics metrics, string serviceId)

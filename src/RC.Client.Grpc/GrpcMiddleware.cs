@@ -1,7 +1,10 @@
-﻿using Rabbit.Cloud.Application.Abstractions;
+﻿using Grpc.Core;
+using Rabbit.Cloud.Abstractions;
+using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
 using Rabbit.Cloud.Grpc.Abstractions;
+using Rabbit.Cloud.Grpc.Abstractions.Utilities.Extensions;
 using Rabbit.Cloud.Grpc.Client.Extensions;
 using Rabbit.Cloud.Grpc.Client.Internal;
 using System;
@@ -46,15 +49,21 @@ namespace Rabbit.Cloud.Client.Grpc
             var method = _methodTable.Get(serviceId);
 
             if (method == null)
-                throw new Exception($"Can not find service '{serviceId}'.");
+                throw new RabbitRpcException(RabbitRpcExceptionCode.Forbidden, $"Can not find service '{serviceId}'.");
+            try
+            {
+                var response = callInvoker.Call(method, grpcRequestFeature.Host, grpcRequestFeature.CallOptions, grpcRequestFeature.Request);
 
-            var response = callInvoker.Call(method, grpcRequestFeature.Host, grpcRequestFeature.CallOptions, grpcRequestFeature.Request);
+                context.Features.Get<IGrpcResponseFeature>().Response = response;
 
-            context.Features.Get<IGrpcResponseFeature>().Response = response;
-
-            //todo: await result, may trigger exception.
-            var awaiterAction = Cache.GetAwaiterAction(response.GetType());
-            awaiterAction(response);
+                //todo: await result, may trigger exception.
+                var awaiterAction = Cache.GetAwaiterAction(response.GetType());
+                awaiterAction(response);
+            }
+            catch (RpcException rpcException)
+            {
+                throw rpcException.WrapRabbitRpcException();
+            }
 
             await _next(context);
         }

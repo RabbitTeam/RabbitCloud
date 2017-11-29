@@ -7,7 +7,7 @@ namespace Rabbit.Cloud.Server.Monitor.Internal.Extensions
             public const string ServiceId = "service_id";
             public const string Exception = "exception";
             public const string ClientId = "client_id";
-            public const string StatusCode = "status_code";
+            public const string Status = "status";
         }
     }
 }

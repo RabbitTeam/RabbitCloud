@@ -1,4 +1,5 @@
 ﻿using App.Metrics;
+using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Server.Monitor.Internal.Extensions;
 using System;
@@ -26,7 +27,12 @@ namespace Rabbit.Cloud.Server.Monitor.Middleware
             catch (Exception exception)
             {
                 var serviceId = context.GetServiceId();
-                _metrics.RecordRequestError(serviceId, -1);
+
+                var status = "Unknown";
+                if (exception is RabbitRpcException rpcException)
+                    status = rpcException.RealStatus;
+
+                _metrics.RecordRequestError(serviceId, status);
                 _metrics.RecordException(serviceId, exception.GetType().FullName);
                 throw;
             }

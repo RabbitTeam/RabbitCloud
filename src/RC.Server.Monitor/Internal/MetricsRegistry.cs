@@ -71,10 +71,10 @@ namespace Rabbit.Cloud.Server.Monitor.Internal
 
         public static class Meters
         {
-            public static MeterOptions EndpointErrorRequestPerStatusCodeRate { get; } = new MeterOptions
+            public static MeterOptions EndpointErrorRequestPerStatusRate { get; } = new MeterOptions
             {
                 Context = ContextName,
-                Name = "Error Rate Per Endpoint And Status Code",
+                Name = "Error Rate Per Endpoint And Status",
                 MeasurementUnit = Unit.Requests
             };
 
