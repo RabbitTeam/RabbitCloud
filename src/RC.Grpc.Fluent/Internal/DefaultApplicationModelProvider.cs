@@ -1,5 +1,5 @@
 ﻿using Google.Protobuf;
-using Newtonsoft.Json;
+using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
 using Rabbit.Cloud.Grpc.Fluent.Utilities;
@@ -7,12 +7,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace Rabbit.Cloud.Grpc.Fluent.Internal
 {
     public class DefaultApplicationModelProvider : IApplicationModelProvider
     {
+        private readonly IEnumerable<ISerializer> _serializers;
+
+        public DefaultApplicationModelProvider(IEnumerable<ISerializer> serializers)
+        {
+            _serializers = serializers;
+        }
+
         #region Implementation of IApplicationModelProvider
 
         public int Order { get; } = 10;
@@ -99,7 +105,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
             }
         }
 
-        private static MethodModel CreateMethodModel(ServiceModel serviceModel, MethodInfo methodInfo)
+        private MethodModel CreateMethodModel(ServiceModel serviceModel, MethodInfo methodInfo)
         {
             var methodName = FluentUtilities.GetMethodName(methodInfo);
             var methodModel = new MethodModel(methodInfo, methodInfo.GetCustomAttributes(false))
@@ -120,35 +126,36 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
             return methodModel;
         }
 
-        private static MarshallerModel CreateMarshallerModel(MethodModel methodModel, Type marshallerType)
+        private MarshallerModel CreateMarshallerModel(MethodModel methodModel, Type marshallerType)
         {
             //todo: 考虑动态实现
             return new MarshallerModel(marshallerType.GetTypeInfo(), marshallerType.GetCustomAttributes(false))
             {
-                Deserializer = data =>
-                {
-                    if (data == null)
-                        return null;
-                    if (!typeof(IMessage).IsAssignableFrom(marshallerType))
-                        return JsonConvert.DeserializeObject(Encoding.UTF8.GetString(data), marshallerType);
-                    var message = (IMessage)Activator.CreateInstance(marshallerType);
-                    message.MergeFrom(data);
-                    return message;
-                },
+                Deserializer = data => Deserialize(marshallerType, data),
                 MethodModel = methodModel,
-                Serializer = model =>
-                {
-                    switch (model)
-                    {
-                        case null:
-                            return null;
-
-                        case IMessage message:
-                            return message.ToByteArray();
-                    }
-                    return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(model));
-                }
+                Serializer = Serialize
             };
+        }
+
+        private byte[] Serialize(object instance)
+        {
+            if (instance is IMessage message)
+                return message.ToByteArray();
+
+            return _serializers.Select(serializer => serializer.Serialize(instance)).FirstOrDefault(data => data != null);
+        }
+
+        private object Deserialize(Type type, byte[] data)
+        {
+            if (typeof(IMessage).IsAssignableFrom(type))
+            {
+                //todo: optimization create instance
+                var message = (IMessage)Activator.CreateInstance(type);
+                message.MergeFrom(data);
+                return message;
+            }
+
+            return _serializers.Select(serializer => serializer.Deserialize(type, data)).FirstOrDefault(instance => instance != null);
         }
 
         #endregion Private Method
