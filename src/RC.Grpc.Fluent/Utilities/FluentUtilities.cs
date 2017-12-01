@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
 using System;
@@ -205,11 +206,46 @@ namespace Rabbit.Cloud.Grpc.Fluent.Utilities
             if (requestType != null)
                 return requestType;
 
-            var parameterInfo = method.GetParameters().FirstOrDefault();
-            if (parameterInfo == null)
+            var parameters = FilterGrpcParameter(method.GetParameters().Select(i => i.ParameterType)).ToArray();
+
+            if (!parameters.Any())
                 throw new ArgumentException($"'{method.Name}' missing request parameter.");
 
-            return parameterInfo.ParameterType;
+            return parameters.Length == 1 ? parameters[0] : typeof(DynamicRequestModel);
+        }
+
+        public static IReadOnlyList<Type> FilterGrpcParameter(IEnumerable<Type> types)
+        {
+            return types.Where(i => !IsGrpcParameter(i)).ToArray();
+        }
+
+        private static bool IsGrpcParameter(Type type)
+        {
+            return type.Assembly.FullName == typeof(ServerCallContext).Assembly.FullName;
+        }
+
+        public static object GetRequestModel(IDictionary<string, object> arguments, IEnumerable<ISerializer> serializers)
+        {
+            arguments = arguments.Where(i => !IsGrpcParameter(i.Value.GetType())).ToDictionary(i => i.Key, i => i.Value);
+
+            switch (arguments.Count)
+            {
+                case 0:
+                    return EmptyRequestModel.Instance;
+
+                case 1:
+                    return arguments.First().Value;
+
+                default:
+                    var dictionary = arguments.ToDictionary(i => i.Key, i =>
+                    {
+                        return serializers.Select(serializer => serializer.Serialize(i.Value)).FirstOrDefault(data => data != null);
+                    }).Where(i => i.Value != null).ToDictionary(i => i.Key, i => i.Value);
+                    return new DynamicRequestModel
+                    {
+                        Items = dictionary
+                    };
+            }
         }
 
         public static Type GetResponseType(MethodInfo method)

@@ -1,11 +1,13 @@
 ﻿using Castle.DynamicProxy;
 using Grpc.Core;
+using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Grpc.Fluent.Utilities;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
@@ -15,10 +17,12 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 {
     public class GrpcProxyInterceptor : RabbitProxyInterceptor
     {
+        private readonly IEnumerable<ISerializer> _serializers;
         private static readonly Type[] IgnoreGenericTypes = { typeof(AsyncServerStreamingCall<>), typeof(AsyncDuplexStreamingCall<,>) };
 
-        public GrpcProxyInterceptor(RabbitRequestDelegate invoker) : base(invoker)
+        public GrpcProxyInterceptor(RabbitRequestDelegate invoker, IEnumerable<ISerializer> serializers) : base(invoker)
         {
+            _serializers = serializers;
         }
 
         #region Overrides of RabbitProxyInterceptor
@@ -39,7 +43,20 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
                 Scheme = "grpc",
                 Path = fullServiceName
             };
-            context.Request.Request = invocation.Arguments[0];
+
+            var parameters = invocation.Method.GetParameters();
+
+            var dictionary = new Dictionary<string, object>();
+            var index = 0;
+            foreach (var parameter in parameters)
+            {
+                dictionary[parameter.Name] = invocation.Arguments[index];
+                index++;
+            }
+
+            var requestModel = FluentUtilities.GetRequestModel(dictionary, _serializers);
+
+            context.Request.Request = requestModel;
 
             return context;
         }

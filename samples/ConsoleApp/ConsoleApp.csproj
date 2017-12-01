@@ -15,11 +15,13 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
     <PackageReference Include="Rabbit.Extensions.Configuration" Version="1.0.0-preview1" />
     <PackageReference Include="App.Metrics.Reporting.Elasticsearch" Version="2.0.0-alpha" />
+    <PackageReference Include="MessagePack" Version="1.7.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +31,9 @@
     <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Server\RC.Grpc.Server.csproj" />
+    <ProjectReference Include="..\..\src\RC.Serialization.Json\RC.Serialization.Json.csproj" />
+    <ProjectReference Include="..\..\src\RC.Serialization.MessagePack\RC.Serialization.MessagePack.csproj" />
+    <ProjectReference Include="..\..\src\RC.Serialization.Protobuf\RC.Serialization.Protobuf.csproj" />
     <ProjectReference Include="..\..\src\RC.Server.Grpc\RC.Server.Grpc.csproj" />
     <ProjectReference Include="..\..\src\RC.Server.Monitor\RC.Server.Monitor.csproj" />
   </ItemGroup>
