@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\src\RC.Client.Breaker\RC.Client.Breaker.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Grpc.Proxy\RC.Client.Grpc.Proxy.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.LoadBalance\RC.Client.LoadBalance.csproj" />
+    <ProjectReference Include="..\..\src\RC.Discovery.Configuration\RC.Discovery.Configuration.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc.Server\RC.Grpc.Server.csproj" />
@@ -37,6 +38,12 @@
     <ProjectReference Include="..\..\src\RC.Serialization.Protobuf\RC.Serialization.Protobuf.csproj" />
     <ProjectReference Include="..\..\src\RC.Server.Grpc\RC.Server.Grpc.csproj" />
     <ProjectReference Include="..\..\src\RC.Server.Monitor\RC.Server.Monitor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="instances.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
