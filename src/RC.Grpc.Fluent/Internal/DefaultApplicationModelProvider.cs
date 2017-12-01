@@ -140,14 +140,29 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
 
         private byte[] Serialize(object instance)
         {
-            if (instance is IMessage message)
-                return message.ToByteArray();
+            switch (instance)
+            {
+                case null:
+                    return null;
 
-            return _serializers.Serialize(instance);
+                case IMessage message:
+                    return message.ToByteArray();
+            }
+
+            var data = _serializers.Serialize(instance);
+            if (data == null)
+                throw RpcExceptionUtilities.NotFoundSerializer(instance.GetType());
+
+            return data;
         }
 
         private object Deserialize(Type type, byte[] data)
         {
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+            if (data == null)
+                return null;
+
             if (typeof(IMessage).IsAssignableFrom(type))
             {
                 //todo: optimization create instance
@@ -156,7 +171,10 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
                 return message;
             }
 
-            return _serializers.Deserialize(type, data);
+            var value = _serializers.Deserialize(type, data);
+            if (value == null)
+                throw RpcExceptionUtilities.NotFoundSerializer(type);
+            return value;
         }
 
         #endregion Private Method

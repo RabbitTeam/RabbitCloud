@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions.Serialization;
+using Rabbit.Cloud.Grpc.Fluent.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,7 +37,12 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal
                         args.AddRange(method.GetParameters().Select(p =>
                         {
                             var data = dynamicRequestModel.Items[p.Name];
-                            return _options.Serializers.Deserialize(p.ParameterType, data.ToByteArray());
+                            var value = _options.Serializers.Deserialize(p.ParameterType, data.ToByteArray());
+
+                            if (value == null)
+                                throw RpcExceptionUtilities.NotFoundSerializer(p.ParameterType);
+
+                            return value;
                         }).ToArray());
                         break;
 

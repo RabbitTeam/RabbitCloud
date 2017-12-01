@@ -238,12 +238,19 @@ namespace Rabbit.Cloud.Grpc.Fluent.Utilities
                     return arguments.First().Value;
 
                 default:
-                    var dictionary = arguments.ToDictionary(i => i.Key, i => serializers.Serialize(i.Value)).Where(i => i.Value != null).ToDictionary(i => i.Key, i => ByteString.CopyFrom(i.Value));
+                    var dictionary = arguments.ToDictionary(i => i.Key, i =>
+                    {
+                        var value = i.Value;
+                        if (value == null)
+                            return null;
+                        var data = serializers.Serialize(value);
+                        if (data == null)
+                            throw RpcExceptionUtilities.NotFoundSerializer(value.GetType());
+                        return data;
+                    }).ToDictionary(i => i.Key, i => i.Value == null || !i.Value.Any() ? ByteString.Empty : ByteString.CopyFrom(i.Value));
                     var request = new DynamicRequestModel();
                     foreach (var item in dictionary)
-                    {
                         request.Items.Add(item.Key, item.Value);
-                    }
                     return request;
             }
         }
