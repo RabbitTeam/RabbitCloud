@@ -1,12 +1,10 @@
 ﻿using Grpc.Core;
-using Helloworld;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions.Extensions;
-using Rabbit.Cloud.Client.Breaker;
-using Rabbit.Cloud.Client.Breaker.Builder;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.LoadBalance;
@@ -20,31 +18,42 @@ using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Fluent;
 using Rabbit.Cloud.Grpc.Server;
+using Rabbit.Cloud.Serialization.Json;
+using Rabbit.Cloud.Serialization.MessagePack;
+using Rabbit.Cloud.Serialization.Protobuf;
 using Rabbit.Cloud.Server.Grpc;
 using Rabbit.Cloud.Server.Grpc.Builder;
 using Rabbit.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
-    public interface IServiceBase
+    public class Request
     {
-        Task<HelloReply> SendAsync(HelloRequest request);
+        public string Name { get; set; }
     }
 
-    public class ServiceBase : IServiceBase
+    public class Response
+    {
+        public string Message { get; set; }
+    }
+
+    [GrpcClient("ConsoleApp.TestService")]
+    public interface ITestService
+    {
+        Task<Response> SendAsync(Request request);
+    }
+
+    [GrpcService("ConsoleApp.TestService")]
+    public class TestService : ITestService
     {
         #region Implementation of IServiceBase
 
-        [GrpcMethod]
-        public Task<HelloReply> SendAsync(HelloRequest request)
+        public Task<Response> SendAsync(Request request)
         {
-            if (request.Name == "error")
-            {
-                throw new Exception("error");
-            }
-            return Task.FromResult(new HelloReply
+            return Task.FromResult(new Response
             {
                 Message = "hello " + request.Name
             });
@@ -53,23 +62,12 @@ namespace ConsoleApp
         #endregion Implementation of IServiceBase
     }
 
-    [GrpcClient("ConsoleApp.TestService")]
-    public interface ITestService : IServiceBase
-    {
-    }
-
-    [GrpcService("ConsoleApp.TestService")]
-    public class ServiceImpl : ServiceBase, ITestService
-    {
-    }
-
     public class Program
     {
-        private const string ConsulUrl = "http://192.168.100.150:8500";
-
         private static async Task StartServer()
         {
             {
+                var rabbitConsulOptions = _configuration.GetSection("RabbitCloud:Consul").Get<RabbitConsulOptions>();
                 IServiceProvider services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
@@ -78,7 +76,10 @@ namespace ConsoleApp
                     .AddGrpcCore()
                     .AddGrpcServer()
                     .AddGrpcFluent()
-                    .AddSingleton<ServiceImpl, ServiceImpl>()
+                    .AddSingleton<TestService, TestService>()
+                    .AddJsonSerializer()
+                    .AddProtobufSerializer()
+                    .AddMessagePackSerializer()
                     .AddServerGrpc(options =>
                     {
                         var serverServices = new ServiceCollection()
@@ -93,8 +94,6 @@ namespace ConsoleApp
                     .BuildServiceProvider();
 
                 var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
-
-                var rabbitConsulOptions = services.GetRequiredService<IOptions<RabbitConsulOptions>>().Value;
 
                 await registryService.RegisterAsync(ConsulUtil.Create(rabbitConsulOptions.Discovery));
 
@@ -120,39 +119,27 @@ namespace ConsoleApp
         private static async Task Main(string[] args)
         {
             _configuration = BuildConfiguration(args);
-            /*            await StartServer();
-                        Console.WriteLine("press key exit...");
-                        Console.ReadLine();
-                        return;*/
+            await StartServer();
+
             {
                 //client
                 var services = new ServiceCollection()
-                    .AddLogging()
+                    .AddLogging(options =>
+                    {
+                        options.AddConsole(s =>
+                        {
+                            s.IncludeScopes = true;
+                        });
+                        options.SetMinimumLevel(LogLevel.Information);
+                    })
+                    .AddJsonSerializer()
+                    .AddProtobufSerializer()
+                    .AddMessagePackSerializer()
                     .AddOptions()
                     .AddGrpcCore()
                     .AddGrpcClient()
                     .AddGrpcFluent()
                     .AddConsulDiscovery(_configuration)
-                    .AddBreaker()
-                    .AddSingleton<FailureTable, FailureTable>()
-                    .Configure<BackoffOptions>(options =>
-                    {
-                        options.IsFailure = ctx =>
-                        {
-                            if (!(ctx.Exception is RpcException rpcException))
-                                return false;
-
-                            switch (rpcException.Status.StatusCode)
-                            {
-                                case StatusCode.DeadlineExceeded:
-                                case StatusCode.ResourceExhausted:
-                                case StatusCode.Unavailable:
-                                    return true;
-                            }
-
-                            return false;
-                        };
-                    })
                     .AddLoadBalance()
                     .BuildServiceProvider();
 
@@ -163,13 +150,11 @@ namespace ConsoleApp
                         context.Request.Url.Host = "ConsoleApp";
                         await next();
                     })
-                    .UseBreaker()
-                    .UseMiddleware<BackoffMiddleware>()
                     .UseLoadBalance()
                     .UseGrpc()
                     .Build();
 
-                var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker);
+                var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker, services.GetRequiredService<IEnumerable<ISerializer>>());
                 var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
                 var service = proxyFactory.CreateInterfaceProxy<ITestService>();
 
@@ -178,13 +163,20 @@ namespace ConsoleApp
                 {
                     try
                     {
-                        var t = await service.SendAsync(new HelloRequest { Name = name ?? "test" });
-                        Console.WriteLine(t?.Message ?? "null");
-                        name = Console.ReadLine();
+                        var request = new Request
+                        {
+                            Name = name
+                        };
+                        var response = await service.SendAsync(request);
+                        Console.WriteLine(response.Message);
                     }
                     catch (Exception e)
                     {
-                        //                        Console.WriteLine(e.Message);
+                        Console.WriteLine(e);
+                    }
+                    finally
+                    {
+                        name = Console.ReadLine();
                     }
                 }
             }
