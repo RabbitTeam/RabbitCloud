@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Rabbit.Cloud.Abstractions.Serialization;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions.Extensions;
 using Rabbit.Cloud.Client.Grpc.Builder;
@@ -25,7 +25,6 @@ using Rabbit.Cloud.Server.Grpc;
 using Rabbit.Cloud.Server.Grpc.Builder;
 using Rabbit.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -44,6 +43,8 @@ namespace ConsoleApp
     public interface ITestService
     {
         Task<Response> SendAsync(Request request);
+
+        Task<Response> Send2Async(string name, int age);
     }
 
     [GrpcService("ConsoleApp.TestService")]
@@ -56,6 +57,14 @@ namespace ConsoleApp
             return Task.FromResult(new Response
             {
                 Message = "hello " + request.Name
+            });
+        }
+
+        public Task<Response> Send2Async(string name, int age)
+        {
+            return Task.FromResult(new Response
+            {
+                Message = "hello " + name + ",age " + age
             });
         }
 
@@ -75,11 +84,15 @@ namespace ConsoleApp
                     .AddConsulRegistry()
                     .AddGrpcCore()
                     .AddGrpcServer()
-                    .AddGrpcFluent()
+                    .AddGrpcFluent(options =>
+                    {
+                        options
+                            .Serializers
+                            .AddProtobufSerializer()
+                            .AddMessagePackSerializer()
+                            .AddJsonSerializer();
+                    })
                     .AddSingleton<TestService, TestService>()
-                    .AddJsonSerializer()
-                    .AddProtobufSerializer()
-                    .AddMessagePackSerializer()
                     .AddServerGrpc(options =>
                     {
                         var serverServices = new ServiceCollection()
@@ -132,13 +145,17 @@ namespace ConsoleApp
                         });
                         options.SetMinimumLevel(LogLevel.Information);
                     })
-                    .AddJsonSerializer()
-                    .AddProtobufSerializer()
-                    .AddMessagePackSerializer()
                     .AddOptions()
                     .AddGrpcCore()
                     .AddGrpcClient()
-                    .AddGrpcFluent()
+                    .AddGrpcFluent(options =>
+                    {
+                        options
+                            .Serializers
+                            .AddProtobufSerializer()
+                            .AddMessagePackSerializer()
+                            .AddJsonSerializer();
+                    })
                     .AddConsulDiscovery(_configuration)
                     .AddLoadBalance()
                     .BuildServiceProvider();
@@ -154,7 +171,7 @@ namespace ConsoleApp
                     .UseGrpc()
                     .Build();
 
-                var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker, services.GetRequiredService<IEnumerable<ISerializer>>());
+                var rabbitProxyInterceptor = new GrpcProxyInterceptor(invoker, services.GetRequiredService<IOptions<GrpcOptions>>());
                 var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
                 var service = proxyFactory.CreateInterfaceProxy<ITestService>();
 
@@ -167,7 +184,7 @@ namespace ConsoleApp
                         {
                             Name = name
                         };
-                        var response = await service.SendAsync(request);
+                        var response = await service.Send2Async(name, 10);
                         Console.WriteLine(response.Message);
                     }
                     catch (Exception e)

@@ -9,24 +9,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 {
-    public class ApplicationModelOptions
-    {
-        public ICollection<TypeInfo> Types { get; } = new List<TypeInfo>();
-        public IList<IApplicationModelConvention> Conventions { get; } = new List<IApplicationModelConvention>();
-    }
-
     public class ApplicationModelHolder
     {
         private ApplicationModel _applicationModel;
-        private readonly ApplicationModelOptions _options;
+        private readonly GrpcOptions _options;
         private readonly IReadOnlyCollection<IApplicationModelProvider> _applicationModelProviders;
         private readonly IEnumerable<IApplicationModelConvention> _conventions;
 
-        public ApplicationModelHolder(IEnumerable<IApplicationModelProvider> applicationModelProviders, IOptions<ApplicationModelOptions> options)
+        public ApplicationModelHolder(IEnumerable<IApplicationModelProvider> applicationModelProviders, IOptions<GrpcOptions> options)
         {
             if (applicationModelProviders == null)
                 throw new ArgumentNullException(nameof(applicationModelProviders));
@@ -51,7 +44,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels
 
         private ApplicationModel BuildApplicationModel()
         {
-            var applicationModelProviderContext = new ApplicationModelProviderContext(_options.Types.Distinct());
+            var applicationModelProviderContext = new ApplicationModelProviderContext(_options.ScanTypes.Distinct());
 
             foreach (var applicationModelProvider in _applicationModelProviders)
             {

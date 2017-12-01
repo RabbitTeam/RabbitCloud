@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc" Version="1.7.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>

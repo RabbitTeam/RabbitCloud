@@ -1,4 +1,5 @@
 ﻿using Google.Protobuf;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
@@ -14,9 +15,9 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
     {
         private readonly IEnumerable<ISerializer> _serializers;
 
-        public DefaultApplicationModelProvider(IEnumerable<ISerializer> serializers)
+        public DefaultApplicationModelProvider(IOptions<GrpcOptions> options)
         {
-            _serializers = serializers;
+            _serializers = options.Value.Serializers;
         }
 
         #region Implementation of IApplicationModelProvider
@@ -142,7 +143,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
             if (instance is IMessage message)
                 return message.ToByteArray();
 
-            return _serializers.Select(serializer => serializer.Serialize(instance)).FirstOrDefault(data => data != null);
+            return _serializers.Serialize(instance);
         }
 
         private object Deserialize(Type type, byte[] data)
@@ -155,7 +156,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.Internal
                 return message;
             }
 
-            return _serializers.Select(serializer => serializer.Deserialize(type, data)).FirstOrDefault(instance => instance != null);
+            return _serializers.Deserialize(type, data);
         }
 
         #endregion Private Method

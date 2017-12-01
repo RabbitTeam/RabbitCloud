@@ -16,16 +16,16 @@ namespace Rabbit.Cloud.Grpc.Fluent
     public static class DependencyInjectionExtensions
     {
         public static IServiceCollection AddGrpcFluent(this IServiceCollection services,
-            Action<ApplicationModelOptions> configure)
+            Action<GrpcOptions> configure)
         {
             if (configure == null)
                 throw new ArgumentNullException(nameof(configure));
 
             return services
-                .Configure<ApplicationModelOptions>(options =>
+                .Configure<GrpcOptions>(options =>
                 {
                     foreach (var type in GetTypes())
-                        options.Types.Add(type);
+                        options.ScanTypes.Add(type);
                     configure(options);
                 })
                 .InternalAddGrpcFluent();
@@ -34,11 +34,11 @@ namespace Rabbit.Cloud.Grpc.Fluent
         public static IServiceCollection AddGrpcFluent(this IServiceCollection services, Func<AssemblyName, bool> assemblyPredicate = null, Func<TypeInfo, bool> typePredicate = null)
         {
             return services
-                .Configure<ApplicationModelOptions>(options =>
+                .Configure<GrpcOptions>(options =>
                 {
                     foreach (var type in GetTypes(assemblyPredicate, typePredicate))
                     {
-                        options.Types.Add(type);
+                        options.ScanTypes.Add(type);
                     }
                 })
                 .InternalAddGrpcFluent();

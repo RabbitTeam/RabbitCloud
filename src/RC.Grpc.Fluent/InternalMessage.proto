@@ -1,0 +1,7 @@
+﻿syntax = "proto3";
+
+message DynamicRequestModel{
+ map<string,bytes> items = 1;
+}
+
+message EmptyRequestModel { }

@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using Google.Protobuf;
+using Grpc.Core;
 using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
@@ -209,7 +210,7 @@ namespace Rabbit.Cloud.Grpc.Fluent.Utilities
             var parameters = FilterGrpcParameter(method.GetParameters().Select(i => i.ParameterType)).ToArray();
 
             if (!parameters.Any())
-                throw new ArgumentException($"'{method.Name}' missing request parameter.");
+                return typeof(EmptyRequestModel);
 
             return parameters.Length == 1 ? parameters[0] : typeof(DynamicRequestModel);
         }
@@ -231,20 +232,19 @@ namespace Rabbit.Cloud.Grpc.Fluent.Utilities
             switch (arguments.Count)
             {
                 case 0:
-                    return EmptyRequestModel.Instance;
+                    return new EmptyRequestModel();
 
                 case 1:
                     return arguments.First().Value;
 
                 default:
-                    var dictionary = arguments.ToDictionary(i => i.Key, i =>
+                    var dictionary = arguments.ToDictionary(i => i.Key, i => serializers.Serialize(i.Value)).Where(i => i.Value != null).ToDictionary(i => i.Key, i => ByteString.CopyFrom(i.Value));
+                    var request = new DynamicRequestModel();
+                    foreach (var item in dictionary)
                     {
-                        return serializers.Select(serializer => serializer.Serialize(i.Value)).FirstOrDefault(data => data != null);
-                    }).Where(i => i.Value != null).ToDictionary(i => i.Key, i => i.Value);
-                    return new DynamicRequestModel
-                    {
-                        Items = dictionary
-                    };
+                        request.Items.Add(item.Key, item.Value);
+                    }
+                    return request;
             }
         }
 

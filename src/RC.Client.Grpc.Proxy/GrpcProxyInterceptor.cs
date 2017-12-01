@@ -1,9 +1,11 @@
 ﻿using Castle.DynamicProxy;
 using Grpc.Core;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Proxy;
+using Rabbit.Cloud.Grpc.Fluent;
 using Rabbit.Cloud.Grpc.Fluent.Utilities;
 using System;
 using System.Collections.Concurrent;
@@ -20,9 +22,9 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
         private readonly IEnumerable<ISerializer> _serializers;
         private static readonly Type[] IgnoreGenericTypes = { typeof(AsyncServerStreamingCall<>), typeof(AsyncDuplexStreamingCall<,>) };
 
-        public GrpcProxyInterceptor(RabbitRequestDelegate invoker, IEnumerable<ISerializer> serializers) : base(invoker)
+        public GrpcProxyInterceptor(RabbitRequestDelegate invoker, IOptions<GrpcOptions> options) : base(invoker)
         {
-            _serializers = serializers;
+            _serializers = options.Value.Serializers;
         }
 
         #region Overrides of RabbitProxyInterceptor

@@ -25,12 +25,12 @@ namespace Rabbit.Cloud.Serialization.Json
 
         #region Overrides of Serializer
 
-        protected override void DoSerialize(Stream stream, object instance)
+        protected override bool DoSerialize(Stream stream, object instance)
         {
             using (TextWriter writer = new StreamWriter(stream))
-            {
                 _jsonSerializer.Serialize(writer, instance);
-            }
+
+            return true;
         }
 
         protected override object DoDeserialize(Type type, Stream stream)

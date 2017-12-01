@@ -1,16 +1,23 @@
 ﻿using Grpc.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Abstractions.Serialization;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal
 {
     public class DefaultServerMethodInvoker : ServerMethodInvoker
     {
+        private readonly GrpcOptions _options;
         private readonly ILogger<DefaultServerMethodInvoker> _logger;
 
         public DefaultServerMethodInvoker(ServerMethodModel serverMethod, IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger) : base(serverMethod, services, logger)
         {
+            _options = services.GetRequiredService<IOptions<GrpcOptions>>().Value;
             _logger = logger;
         }
 
@@ -20,7 +27,28 @@ namespace Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal
         {
             try
             {
-                return (Task<TResponse>)MethodInvoker(new object[] { request, callContext });
+                object objRequest = request;
+                var args = new List<object>();
+                switch (objRequest)
+                {
+                    case DynamicRequestModel dynamicRequestModel:
+                        var method = ServerMethod.MethodInfo;
+                        args.AddRange(method.GetParameters().Select(p =>
+                        {
+                            var data = dynamicRequestModel.Items[p.Name];
+                            return _options.Serializers.Deserialize(p.ParameterType, data.ToByteArray());
+                        }).ToArray());
+                        break;
+
+                    case EmptyRequestModel _:
+                        break;
+
+                    default:
+                        args.Add(request);
+                        break;
+                }
+                args.Add(callContext);
+                return (Task<TResponse>)MethodInvoker(args.ToArray());
             }
             catch (Exception e)
             {

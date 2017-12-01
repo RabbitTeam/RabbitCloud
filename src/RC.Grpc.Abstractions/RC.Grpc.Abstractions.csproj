@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.4.1" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
     <PackageReference Include="Grpc" Version="1.7.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.3" />
   </ItemGroup>

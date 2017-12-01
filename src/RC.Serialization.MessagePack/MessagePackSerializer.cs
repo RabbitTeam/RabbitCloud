@@ -10,12 +10,14 @@ namespace Rabbit.Cloud.Serialization.MessagePack
     {
         #region Overrides of Serializer
 
-        protected override void DoSerialize(Stream stream, object instance)
+        protected override bool DoSerialize(Stream stream, object instance)
         {
             if (!IsMessagePack(instance.GetType()))
-                return;
+                return false;
 
             PackSerializer.Serialize(instance.GetType(), stream, instance);
+
+            return true;
         }
 
         protected override object DoDeserialize(Type type, Stream stream)

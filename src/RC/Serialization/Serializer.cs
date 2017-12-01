@@ -8,7 +8,7 @@ namespace Rabbit.Cloud.Serialization
     {
         #region Implementation of ISerializer
 
-        public void Serialize(Stream stream, object instance)
+        public bool Serialize(Stream stream, object instance)
         {
             if (instance == null)
                 throw new ArgumentNullException(nameof(instance));
@@ -18,7 +18,7 @@ namespace Rabbit.Cloud.Serialization
             if (!stream.CanWrite)
                 throw new ArgumentException("Stream can not write.", nameof(stream));
 
-            DoSerialize(stream, instance);
+            return DoSerialize(stream, instance);
         }
 
         public object Deserialize(Type type, Stream stream)
@@ -34,7 +34,7 @@ namespace Rabbit.Cloud.Serialization
             return DoDeserialize(type, stream);
         }
 
-        protected abstract void DoSerialize(Stream stream, object instance);
+        protected abstract bool DoSerialize(Stream stream, object instance);
 
         protected abstract object DoDeserialize(Type type, Stream stream);
 
