@@ -25,5 +25,9 @@ $projects = @(
     @{ Name = "Rabbit.Cloud.Client.Breaker"; SourceDir = "$source_dir\RC.Client.Breaker"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud.Client.LoadBalance"; SourceDir = "$source_dir\RC.Client.LoadBalance"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
     @{ Name = "Rabbit.Cloud.Server.Grpc"; SourceDir = "$source_dir\RC.Server.Grpc"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
-    @{ Name = "Rabbit.Cloud.Server.Monitor"; SourceDir = "$source_dir\RC.Server.Monitor"; ExternalNuGetDependencies = $null; UseMSBuild = $False; }
+    @{ Name = "Rabbit.Cloud.Server.Monitor"; SourceDir = "$source_dir\RC.Server.Monitor"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Serialization.Protobuf"; SourceDir = "$source_dir\RC.Serialization.Protobuf"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Serialization.MessagePack"; SourceDir = "$source_dir\RC.Serialization.MessagePack"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Serialization.Json"; SourceDir = "$source_dir\RC.Serialization.Json"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+    @{ Name = "Rabbit.Cloud.Discovery.Configuration"; SourceDir = "$source_dir\RC.Discovery.Configuration"; ExternalNuGetDependencies = $null; UseMSBuild = $False; }
 )

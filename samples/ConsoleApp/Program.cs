@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
-using Rabbit.Cloud.Application.Abstractions.Extensions;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.LoadBalance;
@@ -112,11 +111,6 @@ namespace ConsoleApp
         {
             var app = new RabbitApplicationBuilder(services);
             return app
-                .Use(async (context, next) =>
-                {
-                    context.Request.Url.Host = "ConsoleApp";
-                    await next();
-                })
                 .UseLoadBalance()
                 .UseGrpc()
                 .Build();

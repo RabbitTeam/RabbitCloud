@@ -43,6 +43,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
             context.Request.Url = new ServiceUrl
             {
                 Scheme = "grpc",
+                Host = FluentUtilities.GetServiceName(proxyType),
                 Path = fullServiceName
             };
 
