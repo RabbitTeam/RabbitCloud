@@ -9,14 +9,9 @@ namespace Rabbit.Cloud.Discovery.Consul
         protected bool Disposed { get; private set; }
         public IConsulClient ConsulClient { get; private set; }
 
-        protected ConsulService(IConsulClient consulClient)
+        protected ConsulService(IOptionsMonitor<ConsulOptions> consulOptionsMonitor)
         {
-            ConsulClient = consulClient;
-        }
-
-        protected ConsulService(IOptionsMonitor<RabbitConsulOptions> consulOptionsMonitor)
-            : this(consulOptionsMonitor.CurrentValue.CreateClient())
-        {
+            ConsulClient = consulOptionsMonitor.CurrentValue.CreateClient();
             consulOptionsMonitor.OnChange(options =>
             {
                 ConsulClient = options.CreateClient();

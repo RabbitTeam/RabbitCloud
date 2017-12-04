@@ -1,7 +1,5 @@
-﻿using Consul;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Discovery.Consul.Discovery;
 using Rabbit.Cloud.Discovery.Consul.Registry;
@@ -11,42 +9,48 @@ namespace Rabbit.Cloud.Discovery.Consul
 {
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddConsulDiscovery(this IServiceCollection services, IConfiguration configuration)
-        {
-            if (configuration is IConfigurationRoot configurationRoot)
-                configuration = configurationRoot.GetSection("RabbitCloud:Consul");
+        #region ConfigureConsul
 
-            services
-                .Configure<RabbitConsulOptions>(configuration)
+        public static IServiceCollection ConfigureConsul(this IServiceCollection services, IConfigurationRoot configurationRoot, string sectionKey = "RabbitCloud:Consul")
+        {
+            return services.ConfigureConsul(configurationRoot.GetSection(sectionKey));
+        }
+
+        public static IServiceCollection ConfigureConsul(this IServiceCollection services, IConfiguration configuration)
+        {
+            return services.Configure<ConsulOptions>(configuration);
+        }
+
+        public static IServiceCollection ConfigureConsul(this IServiceCollection services, Action<ConsulOptions> configure)
+        {
+            return services.Configure(configure);
+        }
+
+        public static IServiceCollection ConfigureConsul(this IServiceCollection services, string url, string datacenter = null, string token = null)
+        {
+            return services.ConfigureConsul(options =>
+            {
+                options.Address = url;
+
+                if (datacenter != null)
+                    options.Datacenter = datacenter;
+                if (token != null)
+                    options.Token = token;
+            });
+        }
+
+        #endregion ConfigureConsul
+
+        public static IServiceCollection AddConsulDiscovery(this IServiceCollection services)
+        {
+            return services
                 .AddSingleton<IDiscoveryClient, ConsulDiscoveryClient>();
-
-            return services;
         }
 
-        public static IServiceCollection AddConsulDiscovery(this IServiceCollection services, Action<RabbitConsulOptions> configure)
+        public static IServiceCollection AddConsulRegistry(this IServiceCollection services)
         {
-            services
-                .Configure(configure)
-                .AddSingleton<IDiscoveryClient, ConsulDiscoveryClient>();
-
-            return services;
-        }
-
-        public static IServiceCollection AddConsulDiscovery(this IServiceCollection services, IConsulClient consulClient)
-        {
-            services
-                .AddSingleton<IDiscoveryClient>(s => new ConsulDiscoveryClient(consulClient, s.GetRequiredService<ILogger<ConsulDiscoveryClient>>()));
-
-            return services;
-        }
-
-        public static IServiceCollection AddConsulRegistry(this IServiceCollection services, ConsulClient consulClient = null)
-        {
-            if (consulClient == null)
-                services.AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
-            else
-                services.AddSingleton<IRegistryService<ConsulRegistration>>(s => new ConsulRegistryService(consulClient, s.GetRequiredService<ILoggerFactory>()));
-            return services;
+            return services
+                .AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
         }
     }
 }

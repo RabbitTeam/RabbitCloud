@@ -29,8 +29,10 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
 
         #region Constructor
 
-        public ConsulDiscoveryClient(IConsulClient consulClient, ILogger<ConsulDiscoveryClient> logger) : base(consulClient)
+        public ConsulDiscoveryClient(IOptionsMonitor<ConsulOptions> consulOptionsMonitor, ILogger<ConsulDiscoveryClient> logger)
+            : base(consulOptionsMonitor)
         {
+            var consulClient = ConsulClient;
             Task.Factory.StartNew(async () =>
             {
                 var healthEndpoint = consulClient.Health;
@@ -79,11 +81,6 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
                     Services = response.Where(i => i.Value.Contains(ConsulUtil.ServicePrefix)).Select(i => i.Key).ToArray();
                 }
             });
-        }
-
-        public ConsulDiscoveryClient(IOptionsMonitor<RabbitConsulOptions> consulOptionsMonitor, ILogger<ConsulDiscoveryClient> logger)
-            : this(consulOptionsMonitor.CurrentValue.CreateClient(), logger)
-        {
         }
 
         #endregion Constructor

@@ -16,7 +16,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Utilities
 
         #region Public  Method
 
-        public static ConsulRegistration Create(RabbitConsulOptions.DiscoveryOptions options, IDictionary<string, string> metadata = null)
+        public static ConsulRegistration Create(ConsulDiscoveryOptions options, IDictionary<string, string> metadata = null)
         {
             var tags = options.Tags ?? Enumerable.Empty<string>();
 

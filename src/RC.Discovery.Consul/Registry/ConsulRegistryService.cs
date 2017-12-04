@@ -1,5 +1,4 @@
-﻿using Consul;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
 using System.Threading.Tasks;
@@ -8,18 +7,18 @@ namespace Rabbit.Cloud.Discovery.Consul.Registry
 {
     public class ConsulRegistryService : ConsulService, IRegistryService<ConsulRegistration>
     {
-        private readonly HeartbeatManager _heartbeatManager;
+        private HeartbeatManager _heartbeatManager;
 
         #region Constructor
 
-        public ConsulRegistryService(IConsulClient consulClient, ILoggerFactory loggerFactory) : base(consulClient)
+        public ConsulRegistryService(IOptionsMonitor<ConsulOptions> consulOptionsMonitor, ILoggerFactory loggerFactory) : base(consulOptionsMonitor)
         {
-            _heartbeatManager = new HeartbeatManager(ConsulClient, loggerFactory.CreateLogger<HeartbeatManager>());
-        }
-
-        public ConsulRegistryService(IOptionsMonitor<RabbitConsulOptions> consulOptionsMonitor, ILoggerFactory loggerFactory) : base(consulOptionsMonitor)
-        {
-            _heartbeatManager = new HeartbeatManager(ConsulClient, loggerFactory.CreateLogger<HeartbeatManager>());
+            var heartbeatManagerLogger = loggerFactory.CreateLogger<HeartbeatManager>();
+            consulOptionsMonitor.OnChange(options =>
+            {
+                _heartbeatManager = new HeartbeatManager(ConsulClient, heartbeatManagerLogger);
+            });
+            _heartbeatManager = new HeartbeatManager(ConsulClient, heartbeatManagerLogger);
         }
 
         #endregion Constructor
