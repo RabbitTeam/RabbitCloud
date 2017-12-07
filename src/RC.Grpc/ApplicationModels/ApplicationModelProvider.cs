@@ -16,11 +16,11 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels
     public class ApplicationModelHolder
     {
         private ApplicationModel _applicationModel;
-        private readonly GrpcOptions _options;
+        private readonly RabbitCloudOptions _options;
         private readonly IReadOnlyCollection<IApplicationModelProvider> _applicationModelProviders;
         private readonly IEnumerable<IApplicationModelConvention> _conventions;
 
-        public ApplicationModelHolder(IEnumerable<IApplicationModelProvider> applicationModelProviders, IOptions<GrpcOptions> options)
+        public ApplicationModelHolder(IEnumerable<IApplicationModelProvider> applicationModelProviders, IOptions<RabbitCloudOptions> options)
         {
             if (applicationModelProviders == null)
                 throw new ArgumentNullException(nameof(applicationModelProviders));

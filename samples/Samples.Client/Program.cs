@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Rabbit.Cloud;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Grpc.Builder;
@@ -86,7 +87,7 @@ namespace Samples.Client
         {
             var services = BuildClientServices();
             var application = GetClientApplication(services);
-            var rabbitProxyInterceptor = new GrpcProxyInterceptor(application, services.GetRequiredService<IOptions<GrpcOptions>>());
+            var rabbitProxyInterceptor = new GrpcProxyInterceptor(application, services.GetRequiredService<IOptions<RabbitCloudOptions>>());
             var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
 
             return proxyFactory;

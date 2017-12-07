@@ -21,13 +21,13 @@ namespace Rabbit.Cloud.Grpc
 {
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddGrpcClient(this IServiceCollection services, Action<GrpcOptions> configure)
+        public static IServiceCollection AddGrpcClient(this IServiceCollection services, Action<RabbitCloudOptions> configure)
         {
             return services
                 .AddGrpcCore()
                 .AddSingleton<ChannelPool>()
                 .AddSingleton<ICallInvokerFactory, CallInvokerFactory>()
-                .Configure<GrpcOptions>(options =>
+                .Configure<RabbitCloudOptions>(options =>
                 {
                     configure(options);
                     foreach (var typeInfo in GetTypes(typePredicate: t => t.GetTypeAttribute<IClientDefinitionProvider>() != null))
@@ -37,12 +37,12 @@ namespace Rabbit.Cloud.Grpc
                 });
         }
 
-        public static IServiceCollection AddGrpcServer(this IServiceCollection services, Action<GrpcOptions> configure)
+        public static IServiceCollection AddGrpcServer(this IServiceCollection services, Action<RabbitCloudOptions> configure)
         {
             return services
                 .AddGrpcCore()
                 .AddSingleton<IServerServiceDefinitionTableProvider, ApplicationModelServerServiceDefinitionTableProvider>()
-                .Configure<GrpcOptions>(options =>
+                .Configure<RabbitCloudOptions>(options =>
                 {
                     configure(options);
                     foreach (var typeInfo in GetTypes(typePredicate: t => t.GetTypeAttribute<IServiceDefinitionProvider>() != null))

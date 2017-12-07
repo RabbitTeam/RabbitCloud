@@ -15,7 +15,7 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
     {
         private readonly IEnumerable<ISerializer> _serializers;
 
-        public DefaultApplicationModelProvider(IOptions<GrpcOptions> options)
+        public DefaultApplicationModelProvider(IOptions<RabbitCloudOptions> options)
         {
             _serializers = options.Value.Serializers;
         }

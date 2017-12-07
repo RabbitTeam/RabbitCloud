@@ -3,9 +3,9 @@ using Rabbit.Cloud.ApplicationModels;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Rabbit.Cloud.Grpc
+namespace Rabbit.Cloud
 {
-    public class GrpcOptions
+    public class RabbitCloudOptions
     {
         public IList<TypeInfo> ScanTypes { get; } = new List<TypeInfo>();
         public IList<IApplicationModelConvention> Conventions { get; } = new List<IApplicationModelConvention>();

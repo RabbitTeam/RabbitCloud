@@ -14,12 +14,12 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
 {
     public class DefaultServerMethodInvoker : ServerMethodInvoker
     {
-        private readonly GrpcOptions _options;
+        private readonly RabbitCloudOptions _options;
         private readonly ILogger<DefaultServerMethodInvoker> _logger;
 
         public DefaultServerMethodInvoker(MethodModel serverMethod, IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger) : base(serverMethod, services, logger)
         {
-            _options = services.GetRequiredService<IOptions<GrpcOptions>>().Value;
+            _options = services.GetRequiredService<IOptions<RabbitCloudOptions>>().Value;
             _logger = logger;
         }
 

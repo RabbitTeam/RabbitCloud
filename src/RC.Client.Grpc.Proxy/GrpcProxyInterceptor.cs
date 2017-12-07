@@ -23,7 +23,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
         private readonly IEnumerable<ISerializer> _serializers;
         private static readonly Type[] IgnoreGenericTypes = { typeof(AsyncServerStreamingCall<>), typeof(AsyncDuplexStreamingCall<,>) };
 
-        public GrpcProxyInterceptor(RabbitRequestDelegate invoker, IOptions<GrpcOptions> options) : base(invoker)
+        public GrpcProxyInterceptor(RabbitRequestDelegate invoker, IOptions<RabbitCloudOptions> options) : base(invoker)
         {
             _serializers = options.Value.Serializers;
         }
