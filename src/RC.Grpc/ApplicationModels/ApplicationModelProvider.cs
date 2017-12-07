@@ -161,8 +161,7 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels
 
             public static Delegate GetMethodDelegate(IServerMethodInvoker serverMethodInvoker, MethodModel serverMethod)
             {
-                //todo: MethodType.Unary dynamic
-                switch (MethodType.Unary)
+                switch (FluentUtilities.GetMethodType(serverMethod.MethodInfo))
                 {
                     case MethodType.Unary:
                         return GetUnaryMethodDelegate(serverMethodInvoker, serverMethod);

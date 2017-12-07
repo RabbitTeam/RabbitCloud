@@ -112,9 +112,7 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
             var methodModel = new MethodModel(methodInfo, methodInfo.GetCustomAttributes(false))
             {
                 Name = methodName,
-                ServiceModel = serviceModel,
-                //todo: methodType dynamic
-                //                Type = FluentUtilities.GetMethodType(methodInfo)
+                ServiceModel = serviceModel
             };
 
             var requestMarshallerModel = CreateMarshallerModel(methodModel, FluentUtilities.GetRequestType(methodInfo));

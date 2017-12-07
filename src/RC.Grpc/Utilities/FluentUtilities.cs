@@ -76,13 +76,15 @@ namespace Rabbit.Cloud.Grpc.Utilities
             var requestType = method.RequestCodec.Type;
             var responseType = method.ResponseCodec.Type;
 
-            var factory = GetMethodFactory(requestType, responseType);
+            var methodType = FluentUtilities.GetMethodType(method.MethodInfo);
+
+            var factory = GetMethodFactory(methodType, requestType, responseType);
             return factory(method);
         }
 
         #region Private Method
 
-        private static Func<MethodModel, IMethod> GetMethodFactory(Type requestType, Type responseType)
+        private static Func<MethodModel, IMethod> GetMethodFactory(MethodType grpcMethodType, Type requestType, Type responseType)
         {
             return Cache.GetCache(("MethodFactory", requestType, responseType), () =>
             {
@@ -96,11 +98,8 @@ namespace Rabbit.Cloud.Grpc.Utilities
                     return type.GetMember(name).First();
                 }
 
-                
-                
                 var newExpression = Expression.New(methodGenericType.GetConstructors().Last(),
-                    //todo: methodType dynamic
-                    Expression.Constant(MethodType.Unary),
+                    Expression.Constant(grpcMethodType),
                     Expression.MakeMemberAccess(Expression.MakeMemberAccess(methodParameterExpression, GetMember(methodType, nameof(MethodModel.ServiceModel))), GetMember(typeof(ServiceModel), nameof(ServiceModel.ServiceName))),
                     Expression.MakeMemberAccess(methodParameterExpression, GetMember(methodType, nameof(MethodModel.Name))),
                     Expression.Call(typeof(MarshallerExtensions), nameof(MarshallerExtensions.CreateGenericMarshaller), new[] { requestType }, Expression.MakeMemberAccess(methodParameterExpression, methodType.GetMember(nameof(MethodModel.RequestCodec)).First())),
