@@ -4,9 +4,8 @@ using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
 using Rabbit.Cloud.Grpc.Abstractions;
+using Rabbit.Cloud.Grpc.Abstractions.Client;
 using Rabbit.Cloud.Grpc.Abstractions.Utilities.Extensions;
-using Rabbit.Cloud.Grpc.Client.Extensions;
-using Rabbit.Cloud.Grpc.Client.Internal;
 using System;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
@@ -18,13 +17,13 @@ namespace Rabbit.Cloud.Client.Grpc
     public class GrpcMiddleware
     {
         private readonly RabbitRequestDelegate _next;
-        private readonly CallInvokerPool _callInvokerPool;
+        private readonly ICallInvokerFactory _callInvokerFactory;
         private readonly IMethodTable _methodTable;
 
-        public GrpcMiddleware(RabbitRequestDelegate next, CallInvokerPool callInvokerPool, IMethodTableProvider methodTableProvider)
+        public GrpcMiddleware(RabbitRequestDelegate next, ICallInvokerFactory callInvokerFactory, IMethodTableProvider methodTableProvider)
         {
             _next = next;
-            _callInvokerPool = callInvokerPool;
+            _callInvokerFactory = callInvokerFactory;
             _methodTable = methodTableProvider.MethodTable;
         }
 
@@ -43,7 +42,7 @@ namespace Rabbit.Cloud.Client.Grpc
             if (serviceUrl == null)
                 throw new ArgumentNullException(nameof(requestFeature.ServiceUrl));
 
-            var callInvoker = _callInvokerPool.GetCallInvoker(serviceUrl.Host, serviceUrl.Port);
+            var callInvoker = _callInvokerFactory.GetCallInvoker(serviceUrl.Host, serviceUrl.Port);
 
             var serviceId = serviceUrl.Path;
             var method = _methodTable.Get(serviceId);

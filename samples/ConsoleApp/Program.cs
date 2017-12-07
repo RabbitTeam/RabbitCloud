@@ -13,7 +13,6 @@ using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Discovery.Configuration;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Client;
-using Rabbit.Cloud.Grpc.Fluent;
 using Rabbit.Cloud.Grpc.Server;
 using Rabbit.Cloud.Serialization.Json;
 using Rabbit.Cloud.Serialization.MessagePack;
@@ -22,6 +21,8 @@ using Rabbit.Cloud.Server.Grpc;
 using Rabbit.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
+using Rabbit.Cloud.Grpc;
+using Rabbit.Cloud.Grpc.Abstractions.Server;
 
 namespace ConsoleApp
 {
@@ -76,7 +77,7 @@ namespace ConsoleApp
                 IServiceProvider services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
-                    .AddSingleton<TestService, TestService>()
+                    .AddSingleton<ITestService, TestService>()
                     .AddGrpcCore()
                     .AddGrpcServer()
                     .AddGrpcFluent(options =>

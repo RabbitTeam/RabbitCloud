@@ -2,10 +2,11 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
-using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
-using Rabbit.Cloud.Grpc.Fluent.ApplicationModels.Internal;
 using System;
 using System.Threading.Tasks;
+using Rabbit.Cloud.ApplicationModels;
+using Rabbit.Cloud.Grpc.ApplicationModels;
+using Rabbit.Cloud.Grpc.ApplicationModels.Internal;
 
 namespace Rabbit.Cloud.Server.Grpc.Internal
 {
@@ -22,7 +23,7 @@ namespace Rabbit.Cloud.Server.Grpc.Internal
 
         #region Implementation of IServerMethodInvokerFactory
 
-        public IServerMethodInvoker CreateInvoker(ServerMethodModel serverMethod)
+        public IServerMethodInvoker CreateInvoker(MethodModel serverMethod)
         {
             var serverMethodInvoker = _defaultServerMethodInvokerFactory.CreateInvoker(serverMethod);
             return new GrpcServerMethodInvoker(serverMethodInvoker, _options.Invoker);

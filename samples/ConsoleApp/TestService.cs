@@ -1,4 +1,4 @@
-﻿using Rabbit.Cloud.Grpc.Fluent;
+﻿using Rabbit.Cloud;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
@@ -13,7 +13,7 @@ namespace ConsoleApp
         public string Message { get; set; }
     }
 
-    [GrpcClient("ConsoleApp.TestService")]
+    [RabbitService("ConsoleApp.TestService")]
     public interface ITestService
     {
         Task<Response> SendAsync(Request request);
@@ -21,7 +21,7 @@ namespace ConsoleApp
         Task<Response> Send2Async(string name, int age);
     }
 
-    [GrpcService("ConsoleApp.TestService")]
+//    [GrpcService("ConsoleApp.TestService")]
     public class TestService : ITestService
     {
         #region Implementation of IServiceBase

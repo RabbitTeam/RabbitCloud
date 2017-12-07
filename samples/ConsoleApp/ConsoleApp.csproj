@@ -31,8 +31,7 @@
     <ProjectReference Include="..\..\src\RC.Client.LoadBalance\RC.Client.LoadBalance.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Configuration\RC.Discovery.Configuration.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
-    <ProjectReference Include="..\..\src\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
-    <ProjectReference Include="..\..\src\RC.Grpc.Server\RC.Grpc.Server.csproj" />
+    <ProjectReference Include="..\..\src\RC.Grpc\RC.Grpc.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.Json\RC.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.MessagePack\RC.Serialization.MessagePack.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.Protobuf\RC.Serialization.Protobuf.csproj" />

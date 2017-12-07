@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2010
+VisualStudioVersion = 15.0.27130.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{850A43C4-8B62-4732-95F9-A769981A59E5}"
 EndProject
@@ -39,10 +39,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "grpc", "grpc", "{90DE1B67-4
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Grpc.Abstractions", "src\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj", "{13B4AEB5-CC58-483D-83FC-86016D8EDB84}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Grpc.Server", "src\RC.Grpc.Server\RC.Grpc.Server.csproj", "{4D36F1CA-6476-4347-B355-03BCBC2F8F00}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Grpc.Client", "src\RC.Grpc.Client\RC.Grpc.Client.csproj", "{B2B164B1-B824-408F-8A14-FB249906AA06}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Memory", "src\RC.Discovery.Memory\RC.Discovery.Memory.csproj", "{4AAD1F8B-9E82-4BDB-97F0-84265054676E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Client.LoadBalance", "src\RC.Client.LoadBalance\RC.Client.LoadBalance.csproj", "{8C927510-25B6-4AA1-8481-337B2F061FE9}"
@@ -55,7 +51,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Client.Grpc.Proxy", "src
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Client.Breaker", "src\RC.Client.Breaker\RC.Client.Breaker.csproj", "{82847FB9-2EC5-40CE-B643-27B75BDA66A4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Grpc.Fluent", "src\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj", "{87714399-0649-4809-9F83-49E8599B9F2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Grpc", "src\RC.Grpc\RC.Grpc.csproj", "{87714399-0649-4809-9F83-49E8599B9F2B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Server.Grpc", "src\RC.Server.Grpc\RC.Server.Grpc.csproj", "{8B90C480-B4D9-4A64-9F8D-52778775A94C}"
 EndProject
@@ -73,7 +69,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Serialization.Protobuf",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Serialization.MessagePack", "src\RC.Serialization.MessagePack\RC.Serialization.MessagePack.csproj", "{00C6D214-BCF8-411F-8F69-C33F0FAFDB3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Discovery.Configuration", "src\RC.Discovery.Configuration\RC.Discovery.Configuration.csproj", "{CEF2707F-E700-4606-BA01-FF3C111B973A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Configuration", "src\RC.Discovery.Configuration\RC.Discovery.Configuration.csproj", "{CEF2707F-E700-4606-BA01-FF3C111B973A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -121,14 +117,6 @@ Global
 		{13B4AEB5-CC58-483D-83FC-86016D8EDB84}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13B4AEB5-CC58-483D-83FC-86016D8EDB84}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13B4AEB5-CC58-483D-83FC-86016D8EDB84}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4D36F1CA-6476-4347-B355-03BCBC2F8F00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4D36F1CA-6476-4347-B355-03BCBC2F8F00}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4D36F1CA-6476-4347-B355-03BCBC2F8F00}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4D36F1CA-6476-4347-B355-03BCBC2F8F00}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B2B164B1-B824-408F-8A14-FB249906AA06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B2B164B1-B824-408F-8A14-FB249906AA06}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B2B164B1-B824-408F-8A14-FB249906AA06}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B2B164B1-B824-408F-8A14-FB249906AA06}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4AAD1F8B-9E82-4BDB-97F0-84265054676E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4AAD1F8B-9E82-4BDB-97F0-84265054676E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4AAD1F8B-9E82-4BDB-97F0-84265054676E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -194,8 +182,6 @@ Global
 		{435CA102-448E-4FC0-9345-2DA3AFB59F00} = {AEBCE587-6573-4400-BD7F-47D2766E65D2}
 		{90DE1B67-4552-4D3C-9A18-DC2A20A9DE1D} = {850A43C4-8B62-4732-95F9-A769981A59E5}
 		{13B4AEB5-CC58-483D-83FC-86016D8EDB84} = {90DE1B67-4552-4D3C-9A18-DC2A20A9DE1D}
-		{4D36F1CA-6476-4347-B355-03BCBC2F8F00} = {90DE1B67-4552-4D3C-9A18-DC2A20A9DE1D}
-		{B2B164B1-B824-408F-8A14-FB249906AA06} = {90DE1B67-4552-4D3C-9A18-DC2A20A9DE1D}
 		{4AAD1F8B-9E82-4BDB-97F0-84265054676E} = {9907A079-3A91-42AE-8798-695B10148989}
 		{8C927510-25B6-4AA1-8481-337B2F061FE9} = {850A43C4-8B62-4732-95F9-A769981A59E5}
 		{9907A079-3A91-42AE-8798-695B10148989} = {850A43C4-8B62-4732-95F9-A769981A59E5}

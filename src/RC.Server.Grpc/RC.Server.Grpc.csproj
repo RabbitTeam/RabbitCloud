@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
-    <ProjectReference Include="..\RC.Grpc.Fluent\RC.Grpc.Fluent.csproj" />
+    <ProjectReference Include="..\RC.Grpc\RC.Grpc.csproj" />
   </ItemGroup>
 
 </Project>

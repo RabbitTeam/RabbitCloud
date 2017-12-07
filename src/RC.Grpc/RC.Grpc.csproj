@@ -3,17 +3,20 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>Rabbit.Cloud.Client.Grpc</AssemblyName>
-    <RootNamespace>Rabbit.Cloud.Client.Grpc</RootNamespace>
+    <AssemblyName>Rabbit.Cloud.Grpc</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Grpc</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Grpc" Version="1.7.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
+    <ProjectReference Include="..\RC.Application.Abstractions\RC.Application.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
+    <ProjectReference Include="..\RC\RC.csproj" />
     <ProjectReference Include="..\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj" />
   </ItemGroup>
 

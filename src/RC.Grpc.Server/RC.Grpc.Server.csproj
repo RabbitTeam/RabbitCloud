@@ -14,6 +14,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj" />
+    <ProjectReference Include="..\RC\RC.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Internal\" />
   </ItemGroup>
 
 </Project>

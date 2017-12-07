@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
-using Rabbit.Cloud.Grpc.Fluent.ApplicationModels;
+using Rabbit.Cloud.Grpc.ApplicationModels;
 using Rabbit.Cloud.Server.Grpc.Builder;
 using Rabbit.Cloud.Server.Grpc.Internal;
 using System;
