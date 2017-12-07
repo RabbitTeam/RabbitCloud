@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Rabbit.Cloud.Abstractions.Utilities;
+using System;
 
 namespace Rabbit.Cloud
 {
@@ -30,6 +31,12 @@ namespace Rabbit.Cloud
         public RabbitServiceAttribute(string serviceName)
         {
             ServiceName = serviceName;
+        }
+
+        public RabbitServiceAttribute(Type clientDefinitionMapping)
+        {
+            var clientDefinitionProvider = clientDefinitionMapping.GetTypeAttribute<IClientDefinitionProvider>();
+            ServiceName = clientDefinitionProvider.ServiceName;
         }
 
         public RabbitServiceAttribute()

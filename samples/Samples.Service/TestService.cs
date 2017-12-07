@@ -21,7 +21,7 @@ namespace Samples.Service
         Task<Response> Send2Async(string name, int age);
     }
 
-    [RabbitService("TestService")]
+    [RabbitService(typeof(ITestService))]
     public class TestService : ITestService
     {
         #region Implementation of IServiceBase
