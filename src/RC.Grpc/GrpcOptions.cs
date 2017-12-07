@@ -7,7 +7,7 @@ namespace Rabbit.Cloud.Grpc
 {
     public class GrpcOptions
     {
-        public ICollection<TypeInfo> ScanTypes { get; } = new List<TypeInfo>();
+        public IList<TypeInfo> ScanTypes { get; } = new List<TypeInfo>();
         public IList<IApplicationModelConvention> Conventions { get; } = new List<IApplicationModelConvention>();
         public ICollection<ISerializer> Serializers { get; } = new List<ISerializer>();
     }

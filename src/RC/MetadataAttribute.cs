@@ -17,6 +17,12 @@ namespace Rabbit.Cloud
 
     public interface IServiceDefinitionProvider : IServiceNameProvider { }
 
+    public interface IClientDefinitionProvider : IServiceNameProvider
+    {
+        string Host { get; }
+        string Protocol { get; }
+    }
+
     public interface IServiceIgnoreProvider { }
 
     public class RabbitServiceAttribute : Attribute, IServiceDefinitionProvider
@@ -32,6 +38,31 @@ namespace Rabbit.Cloud
 
         #region Implementation of IServiceNameProvider
 
+        public string ServiceName { get; set; }
+
+        #endregion Implementation of IServiceNameProvider
+    }
+
+    public class RabbitClientAttribute : Attribute, IClientDefinitionProvider
+    {
+        public RabbitClientAttribute(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                throw new ArgumentException("illegal url.", nameof(url));
+
+            Protocol = uri.Scheme;
+            Host = uri.IsDefaultPort ? uri.Host : $"{uri.Host}:{uri.Port}";
+            ServiceName = uri.AbsolutePath.TrimStart('/');
+        }
+
+        public RabbitClientAttribute()
+        {
+        }
+
+        #region Implementation of IServiceNameProvider
+
+        public string Host { get; set; }
+        public string Protocol { get; set; }
         public string ServiceName { get; set; }
 
         #endregion Implementation of IServiceNameProvider

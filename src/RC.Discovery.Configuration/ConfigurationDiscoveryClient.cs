@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Discovery.Configuration.Internal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -59,7 +60,7 @@ namespace Rabbit.Cloud.Discovery.Configuration
 
         public IReadOnlyCollection<IServiceInstance> GetInstances(string serviceId)
         {
-            return _serviceInstances;
+            return _serviceInstances.Where(i => string.Equals(i.ServiceId, serviceId, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
 
         #endregion Implementation of IDiscoveryClient

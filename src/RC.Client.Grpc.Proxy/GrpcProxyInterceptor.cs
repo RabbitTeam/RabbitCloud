@@ -2,6 +2,7 @@
 using Grpc.Core;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions.Serialization;
+using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Proxy;
@@ -37,13 +38,26 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
             //todo: think of a more reliable way
             var fullServiceName = FluentUtilities.GetFullServiceName(proxyType, invocation.Method);
+            var clientDefinitionProvider = proxyType.GetTypeAttribute<IClientDefinitionProvider>();
 
             var context = new GrpcRabbitContext();
 
+            var host = clientDefinitionProvider.Host;
+
+            var port = 0;
+            if (host.Contains(":"))
+            {
+                var temp = host.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+                host = temp[0];
+                if (temp.Length == 2)
+                    int.TryParse(temp[1], out port);
+            }
+
             context.Request.Url = new ServiceUrl
             {
-                Scheme = "grpc",
-                Host = FluentUtilities.GetServiceName(proxyType),
+                Scheme = clientDefinitionProvider.Protocol,
+                Host = host,
+                Port = port,
                 Path = fullServiceName
             };
 

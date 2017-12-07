@@ -1,7 +1,5 @@
-﻿using Grpc.Core;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
@@ -11,39 +9,20 @@ using Rabbit.Cloud.Client.LoadBalance;
 using Rabbit.Cloud.Client.LoadBalance.Builder;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Discovery.Configuration;
-using Rabbit.Cloud.Grpc.Abstractions;
-using Rabbit.Cloud.Grpc.Client;
-using Rabbit.Cloud.Grpc.Server;
+using Rabbit.Cloud.Grpc;
 using Rabbit.Cloud.Serialization.Json;
 using Rabbit.Cloud.Serialization.MessagePack;
 using Rabbit.Cloud.Serialization.Protobuf;
-using Rabbit.Cloud.Server.Grpc;
-using Rabbit.Extensions.Configuration;
+using Samples.Service;
 using System;
 using System.Threading.Tasks;
-using Rabbit.Cloud.Grpc;
-using Rabbit.Cloud.Grpc.Abstractions.Server;
 
-namespace ConsoleApp
+namespace Samples.Client
 {
-    public class ApplicationInfo
+    internal class Program
     {
-        public string ServiceName { get; set; }
-        public string HostName { get; set; }
-        public int HostPort { get; set; }
-    }
-
-    public class Program
-    {
-        private static ApplicationInfo ApplicationInfo { get; set; }
-
         private static async Task Main(string[] args)
         {
-            ApplicationInfo = BuildConfiguration(args).Get<ApplicationInfo>();
-
-            // start server
-            StartServer();
-
             // init client
             var proxyFactory = BuildClientProxyFactory();
 
@@ -71,43 +50,6 @@ namespace ConsoleApp
             }
         }
 
-        private static void StartServer()
-        {
-            {
-                IServiceProvider services = new ServiceCollection()
-                    .AddLogging()
-                    .AddOptions()
-                    .AddSingleton<ITestService, TestService>()
-                    .AddGrpcCore()
-                    .AddGrpcServer()
-                    .AddGrpcFluent(options =>
-                    {
-                        options
-                            .Serializers
-                            .AddProtobufSerializer()
-                            .AddMessagePackSerializer()
-                            .AddJsonSerializer();
-                    })
-                    .AddServerGrpc()
-                    .BuildServiceProvider();
-
-                var serverServiceDefinitionTable = services.GetRequiredService<IServerServiceDefinitionTableProvider>().ServerServiceDefinitionTable;
-
-                {
-                    var server = new Server
-                    {
-                        Ports = { new ServerPort(ApplicationInfo.HostName, ApplicationInfo.HostPort, ServerCredentials.Insecure) }
-                    };
-
-                    foreach (var definition in serverServiceDefinitionTable)
-                    {
-                        server.Services.Add(definition);
-                    }
-                    server.Start();
-                }
-            }
-        }
-
         private static RabbitRequestDelegate GetClientApplication(IServiceProvider services)
         {
             var app = new RabbitApplicationBuilder(services);
@@ -125,18 +67,9 @@ namespace ConsoleApp
 
             //client
             return new ServiceCollection()
-                .AddLogging(options =>
-                {
-                    options.AddConsole(s =>
-                    {
-                        s.IncludeScopes = true;
-                    });
-                    options.SetMinimumLevel(LogLevel.Information);
-                })
+                .AddLogging()
                 .AddOptions()
-                .AddGrpcCore()
-                .AddGrpcClient()
-                .AddGrpcFluent(options =>
+                .AddGrpcClient(options =>
                 {
                     options
                         .Serializers
@@ -157,15 +90,6 @@ namespace ConsoleApp
             var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
 
             return proxyFactory;
-        }
-
-        private static IConfiguration BuildConfiguration(string[] args)
-        {
-            return new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json")
-                .AddCommandLine(args)
-                .Build()
-                .EnableTemplateSupport();
         }
     }
 }

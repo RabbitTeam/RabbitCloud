@@ -1,7 +1,7 @@
 ﻿{
   "Instances": [
     {
-      "ServiceId": "ConsoleApp.TestService",
+      "ServiceId": "Samples.Service",
       "Host": "192.168.18.190",
       "Port": 9908,
       "Metadata": {}

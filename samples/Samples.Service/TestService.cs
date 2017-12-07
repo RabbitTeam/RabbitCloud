@@ -1,7 +1,7 @@
 ﻿using Rabbit.Cloud;
 using System.Threading.Tasks;
 
-namespace ConsoleApp
+namespace Samples.Service
 {
     public class Request
     {
@@ -13,7 +13,7 @@ namespace ConsoleApp
         public string Message { get; set; }
     }
 
-    [RabbitService("ConsoleApp.TestService")]
+    [RabbitClient("grpc://Samples.Service/TestService")]
     public interface ITestService
     {
         Task<Response> SendAsync(Request request);
@@ -21,7 +21,7 @@ namespace ConsoleApp
         Task<Response> Send2Async(string name, int age);
     }
 
-//    [GrpcService("ConsoleApp.TestService")]
+    [RabbitService("TestService")]
     public class TestService : ITestService
     {
         #region Implementation of IServiceBase
