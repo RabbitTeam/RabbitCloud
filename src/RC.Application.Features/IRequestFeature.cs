@@ -52,5 +52,7 @@ namespace Rabbit.Cloud.Application.Features
     public interface IRequestFeature
     {
         ServiceUrl ServiceUrl { get; set; }
+        TimeSpan ConnectionTimeout { get; set; }
+        TimeSpan ReadTimeout { get; set; }
     }
 }

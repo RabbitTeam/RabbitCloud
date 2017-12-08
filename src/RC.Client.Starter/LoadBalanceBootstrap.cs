@@ -17,7 +17,7 @@ namespace Rabbit.Cloud.Client.Starter
                 .AddLoadBalance()
                 .Configure<LoadBalanceConfigurationOptions>(options =>
                 {
-                    var loadBalanceConfiguration = ctx.Configuration.GetSection("RabbitCloud:LoadBalance");
+                    var loadBalanceConfiguration = ctx.Configuration.GetSection("RabbitCloud:Client");
 
                     var loadBalanceConfigurationItems = loadBalanceConfiguration.GetChildren().ToDictionary(i => i.Key,
                         s => s.Get<LoadBalanceConfigurationOptions.LoadBalanceConfigurationItem>(),

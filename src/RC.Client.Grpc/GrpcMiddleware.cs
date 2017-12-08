@@ -34,21 +34,23 @@ namespace Rabbit.Cloud.Client.Grpc
             if (grpcRequestFeature == null)
                 throw new ArgumentNullException(nameof(grpcRequestFeature));
 
-            grpcRequestFeature.CallOptions = grpcRequestFeature.CallOptions.WithDeadline(DateTime.UtcNow.AddSeconds(5));
-
             var requestFeature = context.Features.Get<IRequestFeature>();
             var serviceUrl = requestFeature.ServiceUrl;
 
             if (serviceUrl == null)
                 throw new ArgumentNullException(nameof(requestFeature.ServiceUrl));
 
-            var callInvoker = _callInvokerFactory.GetCallInvoker(serviceUrl.Host, serviceUrl.Port);
-
             var serviceId = serviceUrl.Path;
             var method = _methodTable.Get(serviceId);
 
             if (method == null)
                 throw new RabbitRpcException(RabbitRpcExceptionCode.Forbidden, $"Can not find service '{serviceId}'.");
+
+            var callInvoker = await _callInvokerFactory.GetCallInvokerAsync(serviceUrl.Host, serviceUrl.Port, requestFeature.ConnectionTimeout);
+            // set readTimeout
+            grpcRequestFeature.CallOptions = grpcRequestFeature
+                .CallOptions
+                .WithDeadline(DateTime.UtcNow.Add(requestFeature.ReadTimeout));
             try
             {
                 var response = callInvoker.Call(method, grpcRequestFeature.Host, grpcRequestFeature.CallOptions, grpcRequestFeature.Request);

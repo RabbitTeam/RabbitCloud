@@ -4,12 +4,13 @@ using Rabbit.Cloud.Grpc.Abstractions.Client;
 using Rabbit.Cloud.Grpc.Client.Internal;
 using System;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Grpc.Client
 {
     public class CallInvokerFactory : ICallInvokerFactory
     {
-        private readonly ConcurrentDictionary<IServiceInstance, Lazy<CallInvoker>> _callInvokers = new ConcurrentDictionary<IServiceInstance, Lazy<CallInvoker>>(ChannelPool.ChannelServiceInstanceComparer.Instance);
+        private readonly ConcurrentDictionary<IServiceInstance, CallInvoker> _callInvokers = new ConcurrentDictionary<IServiceInstance, CallInvoker>(ChannelPool.ChannelServiceInstanceComparer.Instance);
 
         private readonly ChannelPool _channelPool;
 
@@ -18,9 +19,14 @@ namespace Rabbit.Cloud.Grpc.Client
             _channelPool = channelPool;
         }
 
-        public CallInvoker GetCallInvoker(string host, int port)
+        public async Task<CallInvoker> GetCallInvokerAsync(string host, int port, TimeSpan timeout)
         {
-            return _callInvokers.GetOrAdd(new ChannelPool.ServiceInstance(host, port), key => new Lazy<CallInvoker>(() => new DefaultCallInvoker(_channelPool.GetChannel(key)))).Value;
+            var key = new ChannelPool.ServiceInstance(host, port);
+            var channel = _channelPool.GetChannel(key);
+
+            await channel.ConnectAsync(DateTime.UtcNow.Add(timeout));
+
+            return _callInvokers.GetOrAdd(key, new DefaultCallInvoker(channel));
         }
     }
 }

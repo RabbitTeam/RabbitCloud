@@ -54,6 +54,7 @@ namespace Rabbit.Cloud.Client.LoadBalance
                     maxAutoRetriesNextServer = 0;
 
                 IServiceInstance serviceInstance = null;
+                var exceptions = new List<Exception>();
                 for (var i = 0; i <= maxAutoRetriesNextServer; i++)
                 {
                     var currentServiceInstances = GetAvailableServiceInstances(serviceInstance);
@@ -76,8 +77,13 @@ namespace Rabbit.Cloud.Client.LoadBalance
                         catch (Exception e)
                         {
                             _logger.LogError(e, "Execution failed.");
+                            exceptions.Add(e);
                         }
                     }
+                }
+                if (exceptions.Any())
+                {
+                    throw new AggregateException(exceptions);
                 }
             }
             finally

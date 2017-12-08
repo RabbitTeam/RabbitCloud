@@ -10,7 +10,7 @@ namespace Rabbit.Cloud.Client.Grpc.Features
         CallOptions CallOptions { get; set; }
     }
 
-    public class GrpcRequestFeature : IGrpcRequestFeature
+    public class GrpcRequestFeature : RequestFeature, IGrpcRequestFeature
     {
         #region Implementation of IGrpcRequestFeature
 
@@ -19,11 +19,5 @@ namespace Rabbit.Cloud.Client.Grpc.Features
         public CallOptions CallOptions { get; set; }
 
         #endregion Implementation of IGrpcRequestFeature
-
-        #region Implementation of IRequestFeature
-
-        public ServiceUrl ServiceUrl { get; set; }
-
-        #endregion Implementation of IRequestFeature
     }
 }

@@ -5,6 +5,11 @@ namespace Rabbit.Cloud.Abstractions.Utilities
 {
     public class TimeUtilities
     {
+        public static TimeSpan GetTimeSpanBySimpleOrDefault(string time, TimeSpan def)
+        {
+            return string.IsNullOrEmpty(time) ? def : GetTimeSpanBySimple(time);
+        }
+
         public static TimeSpan GetTimeSpanBySimple(string time)
         {
             if (string.IsNullOrEmpty(time))

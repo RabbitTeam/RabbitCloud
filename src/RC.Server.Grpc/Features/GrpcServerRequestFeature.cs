@@ -9,14 +9,8 @@ namespace Rabbit.Cloud.Server.Grpc.Features
         ServerCallContext ServerCallContext { get; set; }
     }
 
-    public class GrpcServerRequestFeature : IGrpcServerRequestFeature
+    public class GrpcServerRequestFeature : RequestFeature, IGrpcServerRequestFeature
     {
-        #region Implementation of IRequestFeature
-
-        public ServiceUrl ServiceUrl { get; set; }
-
-        #endregion Implementation of IRequestFeature
-
         #region Implementation of IGrpcServerRequestFeature
 
         public object Request { get; set; }

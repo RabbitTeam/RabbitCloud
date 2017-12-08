@@ -39,12 +39,8 @@ namespace Samples.Client
                             .AddConfigurationDiscovery(instancesConfiguration);
                     })
                     .UseRabbitApplicationConfigure();
-                builder.ConfigureRabbitApplication(app =>
-                {
-                    app.UseLoadBalance();
-                });
             });
-
+            
             hostBuilder.ConfigureRabbitApplication((ctx, services, applicationServices, appBuilder) =>
             {
                 var app = appBuilder.Build();
