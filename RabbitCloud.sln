@@ -69,11 +69,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Serialization.MessagePac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Discovery.Configuration", "src\RC.Discovery.Configuration\RC.Discovery.Configuration.csproj", "{CEF2707F-E700-4606-BA01-FF3C111B973A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Server", "samples\Samples.Server\Samples.Server.csproj", "{3CBAB56D-6683-427C-A293-3142A9C62748}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Server", "samples\Samples.Server\Samples.Server.csproj", "{3CBAB56D-6683-427C-A293-3142A9C62748}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Client", "samples\Samples.Client\Samples.Client.csproj", "{A328118D-6703-402E-B203-815309FD73CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Client", "samples\Samples.Client\Samples.Client.csproj", "{A328118D-6703-402E-B203-815309FD73CE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Service", "samples\Samples.Service\Samples.Service.csproj", "{88A3F744-7813-4CAA-8AA4-D78E47F0B544}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Service", "samples\Samples.Service\Samples.Service.csproj", "{88A3F744-7813-4CAA-8AA4-D78E47F0B544}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Starter", "src\RC.Starter\RC.Starter.csproj", "{703783D5-C483-4B56-ABF7-37E1A1EAC9B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Client.Starter", "src\RC.Client.Starter\RC.Client.Starter.csproj", "{C518DA32-0A28-4CF2-AC1A-0DBD825B1333}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RC.Server.Starter", "src\RC.Server.Starter\RC.Server.Starter.csproj", "{431F5BC3-A05E-43F0-B38A-48A90EA928C6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "starter", "starter", "{E91F4C1D-8781-4686-B883-5AA4DE655920}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -177,6 +185,18 @@ Global
 		{88A3F744-7813-4CAA-8AA4-D78E47F0B544}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88A3F744-7813-4CAA-8AA4-D78E47F0B544}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88A3F744-7813-4CAA-8AA4-D78E47F0B544}.Release|Any CPU.Build.0 = Release|Any CPU
+		{703783D5-C483-4B56-ABF7-37E1A1EAC9B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{703783D5-C483-4B56-ABF7-37E1A1EAC9B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{703783D5-C483-4B56-ABF7-37E1A1EAC9B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{703783D5-C483-4B56-ABF7-37E1A1EAC9B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C518DA32-0A28-4CF2-AC1A-0DBD825B1333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C518DA32-0A28-4CF2-AC1A-0DBD825B1333}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C518DA32-0A28-4CF2-AC1A-0DBD825B1333}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C518DA32-0A28-4CF2-AC1A-0DBD825B1333}.Release|Any CPU.Build.0 = Release|Any CPU
+		{431F5BC3-A05E-43F0-B38A-48A90EA928C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{431F5BC3-A05E-43F0-B38A-48A90EA928C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{431F5BC3-A05E-43F0-B38A-48A90EA928C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{431F5BC3-A05E-43F0-B38A-48A90EA928C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -212,6 +232,10 @@ Global
 		{3CBAB56D-6683-427C-A293-3142A9C62748} = {B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}
 		{A328118D-6703-402E-B203-815309FD73CE} = {B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}
 		{88A3F744-7813-4CAA-8AA4-D78E47F0B544} = {B1A5920A-2C4F-4CA3-A2A2-052DB3387D1E}
+		{703783D5-C483-4B56-ABF7-37E1A1EAC9B0} = {E91F4C1D-8781-4686-B883-5AA4DE655920}
+		{C518DA32-0A28-4CF2-AC1A-0DBD825B1333} = {E91F4C1D-8781-4686-B883-5AA4DE655920}
+		{431F5BC3-A05E-43F0-B38A-48A90EA928C6} = {E91F4C1D-8781-4686-B883-5AA4DE655920}
+		{E91F4C1D-8781-4686-B883-5AA4DE655920} = {850A43C4-8B62-4732-95F9-A769981A59E5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {36EA6FDA-5082-43F0-932E-8E204636C432}

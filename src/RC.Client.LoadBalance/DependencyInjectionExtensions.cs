@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 
 namespace Rabbit.Cloud.Client.LoadBalance
@@ -9,10 +8,10 @@ namespace Rabbit.Cloud.Client.LoadBalance
         public static IServiceCollection AddLoadBalance(this IServiceCollection services)
         {
             return services.Configure<LoadBalanceOptions>(options =>
-            {
-                options.DefaultLoadBalanceStrategy = options.LoadBalanceStrategies["Random"] = new RandomLoadBalanceStrategy<string, IServiceInstance>();
-                options.LoadBalanceStrategies["RoundRobin"] = new RoundRobinLoadBalanceStrategy<string, IServiceInstance>();
-            });
+           {
+               options.ServiceInstanceChooserCollection.Set("Random", new RandomServiceInstanceChooser());
+               options.ServiceInstanceChooserCollection.Set("RoundRobin", new RoundRobinLoadBalanceStrategy());
+           });
         }
 
         public static IServiceCollection AddLoadBalance(this IServiceCollection services, Action<LoadBalanceOptions> configure)

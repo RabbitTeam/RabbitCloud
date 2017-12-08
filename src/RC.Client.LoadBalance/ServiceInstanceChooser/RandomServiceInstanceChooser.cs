@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Rabbit.Cloud.Discovery.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,14 +10,14 @@ namespace Rabbit.Cloud.Client.LoadBalance
         public static readonly Random Random = new Random();
     }
 
-    public class RandomLoadBalanceStrategy<TKey, TItem> : LoadBalanceStrategy<TKey, TItem>
+    public class RandomServiceInstanceChooser : ServiceInstanceChooser
     {
         #region Overrides of LoadBalanceStrategy<TKey,TItem>
 
-        protected override TItem DoChoose(TKey key, IReadOnlyCollection<TItem> items)
+        protected override IServiceInstance DoChoose(IReadOnlyCollection<IServiceInstance> instances)
         {
-            var index = RandomStatic.Random.Next(items.Count);
-            return items.ElementAt(index);
+            var index = RandomStatic.Random.Next(instances.Count);
+            return instances.ElementAt(index);
         }
 
         #endregion Overrides of LoadBalanceStrategy<TKey,TItem>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Rabbit.Extensions.Boot" Version="1.0.0-preview5" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\RC.Serialization.Json\RC.Serialization.Json.csproj" />
+    <ProjectReference Include="..\RC.Serialization.MessagePack\RC.Serialization.MessagePack.csproj" />
+    <ProjectReference Include="..\RC.Serialization.Protobuf\RC.Serialization.Protobuf.csproj" />
+  </ItemGroup>
+
+</Project>

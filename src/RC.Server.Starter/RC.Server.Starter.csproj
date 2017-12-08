@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\build\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Rabbit.Cloud.Server.Starter</AssemblyName>
+    <RootNamespace>Rabbit.Cloud.Server.Starter</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Rabbit.Extensions.Boot" Version="1.0.0-preview5" />
+  </ItemGroup>
+
+</Project>

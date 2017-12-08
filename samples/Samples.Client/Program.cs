@@ -1,22 +1,19 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud;
 using Rabbit.Cloud.Application;
-using Rabbit.Cloud.Application.Abstractions;
-using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
-using Rabbit.Cloud.Client.LoadBalance;
-using Rabbit.Cloud.Client.LoadBalance.Builder;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Discovery.Configuration;
 using Rabbit.Cloud.Grpc;
-using Rabbit.Cloud.Serialization.Json;
-using Rabbit.Cloud.Serialization.MessagePack;
-using Rabbit.Cloud.Serialization.Protobuf;
+using Rabbit.Cloud.Grpc.ApplicationModels;
+using Rabbit.Extensions.Boot;
 using Samples.Service;
 using System;
 using System.Threading.Tasks;
+using Rabbit.Cloud.Client.LoadBalance.Builder;
 
 namespace Samples.Client
 {
@@ -24,11 +21,48 @@ namespace Samples.Client
     {
         private static async Task Main(string[] args)
         {
-            // init client
-            var proxyFactory = BuildClientProxyFactory();
+            var hostBuilder = await RabbitBoot.BuildHostBuilderAsync(builder =>
+            {
+                builder.ConfigureHostConfiguration(b =>
+                {
+                    b.AddJsonFile("appsettings.json");
+                });
+                builder.ConfigureServices(services =>
+                    {
+                        var instancesConfiguration = new ConfigurationBuilder()
+                            .AddJsonFile("instances.json", false, true)
+                            .Build();
+                        services
+                            .AddLogging()
+                            .AddOptions()
+                            .AddGrpcClient(o => { })
+                            .AddConfigurationDiscovery(instancesConfiguration);
+                    })
+                    .UseRabbitApplicationConfigure();
+                builder.ConfigureRabbitApplication(app =>
+                {
+                    app.UseLoadBalance();
+                });
+            });
+
+            hostBuilder.ConfigureRabbitApplication((ctx, services, applicationServices, appBuilder) =>
+            {
+                var app = appBuilder.Build();
+
+                var rabbitProxyInterceptor = new GrpcProxyInterceptor(app, applicationServices.GetRequiredService<IOptions<RabbitCloudOptions>>());
+
+                var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
+
+                foreach (var serviceModel in applicationServices.GetRequiredService<ApplicationModelHolder>().GetApplicationModel().Services)
+                {
+                    services.AddSingleton(serviceModel.Type, proxyFactory.CreateInterfaceProxy(serviceModel.Type));
+                }
+            });
+
+            var host = hostBuilder.Build();
 
             {
-                var service = proxyFactory.CreateInterfaceProxy<ITestService>();
+                var service = host.Services.GetRequiredService<ITestService>();
                 var name = "test";
                 while (true)
                 {
@@ -43,54 +77,16 @@ namespace Samples.Client
                         response = await service.Send2Async(name, 10);
                         Console.WriteLine($"Send2Async:{response.Message}");
                     }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
                     finally
                     {
                         name = Console.ReadLine();
                     }
                 }
             }
-        }
-
-        private static RabbitRequestDelegate GetClientApplication(IServiceProvider services)
-        {
-            var app = new RabbitApplicationBuilder(services);
-            return app
-                .UseLoadBalance()
-                .UseGrpc()
-                .Build();
-        }
-
-        private static IServiceProvider BuildClientServices()
-        {
-            var instancesConfiguration = new ConfigurationBuilder()
-                .AddJsonFile("instances.json", false, true)
-                .Build();
-
-            //client
-            return new ServiceCollection()
-                .AddLogging()
-                .AddOptions()
-                .AddGrpcClient(options =>
-                {
-                    options
-                        .Serializers
-                        .AddProtobufSerializer()
-                        .AddMessagePackSerializer()
-                        .AddJsonSerializer();
-                })
-                .AddConfigurationDiscovery(instancesConfiguration)
-                .AddLoadBalance()
-                .BuildServiceProvider();
-        }
-
-        private static IProxyFactory BuildClientProxyFactory()
-        {
-            var services = BuildClientServices();
-            var application = GetClientApplication(services);
-            var rabbitProxyInterceptor = new GrpcProxyInterceptor(application, services.GetRequiredService<IOptions<RabbitCloudOptions>>());
-            var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
-
-            return proxyFactory;
         }
     }
 }
