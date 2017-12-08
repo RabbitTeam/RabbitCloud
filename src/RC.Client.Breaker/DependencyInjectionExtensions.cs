@@ -17,7 +17,7 @@ namespace Rabbit.Cloud.Client.Breaker
                 .AddBreaker()
                 .Configure(configure);
         }
-
+/*
         public static IServiceCollection AddBackoff(this IServiceCollection services)
         {
             return services
@@ -51,6 +51,6 @@ namespace Rabbit.Cloud.Client.Breaker
             return services
                 .AddSingleton<FailureTable, FailureTable>()
                 .Configure(configure);
-        }
+        }*/
     }
 }

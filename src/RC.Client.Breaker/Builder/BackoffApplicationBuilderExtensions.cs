@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+﻿/*using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Abstractions.Extensions;
 
@@ -18,4 +18,4 @@ namespace Rabbit.Cloud.Client.Breaker.Builder
                 .UseMiddleware<BackoffMiddleware>();
         }
     }
-}
+}*/

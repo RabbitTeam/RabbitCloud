@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+﻿/*using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.LoadBalance.Features;
@@ -242,4 +242,4 @@ namespace Rabbit.Cloud.Client.Breaker
             }
         }
     }
-}
+}*/
