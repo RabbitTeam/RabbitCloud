@@ -1,30 +1,19 @@
 ﻿using Grpc.Core;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Grpc;
 using Rabbit.Cloud.Grpc.Abstractions.Server;
 using System.Threading;
 using System.Threading.Tasks;
 
-using GoogleGrpc = Grpc.Core;
-
 namespace Rabbit.Cloud.Server.Grpc.Starter
 {
-    public class GrpcServerOptions
-    {
-        public string Host { get; set; }
-        public int Port { get; set; }
-    }
-
-    public class StartGrpcServerService : IHostedService
+    public class GrpcServerHostedService : IHostedService
     {
         private readonly IServerServiceDefinitionTable _serverServiceDefinitionTable;
         private readonly GrpcServerOptions _options;
-        private GoogleGrpc.Server _server;
+        private global::Grpc.Core.Server _server;
 
-        public StartGrpcServerService(IOptions<GrpcServerOptions> options, IServerServiceDefinitionTableProvider serverServiceDefinitionTableProvider)
+        public GrpcServerHostedService(IOptions<GrpcServerOptions> options, IServerServiceDefinitionTableProvider serverServiceDefinitionTableProvider)
         {
             _serverServiceDefinitionTable = serverServiceDefinitionTableProvider.ServerServiceDefinitionTable;
             _options = options.Value;
@@ -39,7 +28,7 @@ namespace Rabbit.Cloud.Server.Grpc.Starter
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _server = new GoogleGrpc.Server
+            _server = new global::Grpc.Core.Server
             {
                 Ports = { new ServerPort(_options.Host, _options.Port, ServerCredentials.Insecure) }
             };
@@ -63,26 +52,5 @@ namespace Rabbit.Cloud.Server.Grpc.Starter
         }
 
         #endregion Implementation of IHostedService
-    }
-
-    public class GrpcBootstrap
-    {
-        public static int Priority => 10;
-
-        public static void Start(IHostBuilder hostBuilder)
-        {
-            hostBuilder
-                .ConfigureServices((ctx, services) =>
-                {
-                    var grpConfiguration = ctx.Configuration.GetSection("RabbitCloud:Server:Grpc");
-                    if (!grpConfiguration.Exists())
-                        return;
-                    services
-                        .Configure<GrpcServerOptions>(grpConfiguration)
-                        .AddGrpcServer()
-                        .AddServerGrpc()
-                        .AddSingleton<IHostedService, StartGrpcServerService>();
-                });
-        }
     }
 }

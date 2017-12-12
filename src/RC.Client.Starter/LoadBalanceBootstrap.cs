@@ -9,6 +9,8 @@ namespace Rabbit.Cloud.Client.Starter
 {
     public static class LoadBalanceBootstrap
     {
+        public static int Priority => 20;
+
         public static void Start(IHostBuilder hostBuilder)
         {
             hostBuilder.ConfigureServices((ctx, services) =>

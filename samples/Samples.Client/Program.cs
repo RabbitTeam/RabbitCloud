@@ -47,6 +47,7 @@ namespace Samples.Client
             });
 
             var host = hostBuilder.Build();
+            await host.StartAsync();
 
             {
                 var service = host.Services.GetRequiredService<ITestService>();
