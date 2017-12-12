@@ -5,7 +5,7 @@ using Rabbit.Cloud.Grpc.Abstractions.Server;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Server.Grpc.Starter
+namespace Rabbit.Cloud.Server.Grpc.AutoConfiguration
 {
     public class GrpcServerHostedService : IHostedService
     {

@@ -1,11 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Rabbit.Cloud;
 using Rabbit.Cloud.Serialization.Json;
 using Rabbit.Cloud.Serialization.MessagePack;
 using Rabbit.Cloud.Serialization.Protobuf;
 
-namespace RC.Starter
+namespace Rabbit.Cloud.Starter
 {
     public class SerializerBootstrap
     {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
@@ -16,12 +17,14 @@ namespace Rabbit.Cloud.Client.LoadBalance
         private readonly RabbitRequestDelegate _next;
         private readonly IDiscoveryClient _discoveryClient;
         private readonly ILogger<LoadBalanceMiddleware> _logger;
+        private readonly LoadBalanceClientOptions _options;
 
-        public LoadBalanceMiddleware(RabbitRequestDelegate next, IDiscoveryClient discoveryClient, ILogger<LoadBalanceMiddleware> logger)
+        public LoadBalanceMiddleware(RabbitRequestDelegate next, IDiscoveryClient discoveryClient, ILogger<LoadBalanceMiddleware> logger, IOptions<LoadBalanceClientOptions> options)
         {
             _next = next;
             _discoveryClient = discoveryClient;
             _logger = logger;
+            _options = options.Value;
         }
 
         public async Task Invoke(IRabbitContext context)
@@ -31,6 +34,8 @@ namespace Rabbit.Cloud.Client.LoadBalance
 
             if (_logger.IsEnabled(LogLevel.Debug))
                 _logger.LogDebug($"Prepare to parse the service instance for '{serviceUrl}'");
+
+            _options.ApplyRequestOptions(context);
 
             var loadBalanceFeature = context.Features.Get<ILoadBalanceFeature>();
 
@@ -67,7 +72,7 @@ namespace Rabbit.Cloud.Client.LoadBalance
                     serviceUrl.Host = serviceInstance.Host;
                     serviceUrl.Port = serviceInstance.Port;
 
-                    for (var z = 0; z < strategy.MaxAutoRetries; z++)
+                    for (var z = 0; z <= strategy.MaxAutoRetries; z++)
                     {
                         try
                         {

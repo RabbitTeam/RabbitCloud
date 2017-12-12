@@ -2,10 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Rabbit.Cloud.Grpc;
-using Rabbit.Cloud.Hosting;
-using Rabbit.Cloud.Server.Grpc.Builder;
 
-namespace Rabbit.Cloud.Server.Grpc.Starter
+namespace Rabbit.Cloud.Server.Grpc.AutoConfiguration
 {
     public class GrpcServerOptions
     {
@@ -30,10 +28,6 @@ namespace Rabbit.Cloud.Server.Grpc.Starter
                         .AddGrpcServer()
                         .AddServerGrpc()
                         .AddSingleton<IHostedService, GrpcServerHostedService>();
-                })
-                .ConfigureRabbitApplication(app =>
-                {
-                    app.UseServerGrpc();
                 });
         }
     }

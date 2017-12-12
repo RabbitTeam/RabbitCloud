@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
-using Rabbit.Cloud.Discovery.Consul;
 using Rabbit.Cloud.Discovery.Consul.Registry;
 using Rabbit.Cloud.Discovery.Consul.Utilities;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Consul.Starter
+namespace Rabbit.Cloud.Discovery.Consul.AutoConfiguration
 {
     public class RegistryHostedService : IHostedService
     {

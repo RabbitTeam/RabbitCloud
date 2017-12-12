@@ -2,12 +2,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Rabbit.Cloud.Hosting;
-using Rabbit.Cloud.Server.Monitor.Builder;
 using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Server.Monitor.Starter
+namespace Rabbit.Cloud.Server.Monitor.AutoConfiguration
 {
     public class MonitorOptions
     {
@@ -23,7 +21,7 @@ namespace Rabbit.Cloud.Server.Monitor.Starter
         }
     }
 
-    public class MonitorBootstrap
+    public class Bootstrap
     {
         public static int Priority => 20;
 
@@ -68,17 +66,14 @@ namespace Rabbit.Cloud.Server.Monitor.Starter
                     switch (monitorOptions.Report?.Type?.ToLower())
                     {
                         case "elasticsearch":
-                            builder.Report.ToElasticsearch(monitorOptions.Report.Attributes["Url"], monitorOptions.Report.Attributes["Index"]);
+                            builder.Report.ToElasticsearch(monitorOptions.Report.Attributes["Url"],
+                                monitorOptions.Report.Attributes["Index"]);
                             break;
                     }
 
                     services
-                    .AddSingleton<IMetrics>(builder.Build())
-                    .AddSingleton<IHostedService, ReportRunnerService>();
-                })
-                .ConfigureRabbitApplication((ctx, app) =>
-                {
-                    app.UseAllMonitor();
+                        .AddSingleton<IMetrics>(builder.Build())
+                        .AddSingleton<IHostedService, ReportRunnerService>();
                 });
         }
     }

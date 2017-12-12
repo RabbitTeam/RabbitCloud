@@ -15,14 +15,14 @@
     <ProjectReference Include="..\..\src\RC.Client.LoadBalance\RC.Client.LoadBalance.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Grpc.Proxy\RC.Client.Grpc.Proxy.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Proxy\RC.Client.Proxy.csproj" />
-    <ProjectReference Include="..\..\src\RC.Client.Starter\RC.Client.Starter.csproj" />
-    <ProjectReference Include="..\..\src\RC.Consul.Starter\RC.Consul.Starter.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Configuration\RC.Discovery.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc\RC.Grpc.csproj" />
     <ProjectReference Include="..\..\src\RC.Hosting\RC.Hosting.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.Json\RC.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.MessagePack\RC.Serialization.MessagePack.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.Protobuf\RC.Serialization.Protobuf.csproj" />
+    <ProjectReference Include="..\..\src\RC.Starter\RC.Starter.csproj" />
     <ProjectReference Include="..\Samples.Service\Samples.Service.csproj" />
   </ItemGroup>
 

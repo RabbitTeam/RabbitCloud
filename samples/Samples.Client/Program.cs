@@ -1,8 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Rabbit.Cloud;
+using Rabbit.Cloud.Application;
+using Rabbit.Cloud.Client.Grpc.Builder;
+using Rabbit.Cloud.Client.Grpc.Proxy;
+using Rabbit.Cloud.Client.LoadBalance.Builder;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Grpc.ApplicationModels;
-using Rabbit.Cloud.Hosting;
 using Rabbit.Extensions.Boot;
 using Samples.Service;
 using System;
@@ -19,14 +24,18 @@ namespace Samples.Client
             var hostBuilder = await RabbitBoot.BuildHostBuilderAsync(builder =>
             {
                 builder
-                    .ConfigureHostConfiguration(b => b.AddJsonFile("appsettings.json"))
-                    .UseRabbitApplicationConfigure();
+                    .ConfigureHostConfiguration(b => b.AddJsonFile("appsettings.json"));
             });
 
-            var host = hostBuilder.BuidRabbitHost();
+            var host = hostBuilder.Build();
             await host.StartAsync();
 
-            var proxyFactory = host.Services.GetRequiredService<IProxyFactory>();
+            var app = new RabbitApplicationBuilder(host.Services)
+                .UseLoadBalance()
+                .UseGrpc()
+                .Build();
+
+            var proxyFactory = new ProxyFactory(new[] { new GrpcProxyInterceptor(app, host.Services.GetRequiredService<IOptions<RabbitCloudOptions>>()), });
 
             foreach (var serviceModel in host.Services.GetRequiredService<ApplicationModelHolder>().GetApplicationModel().Services)
             {

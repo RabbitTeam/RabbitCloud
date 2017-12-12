@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Server.Monitor.Starter
+namespace Rabbit.Cloud.Server.Monitor.AutoConfiguration
 {
     public class ReportRunnerService : BackgroundService
     {

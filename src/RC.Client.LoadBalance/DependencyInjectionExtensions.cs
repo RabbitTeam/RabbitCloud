@@ -7,14 +7,14 @@ namespace Rabbit.Cloud.Client.LoadBalance
     {
         public static IServiceCollection AddLoadBalance(this IServiceCollection services)
         {
-            return services.Configure<LoadBalanceOptions>(options =>
+            return services.Configure<LoadBalanceClientOptions>(options =>
            {
                options.ServiceInstanceChooserCollection.Set("Random", new RandomServiceInstanceChooser());
                options.ServiceInstanceChooserCollection.Set("RoundRobin", new RoundRobinLoadBalanceStrategy());
            });
         }
 
-        public static IServiceCollection AddLoadBalance(this IServiceCollection services, Action<LoadBalanceOptions> configure)
+        public static IServiceCollection AddLoadBalance(this IServiceCollection services, Action<LoadBalanceClientOptions> configure)
         {
             return services
                 .AddLoadBalance()

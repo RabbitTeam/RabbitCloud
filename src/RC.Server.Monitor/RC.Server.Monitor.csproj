@@ -12,11 +12,13 @@
     <PackageReference Include="App.Metrics.Reporting.TextFile" Version="2.0.0-alpha" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
     <PackageReference Include="App.Metrics.AspNetCore.Tracking" Version="2.0.0-alpha" />
+    <PackageReference Include="App.Metrics.Reporting.Elasticsearch" Version="2.0.0-alpha" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RC.Abstractions\RC.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
+    <ProjectReference Include="..\RC.Hosting\RC.Hosting.csproj" />
   </ItemGroup>
 
 </Project>

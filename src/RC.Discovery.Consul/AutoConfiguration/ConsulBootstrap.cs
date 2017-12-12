@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Rabbit.Cloud.Discovery.Consul;
 
-namespace Rabbit.Cloud.Consul.Starter
+namespace Rabbit.Cloud.Discovery.Consul.AutoConfiguration
 {
     public static class ConsulBootstrap
     {
