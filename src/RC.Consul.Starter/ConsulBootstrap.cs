@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
@@ -53,20 +54,20 @@ namespace Rabbit.Cloud.Consul.Starter
                 {
                     var section = ctx.Configuration.GetSection("RabbitCloud:Consul");
 
-                    if (section == null)
+                    if (!section.Exists())
                         return;
 
                     var client = section.GetSection("Client");
                     var instance = section.GetSection("Instance");
 
-                    if (client == null)
+                    if (!client.Exists())
                         return;
 
                     services
                         .Configure<ConsulOptions>(client)
                         .AddConsulRegistry();
 
-                    if (instance != null)
+                    if (!instance.Exists())
                         services
                         .Configure<ConsulInstanceOptions>(instance)
                         .Configure<ConsulInstanceOptions>(options =>

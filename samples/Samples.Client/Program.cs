@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud;
@@ -19,7 +20,9 @@ namespace Samples.Client
         {
             var hostBuilder = await RabbitBoot.BuildHostBuilderAsync(builder =>
             {
-                builder.ConfigureServices(services =>
+                builder
+                    .ConfigureHostConfiguration(b => b.AddJsonFile("appsettings.json"))
+                    .ConfigureServices(services =>
                     {
                         services
                             .AddLogging()
@@ -27,9 +30,10 @@ namespace Samples.Client
                     })
                     .UseRabbitApplicationConfigure();
             });
-            
-            hostBuilder.ConfigureRabbitApplication((ctx, services, applicationServices, appBuilder) =>
+
+            hostBuilder.ConfigureRabbitApplication((ctx, services, appBuilder) =>
             {
+                var applicationServices = services.BuildServiceProvider();
                 var app = appBuilder.Build();
 
                 var rabbitProxyInterceptor = new GrpcProxyInterceptor(app, applicationServices.GetRequiredService<IOptions<RabbitCloudOptions>>());

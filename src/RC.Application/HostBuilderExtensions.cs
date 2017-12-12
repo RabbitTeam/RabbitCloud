@@ -19,27 +19,18 @@ namespace Rabbit.Cloud.Application
 
         public static IHostBuilder ConfigureRabbitApplication(this IHostBuilder hostBuilder, Action<IRabbitApplicationBuilder> configure)
         {
-            return hostBuilder.ConfigureRabbitApplication((ctx, services, applicationServices, app) =>
+            return hostBuilder.ConfigureRabbitApplication((ctx, services, app) =>
             {
                 configure(app);
             });
         }
 
-        public static IHostBuilder ConfigureRabbitApplication(this IHostBuilder hostBuilder, Action<IServiceProvider, IRabbitApplicationBuilder> configure)
-        {
-            return hostBuilder.ConfigureRabbitApplication((ctx, services, applicationServices, app) =>
-            {
-                configure(applicationServices, app);
-            });
-        }
-
-        public static IHostBuilder ConfigureRabbitApplication(this IHostBuilder hostBuilder, Action<HostBuilderContext, IServiceCollection, IServiceProvider, IRabbitApplicationBuilder> configure)
+        public static IHostBuilder ConfigureRabbitApplication(this IHostBuilder hostBuilder, Action<HostBuilderContext, IServiceCollection, IRabbitApplicationBuilder> configure)
         {
             return hostBuilder.ConfigureContainer<IServiceCollection>((ctx, services) =>
             {
-                var applicationServices = (IServiceProvider)ctx.Properties["ApplicationServices"];
                 var app = (IRabbitApplicationBuilder)ctx.Properties["RabbitApplicationBuilder"];
-                configure(ctx, services, applicationServices, app);
+                configure(ctx, services, app);
             });
         }
     }

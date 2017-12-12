@@ -43,7 +43,7 @@ namespace Rabbit.Cloud.Client.Starter
             }
         }
 
-        private static IDictionary<string, RequestOptions> _requestOptionses =
+        private static readonly IDictionary<string, RequestOptions> RequestOptionses =
             new Dictionary<string, RequestOptions>(StringComparer.OrdinalIgnoreCase);
 
         public static int Priority => 50;
@@ -55,15 +55,15 @@ namespace Rabbit.Cloud.Client.Starter
                 {
                     foreach (var section in ctx.Configuration.GetSection("RabbitCloud:Client").GetChildren())
                     {
-                        _requestOptionses[section.Key] = RequestOptions.Create(section);
+                        RequestOptionses[section.Key] = RequestOptions.Create(section);
                     }
                 })
-                .ConfigureRabbitApplication((ctx, serviceCollection, services, app) =>
+                .ConfigureRabbitApplication((ctx, serviceCollection, app) =>
                 {
                     app
                         .Use(async (c, next) =>
                         {
-                            if (_requestOptionses.TryGetValue(c.Request.Url.Host, out var options))
+                            if (RequestOptionses.TryGetValue(c.Request.Url.Host, out var options))
                             {
                                 var requestFeature = c.Features.GetOrAdd<IRequestFeature>(() => new RequestFeature());
                                 options.Apply(requestFeature);

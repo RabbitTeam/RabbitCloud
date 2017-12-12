@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -6,6 +7,7 @@ using Rabbit.Cloud.Grpc;
 using Rabbit.Cloud.Grpc.Abstractions.Server;
 using System.Threading;
 using System.Threading.Tasks;
+
 using GoogleGrpc = Grpc.Core;
 
 namespace Rabbit.Cloud.Server.Grpc.Starter
@@ -73,13 +75,13 @@ namespace Rabbit.Cloud.Server.Grpc.Starter
                 .ConfigureServices((ctx, services) =>
                 {
                     var grpConfiguration = ctx.Configuration.GetSection("RabbitCloud:Server:Grpc");
-                    if (grpConfiguration == null)
+                    if (!grpConfiguration.Exists())
                         return;
                     services
                         .Configure<GrpcServerOptions>(grpConfiguration)
                         .AddGrpcServer()
                         .AddServerGrpc()
-                        .AddSingleton<IHostedService,StartGrpcServerService>();
+                        .AddSingleton<IHostedService, StartGrpcServerService>();
                 });
         }
     }
