@@ -13,7 +13,9 @@ namespace Rabbit.Cloud.Application
             {
                 var applicationServices = services.BuildServiceProvider();
                 ctx.Properties["ApplicationServices"] = applicationServices;
-                ctx.Properties["RabbitApplicationBuilder"] = new RabbitApplicationBuilder(applicationServices);
+                var rabbitApplicationBuilder = new RabbitApplicationBuilder(applicationServices);
+                ctx.Properties["RabbitApplicationBuilder"] = rabbitApplicationBuilder;
+                services.AddSingleton<IRabbitApplicationBuilder>(rabbitApplicationBuilder);
             });
         }
 

@@ -1,23 +1,22 @@
 ﻿using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
-using System;
-using System.Threading.Tasks;
 using Rabbit.Cloud.ApplicationModels;
 using Rabbit.Cloud.Grpc.ApplicationModels;
 using Rabbit.Cloud.Grpc.ApplicationModels.Internal;
+using System;
+using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Server.Grpc.Internal
 {
     public class ServerMethodInvokerFactory : IServerMethodInvokerFactory
     {
-        private readonly GrpcServerOptions _options;
+        private readonly RabbitRequestDelegate _invoker;
         private readonly DefaultServerMethodInvokerFactory _defaultServerMethodInvokerFactory;
 
-        public ServerMethodInvokerFactory(IOptions<GrpcServerOptions> options, IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger)
+        public ServerMethodInvokerFactory(IRabbitApplicationBuilder applicationBuilder, IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger)
         {
-            _options = options.Value;
+            _invoker = applicationBuilder.Build();
             _defaultServerMethodInvokerFactory = new DefaultServerMethodInvokerFactory(services, logger);
         }
 
@@ -26,7 +25,7 @@ namespace Rabbit.Cloud.Server.Grpc.Internal
         public IServerMethodInvoker CreateInvoker(MethodModel serverMethod)
         {
             var serverMethodInvoker = _defaultServerMethodInvokerFactory.CreateInvoker(serverMethod);
-            return new GrpcServerMethodInvoker(serverMethodInvoker, _options.Invoker);
+            return new GrpcServerMethodInvoker(serverMethodInvoker, _invoker);
         }
 
         #endregion Implementation of IServerMethodInvokerFactory
