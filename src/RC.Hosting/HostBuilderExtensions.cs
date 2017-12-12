@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Extensions.Configuration;
 using System;
 
 namespace Rabbit.Cloud.Hosting
@@ -39,6 +40,10 @@ namespace Rabbit.Cloud.Hosting
         public static IHostBuilder BuidRabbitApp(this IHostBuilder hostBuilder)
         {
             return hostBuilder
+                .ConfigureAppConfiguration((ctx, builder) =>
+                {
+                    ctx.Configuration.EnableTemplateSupport();
+                })
                 .ConfigureContainer<IServiceCollection>((ctx, services) =>
                 {
                     var app = (IRabbitApplicationBuilder)ctx.Properties["RabbitApplicationBuilder"];

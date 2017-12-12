@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Rabbit.Cloud.Hosting;
 using Rabbit.Cloud.Server.Monitor.Builder;
+using System;
 using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Server.Monitor.Starter
@@ -18,7 +19,7 @@ namespace Rabbit.Cloud.Server.Monitor.Starter
         public class ReportOptions
         {
             public string Type { get; set; }
-            public IDictionary<string, string> Attributes { get; set; }
+            public IDictionary<string, string> Attributes { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
     }
 
@@ -31,7 +32,23 @@ namespace Rabbit.Cloud.Server.Monitor.Starter
             hostBuilder
                 .ConfigureServices((ctx, services) =>
                 {
-                    var monitorOptions = ctx.Configuration.GetSection("RabbitCloud:Monitor").Get<MonitorOptions>();
+                    var monitorConfiguration = ctx.Configuration.GetSection("RabbitCloud:Monitor");
+
+                    var monitorOptions = monitorConfiguration.Get<MonitorOptions>();
+                    var reportOptions = monitorOptions.Report;
+                    foreach (var section in monitorConfiguration.GetSection("Report").GetChildren())
+                    {
+                        switch (section.Key)
+                        {
+                            case "Type":
+                                reportOptions.Type = section.Value;
+                                break;
+
+                            default:
+                                reportOptions.Attributes[section.Key] = section.Value;
+                                break;
+                        }
+                    }
 
                     if (string.IsNullOrEmpty(monitorOptions.ApplicationName))
                         monitorOptions.ApplicationName = ctx.HostingEnvironment.ApplicationName;

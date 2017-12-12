@@ -9,6 +9,7 @@
   
   <ItemGroup>
     <PackageReference Include="Rabbit.Extensions.Boot" Version="1.0.0-preview6" />
+    <PackageReference Include="Rabbit.Extensions.Configuration" Version="1.0.0-preview1" />
   </ItemGroup>
   
   <ItemGroup>
