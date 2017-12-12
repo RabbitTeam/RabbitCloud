@@ -1,14 +1,12 @@
 ﻿using Grpc.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Rabbit.Cloud.Grpc;
+using Microsoft.Extensions.Hosting;
 using Rabbit.Cloud.Grpc.Abstractions.Server;
-using Rabbit.Cloud.Serialization.Json;
-using Rabbit.Cloud.Serialization.MessagePack;
-using Rabbit.Cloud.Serialization.Protobuf;
-using Rabbit.Cloud.Server.Grpc;
+using Rabbit.Extensions.Boot;
 using Samples.Service;
 using System;
+using System.Threading.Tasks;
 
 namespace Samples.Server
 {
@@ -21,16 +19,49 @@ namespace Samples.Server
 
     internal class Program
     {
-        private static ApplicationInfo ApplicationInfo { get; set; }
-
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
+            var hostBuilder = await RabbitBoot.BuildHostBuilderAsync(builder =>
+            {
+                builder
+                .ConfigureHostConfiguration(b => b.AddJsonFile("appsettings.json"))
+                .ConfigureServices(s =>
+                {
+                    s
+                        .AddLogging()
+                        .AddOptions()
+                        .AddSingleton<ITestService, TestService>();
+                });
+            });
+            var host = hostBuilder.Build();
+
+            await host.StartAsync();
+
+            Console.WriteLine("press key exit...");
+            Console.ReadLine();
+            /*var host=hostBuilder.Build();
             ApplicationInfo = BuildConfiguration(args).Get<ApplicationInfo>();
+            ApplicationInfo.HostName = "192.168.18.190";
+            ApplicationInfo.HostPort = 9908;
             {
                 IServiceProvider services = new ServiceCollection()
                     .AddLogging()
                     .AddOptions()
                     .AddSingleton<ITestService, TestService>()
+                    .Configure<ConsulOptions>(s =>
+                    {
+                        s.Address = "http://192.168.100.150:8500";
+                    })
+                    .Configure<ConsulDiscoveryOptions>(s =>
+                    {
+                        s.HostName = "192.168.18.190";
+                        s.InstanceId = "192.168.18.190_9908";
+                        s.Port = 9908;
+                        s.ServiceName = "Samples.Service";
+                        s.HealthCheckInterval = "10s";
+                    })
+                    .AddConsulRegistry()
+                    .AddConsulDiscovery()
                     .AddGrpcServer(options =>
                     {
                         options
@@ -41,6 +72,10 @@ namespace Samples.Server
                     })
                     .AddServerGrpc()
                     .BuildServiceProvider();
+
+                var registryService = services.GetRequiredService<IRegistryService<ConsulRegistration>>();
+                await registryService.RegisterAsync(
+                    ConsulUtil.Create(services.GetRequiredService<IOptions<ConsulDiscoveryOptions>>().Value));
 
                 var serverServiceDefinitionTable = services.GetRequiredService<IServerServiceDefinitionTableProvider>().ServerServiceDefinitionTable;
 
@@ -58,8 +93,7 @@ namespace Samples.Server
                 }
 
                 Console.WriteLine("press key exit...");
-                Console.ReadLine();
-            }
+                Console.ReadLine();*/
         }
 
         private static IConfiguration BuildConfiguration(string[] args)

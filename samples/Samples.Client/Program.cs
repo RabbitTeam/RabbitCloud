@@ -1,19 +1,15 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.Proxy;
-using Rabbit.Cloud.Discovery.Configuration;
-using Rabbit.Cloud.Grpc;
 using Rabbit.Cloud.Grpc.ApplicationModels;
 using Rabbit.Extensions.Boot;
 using Samples.Service;
 using System;
 using System.Threading.Tasks;
-using Rabbit.Cloud.Client.LoadBalance.Builder;
 
 namespace Samples.Client
 {
@@ -23,20 +19,11 @@ namespace Samples.Client
         {
             var hostBuilder = await RabbitBoot.BuildHostBuilderAsync(builder =>
             {
-                builder.ConfigureHostConfiguration(b =>
-                {
-                    b.AddJsonFile("appsettings.json");
-                });
                 builder.ConfigureServices(services =>
                     {
-                        var instancesConfiguration = new ConfigurationBuilder()
-                            .AddJsonFile("instances.json", false, true)
-                            .Build();
                         services
                             .AddLogging()
-                            .AddOptions()
-                            .AddGrpcClient(o => { })
-                            .AddConfigurationDiscovery(instancesConfiguration);
+                            .AddOptions();
                     })
                     .UseRabbitApplicationConfigure();
             });

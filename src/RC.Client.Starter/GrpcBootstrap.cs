@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Client.Grpc.Builder;
+using Rabbit.Cloud.Grpc;
 
 namespace Rabbit.Cloud.Client.Starter
 {
@@ -11,6 +12,10 @@ namespace Rabbit.Cloud.Client.Starter
         public static void Start(IHostBuilder hostBuilder)
         {
             hostBuilder
+                .ConfigureServices(services =>
+                {
+                    services.AddGrpcClient();
+                })
                 .ConfigureRabbitApplication(app =>
                 {
                     app.UseGrpc();

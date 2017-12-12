@@ -1,49 +1,78 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Abstractions.Client;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions.Extensions;
 using Rabbit.Cloud.Application.Features;
-using System;
 using Rabbit.Cloud.Client.LoadBalance.Builder;
+using System;
+using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Client.Starter
 {
     public static class ClientRequestOptionsBootstrap
     {
+        private class RequestOptions
+        {
+            public TimeSpan ConnectionTimeout { get; set; }
+            public TimeSpan ReadTimeout { get; set; }
+
+            public static RequestOptions Default { get; } = new RequestOptions
+            {
+                ConnectionTimeout = TimeSpan.FromSeconds(2),
+                ReadTimeout = TimeSpan.FromSeconds(10)
+            };
+
+            public void Apply(IRequestFeature requestFeature)
+            {
+                requestFeature.ConnectionTimeout = ConnectionTimeout;
+                requestFeature.ReadTimeout = ReadTimeout;
+            }
+
+            public static RequestOptions Create(IConfiguration configuration)
+            {
+                return new RequestOptions
+                {
+                    ConnectionTimeout =
+                        TimeUtilities.GetTimeSpanBySimpleOrDefault(configuration[nameof(ConnectionTimeout)],
+                            Default.ConnectionTimeout),
+                    ReadTimeout =
+                        TimeUtilities.GetTimeSpanBySimpleOrDefault(configuration[nameof(ReadTimeout)],
+                            Default.ReadTimeout)
+                };
+            }
+        }
+
+        private static IDictionary<string, RequestOptions> _requestOptionses =
+            new Dictionary<string, RequestOptions>(StringComparer.OrdinalIgnoreCase);
+
         public static int Priority => 50;
 
         public static void Start(IHostBuilder hostBuilder)
         {
-            hostBuilder.ConfigureServices((ctx, services) =>
-            {
-                services.Configure<ClientRequestOptions>(options =>
+            hostBuilder
+                .ConfigureServices((ctx, services) =>
                 {
                     foreach (var section in ctx.Configuration.GetSection("RabbitCloud:Client").GetChildren())
                     {
-                        options.Configurations[section.Key] = section;
+                        _requestOptionses[section.Key] = RequestOptions.Create(section);
                     }
-                });
-            }).ConfigureRabbitApplication((ctx, serviceCollection, services, app) =>
-            {
-                app
-                .Use(async (c, next) =>
-                {
-                    var clientRequestOptions = services.GetRequiredService<IOptions<ClientRequestOptions>>().Value;
-
-                    if (clientRequestOptions.Configurations.TryGetValue(c.Request.Url.Host, out var serviceConfiguration))
-                    {
-                        var requestFeature = c.Features.GetOrAdd<IRequestFeature>(() => new RequestFeature());
-                        requestFeature.ConnectionTimeout = TimeUtilities.GetTimeSpanBySimpleOrDefault(serviceConfiguration[nameof(IRequestFeature.ConnectionTimeout)], TimeSpan.FromSeconds(2));
-                        requestFeature.ReadTimeout = TimeUtilities.GetTimeSpanBySimpleOrDefault(serviceConfiguration[nameof(IRequestFeature.ReadTimeout)], TimeSpan.FromSeconds(10));
-                    }
-
-                    await next();
                 })
-                    .UseLoadBalance();
-            });
+                .ConfigureRabbitApplication((ctx, serviceCollection, services, app) =>
+                {
+                    app
+                        .Use(async (c, next) =>
+                        {
+                            if (_requestOptionses.TryGetValue(c.Request.Url.Host, out var options))
+                            {
+                                var requestFeature = c.Features.GetOrAdd<IRequestFeature>(() => new RequestFeature());
+                                options.Apply(requestFeature);
+                            }
+
+                            await next();
+                        })
+                        .UseLoadBalance();
+                });
         }
     }
 }

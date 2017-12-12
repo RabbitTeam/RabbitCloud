@@ -16,7 +16,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Utilities
 
         #region Public  Method
 
-        public static ConsulRegistration Create(ConsulDiscoveryOptions options, IDictionary<string, string> metadata = null)
+        public static ConsulRegistration Create(ConsulInstanceOptions options, IDictionary<string, string> metadata = null)
         {
             var tags = options.Tags ?? Enumerable.Empty<string>();
 
@@ -24,7 +24,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Utilities
 
             return new ConsulRegistration(new AgentServiceRegistration
             {
-                Address = options.HostName.ToLower(),
+                Address = options.Host.ToLower(),
                 Port = options.Port,
                 Name = options.ServiceName,
                 ID = GetInstanceId(options.InstanceId),

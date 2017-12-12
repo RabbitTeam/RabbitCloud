@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,12 +12,21 @@
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="..\..\src\RC.Consul.Starter\RC.Consul.Starter.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Configuration\RC.Discovery.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.Json\RC.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.MessagePack\RC.Serialization.MessagePack.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.Protobuf\RC.Serialization.Protobuf.csproj" />
+    <ProjectReference Include="..\..\src\RC.Server.Grpc.Starter\RC.Server.Grpc.Starter.csproj" />
     <ProjectReference Include="..\..\src\RC.Server.Grpc\RC.Server.Grpc.csproj" />
     <ProjectReference Include="..\Samples.Service\Samples.Service.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

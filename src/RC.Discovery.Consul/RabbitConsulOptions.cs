@@ -10,11 +10,11 @@ namespace Rabbit.Cloud.Discovery.Consul
         public string Token { get; set; }
     }
 
-    public class ConsulDiscoveryOptions
+    public class ConsulInstanceOptions
     {
         public string InstanceId { get; set; }
         public string ServiceName { get; set; }
-        public string HostName { get; set; }
+        public string Host { get; set; }
         public int Port { get; set; }
         public string HealthCheckInterval { get; set; }
         public string[] Tags { get; set; }
