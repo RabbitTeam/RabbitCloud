@@ -1,12 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-using Rabbit.Cloud;
-using Rabbit.Cloud.Application;
-using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Grpc.ApplicationModels;
+using Rabbit.Cloud.Hosting;
 using Rabbit.Extensions.Boot;
 using Samples.Service;
 using System;
@@ -18,39 +14,27 @@ namespace Samples.Client
     {
         private static async Task Main(string[] args)
         {
+            var services = new ServiceCollection();
+
             var hostBuilder = await RabbitBoot.BuildHostBuilderAsync(builder =>
             {
                 builder
                     .ConfigureHostConfiguration(b => b.AddJsonFile("appsettings.json"))
-                    .ConfigureServices(services =>
-                    {
-                        services
-                            .AddLogging()
-                            .AddOptions();
-                    })
                     .UseRabbitApplicationConfigure();
             });
 
-            hostBuilder.ConfigureRabbitApplication((ctx, services, appBuilder) =>
-            {
-                var applicationServices = services.BuildServiceProvider();
-                var app = appBuilder.Build();
-
-                var rabbitProxyInterceptor = new GrpcProxyInterceptor(app, applicationServices.GetRequiredService<IOptions<RabbitCloudOptions>>());
-
-                var proxyFactory = new ProxyFactory(rabbitProxyInterceptor);
-
-                foreach (var serviceModel in applicationServices.GetRequiredService<ApplicationModelHolder>().GetApplicationModel().Services)
-                {
-                    services.AddSingleton(serviceModel.Type, proxyFactory.CreateInterfaceProxy(serviceModel.Type));
-                }
-            });
-
-            var host = hostBuilder.Build();
+            var host = hostBuilder.BuidRabbitHost();
             await host.StartAsync();
 
+            var proxyFactory = host.Services.GetRequiredService<IProxyFactory>();
+
+            foreach (var serviceModel in host.Services.GetRequiredService<ApplicationModelHolder>().GetApplicationModel().Services)
             {
-                var service = host.Services.GetRequiredService<ITestService>();
+                services.AddSingleton(serviceModel.Type, proxyFactory.CreateInterfaceProxy(serviceModel.Type));
+            }
+
+            {
+                var service = services.BuildServiceProvider().GetRequiredService<ITestService>();
                 var name = "test";
                 while (true)
                 {

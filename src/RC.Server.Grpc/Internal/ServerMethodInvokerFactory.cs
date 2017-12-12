@@ -14,9 +14,9 @@ namespace Rabbit.Cloud.Server.Grpc.Internal
         private readonly RabbitRequestDelegate _invoker;
         private readonly DefaultServerMethodInvokerFactory _defaultServerMethodInvokerFactory;
 
-        public ServerMethodInvokerFactory(IRabbitApplicationBuilder applicationBuilder, IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger)
+        public ServerMethodInvokerFactory(RabbitRequestDelegate invoker, IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger)
         {
-            _invoker = applicationBuilder.Build();
+            _invoker = invoker;
             _defaultServerMethodInvokerFactory = new DefaultServerMethodInvokerFactory(services, logger);
         }
 

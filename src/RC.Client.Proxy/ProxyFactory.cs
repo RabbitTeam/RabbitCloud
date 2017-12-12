@@ -1,5 +1,7 @@
 ﻿using Castle.DynamicProxy;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Rabbit.Cloud.Client.Proxy
 {
@@ -8,9 +10,11 @@ namespace Rabbit.Cloud.Client.Proxy
         private readonly IInterceptor[] _interceptors;
         private static readonly ProxyGenerator ProxyGenerator = new ProxyGenerator();
 
-        public ProxyFactory(params IInterceptor[] interceptors)
+        public ProxyFactory(IEnumerable<IInterceptor> interceptors)
         {
-            _interceptors = interceptors ?? throw new ArgumentNullException(nameof(interceptors));
+            if (interceptors == null)
+                throw new ArgumentNullException(nameof(interceptors));
+            _interceptors = interceptors.ToArray();
         }
 
         #region Implementation of IProxyFactory

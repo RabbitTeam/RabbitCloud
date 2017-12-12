@@ -13,10 +13,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
+    <ProjectReference Include="..\RC.Client.Grpc.Proxy\RC.Client.Grpc.Proxy.csproj" />
     <ProjectReference Include="..\RC.Client.Grpc\RC.Client.Grpc.csproj" />
     <ProjectReference Include="..\RC.Client.LoadBalance\RC.Client.LoadBalance.csproj" />
-    <ProjectReference Include="..\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
     <ProjectReference Include="..\RC.Grpc\RC.Grpc.csproj" />
+    <ProjectReference Include="..\RC.Hosting\RC.Hosting.csproj" />
     <ProjectReference Include="..\RC.Starter\RC.Starter.csproj" />
     <ProjectReference Include="..\RC\RC.csproj" />
   </ItemGroup>

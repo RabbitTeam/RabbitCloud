@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RC.Hosting\RC.Hosting.csproj" />
     <ProjectReference Include="..\RC.Server.Grpc\RC.Server.Grpc.csproj" />
     <ProjectReference Include="..\RC.Server.Starter\RC.Server.Starter.csproj" />
   </ItemGroup>

@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\src\RC.Consul.Starter\RC.Consul.Starter.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Configuration\RC.Discovery.Configuration.csproj" />
     <ProjectReference Include="..\..\src\RC.Grpc\RC.Grpc.csproj" />
+    <ProjectReference Include="..\..\src\RC.Hosting\RC.Hosting.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.Json\RC.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.MessagePack\RC.Serialization.MessagePack.csproj" />
     <ProjectReference Include="..\..\src\RC.Serialization.Protobuf\RC.Serialization.Protobuf.csproj" />

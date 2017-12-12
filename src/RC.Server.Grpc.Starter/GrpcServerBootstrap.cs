@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Grpc;
+using Rabbit.Cloud.Hosting;
 using Rabbit.Cloud.Server.Grpc.Builder;
 
 namespace Rabbit.Cloud.Server.Grpc.Starter

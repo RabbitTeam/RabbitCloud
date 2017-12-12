@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Rabbit.Cloud.Abstractions.Utilities;
-using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions.Extensions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.LoadBalance.Builder;
+using Rabbit.Cloud.Hosting;
 using System;
 using System.Collections.Generic;
 
@@ -58,7 +58,7 @@ namespace Rabbit.Cloud.Client.Starter
                         RequestOptionses[section.Key] = RequestOptions.Create(section);
                     }
                 })
-                .ConfigureRabbitApplication((ctx, serviceCollection, app) =>
+                .ConfigureRabbitApplication((ctx, app) =>
                 {
                     app
                         .Use(async (c, next) =>

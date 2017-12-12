@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\RC.Abstractions\RC.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
+    <ProjectReference Include="..\RC.Hosting\RC.Hosting.csproj" />
     <ProjectReference Include="..\RC.Server.Monitor\RC.Server.Monitor.csproj" />
   </ItemGroup>
 

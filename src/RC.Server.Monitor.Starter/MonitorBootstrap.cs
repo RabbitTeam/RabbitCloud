@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Rabbit.Cloud.Application;
+using Rabbit.Cloud.Hosting;
 using Rabbit.Cloud.Server.Monitor.Builder;
 using System.Collections.Generic;
 
@@ -59,7 +59,7 @@ namespace Rabbit.Cloud.Server.Monitor.Starter
                     .AddSingleton<IMetrics>(builder.Build())
                     .AddSingleton<IHostedService, ReportRunnerService>();
                 })
-                .ConfigureRabbitApplication((ctx, services, app) =>
+                .ConfigureRabbitApplication((ctx, app) =>
                 {
                     app.UseAllMonitor();
                 });

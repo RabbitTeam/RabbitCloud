@@ -1,7 +1,13 @@
-﻿using Microsoft.Extensions.Hosting;
-using Rabbit.Cloud.Application;
+﻿using Castle.DynamicProxy;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Grpc.Builder;
+using Rabbit.Cloud.Client.Grpc.Proxy;
+using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Grpc;
+using Rabbit.Cloud.Hosting;
 
 namespace Rabbit.Cloud.Client.Starter
 {
@@ -15,6 +21,15 @@ namespace Rabbit.Cloud.Client.Starter
                 .ConfigureServices(services =>
                 {
                     services.AddGrpcClient();
+
+                    services
+                        .AddSingleton<IProxyFactory>(p => new ProxyFactory(new[]
+                        {
+                            new GrpcProxyInterceptor(p.GetRequiredService<RabbitRequestDelegate>(),
+                                p.GetRequiredService<IOptions<RabbitCloudOptions>>())
+                        }))
+                        .AddSingleton<IInterceptor, GrpcProxyInterceptor>()
+                        .AddSingleton<IProxyFactory, ProxyFactory>();
                 })
                 .ConfigureRabbitApplication(app =>
                 {
