@@ -100,11 +100,9 @@ namespace Rabbit.Cloud.Server.Grpc.Internal
     {
         public GrpcServerRabbitContext() : this(new FeatureCollection())
         {
-            Request = new GrpcServerRabbitRequest(this);
-            Response = new GrpcServerRabbitResponse(this);
-
-            Features.Set<IRequestFeature>(new GrpcServerRequestFeature());
-            Features.Set<IGrpcServerRequestFeature>(new GrpcServerRequestFeature());
+            var grpcServerRequestFeature = new GrpcServerRequestFeature();
+            Features.Set<IRequestFeature>(grpcServerRequestFeature);
+            Features.Set<IGrpcServerRequestFeature>(grpcServerRequestFeature);
             Features.Set<IGrpcServerResponseFeature>(new GrpcServerResponseFeature());
         }
 

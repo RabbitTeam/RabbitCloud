@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 
@@ -13,17 +14,24 @@ namespace Rabbit.Cloud.Abstractions.Serialization
 
     public static class SerializerExtensions
     {
+        private static readonly ConcurrentDictionary<Type, ISerializer> SerializerCaches = new ConcurrentDictionary<Type, ISerializer>();
+
         public static byte[] Serialize(this IEnumerable<ISerializer> serializers, object instance)
         {
             if (instance == null)
                 return null;
+            var type = instance.GetType();
+            if (SerializerCaches.TryGetValue(type, out var serializer) && serializer != null)
+                return serializer.Serialize(instance);
 
             using (var memoryStream = new MemoryStream())
             {
-                foreach (var serializer in serializers)
+                foreach (var s in serializers)
                 {
-                    if (serializer.Serialize(memoryStream, instance))
-                        return memoryStream.ToArray();
+                    if (!s.Serialize(memoryStream, instance))
+                        continue;
+                    SerializerCaches.TryAdd(type, s);
+                    return memoryStream.ToArray();
                 }
                 return null;
             }
@@ -36,13 +44,18 @@ namespace Rabbit.Cloud.Abstractions.Serialization
             if (data == null)
                 return null;
 
+            if (SerializerCaches.TryGetValue(type, out var serializer) && serializer != null)
+                return serializer.Deserialize(type, data);
+
             using (var memoryStream = new MemoryStream(data))
             {
-                foreach (var serializer in serializers)
+                foreach (var s in serializers)
                 {
-                    var value = serializer.Deserialize(type, memoryStream);
-                    if (value != null)
-                        return value;
+                    var value = s.Deserialize(type, memoryStream);
+                    if (value == null)
+                        continue;
+                    SerializerCaches.TryAdd(type, s);
+                    return value;
                 }
                 return null;
             }

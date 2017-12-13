@@ -18,7 +18,13 @@ namespace Rabbit.Cloud.Server.Grpc
         {
             var requestFeature = context.Features.Get<IGrpcServerRequestFeature>();
 
-            requestFeature.ServiceUrl = new ServiceUrl($"grpc://{requestFeature.ServerCallContext.Host}{requestFeature.ServerCallContext.Method}");
+            var serverCallContext = requestFeature.ServerCallContext;
+            requestFeature.ServiceUrl = new ServiceUrl
+            {
+                Host = serverCallContext.Host,
+                Path = serverCallContext.Method,
+                Scheme = "grpc"
+            };
 
             var responseFeature = context.Features.Get<IGrpcServerResponseFeature>();
             responseFeature.Response = await responseFeature.GetResponseAsync();
