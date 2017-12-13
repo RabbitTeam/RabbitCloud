@@ -4,10 +4,12 @@ using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.ApplicationModels;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Grpc.Utilities
 {
@@ -201,6 +203,27 @@ namespace Rabbit.Cloud.Grpc.Utilities
         }
 
         #endregion Method Type
+
+        private static readonly ConcurrentDictionary<Type, Func<object, Task>> CallResulltWrappers = new ConcurrentDictionary<Type, Func<object, Task>>();
+
+        public static Task WrapperCallResuleToTask(object callResult)
+        {
+            var type = callResult.GetType();
+
+            if (CallResulltWrappers.TryGetValue(type, out var value))
+                return value(callResult);
+
+            var parameterExpression = Expression.Parameter(typeof(object));
+
+            var convertExpression = Expression.Convert(parameterExpression, type);
+
+            var responseAsyncPropertyExpression = Expression.Property(convertExpression, nameof(AsyncUnaryCall<object>.ResponseAsync));
+            var func = Expression.Lambda<Func<object, Task>>(responseAsyncPropertyExpression, parameterExpression).Compile();
+
+            CallResulltWrappers.TryAdd(type, func);
+
+            return func(callResult);
+        }
 
         public static Type GetRequestType(MethodInfo method)
         {

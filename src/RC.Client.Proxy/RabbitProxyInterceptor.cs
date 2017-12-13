@@ -26,7 +26,7 @@ namespace Rabbit.Cloud.Client.Proxy
         {
             #region Field
 
-            private static readonly ConcurrentDictionary<Type, Lazy<Func<RabbitProxyInterceptor, IInvocation, Task>>> Caches = new ConcurrentDictionary<Type, Lazy<Func<RabbitProxyInterceptor, IInvocation, Task>>>();
+            private static readonly ConcurrentDictionary<Type, Func<RabbitProxyInterceptor, IInvocation, Task>> Caches = new ConcurrentDictionary<Type, Func<RabbitProxyInterceptor, IInvocation, Task>>();
 
             #endregion Field
 
@@ -34,14 +34,18 @@ namespace Rabbit.Cloud.Client.Proxy
             {
                 var key = returnType;
 
-                return Caches.GetOrAdd(key, new Lazy<Func<RabbitProxyInterceptor, IInvocation, Task>>(() =>
-                {
-                    var invocationParameterExpression = Expression.Parameter(typeof(IInvocation));
-                    var instanceParameterExpression = Expression.Parameter(typeof(RabbitProxyInterceptor), "instance");
+                if (Caches.TryGetValue(key, out var handler))
+                    return handler;
 
-                    var callExpression = Expression.Call(instanceParameterExpression, nameof(HandleAsync), new[] { returnType }, invocationParameterExpression);
-                    return Expression.Lambda<Func<RabbitProxyInterceptor, IInvocation, Task>>(callExpression, instanceParameterExpression, invocationParameterExpression).Compile();
-                })).Value;
+                var invocationParameterExpression = Expression.Parameter(typeof(IInvocation));
+                var instanceParameterExpression = Expression.Parameter(typeof(RabbitProxyInterceptor), "instance");
+
+                var callExpression = Expression.Call(instanceParameterExpression, nameof(HandleAsync), new[] { returnType }, invocationParameterExpression);
+                handler = Expression.Lambda<Func<RabbitProxyInterceptor, IInvocation, Task>>(callExpression, instanceParameterExpression, invocationParameterExpression).Compile();
+
+                Caches.TryAdd(key, handler);
+
+                return handler;
             }
         }
 
@@ -56,7 +60,7 @@ namespace Rabbit.Cloud.Client.Proxy
 
             if (isTask)
             {
-                returnType = Cloud.Abstractions.Utilities.ReflectionUtilities.GetRealType(returnType);
+                returnType = Abstractions.Utilities.ReflectionUtilities.GetRealType(returnType);
                 var handler = Cache.GetHandler(returnType);
 
                 invocation.ReturnValue = handler(this, invocation);

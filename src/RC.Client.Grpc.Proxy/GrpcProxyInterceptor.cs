@@ -6,14 +6,12 @@ using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Proxy;
-using Rabbit.Cloud.Grpc;
 using Rabbit.Cloud.Grpc.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Grpc.Proxy
@@ -32,34 +30,9 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
         protected override IRabbitContext CreateRabbitContext(IInvocation invocation)
         {
-            var proxyType = invocation.Proxy.GetType();
-            var proxyTypeName = proxyType.Name.Substring(0, proxyType.Name.Length - 5);
-            proxyType = proxyType.GetInterface(proxyTypeName);
-
-            //todo: think of a more reliable way
-            var fullServiceName = FluentUtilities.GetFullServiceName(proxyType, invocation.Method);
-            var clientDefinitionProvider = proxyType.GetTypeAttribute<IClientDefinitionProvider>();
-
             var context = new GrpcRabbitContext();
 
-            var host = clientDefinitionProvider.Host;
-
-            var port = 0;
-            if (host.Contains(":"))
-            {
-                var temp = host.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
-                host = temp[0];
-                if (temp.Length == 2)
-                    int.TryParse(temp[1], out port);
-            }
-
-            context.Request.Url = new ServiceUrl
-            {
-                Scheme = clientDefinitionProvider.Protocol,
-                Host = host,
-                Port = port,
-                Path = fullServiceName
-            };
+            context.Request.Url = GetOrCreateServiceUrl(invocation);
 
             var parameters = invocation.Method.GetParameters();
 
@@ -96,19 +69,64 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
             if (!typeof(Task).IsAssignableFrom(returnType))
                 return response;
 
-            var responseAsyncPropertyAccessor = Cache.GetResponseAsyncAccessor(responseType);
-            var responseAsync = responseAsyncPropertyAccessor(response);
+            var responseAsync = FluentUtilities.WrapperCallResuleToTask(response);
+            await responseAsync;
 
             if (!returnType.IsGenericType)
                 return responseAsync;
 
-            await responseAsync;
-
-            var taskResultAccessor = Cache.GetTaskResultAccessor(responseAsync);
-            return taskResultAccessor(responseAsync);
+            var result = Cache.GetTaskResult(responseAsync);
+            return result;
         }
 
         #endregion Overrides of RabbitProxyInterceptor
+
+        #region Private Method
+
+        private readonly ConcurrentDictionary<Type, ServiceUrl> _serviceUrlCaches = new ConcurrentDictionary<Type, ServiceUrl>();
+
+        public static ServiceUrl CreateServiceUrl(IInvocation invocation)
+        {
+            var proxyType = invocation.Proxy.GetType();
+            var proxyTypeName = proxyType.Name.Substring(0, proxyType.Name.Length - 5);
+            proxyType = proxyType.GetInterface(proxyTypeName);
+
+            //todo: think of a more reliable way
+            var fullServiceName = FluentUtilities.GetFullServiceName(proxyType, invocation.Method);
+            var clientDefinitionProvider = proxyType.GetTypeAttribute<IClientDefinitionProvider>();
+
+            var host = clientDefinitionProvider.Host;
+            var port = 0;
+            if (host.Contains(":"))
+            {
+                var temp = host.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+                host = temp[0];
+                if (temp.Length == 2)
+                    int.TryParse(temp[1], out port);
+            }
+
+            return new ServiceUrl
+            {
+                Host = host,
+                Path = fullServiceName,
+                Port = port,
+                Scheme = clientDefinitionProvider.Protocol
+            };
+        }
+
+        private ServiceUrl GetOrCreateServiceUrl(IInvocation invocation)
+        {
+            var type = invocation.Proxy.GetType();
+            if (_serviceUrlCaches.TryGetValue(type, out var url))
+                return url;
+
+            url = CreateServiceUrl(invocation);
+            _serviceUrlCaches.TryAdd(type, url);
+
+            return url;
+        }
+
+        #endregion Private Method
 
         #region Help Type
 
@@ -116,53 +134,27 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
         {
             #region Field
 
-            private static readonly ConcurrentDictionary<object, Lazy<object>> Caches = new ConcurrentDictionary<object, Lazy<object>>();
+            private static readonly ConcurrentDictionary<Type, Func<Task, object>> Caches = new ConcurrentDictionary<Type, Func<Task, object>>();
 
             #endregion Field
 
-            public static Func<object, Task> GetResponseAsyncAccessor(Type type)
-            {
-                var key = ("ResponseAsyncAccessor", type);
-
-                return GetCache(key, () =>
-                {
-                    var parameterExpression = Expression.Parameter(typeof(object));
-                    var convertExpression = Expression.Convert(parameterExpression, type);
-
-                    var responseAsyncPropertyExpression = Expression.Property(convertExpression, nameof(AsyncUnaryCall<object>.ResponseAsync));
-                    return Expression.Lambda<Func<object, Task>>(responseAsyncPropertyExpression, parameterExpression).Compile();
-                });
-            }
-
-            public static Func<Task, object> GetTaskResultAccessor(Task task)
+            public static object GetTaskResult(Task task)
             {
                 var type = task.GetType();
                 if (!type.IsGenericType)
                     throw new ArgumentException("type is not Task<>.", nameof(type));
 
-                var key = ("TaskResultAccessor", type);
+                if (Caches.TryGetValue(type, out var accesser))
+                    return accesser(task);
 
-                return GetCache(key, () =>
-                {
-                    var parameterExpression = Expression.Parameter(typeof(object));
+                var parameterExpression = Expression.Parameter(typeof(Task));
+                var convertExpression = Expression.Convert(parameterExpression, task.GetType());
 
-                    var getAwaiterMethodInfo = type.GetMethod(nameof(Task<object>.GetAwaiter));
+                accesser = Expression.Lambda<Func<Task, object>>(Expression.Property(convertExpression, "Result"), parameterExpression).Compile();
+                Caches.TryAdd(type, accesser);
 
-                    var callExpression = Expression.Call(Expression.Call(Expression.Convert(parameterExpression, type), getAwaiterMethodInfo), nameof(TaskAwaiter.GetResult), null);
-
-                    return Expression.Lambda<Func<Task, object>>(callExpression, parameterExpression).Compile();
-                });
+                return accesser(task);
             }
-
-            #region Private Method
-
-            private static T GetCache<T>(object key, Func<T> factory)
-            {
-                var item = Caches.GetOrAdd(key, new Lazy<object>(() => factory()));
-                return (T)item.Value;
-            }
-
-            #endregion Private Method
         }
 
         #endregion Help Type

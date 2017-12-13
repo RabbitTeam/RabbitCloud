@@ -6,10 +6,8 @@ using Rabbit.Cloud.Client.Grpc.Features;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Abstractions.Client;
 using Rabbit.Cloud.Grpc.Abstractions.Utilities.Extensions;
+using Rabbit.Cloud.Grpc.Utilities;
 using System;
-using System.Collections.Concurrent;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Grpc
@@ -58,8 +56,7 @@ namespace Rabbit.Cloud.Client.Grpc
                 context.Features.Get<IGrpcResponseFeature>().Response = response;
 
                 //todo: await result, may trigger exception.
-                var awaiterAction = Cache.GetAwaiterAction(response.GetType());
-                awaiterAction(response);
+                await FluentUtilities.WrapperCallResuleToTask(response);
             }
             catch (RpcException rpcException)
             {
@@ -68,33 +65,5 @@ namespace Rabbit.Cloud.Client.Grpc
 
             await _next(context);
         }
-
-        #region Help Type
-
-        private static class Cache
-        {
-            private static readonly ConcurrentDictionary<Type, Lazy<Action<object>>> Caches = new ConcurrentDictionary<Type, Lazy<Action<object>>>();
-
-            public static Action<object> GetAwaiterAction(Type type)
-            {
-                var item = Caches.GetOrAdd(type, k =>
-                  {
-                      return new Lazy<Action<object>>(() =>
-                      {
-                          var getAwaiterMethod = type.GetMethod(nameof(Task.GetAwaiter));
-                          var parameterExpression = Expression.Parameter(typeof(object));
-                          var callExpression =
-                              Expression.Call(
-                                  Expression.Call(Expression.Convert(parameterExpression, type), getAwaiterMethod),
-                                  nameof(TaskAwaiter.GetResult), null);
-                          return Expression.Lambda<Action<object>>(callExpression, parameterExpression).Compile();
-                      });
-                  });
-
-                return item.Value;
-            }
-        }
-
-        #endregion Help Type
     }
 }
