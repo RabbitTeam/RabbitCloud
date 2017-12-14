@@ -9,19 +9,19 @@ namespace Rabbit.Cloud.Serialization.Protobuf
     {
         #region Overrides of Serializer
 
-        protected override bool DoSerialize(Stream stream, object instance)
+        protected override bool CanHandle(Type type)
         {
-            if (!IsProtobuf(instance.GetType()))
-                return false;
+            return IsProtobuf(type);
+        }
 
+        protected override void DoSerialize(Stream stream, object instance)
+        {
             ProtoBuf.Serializer.Serialize(stream, instance);
-
-            return true;
         }
 
         protected override object DoDeserialize(Type type, Stream stream)
         {
-            return IsProtobuf(type) ? ProtoBuf.Serializer.Deserialize(type, stream) : null;
+            return ProtoBuf.Serializer.Deserialize(type, stream);
         }
 
         #endregion Overrides of Serializer

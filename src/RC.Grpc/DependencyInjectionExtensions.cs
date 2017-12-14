@@ -60,35 +60,9 @@ namespace Rabbit.Cloud.Grpc
                 .AddSingleton<ApplicationModelHolder, ApplicationModelHolder>()
                 .AddSingleton<IMethodProvider, MethodProvider>()
                 .AddSingleton<IServerServiceDefinitionProvider, ServerServiceDefinitionProvider>()
-                .AddSingleton<IServerMethodInvokerFactory, DefaultServerMethodInvokerFactory>();
+                .AddSingleton<IServerMethodInvokerFactory, DefaultServerMethodInvokerFactory>()
+                .AddSingleton<SerializerCacheTable, SerializerCacheTable>();
         }
-
-        /*        public static IServiceCollection AddGrpcFluent(this IServiceCollection services,
-                    Action<GrpcOptions> configure)
-                {
-                    if (configure == null)
-                        throw new ArgumentNullException(nameof(configure));
-
-                    return services
-                        .Configure<GrpcOptions>(options =>
-                        {
-                            foreach (var type in GetTypes())
-                                options.ScanTypes.Add(type);
-                            configure(options);
-                        });
-                }
-
-                public static IServiceCollection AddGrpcFluent(this IServiceCollection services, Func<AssemblyName, bool> assemblyPredicate = null, Func<TypeInfo, bool> typePredicate = null)
-                {
-                    return services
-                        .Configure<GrpcOptions>(options =>
-                        {
-                            foreach (var type in GetTypes(assemblyPredicate, typePredicate))
-                            {
-                                options.ScanTypes.Add(type);
-                            }
-                        });
-                }*/
 
         private static IEnumerable<TypeInfo> GetTypes(Func<AssemblyName, bool> assemblyPredicate = null, Func<TypeInfo, bool> typePredicate = null)
         {

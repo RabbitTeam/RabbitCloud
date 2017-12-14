@@ -1,29 +1,29 @@
 ﻿using Castle.DynamicProxy;
 using Grpc.Core;
-using Microsoft.Extensions.Options;
-using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Proxy;
+using Rabbit.Cloud.Grpc.ApplicationModels.Internal;
 using Rabbit.Cloud.Grpc.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Grpc.Proxy
 {
     public class GrpcProxyInterceptor : RabbitProxyInterceptor
     {
-        private readonly IEnumerable<ISerializer> _serializers;
+        private readonly SerializerCacheTable _serializerCacheTable;
         private static readonly Type[] IgnoreGenericTypes = { typeof(AsyncServerStreamingCall<>), typeof(AsyncDuplexStreamingCall<,>) };
 
-        public GrpcProxyInterceptor(RabbitRequestDelegate invoker, IOptions<RabbitCloudOptions> options) : base(invoker)
+        public GrpcProxyInterceptor(RabbitRequestDelegate invoker, SerializerCacheTable serializerCacheTable) : base(invoker)
         {
-            _serializers = options.Value.Serializers;
+            _serializerCacheTable = serializerCacheTable;
         }
 
         #region Overrides of RabbitProxyInterceptor
@@ -44,7 +44,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
                 index++;
             }
 
-            var requestModel = FluentUtilities.GetRequestModel(dictionary, _serializers);
+            var requestModel = FluentUtilities.GetRequestModel(dictionary, _serializerCacheTable);
 
             context.Request.Request = requestModel;
 
@@ -83,7 +83,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
         #region Private Method
 
-        private readonly ConcurrentDictionary<Type, ServiceUrl> _serviceUrlCaches = new ConcurrentDictionary<Type, ServiceUrl>();
+        private readonly ConcurrentDictionary<MethodInfo, ServiceUrl> _serviceUrlCaches = new ConcurrentDictionary<MethodInfo, ServiceUrl>();
 
         public static ServiceUrl CreateServiceUrl(IInvocation invocation)
         {
@@ -116,14 +116,14 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
         private ServiceUrl GetOrCreateServiceUrl(IInvocation invocation)
         {
-            var type = invocation.Proxy.GetType();
-            if (_serviceUrlCaches.TryGetValue(type, out var url))
-                return url;
+            var key = invocation.Method;
+            if (_serviceUrlCaches.TryGetValue(key, out var url))
+                return new ServiceUrl(url);
 
             url = CreateServiceUrl(invocation);
-            _serviceUrlCaches.TryAdd(type, url);
+            _serviceUrlCaches.TryAdd(key, url);
 
-            return url;
+            return new ServiceUrl(url);
         }
 
         #endregion Private Method

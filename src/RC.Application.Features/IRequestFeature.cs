@@ -14,6 +14,14 @@ namespace Rabbit.Cloud.Application.Features
             Path = uri.AbsolutePath;
         }
 
+        public ServiceUrl(ServiceUrl serviceUrl)
+        {
+            Scheme = serviceUrl.Scheme;
+            Host = serviceUrl.Host;
+            Port = serviceUrl.Port;
+            Path = serviceUrl.Path;
+        }
+
         public ServiceUrl()
         {
         }
@@ -43,7 +51,7 @@ namespace Rabbit.Cloud.Application.Features
         /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
-            return $"{Scheme}://{Host}:{Port}{Path}";
+            return $"{Scheme}://{Host}:{(Port <= 0 ? Path : Port + Path)}";
         }
 
         #endregion Overrides of Object

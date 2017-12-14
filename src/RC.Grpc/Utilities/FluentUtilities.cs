@@ -3,6 +3,7 @@ using Grpc.Core;
 using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.ApplicationModels;
+using Rabbit.Cloud.Grpc.ApplicationModels.Internal;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -250,7 +251,7 @@ namespace Rabbit.Cloud.Grpc.Utilities
             return type.Assembly.FullName == typeof(ServerCallContext).Assembly.FullName;
         }
 
-        public static object GetRequestModel(IDictionary<string, object> arguments, IEnumerable<ISerializer> serializers)
+        public static object GetRequestModel(IDictionary<string, object> arguments, SerializerCacheTable serializerCacheTable)
         {
             arguments = arguments.Where(i => !IsGrpcParameter(i.Value.GetType())).ToDictionary(i => i.Key, i => i.Value);
 
@@ -268,10 +269,9 @@ namespace Rabbit.Cloud.Grpc.Utilities
                         var value = i.Value;
                         if (value == null)
                             return null;
-                        var data = serializers.Serialize(value);
-                        if (data == null)
-                            throw RpcExceptionUtilities.NotFoundSerializer(value.GetType());
-                        return data;
+
+                        var serializer = serializerCacheTable.GetRequiredSerializer(value.GetType());
+                        return serializer.Serialize(value);
                     }).ToDictionary(i => i.Key, i => i.Value == null || !i.Value.Any() ? ByteString.Empty : ByteString.CopyFrom(i.Value));
                     var request = new DynamicRequestModel();
                     foreach (var item in dictionary)

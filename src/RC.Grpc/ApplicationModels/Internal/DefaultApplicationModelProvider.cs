@@ -5,19 +5,47 @@ using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.ApplicationModels;
 using Rabbit.Cloud.Grpc.Utilities;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
 namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
 {
-    public class DefaultApplicationModelProvider : IApplicationModelProvider
+    public class SerializerCacheTable
     {
         private readonly IEnumerable<ISerializer> _serializers;
 
-        public DefaultApplicationModelProvider(IOptions<RabbitCloudOptions> options)
+        public SerializerCacheTable(IOptions<RabbitCloudOptions> options)
         {
             _serializers = options.Value.Serializers;
+        }
+
+        private static readonly ConcurrentDictionary<Type, ISerializer> SerializerCaches = new ConcurrentDictionary<Type, ISerializer>();
+
+        public ISerializer GetRequiredSerializer(Type type)
+        {
+            if (!SerializerCaches.TryGetValue(type, out var serializer))
+            {
+                serializer = _serializers.FindAvailableSerializer(type);
+                if (serializer != null)
+                    SerializerCaches[type] = serializer;
+            }
+
+            if (serializer == null)
+                throw RpcExceptionUtilities.NotFoundSerializer(type);
+
+            return serializer;
+        }
+    }
+
+    public class DefaultApplicationModelProvider : IApplicationModelProvider
+    {
+        private readonly SerializerCacheTable _serializerTable;
+
+        public DefaultApplicationModelProvider(SerializerCacheTable serializerTable)
+        {
+            _serializerTable = serializerTable;
         }
 
         #region Implementation of IApplicationModelProvider
@@ -146,11 +174,8 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
                     return message.ToByteArray();
             }
 
-            var data = _serializers.Serialize(instance);
-            if (data == null)
-                throw RpcExceptionUtilities.NotFoundSerializer(instance.GetType());
-
-            return data;
+            var serializer = _serializerTable.GetRequiredSerializer(instance.GetType());
+            return serializer.Serialize(instance);
         }
 
         private object Deserialize(Type type, byte[] data)
@@ -168,10 +193,8 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
                 return message;
             }
 
-            var value = _serializers.Deserialize(type, data);
-            if (value == null)
-                throw RpcExceptionUtilities.NotFoundSerializer(type);
-            return value;
+            var serializer = _serializerTable.GetRequiredSerializer(type);
+            return serializer.Deserialize(type, data);
         }
 
         #endregion Private Method

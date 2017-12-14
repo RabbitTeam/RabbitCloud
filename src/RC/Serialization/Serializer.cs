@@ -1,6 +1,7 @@
 ﻿using Rabbit.Cloud.Abstractions.Serialization;
 using System;
 using System.IO;
+using System.Runtime.Serialization;
 
 namespace Rabbit.Cloud.Serialization
 {
@@ -8,7 +9,12 @@ namespace Rabbit.Cloud.Serialization
     {
         #region Implementation of ISerializer
 
-        public bool Serialize(Stream stream, object instance)
+        bool ISerializer.CanHandle(Type type)
+        {
+            return CanHandle(type);
+        }
+
+        public void Serialize(Stream stream, object instance)
         {
             if (instance == null)
                 throw new ArgumentNullException(nameof(instance));
@@ -18,7 +24,11 @@ namespace Rabbit.Cloud.Serialization
             if (!stream.CanWrite)
                 throw new ArgumentException("Stream can not write.", nameof(stream));
 
-            return DoSerialize(stream, instance);
+            var type = instance.GetType();
+            if (!CanHandle(type))
+                throw new SerializationException($"Unsupported serialization type:{type}");
+
+            DoSerialize(stream, instance);
         }
 
         public object Deserialize(Type type, Stream stream)
@@ -31,10 +41,15 @@ namespace Rabbit.Cloud.Serialization
             if (!stream.CanRead)
                 throw new ArgumentException("Stream unreadable.", nameof(stream));
 
+            if (!CanHandle(type))
+                throw new SerializationException($"Unsupported serialization type:{type}");
+
             return DoDeserialize(type, stream);
         }
 
-        protected abstract bool DoSerialize(Stream stream, object instance);
+        protected abstract bool CanHandle(Type type);
+
+        protected abstract void DoSerialize(Stream stream, object instance);
 
         protected abstract object DoDeserialize(Type type, Stream stream);
 

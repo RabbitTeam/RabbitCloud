@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Rabbit.Cloud;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.LoadBalance.Builder;
 using Rabbit.Cloud.Client.Proxy;
 using Rabbit.Cloud.Grpc.ApplicationModels;
+using Rabbit.Cloud.Grpc.ApplicationModels.Internal;
 using Rabbit.Extensions.Boot;
 using Samples.Service;
 using System;
@@ -35,7 +34,7 @@ namespace Samples.Client
                 .UseGrpc()
                 .Build();
 
-            var proxyFactory = new ProxyFactory(new[] { new GrpcProxyInterceptor(app, host.Services.GetRequiredService<IOptions<RabbitCloudOptions>>()), });
+            var proxyFactory = new ProxyFactory(new[] { new GrpcProxyInterceptor(app, host.Services.GetRequiredService<SerializerCacheTable>()) });
 
             foreach (var serviceModel in host.Services.GetRequiredService<ApplicationModelHolder>().GetApplicationModel().Services)
             {

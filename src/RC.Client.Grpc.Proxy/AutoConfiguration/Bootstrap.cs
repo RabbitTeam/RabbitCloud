@@ -1,9 +1,9 @@
 ﻿using Castle.DynamicProxy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Proxy;
+using Rabbit.Cloud.Grpc.ApplicationModels.Internal;
 
 namespace Rabbit.Cloud.Client.Grpc.Proxy.AutoConfiguration
 {
@@ -17,8 +17,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy.AutoConfiguration
                     services
                         .AddSingleton<IProxyFactory>(p => new ProxyFactory(new[]
                         {
-                            new GrpcProxyInterceptor(p.GetRequiredService<RabbitRequestDelegate>(),
-                                p.GetRequiredService<IOptions<RabbitCloudOptions>>())
+                            new GrpcProxyInterceptor(p.GetRequiredService<RabbitRequestDelegate>(),p.GetRequiredService<SerializerCacheTable>())
                         }))
                         .AddSingleton<IInterceptor, GrpcProxyInterceptor>()
                         .AddSingleton<IProxyFactory, ProxyFactory>();

@@ -1,7 +1,6 @@
 ﻿using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions.Serialization;
 using Rabbit.Cloud.ApplicationModels;
 using Rabbit.Cloud.Grpc.Utilities;
@@ -14,12 +13,12 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
 {
     public class DefaultServerMethodInvoker : ServerMethodInvoker
     {
-        private readonly RabbitCloudOptions _options;
         private readonly ILogger<DefaultServerMethodInvoker> _logger;
+        private readonly SerializerCacheTable _serializerCacheTable;
 
         public DefaultServerMethodInvoker(MethodModel serverMethod, IServiceProvider services, ILogger<DefaultServerMethodInvoker> logger) : base(serverMethod, services, logger)
         {
-            _options = services.GetRequiredService<IOptions<RabbitCloudOptions>>().Value;
+            _serializerCacheTable = services.GetRequiredService<SerializerCacheTable>();
             _logger = logger;
         }
 
@@ -38,7 +37,8 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
                         args.AddRange(method.GetParameters().Select(p =>
                         {
                             var data = dynamicRequestModel.Items[p.Name];
-                            var value = _options.Serializers.Deserialize(p.ParameterType, data.ToByteArray());
+                            var serializer = _serializerCacheTable.GetRequiredSerializer(p.ParameterType);
+                            var value = serializer.Deserialize(p.ParameterType, data.ToByteArray());
 
                             if (value == null)
                                 throw RpcExceptionUtilities.NotFoundSerializer(p.ParameterType);
