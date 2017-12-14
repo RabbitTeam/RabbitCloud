@@ -4,9 +4,6 @@ using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Client.Grpc.Builder;
 using Rabbit.Cloud.Client.Grpc.Proxy;
 using Rabbit.Cloud.Client.LoadBalance.Builder;
-using Rabbit.Cloud.Client.Proxy;
-using Rabbit.Cloud.Grpc.ApplicationModels;
-using Rabbit.Cloud.Grpc.ApplicationModels.Internal;
 using Rabbit.Extensions.Boot;
 using Samples.Service;
 using System;
@@ -29,18 +26,11 @@ namespace Samples.Client
             var host = hostBuilder.Build();
             await host.StartAsync();
 
-            var app = new RabbitApplicationBuilder(host.Services)
+            var applicationBuilder = new RabbitApplicationBuilder(host.Services)
                 .UseLoadBalance()
-                .UseGrpc()
-                .Build();
+                .UseGrpc();
 
-            var proxyFactory = new ProxyFactory(new[] { new GrpcProxyInterceptor(app, host.Services.GetRequiredService<SerializerCacheTable>()) });
-
-            foreach (var serviceModel in host.Services.GetRequiredService<ApplicationModelHolder>().GetApplicationModel().Services)
-            {
-                services.AddSingleton(serviceModel.Type, proxyFactory.CreateInterfaceProxy(serviceModel.Type));
-            }
-
+            services.InjectionServiceProxy(applicationBuilder);
             {
                 var service = services.BuildServiceProvider().GetRequiredService<ITestService>();
                 var name = "test";
