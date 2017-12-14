@@ -1,7 +1,6 @@
 ﻿using Rabbit.Cloud.Abstractions.Serialization;
 using System;
 using System.IO;
-using System.Runtime.Serialization;
 
 namespace Rabbit.Cloud.Serialization
 {
@@ -21,13 +20,6 @@ namespace Rabbit.Cloud.Serialization
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            if (!stream.CanWrite)
-                throw new ArgumentException("Stream can not write.", nameof(stream));
-
-            var type = instance.GetType();
-            if (!CanHandle(type))
-                throw new SerializationException($"Unsupported serialization type:{type}");
-
             DoSerialize(stream, instance);
         }
 
@@ -37,12 +29,6 @@ namespace Rabbit.Cloud.Serialization
                 throw new ArgumentNullException(nameof(type));
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
-
-            if (!stream.CanRead)
-                throw new ArgumentException("Stream unreadable.", nameof(stream));
-
-            if (!CanHandle(type))
-                throw new SerializationException($"Unsupported serialization type:{type}");
 
             return DoDeserialize(type, stream);
         }

@@ -7,7 +7,9 @@ using Rabbit.Cloud.Grpc.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
@@ -15,13 +17,12 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
     public class SerializerCacheTable
     {
         private readonly IEnumerable<ISerializer> _serializers;
+        private static readonly ConcurrentDictionary<Type, ISerializer> SerializerCaches = new ConcurrentDictionary<Type, ISerializer>();
 
         public SerializerCacheTable(IOptions<RabbitCloudOptions> options)
         {
-            _serializers = options.Value.Serializers;
+            _serializers = new[] { MessageSerializer.Instance }.Concat(options.Value.Serializers).ToArray();
         }
-
-        private static readonly ConcurrentDictionary<Type, ISerializer> SerializerCaches = new ConcurrentDictionary<Type, ISerializer>();
 
         public ISerializer GetRequiredSerializer(Type type)
         {
@@ -36,6 +37,49 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
                 throw RpcExceptionUtilities.NotFoundSerializer(type);
 
             return serializer;
+        }
+    }
+
+    internal class MessageSerializer : ISerializer
+    {
+        public static MessageSerializer Instance { get; } = new MessageSerializer();
+
+        #region Implementation of ISerializer
+
+        public bool CanHandle(Type type)
+        {
+            return typeof(IMessage).IsAssignableFrom(type);
+        }
+
+        public void Serialize(Stream stream, object instance)
+        {
+            var message = (IMessage)instance;
+            message.WriteTo(stream);
+        }
+
+        public object Deserialize(Type type, Stream stream)
+        {
+            var message = Cache.CreateMessage(type);
+            message.MergeFrom(stream);
+            return message;
+        }
+
+        #endregion Implementation of ISerializer
+
+        private static class Cache
+        {
+            private static readonly ConcurrentDictionary<Type, Func<IMessage>> FactoryCaches = new ConcurrentDictionary<Type, Func<IMessage>>();
+
+            public static IMessage CreateMessage(Type type)
+            {
+                if (FactoryCaches.TryGetValue(type, out var factory))
+                    return factory();
+
+                factory = Expression.Lambda<Func<IMessage>>(Expression.Convert(Expression.New(type), typeof(IMessage))).Compile();
+                FactoryCaches.TryAdd(type, factory);
+
+                return factory();
+            }
         }
     }
 
@@ -59,7 +103,6 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
             {
                 var serviceName = FluentUtilities.GetServiceName(type);
 
-                //                var isServerService = type.GetTypeAttribute<GrpcServiceAttribute>() != null;
                 var typeAttributes = type.GetCustomAttributes(false);
                 var serviceModel = new ServiceModel(type, typeAttributes)
                 {
@@ -67,31 +110,10 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
                 };
                 applicationModel.Services.Add(serviceModel);
 
-                /*ServerServiceModel serverService = null;
-                if (isServerService)
-                {
-                    serverService = new ServerServiceModel(type, typeAttributes)
-                    {
-                        ServiceName = serviceName
-                    };
-                    applicationModel.ServerServices.Add(serverService);
-                }*/
-
                 foreach (var methodInfo in GetMethodInfos(type))
                 {
                     var methodModel = CreateMethodModel(serviceModel, methodInfo);
                     serviceModel.Methods.Add(methodModel);
-
-                    /*                    if (!isServerService)
-                                            continue;
-
-                                        var serverMethod = new ServerMethodModel(methodInfo, methodInfo.GetCustomAttributes(false))
-                                        {
-                                            Method = methodModel,
-                                            ServerService = serverService
-                                        };
-
-                                        serverService.ServerMethods.Add(serverMethod);*/
                 }
             }
         }
@@ -154,47 +176,20 @@ namespace Rabbit.Cloud.Grpc.ApplicationModels.Internal
 
         private CodecModel CreateMarshallerModel(MethodModel methodModel, Type marshallerType)
         {
-            //todo: 考虑动态实现
+            var serializer = GetSerializer(marshallerType);
             return new CodecModel(marshallerType.GetTypeInfo(), marshallerType.GetCustomAttributes(false))
             {
-                Deserializer = data => Deserialize(marshallerType, data),
+                Deserializer = data => serializer.Deserialize(marshallerType, data),
                 MethodModel = methodModel,
-                Serializer = Serialize
+                Serializer = serializer.Serialize
             };
         }
 
-        private byte[] Serialize(object instance)
-        {
-            switch (instance)
-            {
-                case null:
-                    return null;
-
-                case IMessage message:
-                    return message.ToByteArray();
-            }
-
-            var serializer = _serializerTable.GetRequiredSerializer(instance.GetType());
-            return serializer.Serialize(instance);
-        }
-
-        private object Deserialize(Type type, byte[] data)
+        private ISerializer GetSerializer(Type type)
         {
             if (type == null)
-                throw new ArgumentNullException(nameof(type));
-            if (data == null)
                 return null;
-
-            if (typeof(IMessage).IsAssignableFrom(type))
-            {
-                //todo: optimization create instance
-                var message = (IMessage)Activator.CreateInstance(type);
-                message.MergeFrom(data);
-                return message;
-            }
-
-            var serializer = _serializerTable.GetRequiredSerializer(type);
-            return serializer.Deserialize(type, data);
+            return typeof(IMessage).IsAssignableFrom(type) ? MessageSerializer.Instance : _serializerTable.GetRequiredSerializer(type);
         }
 
         #endregion Private Method
