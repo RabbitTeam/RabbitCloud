@@ -18,6 +18,7 @@ namespace Rabbit.Cloud.Discovery.Consul
         public int Port { get; set; }
         public string HealthCheckInterval { get; set; }
         public string[] Tags { get; set; }
+        public bool AutomaticRegistration { get; set; } = true;
     }
 
     public static class RabbitConsulOptionsExtensions

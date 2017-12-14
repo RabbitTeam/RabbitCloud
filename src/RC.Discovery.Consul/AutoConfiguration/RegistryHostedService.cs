@@ -28,7 +28,7 @@ namespace Rabbit.Cloud.Discovery.Consul.AutoConfiguration
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            return _registryService.RegisterAsync(ConsulUtil.Create(_options));
+            return !_options.AutomaticRegistration ? Task.CompletedTask : _registryService.RegisterAsync(ConsulUtil.Create(_options));
         }
 
         /// <inheritdoc />
