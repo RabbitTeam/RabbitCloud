@@ -2,7 +2,6 @@
 using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
-using Rabbit.Cloud.Client.Grpc.Features;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Abstractions.Client;
 using Rabbit.Cloud.Grpc.Abstractions.Utilities.Extensions;
@@ -27,11 +26,6 @@ namespace Rabbit.Cloud.Client.Grpc
 
         public async Task Invoke(IRabbitContext context)
         {
-            var grpcRequestFeature = context.Features.Get<IGrpcRequestFeature>();
-
-            if (grpcRequestFeature == null)
-                throw new ArgumentNullException(nameof(grpcRequestFeature));
-
             var requestFeature = context.Features.Get<IRequestFeature>();
             var serviceUrl = requestFeature.ServiceUrl;
 
@@ -46,14 +40,13 @@ namespace Rabbit.Cloud.Client.Grpc
 
             var callInvoker = await _callInvokerFactory.GetCallInvokerAsync(serviceUrl.Host, serviceUrl.Port, requestFeature.ConnectionTimeout);
             // set readTimeout
-            grpcRequestFeature.CallOptions = grpcRequestFeature
-                .CallOptions
+            var callOptions = new CallOptions()
                 .WithDeadline(DateTime.UtcNow.Add(requestFeature.ReadTimeout));
             try
             {
-                var response = callInvoker.Call(method, grpcRequestFeature.Host, grpcRequestFeature.CallOptions, grpcRequestFeature.Request);
+                var response = callInvoker.Call(method, requestFeature.ServiceUrl.Host, callOptions, requestFeature.Request);
 
-                context.Features.Get<IGrpcResponseFeature>().Response = response;
+                context.Features.Get<IResponseFeature>().Response = response;
 
                 //todo: await result, may trigger exception.
                 await FluentUtilities.WrapperCallResuleToTask(response);

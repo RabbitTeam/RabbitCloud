@@ -16,18 +16,17 @@ namespace Rabbit.Cloud.Server.Grpc
 
         public async Task Invoke(IRabbitContext context)
         {
-            var requestFeature = context.Features.Get<IGrpcServerRequestFeature>();
+            var grpcServerFeature = context.Features.Get<IGrpcServerFeature>();
 
-            var serverCallContext = requestFeature.ServerCallContext;
-            requestFeature.ServiceUrl = new ServiceUrl
+            var serverCallContext = grpcServerFeature.ServerCallContext;
+            context.Request.Url = new ServiceUrl
             {
                 Host = serverCallContext.Host,
                 Path = serverCallContext.Method,
                 Scheme = "grpc"
             };
 
-            var responseFeature = context.Features.Get<IGrpcServerResponseFeature>();
-            responseFeature.Response = await responseFeature.GetResponseAsync();
+            context.Response.Response = context.Response.Response ?? await grpcServerFeature.ResponseInvoker();
 
             await _next(context);
         }

@@ -6,6 +6,9 @@ using Rabbit.Cloud.Grpc.ApplicationModels;
 using Rabbit.Cloud.Grpc.ApplicationModels.Internal;
 using System;
 using System.Threading.Tasks;
+using Rabbit.Cloud.Application;
+using Rabbit.Cloud.Application.Features;
+using Rabbit.Cloud.Server.Grpc.Features;
 
 namespace Rabbit.Cloud.Server.Grpc.Internal
 {
@@ -45,11 +48,14 @@ namespace Rabbit.Cloud.Server.Grpc.Internal
 
             public async Task<TResponse> UnaryServerMethod<TRequest, TResponse>(TRequest request, ServerCallContext callContext)
             {
-                var context = new GrpcServerRabbitContext();
+                var context = new RabbitContext();
                 context.Request.Request = request;
-                context.Request.ServerCallContext = callContext;
 
-                context.Response.ResponseInvoker = async () =>
+                var grpcServerFeature = context.Features.GetOrAdd<IGrpcServerFeature>(()=>new GrpcServerFeature());
+
+                grpcServerFeature.ServerCallContext = callContext;
+
+                grpcServerFeature.ResponseInvoker = async () =>
                 {
                     if (context.Response.Response != null)
                         return context.Response.Response;
@@ -59,7 +65,7 @@ namespace Rabbit.Cloud.Server.Grpc.Internal
 
                 await _invoker(context);
 
-                context.Response.ResponseType = typeof(TResponse);
+                grpcServerFeature.ResponseType = typeof(TResponse);
                 return (TResponse)context.Response.Response;
             }
 

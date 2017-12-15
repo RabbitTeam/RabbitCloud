@@ -1,17 +1,24 @@
-﻿using Rabbit.Cloud.ApplicationModels;
+﻿using Grpc.Core;
+using System;
+using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Server.Grpc.Features
 {
     public interface IGrpcServerFeature
     {
-        MethodModel ServerMethod { get; set; }
+        ServerCallContext ServerCallContext { get; set; }
+
+        Type ResponseType { get; set; }
+        Func<Task<object>> ResponseInvoker { get; set; }
     }
 
     public class GrpcServerFeature : IGrpcServerFeature
     {
         #region Implementation of IGrpcServerFeature
 
-        public MethodModel ServerMethod { get; set; }
+        public ServerCallContext ServerCallContext { get; set; }
+        public Type ResponseType { get; set; }
+        public Func<Task<object>> ResponseInvoker { get; set; }
 
         #endregion Implementation of IGrpcServerFeature
     }

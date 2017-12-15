@@ -62,5 +62,6 @@ namespace Rabbit.Cloud.Application.Features
         ServiceUrl ServiceUrl { get; set; }
         TimeSpan ConnectionTimeout { get; set; }
         TimeSpan ReadTimeout { get; set; }
+        object Request { get; set; }
     }
 }

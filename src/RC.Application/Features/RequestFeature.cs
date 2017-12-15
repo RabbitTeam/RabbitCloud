@@ -9,6 +9,7 @@ namespace Rabbit.Cloud.Application.Features
         public ServiceUrl ServiceUrl { get; set; }
         public TimeSpan ConnectionTimeout { get; set; } = TimeSpan.FromSeconds(2);
         public TimeSpan ReadTimeout { get; set; } = TimeSpan.FromSeconds(10);
+        public object Request { get; set; }
 
         #endregion Implementation of IRequestFeature
     }

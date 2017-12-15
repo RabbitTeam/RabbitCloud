@@ -1,6 +1,7 @@
 ﻿using Castle.DynamicProxy;
 using Grpc.Core;
 using Rabbit.Cloud.Abstractions.Utilities;
+using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Proxy;
@@ -30,7 +31,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
         protected override IRabbitContext CreateRabbitContext(IInvocation invocation)
         {
-            var context = new GrpcRabbitContext();
+            var context = new RabbitContext();
 
             context.Request.Url = GetOrCreateServiceUrl(invocation);
 
@@ -53,7 +54,7 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
         protected override async Task<object> ConvertReturnValue(IInvocation invocation, IRabbitContext rabbitContext)
         {
-            var response = ((GrpcRabbitContext)rabbitContext).Response.Response;
+            var response = rabbitContext.Response.Response;
             if (response == null)
                 return null;
 
