@@ -1,9 +1,13 @@
 ﻿using App.Metrics;
+using App.Metrics.Reporting.Elasticsearch;
+using App.Metrics.Reporting.InfluxDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Rabbit.Cloud.Abstractions.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 namespace Rabbit.Cloud.Server.Monitor.AutoConfiguration
 {
@@ -31,27 +35,24 @@ namespace Rabbit.Cloud.Server.Monitor.AutoConfiguration
                 .ConfigureServices((ctx, services) =>
                 {
                     var monitorConfiguration = ctx.Configuration.GetSection("RabbitCloud:Monitor");
+                    var reportConfiguration = monitorConfiguration.GetSection("Report");
+
+                    if (!monitorConfiguration.Exists() || !reportConfiguration.Exists())
+                        return;
+
+                    var reportType = reportConfiguration["Type"];
+
+                    if (string.IsNullOrWhiteSpace(reportType))
+                        return;
 
                     var monitorOptions = monitorConfiguration.Get<MonitorOptions>();
-                    var reportOptions = monitorOptions.Report;
-                    foreach (var section in monitorConfiguration.GetSection("Report").GetChildren())
-                    {
-                        switch (section.Key)
-                        {
-                            case "Type":
-                                reportOptions.Type = section.Value;
-                                break;
-
-                            default:
-                                reportOptions.Attributes[section.Key] = section.Value;
-                                break;
-                        }
-                    }
 
                     if (string.IsNullOrEmpty(monitorOptions.ApplicationName))
                         monitorOptions.ApplicationName = ctx.HostingEnvironment.ApplicationName;
                     if (string.IsNullOrEmpty(monitorOptions.EnvironmentName))
                         monitorOptions.EnvironmentName = ctx.HostingEnvironment.EnvironmentName;
+                    if (string.IsNullOrWhiteSpace(monitorOptions.Server))
+                        monitorOptions.Server = Dns.GetHostName();
 
                     var builder = new MetricsBuilder()
                         .Configuration
@@ -63,12 +64,31 @@ namespace Rabbit.Cloud.Server.Monitor.AutoConfiguration
                                 .AddServerTag(monitorOptions.Server);
                         });
 
-                    switch (monitorOptions.Report?.Type?.ToLower())
+                    var url = reportConfiguration.GetValue<Uri>("Url");
+                    var flushInterval = TimeUtilities.GetTimeSpanBySimpleOrDefault(reportConfiguration["FlushInterval"], TimeSpan.FromSeconds(10));
+                    switch (reportType.ToLower())
                     {
                         case "elasticsearch":
-                            builder.Report.ToElasticsearch(monitorOptions.Report.Attributes["Url"],
-                                monitorOptions.Report.Attributes["Index"]);
+                            builder.Report.ToElasticsearch(options =>
+                            {
+                                options.FlushInterval = flushInterval;
+                                var elasticsearchOptions = new ElasticsearchOptions(url, "null");
+                                reportConfiguration.Bind(elasticsearchOptions);
+                                elasticsearchOptions.BaseUri = url;
+                            });
                             break;
+
+                        case "influxdb":
+                            builder.Report.ToInfluxDb(options =>
+                            {
+                                options.FlushInterval = flushInterval;
+                                var influxDbOptions = reportConfiguration.Get<InfluxDbOptions>();
+                                influxDbOptions.BaseUri = url;
+                            });
+                            break;
+
+                        default:
+                            throw new ArgumentException($"Reporter of type '{reportType}' is not supported");
                     }
 
                     services
