@@ -51,7 +51,7 @@ namespace Rabbit.Cloud.Application.Features
         /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
-            return $"{Scheme}://{Host}:{(Port <= 0 ? Path : Port + Path)}";
+            return Port <= 0 ? $"{Scheme}://{Host}" : $"{Scheme}://{Host}:{Port}";
         }
 
         #endregion Overrides of Object

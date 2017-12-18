@@ -84,16 +84,11 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
         #region Private Method
 
-        private readonly ConcurrentDictionary<MethodInfo, ServiceUrl> _serviceUrlCaches = new ConcurrentDictionary<MethodInfo, ServiceUrl>();
+        private readonly ConcurrentDictionary<(Type, MethodInfo), ServiceUrl> _serviceUrlCaches = new ConcurrentDictionary<(Type, MethodInfo), ServiceUrl>();
 
-        public static ServiceUrl CreateServiceUrl(IInvocation invocation)
+        public static ServiceUrl CreateServiceUrl(Type proxyType, MethodInfo method)
         {
-            var proxyType = invocation.Proxy.GetType();
-            var proxyTypeName = proxyType.Name.Substring(0, proxyType.Name.Length - 5);
-            proxyType = proxyType.GetInterface(proxyTypeName);
-
-            //todo: think of a more reliable way
-            var fullServiceName = FluentUtilities.GetFullServiceName(proxyType, invocation.Method);
+            var fullServiceName = FluentUtilities.GetFullServiceName(proxyType, method);
             var clientDefinitionProvider = proxyType.GetTypeAttribute<IClientDefinitionProvider>();
 
             var host = clientDefinitionProvider.Host;
@@ -117,14 +112,24 @@ namespace Rabbit.Cloud.Client.Grpc.Proxy
 
         private ServiceUrl GetOrCreateServiceUrl(IInvocation invocation)
         {
-            var key = invocation.Method;
+            var proxyType = GetProxyType(invocation);
+
+            var key = (proxyType, invocation.Method);
             if (_serviceUrlCaches.TryGetValue(key, out var url))
                 return new ServiceUrl(url);
 
-            url = CreateServiceUrl(invocation);
+            url = CreateServiceUrl(proxyType, invocation.Method);
             _serviceUrlCaches.TryAdd(key, url);
 
             return new ServiceUrl(url);
+        }
+
+        private static Type GetProxyType(IInvocation invocation)
+        {
+            //todo: think of a more reliable way
+            var proxyType = invocation.Proxy.GetType();
+            var proxyTypeName = proxyType.Name.Substring(0, proxyType.Name.Length - 5);
+            return proxyType.GetInterface(proxyTypeName);
         }
 
         #endregion Private Method
