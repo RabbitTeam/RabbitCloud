@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Grpc.Abstractions.Server;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -38,6 +39,9 @@ namespace Rabbit.Cloud.Server.Grpc.AutoConfiguration
                 _server.Services.Add(definition);
             }
             _server.Start();
+
+            Console.WriteLine($"Now listening on:{_options.Host}:{_options.Port}");
+
             return Task.CompletedTask;
         }
 
