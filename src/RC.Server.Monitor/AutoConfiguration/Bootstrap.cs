@@ -72,7 +72,8 @@ namespace Rabbit.Cloud.Server.Monitor.AutoConfiguration
                             builder.Report.ToElasticsearch(options =>
                             {
                                 options.FlushInterval = flushInterval;
-                                var elasticsearchOptions = new ElasticsearchOptions(url, "null");
+
+                                var elasticsearchOptions = options.Elasticsearch ?? new ElasticsearchOptions(url, "null");
                                 reportConfiguration.Bind(elasticsearchOptions);
                                 elasticsearchOptions.BaseUri = url;
                             });
@@ -82,7 +83,8 @@ namespace Rabbit.Cloud.Server.Monitor.AutoConfiguration
                             builder.Report.ToInfluxDb(options =>
                             {
                                 options.FlushInterval = flushInterval;
-                                var influxDbOptions = reportConfiguration.Get<InfluxDbOptions>();
+                                var influxDbOptions = options.InfluxDb ?? new InfluxDbOptions();
+                                reportConfiguration.Bind(influxDbOptions);
                                 influxDbOptions.BaseUri = url;
                             });
                             break;
