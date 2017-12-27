@@ -1,18 +1,21 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
+using Rabbit.Cloud.Discovery.Consul.Internal;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Discovery.Consul.Registry
 {
     public class ConsulRegistryService : ConsulService, IRegistryService<ConsulRegistration>
     {
+        private readonly ServiceNameResolver _serviceNameResolver;
         private HeartbeatManager _heartbeatManager;
 
         #region Constructor
 
-        public ConsulRegistryService(IOptionsMonitor<ConsulOptions> consulOptionsMonitor, ILoggerFactory loggerFactory) : base(consulOptionsMonitor)
+        public ConsulRegistryService(IOptionsMonitor<ConsulOptions> consulOptionsMonitor, ILoggerFactory loggerFactory, ServiceNameResolver serviceNameResolver) : base(consulOptionsMonitor)
         {
+            _serviceNameResolver = serviceNameResolver;
             var heartbeatManagerLogger = loggerFactory.CreateLogger<HeartbeatManager>();
             consulOptionsMonitor.OnChange(options =>
             {
@@ -28,6 +31,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Registry
         public async Task RegisterAsync(ConsulRegistration registration)
         {
             var serviceRegistration = registration.AgentServiceRegistration;
+            serviceRegistration.Name = _serviceNameResolver.GetConsulNameByLocalName(serviceRegistration.Name);
 
             await ConsulClient.Agent.ServiceRegister(serviceRegistration);
 
@@ -37,6 +41,9 @@ namespace Rabbit.Cloud.Discovery.Consul.Registry
 
         public async Task DeregisterAsync(ConsulRegistration registration)
         {
+            var serviceRegistration = registration.AgentServiceRegistration;
+            serviceRegistration.Name = _serviceNameResolver.GetConsulNameByLocalName(serviceRegistration.Name);
+
             _heartbeatManager.RemoveHeartbeat(registration.ServiceId);
             await ConsulClient.Agent.ServiceDeregister(registration.InstanceId);
         }

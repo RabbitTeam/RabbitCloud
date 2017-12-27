@@ -8,6 +8,7 @@ namespace Rabbit.Cloud.Discovery.Consul
         public string Address { get; set; }
         public string Datacenter { get; set; }
         public string Token { get; set; }
+        public string Prefix { get; set; }
     }
 
     public class ConsulInstanceOptions

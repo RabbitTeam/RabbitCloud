@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Discovery.Abstractions;
+using Rabbit.Cloud.Discovery.Consul.Internal;
 using Rabbit.Cloud.Discovery.Consul.Utilities;
 using System;
 using System.Collections.Concurrent;
@@ -14,6 +15,8 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
 {
     public class ConsulDiscoveryClient : ConsulService, IDiscoveryClient
     {
+        private readonly ServiceNameResolver _serviceNameResolver;
+
         public class InstanceEntry
         {
             public InstanceEntry()
@@ -29,9 +32,10 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
 
         #region Constructor
 
-        public ConsulDiscoveryClient(IOptionsMonitor<ConsulOptions> consulOptionsMonitor, ILogger<ConsulDiscoveryClient> logger)
+        public ConsulDiscoveryClient(IOptionsMonitor<ConsulOptions> consulOptionsMonitor, ILogger<ConsulDiscoveryClient> logger, ServiceNameResolver serviceNameResolver)
             : base(consulOptionsMonitor)
         {
+            _serviceNameResolver = serviceNameResolver;
             var consulClient = ConsulClient;
             Task.Factory.StartNew(async () =>
             {
@@ -57,6 +61,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
                     var criticalServices = response.GroupBy(i => i.ServiceName).Select(i => i.Key).ToArray();
                     if (logger.IsEnabled(LogLevel.Debug))
                         logger.LogDebug($"ready delete critical service info ,{string.Join(",", criticalServices)}");
+
                     foreach (var serviceName in criticalServices)
                         _instances.TryRemove(serviceName, out var _);
                 }
@@ -92,19 +97,20 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
 
         public IReadOnlyCollection<IServiceInstance> GetInstances(string serviceId)
         {
-            if (_instances.TryGetValue(serviceId, out var instances))
+            var consulServiceName = _serviceNameResolver.GetConsulNameByLocalName(serviceId);
+            if (_instances.TryGetValue(consulServiceName, out var instances))
                 return instances.ToArray();
 
             Task.Run(async () =>
             {
                 instances = new List<IServiceInstance>();
 
-                var result = await ConsulClient.Health.Service(serviceId, null, true);
+                var result = await ConsulClient.Health.Service(consulServiceName, null, true);
                 foreach (var instance in result.Response.Where(i => i.Checks.All(c => c.Status.Status == HealthStatus.Passing.Status)).Select(i => ConsulUtil.Create(i.Service)).Where(i => i != null))
                 {
                     instances.Add(instance);
                 }
-                _instances.TryAdd(serviceId, instances);
+                _instances.TryAdd(consulServiceName, instances);
             }).Wait();
 
             return instances.ToArray();

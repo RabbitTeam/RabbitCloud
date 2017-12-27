@@ -12,12 +12,12 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.0.0" />
+    <PackageReference Include="Rabbit.Extensions.Boot" Version="1.0.0-preview6" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RC.Abstractions\RC.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
-    <ProjectReference Include="..\RC.Hosting\RC.Hosting.csproj" />
   </ItemGroup>
 
 </Project>

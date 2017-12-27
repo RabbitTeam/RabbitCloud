@@ -3,6 +3,7 @@ using Rabbit.Cloud.Discovery.Abstractions;
 using Rabbit.Cloud.Discovery.Consul.Discovery;
 using Rabbit.Cloud.Discovery.Consul.Registry;
 using System;
+using Rabbit.Cloud.Discovery.Consul.Internal;
 
 namespace Rabbit.Cloud.Discovery.Consul
 {
@@ -22,7 +23,8 @@ namespace Rabbit.Cloud.Discovery.Consul
         public static IServiceCollection AddConsulRegistry(this IServiceCollection services)
         {
             return services
-                .AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>();
+                .AddSingleton<IRegistryService<ConsulRegistration>, ConsulRegistryService>()
+                .AddSingleton<ServiceNameResolver>();
         }
     }
 }
