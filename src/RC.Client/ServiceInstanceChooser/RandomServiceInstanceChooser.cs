@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Rabbit.Cloud.Client.Abstractions.ServiceInstanceChooser
+namespace Rabbit.Cloud.Client.ServiceInstanceChooser
 {
     internal class RandomStatic
     {

@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Rabbit.Cloud.Client.Abstractions;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Client.Abstractions.ServiceInstanceChooser
+namespace Rabbit.Cloud.Client.ServiceInstanceChooser
 {
     public interface IServiceInstanceChooserCollection : IEnumerable<IServiceInstanceChooser>
     {

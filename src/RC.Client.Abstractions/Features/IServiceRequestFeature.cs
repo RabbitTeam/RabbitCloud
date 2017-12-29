@@ -1,5 +1,4 @@
-﻿using Rabbit.Cloud.Client.Abstractions.ServiceInstanceChooser;
-using Rabbit.Cloud.Discovery.Abstractions;
+﻿using Rabbit.Cloud.Discovery.Abstractions;
 using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Client.Abstractions.Features

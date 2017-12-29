@@ -1,9 +1,10 @@
 ﻿using Rabbit.Cloud.Application.Features;
-using Rabbit.Cloud.Client.Abstractions.ServiceInstanceChooser;
+using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Discovery.Abstractions;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Client.Abstractions.Features
+namespace Rabbit.Cloud.Client.Features
 {
     public class ServiceRequestFeature : IServiceRequestFeature
     {

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Client.Abstractions
+namespace Rabbit.Cloud.Client
 {
     public class RequestOptionMiddleware
     {

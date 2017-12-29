@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Discovery.Abstractions;
 using System;
@@ -7,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Client.Abstractions
+namespace Rabbit.Cloud.Client
 {
     public class ClientMiddleware
     {
@@ -22,13 +23,22 @@ namespace Rabbit.Cloud.Client.Abstractions
 
         public async Task Invoke(IRabbitContext context)
         {
-            await RequestAsync(context);
+            var serviceRequestFeature = context.Features.Get<IServiceRequestFeature>();
+            try
+            {
+                await RequestAsync(context, serviceRequestFeature);
+            }
+            catch (Exception e)
+            {
+                var clientException = e as RabbitClientException ?? new RabbitClientException($"Request service '{serviceRequestFeature.ServiceName}' failed.", 400, e);
+                context.Response.StatusCode = clientException.StatusCode;
+
+                throw clientException;
+            }
         }
 
-        private async Task RequestAsync(IRabbitContext context)
+        private async Task RequestAsync(IRabbitContext context, IServiceRequestFeature serviceRequestFeature)
         {
-            var serviceRequestFeature = context.Features.Get<IServiceRequestFeature>();
-
             var requestOptions = serviceRequestFeature.RequestOptions;
 
             //最少调用一次

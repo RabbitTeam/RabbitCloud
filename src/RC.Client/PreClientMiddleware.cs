@@ -1,9 +1,10 @@
 ﻿using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Abstractions.Features;
+using Rabbit.Cloud.Client.Features;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Client.Abstractions
+namespace Rabbit.Cloud.Client
 {
     public class PreClientMiddleware
     {

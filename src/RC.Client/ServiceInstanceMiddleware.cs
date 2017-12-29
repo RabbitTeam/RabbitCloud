@@ -4,7 +4,7 @@ using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Discovery.Abstractions;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Client.Abstractions
+namespace Rabbit.Cloud.Client
 {
     public class ServiceInstanceMiddleware
     {

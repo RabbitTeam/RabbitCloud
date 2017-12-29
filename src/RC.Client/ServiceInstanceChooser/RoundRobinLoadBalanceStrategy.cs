@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Rabbit.Cloud.Client.Abstractions.ServiceInstanceChooser
+namespace Rabbit.Cloud.Client.ServiceInstanceChooser
 {
     public class RoundRobinLoadBalanceStrategy : ServiceInstanceChooser
     {

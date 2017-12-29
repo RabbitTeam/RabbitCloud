@@ -1,7 +1,7 @@
 ﻿using Rabbit.Cloud.Discovery.Abstractions;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Client.Abstractions.ServiceInstanceChooser
+namespace Rabbit.Cloud.Client.Abstractions
 {
     public interface IServiceInstanceChooser
     {

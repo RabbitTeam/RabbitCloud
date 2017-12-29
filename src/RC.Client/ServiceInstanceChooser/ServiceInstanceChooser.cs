@@ -1,8 +1,9 @@
-﻿using Rabbit.Cloud.Discovery.Abstractions;
+﻿using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Discovery.Abstractions;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Rabbit.Cloud.Client.Abstractions.ServiceInstanceChooser
+namespace Rabbit.Cloud.Client.ServiceInstanceChooser
 {
     public abstract class ServiceInstanceChooser : IServiceInstanceChooser
     {
