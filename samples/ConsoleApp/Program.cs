@@ -152,6 +152,7 @@ namespace ConsoleApp
 
                     await n();
                 })
+                .UseMiddleware<PreGrpcMiddleware>()
                 .UseMiddleware<GrpcMiddleware>()
                 //                .UseMiddleware<HttpMiddleware>()
                 .Build();

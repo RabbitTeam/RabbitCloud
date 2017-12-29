@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace Rabbit.Cloud.Grpc.Abstractions.Utilities.Extensions
+namespace Rabbit.Cloud.Grpc.Utilities.Extensions
 {
     public static class CallInvokerExtensions
     {

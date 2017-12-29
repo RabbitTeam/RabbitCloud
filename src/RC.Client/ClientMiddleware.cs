@@ -30,7 +30,7 @@ namespace Rabbit.Cloud.Client
             }
             catch (Exception e)
             {
-                var clientException = e as RabbitClientException ?? new RabbitClientException($"Request service '{serviceRequestFeature.ServiceName}' failed.", 400, e);
+                var clientException = e as RabbitClientException ?? ExceptionUtilities.ServiceRequestFailure(serviceRequestFeature.ServiceName, 400, e);
                 context.Response.StatusCode = clientException.StatusCode;
 
                 throw clientException;
@@ -80,7 +80,7 @@ namespace Rabbit.Cloud.Client
                 return chooser.Choose(GetAvailableServiceInstances());
             }
 
-            Exception lastException = null;
+            IList<Exception> exceptions = null;
             for (var i = 0; i < retriesNextServer; i++)
             {
                 var serviceInstance = ChooseServiceInstance();
@@ -95,7 +95,11 @@ namespace Rabbit.Cloud.Client
                     }
                     catch (Exception e)
                     {
-                        lastException = e;
+                        if (exceptions == null)
+                            exceptions = new List<Exception>();
+
+                        exceptions.Add(e);
+
                         _logger.LogError(e, "请求失败。");
 
                         //只有服务器错误才进行重试
@@ -107,9 +111,8 @@ namespace Rabbit.Cloud.Client
                     }
                 }
             }
-
-            if (lastException != null)
-                throw lastException;
+            if (exceptions != null && exceptions.Any())
+                throw new AggregateException(exceptions);
         }
     }
 }

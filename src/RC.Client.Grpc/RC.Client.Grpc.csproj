@@ -16,7 +16,6 @@
     <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
     <ProjectReference Include="..\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
-    <ProjectReference Include="..\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Grpc\RC.Grpc.csproj" />
   </ItemGroup>
 

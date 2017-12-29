@@ -15,5 +15,10 @@ namespace Rabbit.Cloud.Client.Abstractions
         {
             throw new RabbitClientException($"Request '{url}' timed out", 503);
         }
+
+        public static RabbitClientException ServiceRequestFailure(string serviceId, int statusCode, Exception exception)
+        {
+            return new RabbitClientException($"Request service '{serviceId}' failed.", statusCode, exception);
+        }
     }
 }
