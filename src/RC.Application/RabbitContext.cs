@@ -1,4 +1,5 @@
-﻿using Rabbit.Cloud.Application.Abstractions;
+﻿using Microsoft.Extensions.Primitives;
+using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Application.Features;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ namespace Rabbit.Cloud.Application
     public class RabbitRequest : IRabbitRequest
     {
         private static readonly Func<IFeatureCollection, IRequestFeature> NullRequestFeature = f => null;
+        private static readonly Func<IFeatureCollection, IQueryFeature> NewQueryFeature = f => new QueryFeature(f);
 
         private FeatureReferences<FeatureInterfaces> _features;
 
@@ -20,20 +22,59 @@ namespace Rabbit.Cloud.Application
         private IRequestFeature RequestFeature =>
             _features.Fetch(ref _features.Cache.Request, NullRequestFeature);
 
+        private IQueryFeature QueryFeature =>
+            _features.Fetch(ref _features.Cache.Query, NewQueryFeature);
+
         #region Implementation of IRabbitRequest
 
         public IRabbitContext RabbitContext { get; }
 
-        public ServiceUrl Url
+        public string Scheme
         {
-            get => RequestFeature.ServiceUrl;
-            set => RequestFeature.ServiceUrl = value;
+            get => RequestFeature.Scheme;
+            set => RequestFeature.Scheme = value;
         }
 
-        public object Request
+        public string Host
         {
-            get => RequestFeature.Request;
-            set => RequestFeature.Request = value;
+            get => RequestFeature.Host;
+            set => RequestFeature.Host = value;
+        }
+
+        public int Port
+        {
+            get => RequestFeature.Port;
+            set => RequestFeature.Port = value;
+        }
+
+        public string Path
+        {
+            get => RequestFeature.Path;
+            set => RequestFeature.Path = value;
+        }
+
+        public string QueryString
+        {
+            get => RequestFeature.QueryString;
+            set => RequestFeature.QueryString = value;
+        }
+
+        public IDictionary<string, StringValues> Query
+        {
+            get => QueryFeature.Query;
+            set => QueryFeature.Query = value;
+        }
+
+        public IDictionary<string, StringValues> Headers
+        {
+            get => RequestFeature.Headers;
+            set => RequestFeature.Headers = value;
+        }
+
+        public object Body
+        {
+            get => RequestFeature.Body;
+            set => RequestFeature.Body = value;
         }
 
         #endregion Implementation of IRabbitRequest
@@ -41,6 +82,7 @@ namespace Rabbit.Cloud.Application
         private struct FeatureInterfaces
         {
             public IRequestFeature Request;
+            public IQueryFeature Query;
         }
     }
 
@@ -63,10 +105,22 @@ namespace Rabbit.Cloud.Application
 
         public IRabbitContext RabbitContext { get; }
 
-        public object Response
+        public int StatusCode
         {
-            get => ResponseFeature.Response;
-            set => ResponseFeature.Response = value;
+            get => ResponseFeature.StatusCode;
+            set => ResponseFeature.StatusCode = value;
+        }
+
+        public IDictionary<string, StringValues> Headers
+        {
+            get => ResponseFeature.Headers;
+            set => ResponseFeature.Headers = value;
+        }
+
+        public object Body
+        {
+            get => ResponseFeature.Body;
+            set => ResponseFeature.Body = value;
         }
 
         #endregion Implementation of IRabbitResponse

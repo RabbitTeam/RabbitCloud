@@ -1,8 +1,0 @@
-﻿using Rabbit.Cloud.Client.Features;
-
-namespace Rabbit.Cloud.Client.Http.Features
-{
-    public interface IHttpResponseFeature : IResponseFeature
-    {
-    }
-}

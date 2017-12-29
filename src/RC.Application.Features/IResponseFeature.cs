@@ -1,7 +1,12 @@
-﻿namespace Rabbit.Cloud.Application.Features
+﻿using Microsoft.Extensions.Primitives;
+using System.Collections.Generic;
+
+namespace Rabbit.Cloud.Application.Features
 {
     public interface IResponseFeature
     {
-        object Response { get; set; }
+        int StatusCode { get; set; }
+        IDictionary<string, StringValues> Headers { get; set; }
+        object Body { get; set; }
     }
 }

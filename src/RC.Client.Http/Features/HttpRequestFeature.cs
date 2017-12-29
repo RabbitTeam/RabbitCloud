@@ -1,18 +1,15 @@
-﻿using Rabbit.Cloud.Client.Features;
-using System.Net.Http;
-
-namespace Rabbit.Cloud.Client.Http.Features
+﻿namespace Rabbit.Cloud.Client.Http.Features
 {
-    public class HttpRequestFeature : RequestFeature, IHttpRequestFeature
+    public interface IHttpRequestFeature
     {
-        public HttpRequestFeature()
-        {
-            Method = HttpMethod.Get;
-        }
+        string Method { get; set; }
+    }
 
+    public class HttpRequestFeature : IHttpRequestFeature
+    {
         #region Implementation of IHttpRequestFeature
 
-        public HttpMethod Method { get; set; }
+        public string Method { get; set; }
 
         #endregion Implementation of IHttpRequestFeature
     }

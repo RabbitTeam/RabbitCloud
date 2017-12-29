@@ -93,11 +93,11 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
         #region Implementation of IDiscoveryClient
 
         public string Description => "Rabbit Cloud Consul Client";
-        public IReadOnlyCollection<string> Services { get; private set; }
+        public IReadOnlyList<string> Services { get; private set; }
 
-        public IReadOnlyCollection<IServiceInstance> GetInstances(string serviceId)
+        public IReadOnlyList<IServiceInstance> GetInstances(string serviceName)
         {
-            var consulServiceName = _serviceNameResolver.GetConsulNameByLocalName(serviceId);
+            var consulServiceName = _serviceNameResolver.GetConsulNameByLocalName(serviceName);
             if (_instances.TryGetValue(consulServiceName, out var instances))
                 return instances.ToArray();
 

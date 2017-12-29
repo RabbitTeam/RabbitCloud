@@ -1,67 +1,156 @@
-﻿using System;
+﻿using Microsoft.Extensions.Primitives;
+using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Application.Features
 {
-    public class ServiceUrl
-    {
-        public ServiceUrl(string url)
+    /*    internal static class QueryHelper
         {
-            var uri = new Uri(url);
+            public static Dictionary<string, StringValues> ParseNullableQuery(string queryString)
+            {
+                if (string.IsNullOrEmpty(queryString))
+                    return null;
 
-            Scheme = uri.Scheme;
-            Host = uri.Host;
-            Port = uri.Port;
-            Path = uri.AbsolutePath;
+                if (queryString.Contains("?") && !queryString.StartsWith("?"))
+                {
+                    queryString = queryString.Substring(queryString.IndexOf('?'));
+                }
+
+                var names = HttpUtility.ParseQueryString(queryString);
+
+                if (!names.HasKeys())
+                    return null;
+
+                var querys = new Dictionary<string, StringValues>(names.Count);
+
+                foreach (string name in names)
+                {
+                    var item = names[name];
+                    var values = item == null ? StringValues.Empty : new StringValues(item?.Split(','));
+
+                    querys[name] = values;
+                }
+
+                return querys;
+            }
+
+            public static Dictionary<string, StringValues> ParseQuery(string queryString)
+            {
+                return ParseNullableQuery(queryString) ?? new Dictionary<string, StringValues>();
+            }
+
+            public static (string Path, IDictionary<string, StringValues> Query) SplitPathAndQuery(string value)
+            {
+                if (string.IsNullOrEmpty(value))
+                    throw new ArgumentNullException(nameof(value));
+
+                var path = value;
+                IDictionary<string, StringValues> query = null;
+
+                var queryStartIndex = value.IndexOf('?');
+
+                if (queryStartIndex != -1)
+                {
+                    path = value.Substring(0, queryStartIndex);
+                    query = ParseNullableQuery(value.Substring(queryStartIndex));
+                }
+
+                return (path, query);
+            }
         }
 
-        public ServiceUrl(ServiceUrl serviceUrl)
+        public struct ServiceUrl
         {
-            Scheme = serviceUrl.Scheme;
-            Host = serviceUrl.Host;
-            Port = serviceUrl.Port;
-            Path = serviceUrl.Path;
-        }
+            private string _full;
+            private IReadOnlyDictionary<string, StringValues> _query;
 
-        public ServiceUrl()
-        {
-        }
+            public ServiceUrl(string url)
+            {
+                if (string.IsNullOrEmpty(url))
+                    throw new ArgumentException("url is null or empty.", nameof(url));
 
-        private string _scheme;
+                var builder = new UriBuilder(url);
 
-        public string Scheme
-        {
-            get => _scheme;
-            set => _scheme = value?.ToLower();
-        }
+                Scheme = builder.Scheme;
+                Host = builder.Host;
+                Port = builder.Port;
+                Path = builder.Path;
+                QueryString = builder.Query;
+                Fragment = builder.Fragment;
 
-        private string _host;
+                if (string.IsNullOrEmpty(builder.Uri.UserInfo))
+                {
+                    Authority = builder.Uri.Authority;
+                }
+                else
+                {
+                    Authority = builder.Uri.UserInfo + "@" + builder.Uri.Authority;
+                }
 
-        public string Host
-        {
-            get => _host;
-            set => _host = value?.ToLower();
-        }
+                _full = builder.ToString();
+                _query = null;
+            }
 
-        public int Port { get; set; }
-        public string Path { get; set; }
+            #region Property
 
-        #region Overrides of Object
+            public string Scheme { get; }
+            public string Authority { get; }
+            public string Host { get; }
+            public int Port { get; }
+            public string Path { get; }
+            public string QueryString { get; }
 
-        /// <summary>Returns a string that represents the current object.</summary>
-        /// <returns>A string that represents the current object.</returns>
-        public override string ToString()
-        {
-            return Port <= 0 ? $"{Scheme}://{Host}" : $"{Scheme}://{Host}:{Port}";
-        }
+            public IReadOnlyDictionary<string, StringValues> Query
+            {
+                get
+                {
+                    if (_query != null)
+                        return _query;
+                    return _query = QueryHelper.ParseQuery(QueryString);
+                }
+            }
 
-        #endregion Overrides of Object
-    }
+            public string Fragment { get; }
+
+            #endregion Property
+
+            #region Overrides of Object
+
+            /// <summary>Returns a string that represents the current object.</summary>
+            /// <returns>A string that represents the current object.</returns>
+            public override string ToString()
+            {
+                return _full ?? (_full = BuildString());
+            }
+
+            #endregion Overrides of Object
+
+            #region Private Method
+
+            private string BuildString()
+            {
+                var builder = new StringBuilder();
+
+                builder.Append($"{Scheme}://{Authority}");
+                builder.Append(Path);
+                if (!string.IsNullOrEmpty(QueryString))
+                    builder.Append(QueryString);
+                if (!string.IsNullOrEmpty(Fragment))
+                    builder.Append(Fragment);
+
+                return builder.ToString();
+            }
+
+            #endregion Private Method
+        }*/
 
     public interface IRequestFeature
     {
-        ServiceUrl ServiceUrl { get; set; }
-        TimeSpan ConnectionTimeout { get; set; }
-        TimeSpan ReadTimeout { get; set; }
-        object Request { get; set; }
+        string Scheme { get; set; }
+        string Host { get; set; }
+        int Port { get; set; }
+        string Path { get; set; }
+        string QueryString { get; set; }
+        IDictionary<string, StringValues> Headers { get; set; }
+        object Body { get; set; }
     }
 }

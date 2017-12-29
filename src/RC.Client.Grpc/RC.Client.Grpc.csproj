@@ -9,14 +9,15 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc" Version="1.7.1" />
+    <PackageReference Include="Rabbit.Extensions.Boot" Version="1.0.0-preview6" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
+    <ProjectReference Include="..\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Discovery.Abstractions\RC.Discovery.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Grpc.Abstractions\RC.Grpc.Abstractions.csproj" />
     <ProjectReference Include="..\RC.Grpc\RC.Grpc.csproj" />
-    <ProjectReference Include="..\RC.Hosting\RC.Hosting.csproj" />
   </ItemGroup>
 
 </Project>
