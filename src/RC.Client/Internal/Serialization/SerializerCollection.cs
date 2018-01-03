@@ -16,7 +16,7 @@ namespace Rabbit.Cloud.Client.Internal.Serialization
                 if (name == null)
                     throw new ArgumentNullException(nameof(name));
                 if (string.IsNullOrEmpty(name))
-                    throw new ArgumentException("nameof(fullName) is empty.", nameof(name));
+                    throw new ArgumentException($"{nameof(name)} is empty.", nameof(name));
 
                 return _items != null && _items.TryGetValue(name, out var method) ? method : null;
             }
@@ -25,7 +25,7 @@ namespace Rabbit.Cloud.Client.Internal.Serialization
                 if (name == null)
                     throw new ArgumentNullException(nameof(name));
                 if (string.IsNullOrEmpty(name))
-                    throw new ArgumentException("nameof(fullName) is empty.", nameof(name));
+                    throw new ArgumentException($"{nameof(name)} is empty.", nameof(name));
 
                 if (_items != null && value == null)
                     _items.Remove(name);
