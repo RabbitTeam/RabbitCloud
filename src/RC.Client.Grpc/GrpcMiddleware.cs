@@ -1,5 +1,4 @@
 ﻿using Grpc.Core;
-using Rabbit.Cloud.Abstractions;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
@@ -28,17 +27,25 @@ namespace Rabbit.Cloud.Client.Grpc
 
             var serviceInstance = serviceRequestFeature.GetServiceInstance();
 
-            var serviceName = request.Path;
-            var method = grpcFeature.Method;
-
-            if (method == null)
-                throw new RabbitRpcException(RabbitRpcExceptionCode.Forbidden, $"Can not find service '{serviceName}'.");
+            var method = request.Path;
 
             try
             {
-                var callInvoker = grpcFeature.CallInvoker;
+                var channel = grpcFeature.Channel;
                 var callOptions = grpcFeature.CallOptions ?? new CallOptions();
-                var grpcResponse = callInvoker.Call(method, serviceInstance.Host, callOptions, request.Body);
+
+                var t = CallInvokerExtensions.Call(serviceRequestFeature.RequesType,
+                    serviceRequestFeature.ResponseType,
+                    request.Body,
+                    channel,
+                    method,
+                    serviceInstance.Host,
+                    grpcFeature.RequestMarshaller,
+                    grpcFeature.ResponseMarshaller,
+                    callOptions);
+
+                var grpcResponse = t;
+                //                var grpcResponse = callInvoker.Call(method, serviceInstance.Host, callOptions, request.Body);
 
                 //                todo: await result, may trigger exception.
                 var task = FluentUtilities.WrapperCallResuleToTask(grpcResponse);
@@ -49,7 +56,7 @@ namespace Rabbit.Cloud.Client.Grpc
             }
             catch (RpcException rpcException)
             {
-                ExceptionUtilities.ServiceRequestFailure($"{serviceInstance.Host}:{serviceInstance.Port}/{method.FullName}", RpcExceptionExtensions.GetStatusCode(rpcException.Status.StatusCode), rpcException);
+                ExceptionUtilities.ServiceRequestFailure($"{serviceInstance.Host}:{serviceInstance.Port}/{method}", RpcExceptionExtensions.GetStatusCode(rpcException.Status.StatusCode), rpcException);
             }
 
             await _next(context);

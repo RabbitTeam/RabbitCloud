@@ -4,18 +4,20 @@ namespace Rabbit.Cloud.Client.Grpc.Features
 {
     public interface IGrpcFeature
     {
-        CallInvoker CallInvoker { get; set; }
-        IMethod Method { get; set; }
+        Channel Channel { get; set; }
         CallOptions? CallOptions { get; set; }
+        object RequestMarshaller { get; set; }
+        object ResponseMarshaller { get; set; }
     }
 
     public class GrpcFeature : IGrpcFeature
     {
         #region Implementation of IGrpcFeature
 
-        public CallInvoker CallInvoker { get; set; }
-        public IMethod Method { get; set; }
+        public Channel Channel { get; set; }
         public CallOptions? CallOptions { get; set; }
+        public object RequestMarshaller { get; set; }
+        public object ResponseMarshaller { get; set; }
 
         #endregion Implementation of IGrpcFeature
     }

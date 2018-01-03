@@ -1,139 +1,71 @@
 ﻿using Grpc.Core;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Rabbit.Cloud.Grpc.Utilities.Extensions
 {
     public static class CallInvokerExtensions
     {
-        #region Field
-
-        private static readonly ParameterExpression CallInvokerParameterExpression;
-        private static readonly ParameterExpression HostParameterExpression;
-        private static readonly ParameterExpression CallOptionsParameterExpression;
-
-        #endregion Field
-
-        #region Constructor
-
-        static CallInvokerExtensions()
+        public static object Call(Type requestType, Type responseType, object request, Channel channel, string method, string host, object requestMarshaller,
+            object responseMarshaller, CallOptions callOptions)
         {
-            CallInvokerParameterExpression = Expression.Parameter(typeof(CallInvoker), "invoker");
-            HostParameterExpression = Expression.Parameter(typeof(string), "host");
-            CallOptionsParameterExpression = Expression.Parameter(typeof(CallOptions), "callOptions");
+            var callInvocationDetailsFactory = Cache.GetCallInvocationDetails(requestType, responseType);
+
+            var callInvocationDetails = callInvocationDetailsFactory(channel, method, host, requestMarshaller, responseMarshaller, callOptions);
+
+            var invoker = Cache.GetUnaryCallInvoker(requestType, responseType);
+            return invoker(callInvocationDetails, request);
         }
-
-        #endregion Constructor
-
-        public static object BlockingUnaryCall(this CallInvoker callInvoker, IMethod method, string host, CallOptions callOptions, object request)
-        {
-            return callInvoker.Call(nameof(CallInvoker.BlockingUnaryCall), method, host, callOptions, request);
-        }
-
-        public static object Call(this CallInvoker callInvoker, IMethod method, string host, CallOptions callOptions, object request)
-        {
-            return callInvoker.Call(GetCallMethodName(method), method, host, callOptions, request);
-        }
-
-        public static object Call(this CallInvoker callInvoker, string callMethodName, IMethod method, string host, CallOptions callOptions, object request)
-        {
-            var invoker = Cache.GetInvoker(method, callMethodName);
-            return invoker(callInvoker, method, host, callOptions, request);
-        }
-
-        #region Private Method
-
-        private static string GetCallMethodName(IMethod method)
-        {
-            switch (method.Type)
-            {
-                case MethodType.Unary:
-                    return nameof(CallInvoker.AsyncUnaryCall);
-
-                case MethodType.ClientStreaming:
-                    return nameof(CallInvoker.AsyncClientStreamingCall);
-
-                case MethodType.ServerStreaming:
-                    return nameof(CallInvoker.AsyncServerStreamingCall);
-
-                case MethodType.DuplexStreaming:
-                    return nameof(CallInvoker.AsyncDuplexStreamingCall);
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        #endregion Private Method
 
         #region Help Type
 
         private static class Cache
         {
-            private static readonly ConcurrentDictionary<string, Func<CallInvoker, IMethod, string, CallOptions, object, object>> Caches = new ConcurrentDictionary<string, Func<CallInvoker, IMethod, string, CallOptions, object, object>>();
+            private static readonly ConcurrentDictionary<(Type requestType, Type responseType), Func<Channel, string, string, object, object, CallOptions, object>> CallInvocationDetailsFactorys = new ConcurrentDictionary<(Type requestType, Type responseType), Func<Channel, string, string, object, object, CallOptions, object>>();
 
-            public static Func<CallInvoker, IMethod, string, CallOptions, object, object> GetInvoker(IMethod method, string callMethodName)
+            public static Func<Channel, string, string, object, object, CallOptions, object> GetCallInvocationDetails(Type requestType, Type responseType)
             {
-                var key = method.FullName;
-
-                if (Caches.TryGetValue(key, out var invoker))
-                    return invoker;
-
-                var typeArguments = method.GetType().GenericTypeArguments;
-                var requestType = typeArguments[0];
-                var requestParameterExpression = Expression.Parameter(typeof(object));
-                var methodParameterExpression = Expression.Parameter(typeof(IMethod));
-
-                Expression[] parameterExpressions;
-                IEnumerable<ParameterExpression> lambdaParameterExpressions;
-
-                switch (callMethodName)
+                return CallInvocationDetailsFactorys.GetOrAdd((requestType, responseType), key =>
                 {
-                    case nameof(CallInvoker.AsyncClientStreamingCall):
-                    case nameof(CallInvoker.AsyncDuplexStreamingCall):
-                        parameterExpressions = new Expression[]
-                        {
-                                methodParameterExpression,
-                                HostParameterExpression,
-                                CallOptionsParameterExpression
-                        };
-                        lambdaParameterExpressions = new[]
-                        {
-                                CallInvokerParameterExpression,
-                                methodParameterExpression,
-                                HostParameterExpression,
-                                CallOptionsParameterExpression
-                            };
-                        break;
+                    var channelParameterExpression = Expression.Parameter(typeof(Channel), "channel");
+                    var methodParameterExpression = Expression.Parameter(typeof(string), "method");
+                    var hostParameterExpression = Expression.Parameter(typeof(string), "host");
+                    var requestMarshallerParameterExpression = Expression.Parameter(typeof(object), "requestMarshaller");
+                    var responseMarshallerParameterExpression = Expression.Parameter(typeof(object), "responseMarshaller");
+                    var callOptionsParameterExpression = Expression.Parameter(typeof(CallOptions), "callOptions");
 
-                    default:
-                        parameterExpressions = new Expression[]
-                        {
-                                Expression.Convert(methodParameterExpression,method.GetType()),
-                                HostParameterExpression,
-                                CallOptionsParameterExpression,
-                                Expression.Convert(requestParameterExpression,requestType)
-                        };
-                        lambdaParameterExpressions = new[]
-                        {
-                                CallInvokerParameterExpression,
-                                methodParameterExpression,
-                                HostParameterExpression,
-                                CallOptionsParameterExpression,
-                                requestParameterExpression
-                            };
-                        break;
-                }
+                    var type = typeof(CallInvocationDetails<,>).MakeGenericType(requestType, responseType);
+                    var newExpression = Expression.New(type.GetConstructors().Last(),
+                        channelParameterExpression,
+                        methodParameterExpression,
+                        hostParameterExpression,
+                        Expression.Convert(requestMarshallerParameterExpression, typeof(Marshaller<>).MakeGenericType(requestType)),
+                        Expression.Convert(responseMarshallerParameterExpression, typeof(Marshaller<>).MakeGenericType(responseType)),
+                        callOptionsParameterExpression);
 
-                var callExpression = Expression.Call(CallInvokerParameterExpression, callMethodName, typeArguments, parameterExpressions);
+                    return Expression.Lambda<Func<Channel, string, string, object, object, CallOptions, object>>(Expression.Convert(newExpression, typeof(object)), channelParameterExpression,
+                        methodParameterExpression, hostParameterExpression,
+                        requestMarshallerParameterExpression,
+                        responseMarshallerParameterExpression,
+                        callOptionsParameterExpression).Compile();
+                });
+            }
 
-                var lambda = Expression.Lambda<Func<CallInvoker, IMethod, string, CallOptions, object, object>>(callExpression, lambdaParameterExpressions);
-                invoker = lambda.Compile();
+            private static readonly ConcurrentDictionary<(Type requestType, Type responseType), Func<object, object, object>> UnaryCallInvokers = new ConcurrentDictionary<(Type requestType, Type responseType), Func<object, object, object>>();
 
-                Caches.TryAdd(key, invoker);
-                return invoker;
+            public static Func<object, object, object> GetUnaryCallInvoker(Type requestType, Type responseType)
+            {
+                return UnaryCallInvokers.GetOrAdd((requestType, responseType), key =>
+                {
+                    var callInvocationDetailsParameterExpression = Expression.Parameter(typeof(object), "callInvocationDetails");
+                    var requestParameterExpression = Expression.Parameter(typeof(object), "request");
+
+                    var callExpression = Expression.Call(typeof(Calls), nameof(Calls.AsyncUnaryCall), new[] { requestType, responseType }, Expression.Convert(callInvocationDetailsParameterExpression, typeof(CallInvocationDetails<,>).MakeGenericType(requestType, responseType)), Expression.Convert(requestParameterExpression, requestType));
+
+                    return Expression.Lambda<Func<object, object, object>>(callExpression, callInvocationDetailsParameterExpression, requestParameterExpression).Compile();
+                });
             }
         }
 

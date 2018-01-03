@@ -3,8 +3,7 @@ using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
-using Rabbit.Cloud.Grpc.Abstractions;
-using Rabbit.Cloud.Grpc.Abstractions.Client;
+using Rabbit.Cloud.Grpc.Client.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,17 +14,15 @@ namespace Rabbit.Cloud.Client.Grpc
     public class PreGrpcMiddleware
     {
         private readonly RabbitRequestDelegate _next;
-        private readonly ICallInvokerFactory _callInvokerFactory;
-        private readonly IMethodTable _methodTable;
+        private readonly ChannelPool _channelPool;
 
         private static readonly TimeSpan DefaultConnectionTimeout = TimeSpan.FromSeconds(2);
         private static readonly TimeSpan DefaultReadTimeout = TimeSpan.FromSeconds(10);
 
-        public PreGrpcMiddleware(RabbitRequestDelegate next, ICallInvokerFactory callInvokerFactory, IMethodTableProvider methodTableProvider)
+        public PreGrpcMiddleware(RabbitRequestDelegate next, ChannelPool channelPool)
         {
             _next = next;
-            _callInvokerFactory = callInvokerFactory;
-            _methodTable = methodTableProvider.MethodTable;
+            _channelPool = channelPool;
         }
 
         public async Task Invoke(IRabbitContext context)
@@ -46,16 +43,11 @@ namespace Rabbit.Cloud.Client.Grpc
             var connectionTimeout = requestOptions?.ConnectionTimeout ?? DefaultConnectionTimeout;
             var readTimeout = requestOptions?.ReadTimeout ?? DefaultReadTimeout;
 
-            if (grpcFeature.Method == null)
+            if (grpcFeature.Channel == null)
             {
-                var serviceName = request.Path;
-                var method = _methodTable.Get(serviceName);
-                grpcFeature.Method = method;
-            }
-            if (grpcFeature.CallInvoker == null)
-            {
-                var callInvoker = await _callInvokerFactory.GetCallInvokerAsync(serviceInstance.Host, serviceInstance.Port, connectionTimeout);
-                grpcFeature.CallInvoker = callInvoker;
+                var channel = _channelPool.GetChannel(serviceInstance.Host, serviceInstance.Port);
+                await channel.ConnectAsync(DateTime.UtcNow.Add(connectionTimeout));
+                grpcFeature.Channel = channel;
             }
 
             var callOptionsNullable = grpcFeature.CallOptions;
