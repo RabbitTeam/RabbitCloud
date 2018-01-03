@@ -1,5 +1,4 @@
 ﻿using Rabbit.Cloud.Application.Abstractions;
-using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Codec;
 using Rabbit.Cloud.Client.Abstractions.Features;
@@ -10,22 +9,10 @@ namespace Rabbit.Cloud.Client.Features
 {
     public class ServiceRequestFeature : IServiceRequestFeature
     {
-        public ServiceRequestFeature(IRequestFeature requestFeature)
-        {
-            ServiceProtocol = requestFeature.Scheme;
-            if (requestFeature.Port < 0)
-                ServiceName = requestFeature.Host;
-        }
-
         public ServiceRequestFeature(IRabbitRequest request)
         {
             ServiceProtocol = request.Scheme;
-            if (request.Port < 0)
-                ServiceName = request.Host;
-        }
-
-        public ServiceRequestFeature()
-        {
+            ServiceName = request.Host;
         }
 
         #region Implementation of IServiceRequestFeature

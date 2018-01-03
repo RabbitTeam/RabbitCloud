@@ -18,6 +18,9 @@ namespace Rabbit.Cloud.Client.Grpc
         private readonly ICallInvokerFactory _callInvokerFactory;
         private readonly IMethodTable _methodTable;
 
+        private static readonly TimeSpan DefaultConnectionTimeout = TimeSpan.FromSeconds(2);
+        private static readonly TimeSpan DefaultReadTimeout = TimeSpan.FromSeconds(10);
+
         public PreGrpcMiddleware(RabbitRequestDelegate next, ICallInvokerFactory callInvokerFactory, IMethodTableProvider methodTableProvider)
         {
             _next = next;
@@ -40,6 +43,9 @@ namespace Rabbit.Cloud.Client.Grpc
             var serviceInstance = serviceRequestFeature.GetServiceInstance();
             var requestOptions = serviceRequestFeature.RequestOptions;
 
+            var connectionTimeout = requestOptions?.ConnectionTimeout ?? DefaultConnectionTimeout;
+            var readTimeout = requestOptions?.ReadTimeout ?? DefaultReadTimeout;
+
             if (grpcFeature.Method == null)
             {
                 var serviceName = request.Path;
@@ -48,7 +54,7 @@ namespace Rabbit.Cloud.Client.Grpc
             }
             if (grpcFeature.CallInvoker == null)
             {
-                var callInvoker = await _callInvokerFactory.GetCallInvokerAsync(serviceInstance.Host, serviceInstance.Port, requestOptions.ConnectionTimeout);
+                var callInvoker = await _callInvokerFactory.GetCallInvokerAsync(serviceInstance.Host, serviceInstance.Port, connectionTimeout);
                 grpcFeature.CallInvoker = callInvoker;
             }
 
@@ -62,7 +68,7 @@ namespace Rabbit.Cloud.Client.Grpc
                 callOptions = callOptionsNullable.Value;
 
                 if (!callOptions.Deadline.HasValue)
-                    callOptions = callOptions.WithDeadline(DateTime.UtcNow.Add(requestOptions.ReadTimeout));
+                    callOptions = callOptions.WithDeadline(DateTime.UtcNow.Add(readTimeout));
 
                 var headers = callOptions.Headers ?? new Metadata();
                 if (AppendHeaders(headers, request))
@@ -73,7 +79,7 @@ namespace Rabbit.Cloud.Client.Grpc
                 var headers = new Metadata();
                 if (!AppendHeaders(headers, request))
                     headers = null;
-                callOptions = new CallOptions(headers, DateTime.UtcNow.Add(requestOptions.ReadTimeout));
+                callOptions = new CallOptions(headers, DateTime.UtcNow.Add(readTimeout));
             }
 
             grpcFeature.CallOptions = callOptions;

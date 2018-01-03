@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
@@ -13,11 +14,13 @@ namespace Rabbit.Cloud.Client
     {
         private readonly RabbitRequestDelegate _next;
         private readonly ILogger<ClientMiddleware> _logger;
+        private readonly RabbitClientOptions _options;
 
-        public ClientMiddleware(RabbitRequestDelegate next, ILogger<ClientMiddleware> logger)
+        public ClientMiddleware(RabbitRequestDelegate next, ILogger<ClientMiddleware> logger, IOptions<RabbitClientOptions> options)
         {
             _next = next;
             _logger = logger;
+            _options = options.Value;
         }
 
         public async Task Invoke(IRabbitContext context)
@@ -38,7 +41,7 @@ namespace Rabbit.Cloud.Client
 
         private async Task RequestAsync(IRabbitContext context, IServiceRequestFeature serviceRequestFeature)
         {
-            var requestOptions = serviceRequestFeature.RequestOptions;
+            var requestOptions = serviceRequestFeature.RequestOptions ?? _options.DefaultRequestOptions;
 
             //最少调用一次
             var retries = Math.Max(requestOptions.MaxAutoRetries, 0) + 1;

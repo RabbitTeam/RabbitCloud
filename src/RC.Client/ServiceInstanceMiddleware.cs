@@ -32,15 +32,13 @@ namespace Rabbit.Cloud.Client
 
             var requestOptions = serviceRequestFeature.RequestOptions;
 
-            var instances = string.IsNullOrEmpty(serviceRequestFeature.ServiceName) ? null : _discoveryClient.GetInstances(serviceRequestFeature.ServiceName);
+            var instances = serviceRequestFeature.ServiceName == null ? null : _discoveryClient.GetInstances(serviceRequestFeature.ServiceName);
 
             if (instances == null || !instances.Any())
             {
-                if (!string.IsNullOrEmpty(serviceRequestFeature.ServiceName))
-                {
-                    var exception = ExceptionUtilities.NotFindServiceInstance(serviceRequestFeature.ServiceName);
-                    _logger.LogWarning(exception, exception.Message);
-                }
+                //直接请求
+                var exception = ExceptionUtilities.NotFindServiceInstance(serviceRequestFeature.ServiceName);
+                _logger.LogInformation(exception, exception.Message);
 
                 var request = context.Request;
                 var serviceInstance = new ServiceInstance
@@ -53,10 +51,8 @@ namespace Rabbit.Cloud.Client
             }
             else
             {
-                var chooser = _options.Choosers.Get(requestOptions.ServiceChooser) ?? _options.DefaultChooser;
-
+                var chooser = (requestOptions == null || string.IsNullOrEmpty(requestOptions.ServiceChooser) ? null : _options.Choosers.Get(requestOptions.ServiceChooser)) ?? _options.DefaultChooser;
                 chooser = new FairServiceInstanceChooser(chooser);
-
                 serviceRequestFeature.GetServiceInstance = () => chooser.Choose(instances);
             }
 
