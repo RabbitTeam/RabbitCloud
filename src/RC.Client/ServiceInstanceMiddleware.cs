@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
@@ -14,12 +15,14 @@ namespace Rabbit.Cloud.Client
         private readonly RabbitRequestDelegate _next;
         private readonly RabbitClientOptions _options;
         private readonly IDiscoveryClient _discoveryClient;
+        private readonly ILogger<ServiceInstanceMiddleware> _logger;
 
-        public ServiceInstanceMiddleware(RabbitRequestDelegate next, IOptions<RabbitClientOptions> options, IDiscoveryClient discoveryClient)
+        public ServiceInstanceMiddleware(RabbitRequestDelegate next, IOptions<RabbitClientOptions> options, IDiscoveryClient discoveryClient, ILogger<ServiceInstanceMiddleware> logger)
         {
             _next = next;
             _options = options.Value;
             _discoveryClient = discoveryClient;
+            _logger = logger;
         }
 
         public async Task Invoke(IRabbitContext context)
@@ -31,7 +34,10 @@ namespace Rabbit.Cloud.Client
             var instances = _discoveryClient.GetInstances(serviceRequestFeature.ServiceName);
 
             if (instances == null || !instances.Any())
-                throw ExceptionUtilities.NotFindServiceInstance(serviceRequestFeature.ServiceName);
+            {
+                var exception = ExceptionUtilities.NotFindServiceInstance(serviceRequestFeature.ServiceName);
+                _logger.LogWarning(exception, exception.Message);
+            }
 
             var chooser = _options.Choosers.Get(requestOptions.ServiceChooser) ?? _options.DefaultChooser;
 

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using Rabbit.Cloud.Application;
@@ -104,6 +105,10 @@ namespace ConsoleApp
             return WebHost.CreateDefaultBuilder()
                 .UseUrls("http://192.168.18.190:5000")
                 .UseStartup<Startup>()
+                .ConfigureLogging(lb =>
+                {
+                    lb.ClearProviders();
+                })
                 .Build()
                 .StartAsync();
         }
@@ -169,12 +174,13 @@ namespace ConsoleApp
             var rabbitClient = new RabbitClient(app, services);
 
             var response = await rabbitClient.SendAsync<HelloRequest, HelloReply>(
-                $"grpc://Test{Greeter.__Method_SayHello.FullName}",
-                new HelloRequest { Name = "ben" });
+                "grpc://Test/helloworld.Greeter/SayHello"
+                , new HelloRequest { Name = "ben" });
+
             Console.WriteLine(JsonConvert.SerializeObject(response));
 
             response = await rabbitClient.SendAsync<HelloRequest, HelloReply>(
-                $"http://Test{Greeter.__Method_SayHello.FullName}",
+                "http://Test/helloworld.Greeter/SayHello",
                 new HelloRequest { Name = "ben" }, new Dictionary<string, StringValues>
                 {
                     {"Content-Type","application/json" }
