@@ -2,7 +2,6 @@
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
-using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,45 +45,12 @@ namespace Rabbit.Cloud.Client
             //最少使用一个服务
             var retriesNextServer = Math.Max(requestOptions.MaxAutoRetriesNextServer, 0) + 1;
 
-            var serviceInstances = serviceRequestFeature.ServiceInstances;
-
-            if (serviceInstances == null || !serviceInstances.Any())
-                throw ExceptionUtilities.NotFindServiceInstance(serviceRequestFeature.ServiceName);
-
-            var chooser = serviceRequestFeature.Chooser;
-            IList<IServiceInstance> invokedServiceInstances = null;
-
-            void AddInvoked(IServiceInstance serviceInstance)
-            {
-                if (invokedServiceInstances == null)
-                    invokedServiceInstances = new List<IServiceInstance>();
-
-                invokedServiceInstances.Add(serviceInstance);
-            }
-
-            IReadOnlyList<IServiceInstance> GetAvailableServiceInstances()
-            {
-                //没有任何调用过的服务实例则全部返回，否则过滤掉已经调用过的服务实例
-                if (invokedServiceInstances == null || !invokedServiceInstances.Any())
-                    return serviceInstances;
-
-                //所有的服务实例都已经被调用过，则清除重新开始
-                if (invokedServiceInstances.Count == serviceInstances.Count)
-                    invokedServiceInstances.Clear();
-
-                return serviceInstances.Except(invokedServiceInstances).ToArray();
-            }
-
-            IServiceInstance ChooseServiceInstance()
-            {
-                return chooser.Choose(GetAvailableServiceInstances());
-            }
-
             IList<Exception> exceptions = null;
             for (var i = 0; i < retriesNextServer; i++)
             {
-                var serviceInstance = ChooseServiceInstance();
-                serviceRequestFeature.ServiceInstance = serviceInstance;
+                var getServiceInstance = serviceRequestFeature.GetServiceInstance;
+                var serviceInstance = getServiceInstance();
+                serviceRequestFeature.GetServiceInstance = () => serviceInstance;
 
                 for (var j = 0; j < retries; j++)
                 {
@@ -106,8 +72,6 @@ namespace Rabbit.Cloud.Client
                         if (!(e is RabbitClientException rabbitClientException) ||
                             rabbitClientException.StatusCode < 500)
                             throw;
-
-                        AddInvoked(serviceInstance);
                     }
                 }
             }

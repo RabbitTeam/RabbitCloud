@@ -37,7 +37,7 @@ namespace Rabbit.Cloud.Client.Grpc
                 context.Features.Set(grpcFeature);
             }
 
-            var serviceInstance = serviceRequestFeature.ServiceInstance;
+            var serviceInstance = serviceRequestFeature.GetServiceInstance();
             var requestOptions = serviceRequestFeature.RequestOptions;
 
             if (grpcFeature.Method == null)

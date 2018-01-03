@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="..\RC.Application\RC.Application.csproj" />
     <ProjectReference Include="..\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
   </ItemGroup>

@@ -2,7 +2,7 @@
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Discovery.Abstractions;
-using System.Collections.Generic;
+using System;
 
 namespace Rabbit.Cloud.Client.Features
 {
@@ -24,9 +24,7 @@ namespace Rabbit.Cloud.Client.Features
         public string ServiceName { get; set; }
         public string ServiceProtocol { get; set; }
         public ServiceRequestOptions RequestOptions { get; set; }
-        public IReadOnlyList<IServiceInstance> ServiceInstances { get; set; }
-        public IServiceInstanceChooser Chooser { get; set; }
-        public IServiceInstance ServiceInstance { get; set; }
+        public Func<IServiceInstance> GetServiceInstance { get; set; }
 
         #endregion Implementation of IServiceRequestFeature
     }

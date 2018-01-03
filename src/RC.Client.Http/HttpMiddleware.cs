@@ -2,6 +2,9 @@
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -57,19 +60,93 @@ namespace Rabbit.Cloud.Client.Http
         private static HttpRequestMessage CreateHttpRequestMessage(IRabbitContext context)
         {
             var request = context.Request;
-            var instance = context.Features.Get<IServiceRequestFeature>().ServiceInstance;
+            var instance = context.Features.Get<IServiceRequestFeature>().GetServiceInstance();
 
             var authority = instance.Port >= 0 ? $"{instance.Host}:{instance.Port}" : instance.Host;
-            var url = $"{request.Scheme}://{authority}{request.Path}{request.QueryString}";
+            var url = $"{request.Scheme}://{authority}{request.Path}";
+            if (request.QueryString.Length > 1)
+                url += request.QueryString;
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
 
-            foreach (var header in request.Headers)
+            if (request.Body != null)
             {
-                httpRequest.Headers.Add(header.Key, header.Value.ToArray());
+                HttpContent httpContent;
+                if (request.Body is string content)
+                {
+                    httpContent = new StringContent(content);
+                }
+                else if (request.Body is IEnumerable<byte> data)
+                {
+                    httpContent = new ByteArrayContent(data.ToArray());
+                }
+                else if (request.Body is Stream stream)
+                {
+                    httpContent = new StreamContent(stream);
+                }
+                else
+                {
+                    throw new Exception("不支持的Body类型。");
+                }
+                httpRequest.Content = httpContent;
+
+                var method = context.Items.TryGetValue("HttpMethod", out var httpMethod) ? httpMethod.ToString() : null;
+                httpRequest.Method = GetHttpMethod(method, HttpMethod.Post);
+
+                var headers = httpContent.Headers;
+
+                if (request.Headers.ContainsKey("Content-Type"))
+                    headers.ContentType = null;
+
+                foreach (var header in request.Headers)
+                {
+                    headers.Add(header.Key, header.Value.ToArray());
+                }
+            }
+            else
+            {
+                var headers = httpRequest.Headers;
+                foreach (var header in request.Headers)
+                {
+                    headers.Add(header.Key, header.Value.ToArray());
+                }
             }
 
             return httpRequest;
+        }
+
+        private static HttpMethod GetHttpMethod(string method, HttpMethod def)
+        {
+            switch (method?.ToLower())
+            {
+                case "delete":
+                    return HttpMethod.Delete;
+
+                case "get":
+                    return HttpMethod.Get;
+
+                case "head":
+                    return HttpMethod.Head;
+
+                case "options":
+                    return HttpMethod.Options;
+
+                case "post":
+                    return HttpMethod.Post;
+
+                case "put":
+                    return HttpMethod.Put;
+
+                case "trace":
+                    return HttpMethod.Trace;
+
+                case null:
+                case "":
+                    return def;
+
+                default:
+                    return new HttpMethod(method);
+            }
         }
 
         private static async Task SetResponseAsync(IRabbitContext context, HttpResponseMessage httpResponse)

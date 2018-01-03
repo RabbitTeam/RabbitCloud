@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Client.Features;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ namespace Rabbit.Cloud.Client
             Scheme = url.Scheme;
             Host = url.Host;
             Path = url.PathAndQuery.Substring(0, url.PathAndQuery.Length - url.Query.Length);
-            Port = url.Port;
+            Port = url.IsDefaultPort ? -1 : url.Port;
             QueryString = url.Query;
             Body = body;
             Headers = headers != null ? new Dictionary<string, StringValues>(headers, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase);
@@ -48,7 +49,7 @@ namespace Rabbit.Cloud.Client
 
     public interface IRabbitClient
     {
-        Task<RabbitResponseMessage> SendAsync(RabbitRequestMessage request);
+        Task<RabbitResponseMessage> SendAsync<TRequest, TResponse>(RabbitRequestMessage request);
     }
 
     public class RabbitClient : IRabbitClient
@@ -64,7 +65,7 @@ namespace Rabbit.Cloud.Client
 
         #region Implementation of IRabbitClient
 
-        public async Task<RabbitResponseMessage> SendAsync(RabbitRequestMessage request)
+        public async Task<RabbitResponseMessage> SendAsync<TRequest, TResponse>(RabbitRequestMessage request)
         {
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -79,6 +80,13 @@ namespace Rabbit.Cloud.Client
                 rabbitRequest.Port = request.Port;
                 rabbitRequest.QueryString = request.QueryString;
                 rabbitRequest.Body = request.Body;
+                rabbitRequest.Headers = request.Headers;
+
+                rabbitContext.Features.Set<ICodecFeature>(new CodecFeature
+                {
+                    RequesType = typeof(TRequest),
+                    ResponseType = typeof(TResponse)
+                });
 
                 await _requestDelegate(rabbitContext);
 
@@ -98,7 +106,10 @@ namespace Rabbit.Cloud.Client
     {
         public static async Task<TResponse> SendAsync<TRequest, TResponse>(this IRabbitClient rabbitClient, string url, TRequest request, IDictionary<string, StringValues> headers = null)
         {
-            var response = await rabbitClient.SendAsync(new RabbitRequestMessage(new Uri(url), request, headers));
+            var response = await rabbitClient.SendAsync<TRequest, TResponse>(new RabbitRequestMessage(new Uri(url), request, headers));
+            var body = response.Body;
+            if (body is Task<TResponse> task)
+                return await task;
             return (TResponse)response.Body;
         }
     }

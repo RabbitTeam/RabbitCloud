@@ -1,5 +1,5 @@
 ﻿using Rabbit.Cloud.Discovery.Abstractions;
-using System.Collections.Generic;
+using System;
 
 namespace Rabbit.Cloud.Client.Abstractions.Features
 {
@@ -8,8 +8,6 @@ namespace Rabbit.Cloud.Client.Abstractions.Features
         string ServiceName { get; set; }
         string ServiceProtocol { get; set; }
         ServiceRequestOptions RequestOptions { get; set; }
-        IReadOnlyList<IServiceInstance> ServiceInstances { get; set; }
-        IServiceInstanceChooser Chooser { get; set; }
-        IServiceInstance ServiceInstance { get; set; }
+        Func<IServiceInstance> GetServiceInstance { get; set; }
     }
 }

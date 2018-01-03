@@ -26,7 +26,7 @@ namespace Rabbit.Cloud.Client.Grpc
             var serviceRequestFeature = context.Features.Get<IServiceRequestFeature>();
             var grpcFeature = context.Features.Get<IGrpcFeature>();
 
-            var serviceInstance = serviceRequestFeature.ServiceInstance;
+            var serviceInstance = serviceRequestFeature.GetServiceInstance();
 
             var serviceName = request.Path;
             var method = grpcFeature.Method;
@@ -40,11 +40,12 @@ namespace Rabbit.Cloud.Client.Grpc
                 var callOptions = grpcFeature.CallOptions ?? new CallOptions();
                 var grpcResponse = callInvoker.Call(method, serviceInstance.Host, callOptions, request.Body);
 
-                //todo: await result, may trigger exception.
+                //                todo: await result, may trigger exception.
                 var task = FluentUtilities.WrapperCallResuleToTask(grpcResponse);
                 await task;
 
-                response.Body = task.GetType().GetProperty("Result")?.GetValue(task);
+                //                response.Body = task.GetType().GetProperty("Result")?.GetValue(task);
+                response.Body = task;
             }
             catch (RpcException rpcException)
             {

@@ -1,7 +1,10 @@
 ﻿using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
+using Rabbit.Cloud.Client.Internal;
 using Rabbit.Cloud.Discovery.Abstractions;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client
@@ -27,10 +30,14 @@ namespace Rabbit.Cloud.Client
 
             var instances = _discoveryClient.GetInstances(serviceRequestFeature.ServiceName);
 
+            if (instances == null || !instances.Any())
+                throw ExceptionUtilities.NotFindServiceInstance(serviceRequestFeature.ServiceName);
+
             var chooser = _options.Choosers.Get(requestOptions.ServiceChooser) ?? _options.DefaultChooser;
 
-            serviceRequestFeature.Chooser = chooser;
-            serviceRequestFeature.ServiceInstances = instances;
+            chooser = new FairServiceInstanceChooser(chooser);
+
+            serviceRequestFeature.GetServiceInstance = () => chooser.Choose(instances);
 
             await _next(context);
         }
