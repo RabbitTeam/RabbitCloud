@@ -5,6 +5,7 @@ using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Client.Internal;
 using Rabbit.Cloud.Discovery.Abstractions;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -31,21 +32,47 @@ namespace Rabbit.Cloud.Client
 
             var requestOptions = serviceRequestFeature.RequestOptions;
 
-            var instances = _discoveryClient.GetInstances(serviceRequestFeature.ServiceName);
+            var instances = string.IsNullOrEmpty(serviceRequestFeature.ServiceName) ? null : _discoveryClient.GetInstances(serviceRequestFeature.ServiceName);
 
             if (instances == null || !instances.Any())
             {
-                var exception = ExceptionUtilities.NotFindServiceInstance(serviceRequestFeature.ServiceName);
-                _logger.LogWarning(exception, exception.Message);
+                if (!string.IsNullOrEmpty(serviceRequestFeature.ServiceName))
+                {
+                    var exception = ExceptionUtilities.NotFindServiceInstance(serviceRequestFeature.ServiceName);
+                    _logger.LogWarning(exception, exception.Message);
+                }
+
+                var request = context.Request;
+                var serviceInstance = new ServiceInstance
+                {
+                    Host = request.Host,
+                    Port = request.Port,
+                    ServiceId = request.Path
+                };
+                serviceRequestFeature.GetServiceInstance = () => serviceInstance;
+            }
+            else
+            {
+                var chooser = _options.Choosers.Get(requestOptions.ServiceChooser) ?? _options.DefaultChooser;
+
+                chooser = new FairServiceInstanceChooser(chooser);
+
+                serviceRequestFeature.GetServiceInstance = () => chooser.Choose(instances);
             }
 
-            var chooser = _options.Choosers.Get(requestOptions.ServiceChooser) ?? _options.DefaultChooser;
-
-            chooser = new FairServiceInstanceChooser(chooser);
-
-            serviceRequestFeature.GetServiceInstance = () => chooser.Choose(instances);
-
             await _next(context);
+        }
+
+        private class ServiceInstance : IServiceInstance
+        {
+            #region Implementation of IServiceInstance
+
+            public string ServiceId { get; set; }
+            public string Host { get; set; }
+            public int Port { get; set; }
+            public IDictionary<string, string> Metadata { get; set; }
+
+            #endregion Implementation of IServiceInstance
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using System;
 using System.Collections.Generic;
@@ -24,8 +25,10 @@ namespace Rabbit.Cloud.Client
         {
             var serviceRequestFeature = context.Features.Get<IServiceRequestFeature>();
 
-            if (!_options.RequestOptionses.TryGetValue(serviceRequestFeature.ServiceName, out var requestOptions))
+            if (!string.IsNullOrEmpty(serviceRequestFeature.ServiceName) && !_options.RequestOptionses.TryGetValue(serviceRequestFeature.ServiceName, out var requestOptions))
                 requestOptions = _options.DefaultRequestOptions;
+            else
+                requestOptions = new ServiceRequestOptions();
 
             requestOptions.ConnectionTimeout = GetRequestOption(context, "ConnectionTimeout", requestOptions.ConnectionTimeout);
             requestOptions.ReadTimeout = GetRequestOption(context, "ReadTimeout", requestOptions.ReadTimeout);

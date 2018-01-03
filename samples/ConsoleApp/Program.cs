@@ -17,7 +17,6 @@ using Rabbit.Cloud.Client.Codec;
 using Rabbit.Cloud.Client.Grpc;
 using Rabbit.Cloud.Client.Http;
 using Rabbit.Cloud.Discovery.Consul;
-using Rabbit.Cloud.Discovery.Consul.Discovery;
 using Rabbit.Cloud.Grpc.Abstractions;
 using Rabbit.Cloud.Grpc.Abstractions.Client;
 using Rabbit.Cloud.Grpc.Client;
@@ -136,20 +135,20 @@ namespace ConsoleApp
             var appBuild = new RabbitApplicationBuilder(services);
             var app = appBuild
                 .UseMiddleware<RequestOptionMiddleware>()
-                //                .UseMiddleware<ServiceInstanceMiddleware>()
-                .Use(async (c, n) =>
-                {
-                    var feature = c.Features.Get<IServiceRequestFeature>();
+                .UseMiddleware<ServiceInstanceMiddleware>()
+                /*                .Use(async (c, n) =>
+                                {
+                                    var feature = c.Features.Get<IServiceRequestFeature>();
 
-                    var instance = new ConsulServiceInstance
-                    {
-                        Host = "192.168.18.190",
-                        Port = c.Request.Scheme == "http" ? 5000 : 9999,
-                        ServiceId = Greeter.__Method_SayHello.FullName
-                    };
-                    feature.GetServiceInstance = () => instance;
-                    await n();
-                })
+                                    var instance = new ConsulServiceInstance
+                                    {
+                                        Host = "192.168.18.190",
+                                        Port = c.Request.Scheme == "http" ? 5000 : 9999,
+                                        ServiceId = Greeter.__Method_SayHello.FullName
+                                    };
+                                    feature.GetServiceInstance = () => instance;
+                                    await n();
+                                })*/
                 .MapWhen<IRabbitContext>(c => c.Request.Scheme == "http", ab =>
                 {
                     ab
@@ -174,13 +173,13 @@ namespace ConsoleApp
             var rabbitClient = new RabbitClient(app, services);
 
             var response = await rabbitClient.SendAsync<HelloRequest, HelloReply>(
-                "grpc://Test/helloworld.Greeter/SayHello"
+                "grpc://192.168.18.190:9999/helloworld.Greeter/SayHello"
                 , new HelloRequest { Name = "ben" });
 
             Console.WriteLine(JsonConvert.SerializeObject(response));
 
             response = await rabbitClient.SendAsync<HelloRequest, HelloReply>(
-                "http://Test/helloworld.Greeter/SayHello",
+                "http://192.168.18.190:5000/helloworld.Greeter/SayHello",
                 new HelloRequest { Name = "ben" }, new Dictionary<string, StringValues>
                 {
                     {"Content-Type","application/json" }
