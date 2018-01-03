@@ -4,9 +4,9 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace Rabbit.Cloud.Grpc.Utilities.Extensions
+namespace Rabbit.Cloud.Grpc.Utilities
 {
-    public static class CallInvokerExtensions
+    public static class CallInvokerUtilities
     {
         public static object Call(Type requestType, Type responseType, object request, Channel channel, string method, string host, object requestMarshaller,
             object responseMarshaller, CallOptions callOptions)

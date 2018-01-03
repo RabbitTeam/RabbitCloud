@@ -1,16 +1,75 @@
-﻿using Grpc.Core;
+﻿using Google.Protobuf;
+using Grpc.Core;
 using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Client.Abstractions.Codec;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
+using Rabbit.Cloud.Client.Serialization;
 using Rabbit.Cloud.Grpc.Client.Internal;
+using Rabbit.Cloud.Grpc.Utilities;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Grpc
 {
+    internal class GrpcCodec : ICodec
+    {
+        private readonly Type _requestType;
+        private readonly Type _responseType;
+
+        public GrpcCodec(Type requestType, Type responseType)
+        {
+            _requestType = requestType;
+            _responseType = responseType;
+        }
+
+        #region Implementation of ICodec
+
+        public object Encode(object body)
+        {
+            return GrpcProtobufSerializer.Instance.Serializer(body);
+        }
+
+        public object Decode(object data)
+        {
+            return GrpcProtobufSerializer.Instance.Deserialize((byte[])data, _responseType);
+        }
+
+        #endregion Implementation of ICodec
+    }
+
+    internal class GrpcProtobufSerializer : ISerializer
+    {
+        public static ISerializer Instance { get; } = new GrpcProtobufSerializer();
+
+        #region Implementation of ISerializer
+
+        public void Serialize(object instance, Stream stream)
+        {
+            if (instance is IMessage message)
+            {
+                message.WriteTo(stream);
+            }
+        }
+
+        public object Deserialize(Stream stream, Type type)
+        {
+            if (Activator.CreateInstance(type) is IMessage message)
+            {
+                message.MergeFrom(stream);
+                return message;
+            }
+            return null;
+        }
+
+        #endregion Implementation of ISerializer
+    }
+
     public class PreGrpcMiddleware
     {
         private readonly RabbitRequestDelegate _next;
@@ -24,6 +83,20 @@ namespace Rabbit.Cloud.Client.Grpc
             _next = next;
             _channelPool = channelPool;
         }
+
+        private struct MarshallerCache
+        {
+            public MarshallerCache(object requestMarshaller, object responseMarshaller) : this()
+            {
+                RequestMarshaller = requestMarshaller;
+                ResponseMarshaller = responseMarshaller;
+            }
+
+            public object RequestMarshaller { get; }
+            public object ResponseMarshaller { get; }
+        }
+
+        private static readonly ConcurrentDictionary<(Type, Type), MarshallerCache> _marshallerCache = new ConcurrentDictionary<(Type, Type), MarshallerCache>();
 
         public async Task Invoke(IRabbitContext context)
         {
@@ -49,6 +122,22 @@ namespace Rabbit.Cloud.Client.Grpc
                 await channel.ConnectAsync(DateTime.UtcNow.Add(connectionTimeout));
                 grpcFeature.Channel = channel;
             }
+
+            var entry = _marshallerCache.GetOrAdd((serviceRequestFeature.RequesType, serviceRequestFeature.ResponseType), key =>
+              {
+                  var codec = serviceRequestFeature.Codec ?? new GrpcCodec(key.Item1, key.Item2);
+                  var requestMarshaller = MarshallerUtilities.CreateGenericMarshaller(
+                      serviceRequestFeature.RequesType,
+                      instance => (byte[])codec.Encode(instance), data => codec.Decode(data));
+                  var responseMarshaller = MarshallerUtilities.CreateGenericMarshaller(
+                      serviceRequestFeature.ResponseType,
+                      instance => (byte[])codec.Encode(instance), data => codec.Decode(data));
+
+                  return new MarshallerCache(requestMarshaller, responseMarshaller);
+              });
+
+            grpcFeature.RequestMarshaller = entry.RequestMarshaller;
+            grpcFeature.ResponseMarshaller = entry.ResponseMarshaller;
 
             var callOptionsNullable = grpcFeature.CallOptions;
 

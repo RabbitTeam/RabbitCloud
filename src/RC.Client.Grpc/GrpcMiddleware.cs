@@ -34,7 +34,7 @@ namespace Rabbit.Cloud.Client.Grpc
                 var channel = grpcFeature.Channel;
                 var callOptions = grpcFeature.CallOptions ?? new CallOptions();
 
-                var t = CallInvokerExtensions.Call(serviceRequestFeature.RequesType,
+                var grpcResponse = CallInvokerUtilities.Call(serviceRequestFeature.RequesType,
                     serviceRequestFeature.ResponseType,
                     request.Body,
                     channel,
@@ -44,14 +44,10 @@ namespace Rabbit.Cloud.Client.Grpc
                     grpcFeature.ResponseMarshaller,
                     callOptions);
 
-                var grpcResponse = t;
-                //                var grpcResponse = callInvoker.Call(method, serviceInstance.Host, callOptions, request.Body);
-
-                //                todo: await result, may trigger exception.
+                //todo: await result, may trigger exception.
                 var task = FluentUtilities.WrapperCallResuleToTask(grpcResponse);
                 await task;
 
-                //                response.Body = task.GetType().GetProperty("Result")?.GetValue(task);
                 response.Body = task;
             }
             catch (RpcException rpcException)
