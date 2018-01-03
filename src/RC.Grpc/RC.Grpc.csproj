@@ -19,4 +19,8 @@
     <ProjectReference Include="..\RC\RC.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Abstractions\" />
+  </ItemGroup>
+
 </Project>
