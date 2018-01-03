@@ -11,6 +11,7 @@ namespace Rabbit.Cloud.Client.Abstractions
             ReadTimeout = TimeSpan.FromSeconds(10);
             ConnectionTimeout = TimeSpan.FromSeconds(2);
             ServiceChooser = "random";
+            SerializerName = "json";
         }
 
         public int MaxAutoRetries { get; set; }
@@ -18,5 +19,6 @@ namespace Rabbit.Cloud.Client.Abstractions
         public string ServiceChooser { get; set; }
         public TimeSpan ConnectionTimeout { get; set; }
         public TimeSpan ReadTimeout { get; set; }
+        public string SerializerName { get; set; }
     }
 }

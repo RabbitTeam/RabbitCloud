@@ -60,7 +60,9 @@ namespace Rabbit.Cloud.Client.Http
         private static HttpRequestMessage CreateHttpRequestMessage(IRabbitContext context)
         {
             var request = context.Request;
-            var instance = context.Features.Get<IServiceRequestFeature>().GetServiceInstance();
+            var requestFeature = context.Features.Get<IServiceRequestFeature>();
+            var instance = requestFeature.GetServiceInstance();
+            var codec = requestFeature.Codec;
 
             var authority = instance.Port >= 0 ? $"{instance.Host}:{instance.Port}" : instance.Host;
             var url = $"{request.Scheme}://{authority}{request.Path}";
@@ -71,6 +73,7 @@ namespace Rabbit.Cloud.Client.Http
 
             if (request.Body != null)
             {
+                context.Request.Body = codec.Encode(context.Request.Body);
                 HttpContent httpContent;
                 if (request.Body is string content)
                 {
@@ -151,6 +154,9 @@ namespace Rabbit.Cloud.Client.Http
 
         private static async Task SetResponseAsync(IRabbitContext context, HttpResponseMessage httpResponse)
         {
+            var requestFeature = context.Features.Get<IServiceRequestFeature>();
+            var codec = requestFeature.Codec;
+
             var response = context.Response;
             var httpResponseContent = httpResponse.Content;
             foreach (var header in httpResponse.Headers.Concat(httpResponseContent.Headers))
@@ -161,7 +167,7 @@ namespace Rabbit.Cloud.Client.Http
             response.StatusCode = (int)httpResponse.StatusCode;
 
             var stream = await httpResponseContent.ReadAsStreamAsync();
-            response.Body = stream;
+            response.Body = codec.Decode(stream);
         }
 
         #endregion Private Method

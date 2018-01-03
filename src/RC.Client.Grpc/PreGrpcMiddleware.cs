@@ -19,11 +19,13 @@ namespace Rabbit.Cloud.Client.Grpc
 {
     internal class GrpcCodec : ICodec
     {
+        private readonly ICodec _codec;
         private readonly Type _requestType;
         private readonly Type _responseType;
 
-        public GrpcCodec(Type requestType, Type responseType)
+        public GrpcCodec(ICodec codec, Type requestType, Type responseType)
         {
+            _codec = codec;
             _requestType = requestType;
             _responseType = responseType;
         }
@@ -32,12 +34,12 @@ namespace Rabbit.Cloud.Client.Grpc
 
         public object Encode(object body)
         {
-            return GrpcProtobufSerializer.Instance.Serializer(body);
+            return typeof(IMessage).IsAssignableFrom(_requestType) ? GrpcProtobufSerializer.Instance.Serializer(body) : _codec.Encode(body);
         }
 
         public object Decode(object data)
         {
-            return GrpcProtobufSerializer.Instance.Deserialize((byte[])data, _responseType);
+            return typeof(IMessage).IsAssignableFrom(_responseType) ? GrpcProtobufSerializer.Instance.Deserialize((byte[])data, _responseType) : _codec.Decode(data);
         }
 
         #endregion Implementation of ICodec
@@ -123,18 +125,21 @@ namespace Rabbit.Cloud.Client.Grpc
                 grpcFeature.Channel = channel;
             }
 
-            var entry = _marshallerCache.GetOrAdd((serviceRequestFeature.RequesType, serviceRequestFeature.ResponseType), key =>
-              {
-                  var codec = serviceRequestFeature.Codec ?? new GrpcCodec(key.Item1, key.Item2);
-                  var requestMarshaller = MarshallerUtilities.CreateGenericMarshaller(
-                      serviceRequestFeature.RequesType,
-                      instance => (byte[])codec.Encode(instance), data => codec.Decode(data));
-                  var responseMarshaller = MarshallerUtilities.CreateGenericMarshaller(
-                      serviceRequestFeature.ResponseType,
-                      instance => (byte[])codec.Encode(instance), data => codec.Decode(data));
+            var codec = serviceRequestFeature.Codec;
+            if (!(codec is GrpcCodec))
+                serviceRequestFeature.Codec = codec = new GrpcCodec(serviceRequestFeature.Codec, serviceRequestFeature.RequesType, serviceRequestFeature.ResponseType);
 
-                  return new MarshallerCache(requestMarshaller, responseMarshaller);
-              });
+            var entry = _marshallerCache.GetOrAdd((serviceRequestFeature.RequesType, serviceRequestFeature.ResponseType), key =>
+            {
+                var requestMarshaller = MarshallerUtilities.CreateGenericMarshaller(
+                    serviceRequestFeature.RequesType,
+                    instance => (byte[])codec.Encode(instance), data => codec.Decode(data));
+                var responseMarshaller = MarshallerUtilities.CreateGenericMarshaller(
+                    serviceRequestFeature.ResponseType,
+                    instance => (byte[])codec.Encode(instance), data => codec.Decode(data));
+
+                return new MarshallerCache(requestMarshaller, responseMarshaller);
+            });
 
             grpcFeature.RequestMarshaller = entry.RequestMarshaller;
             grpcFeature.ResponseMarshaller = entry.ResponseMarshaller;

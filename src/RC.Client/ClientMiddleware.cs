@@ -2,7 +2,9 @@
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Client.Abstractions.Codec;
 using Rabbit.Cloud.Client.Abstractions.Features;
+using Rabbit.Cloud.Client.Codec;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,6 +43,7 @@ namespace Rabbit.Cloud.Client
 
         private async Task RequestAsync(IRabbitContext context, IServiceRequestFeature serviceRequestFeature)
         {
+            serviceRequestFeature.Codec = GetCodec(context);
             var requestOptions = serviceRequestFeature.RequestOptions ?? _options.DefaultRequestOptions;
 
             //最少调用一次
@@ -59,12 +62,7 @@ namespace Rabbit.Cloud.Client
                 {
                     try
                     {
-                        var codec = serviceRequestFeature.Codec;
-                        if (codec != null)
-                            context.Request.Body = codec.Encode(context.Request.Body);
                         await _next(context);
-                        if (codec != null)
-                            context.Response.Body = codec.Decode(context.Response.Body);
                         return;
                     }
                     catch (Exception e)
@@ -85,6 +83,22 @@ namespace Rabbit.Cloud.Client
             }
             if (exceptions != null && exceptions.Any())
                 throw new AggregateException(exceptions);
+        }
+
+        private ICodec GetCodec(IRabbitContext rabbitContext)
+        {
+            var requestFeature = rabbitContext.Features.Get<IServiceRequestFeature>();
+
+            if (requestFeature.Codec != null)
+                return requestFeature.Codec;
+
+            var requestOptions = requestFeature.RequestOptions ?? _options.DefaultRequestOptions;
+
+            var serializerName = requestOptions.SerializerName;
+
+            var serializer = (string.IsNullOrEmpty(serializerName) ? null : _options.SerializerTable.Get(serializerName)) ?? _options.SerializerTable.Get("json");
+
+            return requestFeature.Codec = new SerializerCodec(serializer, requestFeature.RequesType, requestFeature.ResponseType);
         }
     }
 }
