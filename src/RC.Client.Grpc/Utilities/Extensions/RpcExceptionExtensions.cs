@@ -2,7 +2,7 @@
 using Rabbit.Cloud.Abstractions;
 using System;
 
-namespace Rabbit.Cloud.Grpc.Utilities.Extensions
+namespace Rabbit.Cloud.Client.Grpc.Utilities.Extensions
 {
     public static class RpcExceptionExtensions
     {

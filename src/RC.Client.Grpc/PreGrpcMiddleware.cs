@@ -6,7 +6,7 @@ using Rabbit.Cloud.Client.Abstractions.Codec;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
 using Rabbit.Cloud.Client.Serialization;
-using Rabbit.Cloud.Grpc.Client.Internal;
+using Rabbit.Cloud.Grpc.Client;
 using Rabbit.Cloud.Grpc.Utilities;
 using System;
 using System.Collections.Concurrent;

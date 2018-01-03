@@ -4,7 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace Rabbit.Cloud.Grpc.Client.Internal
+namespace Rabbit.Cloud.Grpc.Client
 {
     //todo: 考虑长时间未使用Channel进行资源释放
     public class ChannelPool

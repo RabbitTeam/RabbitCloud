@@ -3,8 +3,8 @@ using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Client.Grpc.Features;
+using Rabbit.Cloud.Client.Grpc.Utilities.Extensions;
 using Rabbit.Cloud.Grpc.Utilities;
-using Rabbit.Cloud.Grpc.Utilities.Extensions;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Grpc
