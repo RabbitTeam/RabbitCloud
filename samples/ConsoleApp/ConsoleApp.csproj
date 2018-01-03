@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\RC.Application\RC.Application.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\RC.Client.Grpc\RC.Client.Grpc.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Http\RC.Client.Http.csproj" />
     <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
   </ItemGroup>

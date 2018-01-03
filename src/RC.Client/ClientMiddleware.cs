@@ -56,7 +56,12 @@ namespace Rabbit.Cloud.Client
                 {
                     try
                     {
+                        var codec = serviceRequestFeature.Codec;
+                        if (codec != null)
+                            context.Request.Body = codec.Encode(context.Request.Body);
                         await _next(context);
+                        if (codec != null)
+                            context.Response.Body = codec.Decode(context.Response.Body);
                         return;
                     }
                     catch (Exception e)

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Client.Features;
 using System;
 using System.Collections.Generic;
@@ -82,7 +83,7 @@ namespace Rabbit.Cloud.Client
                 rabbitRequest.Body = request.Body;
                 rabbitRequest.Headers = request.Headers;
 
-                rabbitContext.Features.Set<ICodecFeature>(new CodecFeature
+                rabbitContext.Features.Set<IServiceRequestFeature>(new ServiceRequestFeature(rabbitRequest)
                 {
                     RequesType = typeof(TRequest),
                     ResponseType = typeof(TResponse)

@@ -1,5 +1,7 @@
-﻿using Rabbit.Cloud.Application.Features;
+﻿using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Application.Features;
 using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Client.Abstractions.Codec;
 using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Discovery.Abstractions;
 using System;
@@ -15,6 +17,13 @@ namespace Rabbit.Cloud.Client.Features
                 ServiceName = requestFeature.Host;
         }
 
+        public ServiceRequestFeature(IRabbitRequest request)
+        {
+            ServiceProtocol = request.Scheme;
+            if (request.Port < 0)
+                ServiceName = request.Host;
+        }
+
         public ServiceRequestFeature()
         {
         }
@@ -25,6 +34,9 @@ namespace Rabbit.Cloud.Client.Features
         public string ServiceProtocol { get; set; }
         public ServiceRequestOptions RequestOptions { get; set; }
         public Func<IServiceInstance> GetServiceInstance { get; set; }
+        public Type RequesType { get; set; }
+        public Type ResponseType { get; set; }
+        public ICodec Codec { get; set; }
 
         #endregion Implementation of IServiceRequestFeature
     }
