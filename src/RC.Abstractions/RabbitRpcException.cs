@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 
 namespace Rabbit.Cloud.Abstractions
 {
@@ -51,4 +51,4 @@ namespace Rabbit.Cloud.Abstractions
             return exception.RabbitStatusCode == (int)RabbitRpcExceptionCode.Business;
         }
     }
-}
+}*/

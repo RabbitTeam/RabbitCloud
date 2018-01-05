@@ -71,6 +71,9 @@ namespace Rabbit.Cloud.Client.Http
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
 
+            var method = context.Items.TryGetValue("HttpMethod", out var httpMethod) ? httpMethod.ToString() : null;
+            httpRequest.Method = GetHttpMethod(method, HttpMethod.Post);
+
             if (request.Body != null)
             {
                 context.Request.Body = codec.Encode(context.Request.Body);
@@ -92,9 +95,6 @@ namespace Rabbit.Cloud.Client.Http
                     throw new Exception("不支持的Body类型。");
                 }
                 httpRequest.Content = httpContent;
-
-                var method = context.Items.TryGetValue("HttpMethod", out var httpMethod) ? httpMethod.ToString() : null;
-                httpRequest.Method = GetHttpMethod(method, HttpMethod.Post);
 
                 var headers = httpContent.Headers;
 
@@ -155,9 +155,23 @@ namespace Rabbit.Cloud.Client.Http
         private static async Task SetResponseAsync(IRabbitContext context, HttpResponseMessage httpResponse)
         {
             var requestFeature = context.Features.Get<IServiceRequestFeature>();
+            var response = context.Response;
+
+            try
+            {
+                httpResponse = httpResponse.EnsureSuccessStatusCode();
+            }
+            catch (RabbitClientException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw ExceptionUtilities.ServiceRequestFailure(requestFeature.ServiceName, (int)httpResponse.StatusCode, e);
+            }
+
             var codec = requestFeature.Codec;
 
-            var response = context.Response;
             var httpResponseContent = httpResponse.Content;
             foreach (var header in httpResponse.Headers.Concat(httpResponseContent.Headers))
             {
@@ -166,8 +180,12 @@ namespace Rabbit.Cloud.Client.Http
 
             response.StatusCode = (int)httpResponse.StatusCode;
 
-            var stream = await httpResponseContent.ReadAsStreamAsync();
-            response.Body = codec.Decode(stream);
+            httpResponse.EnsureSuccessStatusCode();
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                var stream = await httpResponseContent.ReadAsStreamAsync();
+                response.Body = codec.Decode(stream);
+            }
         }
 
         #endregion Private Method

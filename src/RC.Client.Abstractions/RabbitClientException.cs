@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Rabbit.Cloud.Abstractions;
+using System;
 
 namespace Rabbit.Cloud.Client.Abstractions
 {
-    public class RabbitClientException : Exception
+    public class RabbitClientException : RabbitException
     {
         public RabbitClientException(string message, int statusCode) : base(message)
         {

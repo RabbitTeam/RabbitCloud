@@ -1,190 +1,53 @@
-﻿using Grpc.Core;
-using Helloworld;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using Rabbit.Cloud.Application;
-using Rabbit.Cloud.Application.Abstractions;
-using Rabbit.Cloud.Application.Abstractions.Extensions;
 using Rabbit.Cloud.Client;
-using Rabbit.Cloud.Client.Abstractions.Features;
-using Rabbit.Cloud.Client.Codec;
-using Rabbit.Cloud.Client.Grpc;
+using Rabbit.Cloud.Client.Go;
 using Rabbit.Cloud.Client.Http;
 using Rabbit.Cloud.Discovery.Consul;
-using Rabbit.Cloud.Grpc.Abstractions;
-using Rabbit.Cloud.Grpc.Abstractions.Client;
-using Rabbit.Cloud.Grpc.Client;
-using Rabbit.Cloud.Grpc.Client.Internal;
-using Rabbit.Cloud.Grpc.Internal;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
-    public class Startup
+    public class BookModel
     {
-        public void Configure(IApplicationBuilder app)
-        {
-            app.Run(async c =>
-            {
-                var buffer = new byte[c.Request.ContentLength.Value];
-                c.Request.Body.Read(buffer, 0, buffer.Length);
-                var request = JsonConvert.DeserializeObject<HelloRequest>(Encoding.UTF8.GetString(buffer));
-                await c.Response.WriteAsync(JsonConvert.SerializeObject(new HelloReply
-                {
-                    Message = $"hello,{request.Name},from http server."
-                }));
-            });
-        }
+        public long Id { get; set; }
+        public string Name { get; set; }
     }
 
-    internal class MethodProvider : IMethodProvider
+    [GoClient("http://localhost:46743/cartoons")]
+    public interface ITestClient
     {
-        #region Implementation of IMethodProvider
-
-        public int Order { get; }
-
-        public void OnProvidersExecuting(MethodProviderContext context)
-        {
-            context.Results.Add(Greeter.__Method_SayHello);
-        }
-
-        public void OnProvidersExecuted(MethodProviderContext context)
-        {
-        }
-
-        #endregion Implementation of IMethodProvider
-    }
-
-    internal class GreeterImpl : Greeter.GreeterBase
-    {
-        #region Overrides of GreeterBase
-
-        /// <inheritdoc />
-        /// <summary>
-        /// Sends a greeting
-        /// </summary>
-        /// <param name="request">The request received from the client.</param>
-        /// <param name="context">The context of the server-side call handler being invoked.</param>
-        /// <returns>The response to send back to the client (wrapped by a task).</returns>
-        public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
-        {
-            return Task.FromResult(new HelloReply
-            {
-                Message = $"hello,{request.Name},from grpc server."
-            });
-        }
-
-        #endregion Overrides of GreeterBase
+        [GoGet("/book/{query}")]
+        Task<BookModel[]> SayHelloAsync(string query);
     }
 
     public class Program
     {
-        private static Task StartGrpcServer()
-        {
-            var server = new Server
-            {
-                Services = { Greeter.BindService(new GreeterImpl()) },
-                Ports = { new ServerPort("0.0.0.0", 9999, ServerCredentials.Insecure) }
-            };
-            server.Start();
-            return server.ShutdownTask;
-        }
-
-        private static Task StartHttpServer()
-        {
-            return WebHost.CreateDefaultBuilder()
-                .UseUrls("http://192.168.18.190:5000")
-                .UseStartup<Startup>()
-                .ConfigureLogging(lb =>
-                {
-                    lb.ClearProviders();
-                })
-                .Build()
-                .StartAsync();
-        }
-
         public static async Task Main(string[] args)
         {
-            StartGrpcServer();
-            StartHttpServer();
-
-            await Task.Delay(1000);
-            var services = new ServiceCollection()
-                .AddSingleton<ICallInvokerFactory, CallInvokerFactory>()
-                .AddSingleton<IMethodTableProvider, DefaultMethodTableProvider>()
-                .AddSingleton<IMethodProvider, MethodProvider>()
-                .AddSingleton<ChannelPool>()
+            var applicationServices = new ServiceCollection()
                 .AddLogging()
                 .AddOptions()
-                .ConfigureConsul(s =>
+                .AddConsulDiscovery(s =>
                 {
                     s.Address = "http://192.168.100.150:8500";
                 })
-                .AddConsulDiscovery()
                 .BuildServiceProvider();
 
-            var appBuild = new RabbitApplicationBuilder(services);
-            var app = appBuild
-                .UseMiddleware<RequestOptionMiddleware>()
-                .UseMiddleware<ServiceInstanceMiddleware>()
-                /*                .Use(async (c, n) =>
-                                {
-                                    var feature = c.Features.Get<IServiceRequestFeature>();
-
-                                    var instance = new ConsulServiceInstance
-                                    {
-                                        Host = "192.168.18.190",
-                                        Port = c.Request.Scheme == "http" ? 5000 : 9999,
-                                        ServiceId = Greeter.__Method_SayHello.FullName
-                                    };
-                                    feature.GetServiceInstance = () => instance;
-                                    await n();
-                                })*/
-                .MapWhen<IRabbitContext>(c => c.Request.Scheme == "http", ab =>
+            var services = new ServiceCollection()
+                .AddRabbitClient(applicationServices, app =>
                 {
-                    ab
-                    .Use(async (c, n) =>
-                        {
-                            var feature = c.Features.Get<IServiceRequestFeature>();
-                            feature.Codec = new SerializerCodec(new Rabbit.Cloud.Client.Serialization.JsonSerializer(), feature.RequesType, feature.ResponseType);
-                            await n();
-                        })
-                        .UseMiddleware<ClientMiddleware>()
-                        .UseMiddleware<HttpMiddleware>();
+                    app
+                        .UseRabbitClient()
+                        .UseRabbitHttpClient();
                 })
-                .MapWhen<IRabbitContext>(c => c.Request.Scheme == "grpc", ab =>
-                {
-                    ab
-                        .UseMiddleware<ClientMiddleware>()
-                        .UseMiddleware<PreGrpcMiddleware>()
-                        .UseMiddleware<GrpcMiddleware>();
-                })
-                .Build();
+                .AddGoClientProxy()
+                .BuildServiceProvider();
 
-            var rabbitClient = new RabbitClient(app, services);
-
-            var response = await rabbitClient.SendAsync<HelloRequest, HelloReply>(
-                "grpc://192.168.18.190:9999/helloworld.Greeter/SayHello"
-                , new HelloRequest { Name = "ben" });
-
-            Console.WriteLine(JsonConvert.SerializeObject(response));
-
-            response = await rabbitClient.SendAsync<HelloRequest, HelloReply>(
-                "http://192.168.18.190:5000/helloworld.Greeter/SayHello",
-                new HelloRequest { Name = "ben" }, new Dictionary<string, StringValues>
-                {
-                    {"Content-Type","application/json" }
-                });
-            Console.WriteLine(JsonConvert.SerializeObject(response));
+            var testClient = services.GetRequiredService<ITestClient>();
+            var tt = await testClient.SayHelloAsync("$filter=Id eq 220");
+            Console.WriteLine(JsonConvert.SerializeObject(tt));
         }
     }
 }

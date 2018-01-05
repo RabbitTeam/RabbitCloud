@@ -12,6 +12,6 @@ namespace Rabbit.Cloud.Discovery.Abstractions
         /// </summary>
         IReadOnlyList<string> Services { get; }
 
-        IReadOnlyList<IServiceInstance> GetInstances(string serviceName);
+        IReadOnlyList<IServiceInstance> GetInstances(string serviceId);
     }
 }

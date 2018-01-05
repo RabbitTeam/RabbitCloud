@@ -39,6 +39,7 @@ namespace Rabbit.Cloud.Discovery.Consul
                                 item.Key.Ttl();
                         }
                     }
+                    //todo:计算出间隔时间，而不是固定写死
                     await Task.Delay(5000);
                 }
             }, TaskCreationOptions.LongRunning);

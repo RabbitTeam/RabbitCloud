@@ -18,7 +18,7 @@ namespace Rabbit.Cloud.Client.Abstractions
 
         public static RabbitClientException ServiceRequestFailure(string serviceId, int statusCode, Exception exception)
         {
-            return new RabbitClientException($"Request service '{serviceId}' failed.", statusCode, exception);
+            return new RabbitClientException($"Request service '{serviceId}' failed,statusCode:{statusCode}.", statusCode, exception);
         }
     }
 }
