@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Discovery.Consul
@@ -14,7 +13,7 @@ namespace Rabbit.Cloud.Discovery.Consul
         private readonly IConsulClient _consulClient;
         private readonly ILogger<HeartbeatManager> _logger;
         private readonly ConcurrentDictionary<string, CheckEntry> _checkEntries = new ConcurrentDictionary<string, CheckEntry>(StringComparer.OrdinalIgnoreCase);
-        private readonly Timer _timer;
+        private bool _isDisposable;
 
         public HeartbeatManager(IConsulClient consulClient, ILogger<HeartbeatManager> logger = null)
         {
@@ -22,18 +21,27 @@ namespace Rabbit.Cloud.Discovery.Consul
             logger = logger ?? NullLogger<HeartbeatManager>.Instance;
             _logger = logger;
 
-            _timer = new Timer(s =>
+            Task.Factory.StartNew(async () =>
             {
-                var checkEntries = _checkEntries.Values.Where(i => i.NeedTtl()).ToArray();
-                if (!checkEntries.Any())
-                    return;
-                var nodeName = consulClient.Agent.GetNodeName();
-                Parallel.ForEach(checkEntries, async entry =>
+                while (!_isDisposable)
                 {
-                    if (await PassTtl(entry.CheckId, await nodeName))
-                        entry.Ttl();
-                });
-            }, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+                    var checkEntries = _checkEntries.Values.Where(i => i.NeedTtl()).ToArray();
+                    if (checkEntries.Any())
+                    {
+                        var nodeName = await consulClient.Agent.GetNodeName();
+                        var tasks = checkEntries.ToDictionary(i => i, entry => PassTtl(entry.CheckId, nodeName));
+
+                        await Task.WhenAll(tasks.Values);
+
+                        foreach (var item in tasks)
+                        {
+                            if (await item.Value)
+                                item.Key.Ttl();
+                        }
+                    }
+                    await Task.Delay(5000);
+                }
+            }, TaskCreationOptions.LongRunning);
         }
 
         public async Task AddHeartbeat(string serviceId, TimeSpan interval, bool immediatelyPass = true)
@@ -57,7 +65,7 @@ namespace Rabbit.Cloud.Discovery.Consul
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
         public void Dispose()
         {
-            _timer?.Dispose();
+            _isDisposable = true;
         }
 
         #endregion IDisposable

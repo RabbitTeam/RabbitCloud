@@ -45,25 +45,32 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
                 //watcher
                 while (!Disposed)
                 {
-                    var result = await healthEndpoint.State(HealthStatus.Critical, new QueryOptions { WaitIndex = index });
+                    try
+                    {
+                        var result = await healthEndpoint.State(HealthStatus.Critical, new QueryOptions { WaitIndex = index });
 
-                    //timeout ignore
-                    if (index == result.LastIndex)
-                        continue;
-                    index = result.LastIndex;
+                        //timeout ignore
+                        if (index == result.LastIndex)
+                            continue;
+                        index = result.LastIndex;
 
-                    var response = result.Response;
-                    //_instances no data ignore
-                    if (!_instances.Any())
-                        continue;
+                        var response = result.Response;
+                        //_instances no data ignore
+                        if (!_instances.Any())
+                            continue;
 
-                    // critical to delete
-                    var criticalServices = response.GroupBy(i => i.ServiceName).Select(i => i.Key).ToArray();
-                    if (logger.IsEnabled(LogLevel.Debug))
-                        logger.LogDebug($"ready delete critical service info ,{string.Join(",", criticalServices)}");
+                        // critical to delete
+                        var criticalServices = response.GroupBy(i => i.ServiceName).Select(i => i.Key).ToArray();
+                        if (logger.IsEnabled(LogLevel.Debug))
+                            logger.LogDebug($"ready delete critical service info ,{string.Join(",", criticalServices)}");
 
-                    foreach (var serviceName in criticalServices)
-                        _instances.TryRemove(serviceName, out var _);
+                        foreach (var serviceName in criticalServices)
+                            _instances.TryRemove(serviceName, out var _);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.LogError(e, "监听服务健康度时发生了错误。");
+                    }
                 }
             });
             Task.Factory.StartNew(async () =>
@@ -74,16 +81,23 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
                 //watcher
                 while (!Disposed)
                 {
-                    var result = await catalogEndpoint.Services(new QueryOptions { WaitIndex = index });
+                    try
+                    {
+                        var result = await catalogEndpoint.Services(new QueryOptions { WaitIndex = index });
 
-                    //timeout ignore
-                    if (index == result.LastIndex)
-                        continue;
+                        //timeout ignore
+                        if (index == result.LastIndex)
+                            continue;
 
-                    index = result.LastIndex;
+                        index = result.LastIndex;
 
-                    var response = result.Response;
-                    Services = response.Where(i => i.Value.Contains(ConsulUtil.ServicePrefix)).Select(i => i.Key).ToArray();
+                        var response = result.Response;
+                        Services = response.Where(i => i.Value.Contains(ConsulUtil.ServicePrefix)).Select(i => i.Key).ToArray();
+                    }
+                    catch (Exception e)
+                    {
+                        logger.LogError(e, "监听服务时发生了错误。");
+                    }
                 }
             });
         }
@@ -95,9 +109,9 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
         public string Description => "Rabbit Cloud Consul Client";
         public IReadOnlyList<string> Services { get; private set; }
 
-        public IReadOnlyList<IServiceInstance> GetInstances(string serviceName)
+        public IReadOnlyList<IServiceInstance> GetInstances(string serviceId)
         {
-            var consulServiceName = _serviceNameResolver.GetConsulNameByLocalName(serviceName);
+            var consulServiceName = _serviceNameResolver.GetConsulNameByLocalName(serviceId);
             if (_instances.TryGetValue(consulServiceName, out var instances))
                 return instances.ToArray();
 

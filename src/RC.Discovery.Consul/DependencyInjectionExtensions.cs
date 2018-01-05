@@ -14,6 +14,20 @@ namespace Rabbit.Cloud.Discovery.Consul
             return services.Configure(configure);
         }
 
+        public static IServiceCollection AddConsulDiscovery(this IServiceCollection services, Action<ConsulOptions> configure)
+        {
+            return services
+                .ConfigureConsul(configure)
+                .AddConsulDiscovery();
+        }
+
+        public static IServiceCollection AddConsulRegistry(this IServiceCollection services, Action<ConsulOptions> configure)
+        {
+            return services
+                .ConfigureConsul(configure)
+                .AddConsulRegistry();
+        }
+
         public static IServiceCollection AddConsulDiscovery(this IServiceCollection services)
         {
             return services
