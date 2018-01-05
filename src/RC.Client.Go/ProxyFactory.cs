@@ -210,14 +210,15 @@ namespace Rabbit.Cloud.Client.Go
             return firstComplexTypeIndex;
         }
 
+        //todo:更加精确的是否request body的判断，还有数组的处理（query等）
         private static bool IsComplexType(Type type)
         {
             switch (Type.GetTypeCode(type))
             {
-                case TypeCode.DateTime:
                 case TypeCode.Object:
                     return true;
 
+                case TypeCode.DateTime:
                 case TypeCode.Boolean:
                 case TypeCode.Byte:
                 case TypeCode.Char:
