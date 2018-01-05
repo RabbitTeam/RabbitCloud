@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -54,4 +54,4 @@ namespace Rabbit.Cloud.Client.Go
         public IReadOnlyList<object> Attributes { get; set; }
         public IDictionary<object, object> Properties { get; } = new Dictionary<object, object>();
     }
-}
+}*/

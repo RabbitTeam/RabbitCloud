@@ -69,10 +69,13 @@ namespace Rabbit.Cloud.Client.Http
             if (request.QueryString.Length > 1)
                 url += request.QueryString;
 
-            var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+            var httpRequest = new HttpRequestMessage
+            {
+                RequestUri = new Uri(url)
+            };
 
             var method = context.Items.TryGetValue("HttpMethod", out var httpMethod) ? httpMethod.ToString() : null;
-            httpRequest.Method = GetHttpMethod(method, HttpMethod.Post);
+            httpRequest.Method = GetHttpMethod(method, HttpMethod.Get);
 
             if (request.Body != null)
             {
@@ -180,7 +183,6 @@ namespace Rabbit.Cloud.Client.Http
 
             response.StatusCode = (int)httpResponse.StatusCode;
 
-            httpResponse.EnsureSuccessStatusCode();
             if (httpResponse.IsSuccessStatusCode)
             {
                 var stream = await httpResponseContent.ReadAsStreamAsync();
