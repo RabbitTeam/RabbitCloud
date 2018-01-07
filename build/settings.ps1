@@ -17,5 +17,6 @@ $projects = @(
 	@{ Name = "Rabbit.Cloud.Client.Abstractions"; SourceDir = "$source_dir\RC.Client.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
 	@{ Name = "Rabbit.Cloud.Client"; SourceDir = "$source_dir\RC.Client"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
 	@{ Name = "Rabbit.Cloud.Client.Http"; SourceDir = "$source_dir\RC.Client.Http"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
+	@{ Name = "Rabbit.Cloud.Client.Go.Abstractions"; SourceDir = "$source_dir\RC.Client.Go.Abstractions"; ExternalNuGetDependencies = $null; UseMSBuild = $False; },
 	@{ Name = "Rabbit.Cloud.Client.Go"; SourceDir = "$source_dir\RC.Client.Go"; ExternalNuGetDependencies = $null; UseMSBuild = $False; }
 )
