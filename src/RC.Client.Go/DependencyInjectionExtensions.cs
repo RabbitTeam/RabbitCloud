@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Castle.DynamicProxy;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
 using Rabbit.Cloud.Client.Go.Abstractions;
+using Rabbit.Cloud.Client.Go.ApplicationModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,24 +12,33 @@ namespace Rabbit.Cloud.Client.Go
 {
     public static class DependencyInjectionExtensions
     {
+        public static IServiceCollection AddGoClientProxy(this IServiceCollection services, ApplicationModel applicationModel)
+        {
+            return services
+                .AddGoClient()
+                .AddScoped<IInterceptor>(s => new DefaultInterceptor(s.GetRequiredService<IRabbitClient>(), s.GetRequiredService<ITemplateEngine>(), applicationModel))
+                .InjectionServiceProxy(applicationModel);
+        }
+
         public static IServiceCollection AddGoClientProxy(this IServiceCollection services, params string[] assemblyPrefixs)
         {
-            services
-                .AddGoClient();
-
             Func<AssemblyName, bool> assemblyPredicate = null;
             if (assemblyPrefixs != null && assemblyPrefixs.Any())
                 assemblyPredicate = i => assemblyPrefixs.Any(prefix => i.Name.StartsWith(prefix));
 
             var types = GetTypes(assemblyPredicate, type => type.GetCustomAttribute<GoClientAttribute>() != null);
 
-            return services.InjectionServiceProxy(types);
+            return services
+                .AddGoClientProxy(RabbitApplicationBuilder.BuildModel(types));
         }
 
-        public static IServiceCollection InjectionServiceProxy(this IServiceCollection services, IEnumerable<Type> types)
+        public static IServiceCollection InjectionServiceProxy(this IServiceCollection services, ApplicationModel applicationModel)
         {
-            foreach (var type in types)
+            foreach (var service in applicationModel.Services)
+            {
+                var type = service.Type;
                 services.AddSingleton(type, p => p.GetRequiredService<IProxyFactory>().CreateProxy(type));
+            }
 
             return services;
         }
