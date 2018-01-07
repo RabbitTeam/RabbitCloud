@@ -5,6 +5,10 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
 {
     public class GoGetAttribute : GoMethodAttribute
     {
+        public GoGetAttribute() : base("Get")
+        {
+        }
+
         public GoGetAttribute(string path) : base("Get", path)
         {
         }
@@ -12,6 +16,10 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
 
     public class GoPostAttribute : GoMethodAttribute
     {
+        public GoPostAttribute() : base("Post")
+        {
+        }
+
         public GoPostAttribute(string path) : base("Post", path)
         {
         }
@@ -19,6 +27,10 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
 
     public class GoPutAttribute : GoMethodAttribute
     {
+        public GoPutAttribute() : base("Put")
+        {
+        }
+
         public GoPutAttribute(string path) : base("Put", path)
         {
         }
@@ -26,6 +38,10 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
 
     public class GoDeleteAttribute : GoMethodAttribute
     {
+        public GoDeleteAttribute() : base("Delete")
+        {
+        }
+
         public GoDeleteAttribute(string path) : base("Delete", path)
         {
         }
@@ -44,7 +60,7 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
             Method = method;
         }
 
-        public string Method { get; set; }
+        public string Method { get; }
 
         #region Implementation of IItemsProvider
 
