@@ -16,11 +16,10 @@ namespace Rabbit.Cloud.Client.Go
         {
             return services
                 .AddGoClient()
-                .AddScoped<IInterceptor>(s => new DefaultInterceptor(s.GetRequiredService<IRabbitClient>(), s.GetRequiredService<ITemplateEngine>(), applicationModel))
                 .InjectionServiceProxy(applicationModel);
         }
 
-        public static IServiceCollection AddGoClientProxy(this IServiceCollection services, params string[] assemblyPrefixs)
+        public static IServiceCollection AddGoClientProxy(this IServiceCollection services, Func<IServiceProvider, ApplicationModel, IInterceptor> interceptorFactory = null, params string[] assemblyPrefixs)
         {
             Func<AssemblyName, bool> assemblyPredicate = null;
             if (assemblyPrefixs != null && assemblyPrefixs.Any())
@@ -28,8 +27,14 @@ namespace Rabbit.Cloud.Client.Go
 
             var types = GetTypes(assemblyPredicate, type => type.GetCustomAttribute<GoClientAttribute>() != null);
 
+            var applicationModel = RabbitApplicationBuilder.BuildModel(types);
+
+            if (interceptorFactory == null)
+                interceptorFactory = (s, m) => new DefaultInterceptor(s.GetRequiredService<IRabbitClient>(), s.GetRequiredService<ITemplateEngine>(), m);
+
             return services
-                .AddGoClientProxy(RabbitApplicationBuilder.BuildModel(types));
+                    .AddSingleton(s => interceptorFactory(s, applicationModel))
+                    .AddGoClientProxy(applicationModel);
         }
 
         public static IServiceCollection InjectionServiceProxy(this IServiceCollection services, ApplicationModel applicationModel)

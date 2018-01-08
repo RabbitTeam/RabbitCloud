@@ -5,6 +5,7 @@ using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Go.Abstractions;
 using Rabbit.Cloud.Client.Go.ApplicationModels;
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,6 +55,27 @@ namespace Rabbit.Cloud.Client.Go
             return InternalHandleAsync(goRequestContext).GetAwaiter().GetResult();
         }
 
+        private struct GoParameterContext
+        {
+            public GoParameterContext(ParameterModel parameterModel, object argument)
+            {
+                ParameterModel = parameterModel;
+                Argument = argument;
+                OnlyOneParameter = parameterModel.Request.Parameters.Count == 1;
+                Values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            public ParameterModel ParameterModel { get; }
+            public IDictionary<string, string> Values { get; }
+            public bool OnlyOneParameter { get; }
+            public object Argument { get; }
+
+            public void AppendValue(string name, string value)
+            {
+                Values[name] = value;
+            }
+        }
+
         private static void BuildParameters(GoRequestContext goRequestContext)
         {
             var arguments = goRequestContext.Arguments;
@@ -63,14 +85,20 @@ namespace Rabbit.Cloud.Client.Go
             {
                 var key = parameterModel.ParameterName;
                 var argument = arguments[parameterModel.ParameterInfo.Name];
+
+                IDictionary<string, string> GetSimpleBuild()
+                {
+                    var context = new GoParameterContext(parameterModel, argument);
+                    return GetSimpleValue(context);
+                }
                 switch (parameterModel.Target)
                 {
                     case ParameterTarget.Query:
-                        goRequestContext.AppendQuery(key, GetSimpleValue(argument));
+                        goRequestContext.AppendQuery(GetSimpleBuild());
                         break;
 
                     case ParameterTarget.Header:
-                        goRequestContext.AppendQuery(key, GetSimpleValue(argument));
+                        goRequestContext.AppendHeaders(GetSimpleBuild());
                         break;
 
                     case ParameterTarget.Items:
@@ -78,7 +106,7 @@ namespace Rabbit.Cloud.Client.Go
                         break;
 
                     case ParameterTarget.Path:
-                        goRequestContext.AppendPathVariable(key, GetSimpleValue(argument));
+                        goRequestContext.AppendPathVariable(GetSimpleBuild());
                         break;
 
                     case ParameterTarget.Body:
@@ -91,9 +119,64 @@ namespace Rabbit.Cloud.Client.Go
             }
         }
 
-        private static string GetSimpleValue(object value)
+        private static IDictionary<string, string> GetSimpleValue(GoParameterContext context)
         {
-            return value == null ? string.Empty : value.ToString();
+            SimpleBuild(context.ParameterModel.ParameterName, context.Argument, context);
+            return context.Values;
+        }
+
+        private static void SimpleBuild(string name, object value, GoParameterContext context)
+        {
+            if (value == null)
+                return;
+
+            var type = value.GetType();
+            var code = Type.GetTypeCode(type);
+
+            bool IsEnumerable()
+            {
+                return value is IEnumerable;
+            }
+
+            if (code == TypeCode.Object)
+            {
+                if (IsEnumerable())
+                {
+                    BuildEnumerable(name, (IEnumerable)value, context);
+                }
+                else
+                {
+                    BuildModel(context.OnlyOneParameter ? string.Empty : name, value, context);
+                }
+            }
+            else
+            {
+                context.AppendValue(name, value.ToString());
+            }
+        }
+
+        private static void BuildEnumerable(string name, IEnumerable enumerable, GoParameterContext context)
+        {
+            var enumerator = enumerable.GetEnumerator();
+            var index = 0;
+            while (enumerator.MoveNext())
+            {
+                SimpleBuild($"{name}[{index}]", enumerator.Current, context);
+                index++;
+            }
+        }
+
+        private static void BuildModel(string name, object model, GoParameterContext context)
+        {
+            var type = model.GetType();
+            foreach (var property in type.GetProperties())
+            {
+                var propertyValue = property.GetValue(model);
+
+                var chidName = string.IsNullOrEmpty(name) ? property.Name : name + "." + property.Name;
+
+                SimpleBuild(chidName, propertyValue, context);
+            }
         }
 
         private async Task<object> InternalHandleAsync(GoRequestContext goRequestContext)
@@ -114,15 +197,7 @@ namespace Rabbit.Cloud.Client.Go
 
             var requestMessage = new RabbitRequestMessage(requestType, responseType, new Uri(requestUrl), goRequestContext.Body, goRequestContext.Headers, goRequestContext.Items);
 
-            try
-            {
-                var response = await _rabbitClient.SendAsync(requestMessage);
-                return response.Body;
-            }
-            catch (RabbitClientException rce) when (rce.StatusCode == 404 && requestEntry.RequestOptions.NotFoundReturnNull)
-            {
-                return null;
-            }
+            return await SendAsync(goRequestContext, requestMessage);
         }
 
         private static Dictionary<string, object> AggregateArguments(IInvocation invocation)
@@ -212,50 +287,66 @@ namespace Rabbit.Cloud.Client.Go
 
         private RequestEntry GetRequestEntry(Type type, MethodInfo method)
         {
-            return _requestEntries.GetOrAdd((type, method), key =>
-            {
-                var serviceModel = _applicationModel.Services.SingleOrDefault(i => i.Type == type.GetTypeInfo());
-                var requestModel = serviceModel.Requests.SingleOrDefault(r => r.MethodInfo == method);
-
-                IEnumerable<IGoRequestOptionsProvider> GetRequestOptions()
-                {
-                    yield return requestModel.Attributes.OfType<IGoRequestOptionsProvider>().FirstOrDefault();
-                    yield return requestModel.ServiceModel.Attributes.OfType<IGoRequestOptionsProvider>().FirstOrDefault();
-                    yield return DefaultRequestOptions.RequestOptions;
-                }
-
-                var entry = new RequestEntry
-                {
-                    RequestModel = requestModel,
-                    Handler = null,
-                    Url = null,
-                    DefaultHeaders = GetHeaders(requestModel),
-                    DefaultItems = GetItems(requestModel),
-                    RequestOptions = GetRequestOptions().FirstOrDefault(o => o != null)
-                };
-
-                var url = entry.RequestModel.ServiceModel.Url.TrimEnd('/') + "/" + entry.RequestModel.Path.ToString().TrimStart('/');
-                entry.Url = new Uri(url);
-
-                entry.UrlVariableNames = TemplateEngine.GetVariables(url);
-                entry.DefaultQuery = QueryHelpers.ParseNullableQuery(entry.Url.Query);
-                var returnType = method.ReturnType;
-
-                var isTask = typeof(Task).IsAssignableFrom(returnType);
-
-                if (isTask)
-                {
-                    var handler = Cache.GetHandler(this, entry.RequestModel.ResponseType);
-                    entry.Handler = handler;
-                }
-                else
-                    entry.Handler = Handle;
-
-                return entry;
-            });
+            return _requestEntries.GetOrAdd((type, method), key => CreateRequestEntry(type, method));
         }
 
         #endregion Private Method
+
+        protected virtual RequestEntry CreateRequestEntry(Type type, MethodInfo method)
+        {
+            var serviceModel = _applicationModel.Services.SingleOrDefault(i => i.Type == type.GetTypeInfo());
+            var requestModel = serviceModel.Requests.SingleOrDefault(r => r.MethodInfo == method);
+
+            IEnumerable<IGoRequestOptionsProvider> GetRequestOptions()
+            {
+                yield return requestModel.Attributes.OfType<IGoRequestOptionsProvider>().FirstOrDefault();
+                yield return requestModel.ServiceModel.Attributes.OfType<IGoRequestOptionsProvider>().FirstOrDefault();
+                yield return DefaultRequestOptions.RequestOptions;
+            }
+
+            var entry = new RequestEntry
+            {
+                RequestModel = requestModel,
+                Handler = null,
+                Url = null,
+                DefaultHeaders = GetHeaders(requestModel),
+                DefaultItems = GetItems(requestModel),
+                RequestOptions = GetRequestOptions().FirstOrDefault(o => o != null)
+            };
+
+            var url = entry.RequestModel.ServiceModel.Url.TrimEnd('/') + "/" + entry.RequestModel.Path.ToString().TrimStart('/');
+            entry.Url = new Uri(url);
+
+            entry.UrlVariableNames = TemplateEngine.GetVariables(url);
+            entry.DefaultQuery = QueryHelpers.ParseNullableQuery(entry.Url.Query);
+            var returnType = method.ReturnType;
+
+            var isTask = typeof(Task).IsAssignableFrom(returnType);
+
+            if (isTask)
+            {
+                var handler = Cache.GetHandler(this, entry.RequestModel.ResponseType);
+                entry.Handler = handler;
+            }
+            else
+                entry.Handler = Handle;
+
+            return entry;
+        }
+
+        protected virtual async Task<object> SendAsync(GoRequestContext goRequestContext, RabbitRequestMessage requestMessage)
+        {
+            var requestEntry = goRequestContext.RequestEntry;
+            try
+            {
+                var response = await _rabbitClient.SendAsync(requestMessage);
+                return response.Body;
+            }
+            catch (RabbitClientException rce) when (rce.StatusCode == 404 && requestEntry.RequestOptions.NotFoundReturnNull)
+            {
+                return null;
+            }
+        }
 
         #region Help Type
 
@@ -331,6 +422,16 @@ namespace Rabbit.Cloud.Client.Go
             public IDictionary<object, object> Items { get; set; }
             public IDictionary<string, object> PathVariables { get; set; }
 
+            public GoRequestContext AppendQuery(IDictionary<string, string> values)
+            {
+                foreach (var item in values)
+                {
+                    AppendQuery(item.Key, item.Value);
+                }
+
+                return this;
+            }
+
             public GoRequestContext AppendQuery(string key, StringValues value)
             {
                 if (Query == null)
@@ -338,6 +439,16 @@ namespace Rabbit.Cloud.Client.Go
 
                 value = Query.TryGetValue(key, out var temp) ? StringValues.Concat(temp, value) : value;
                 Query[key] = value;
+
+                return this;
+            }
+
+            public GoRequestContext AppendHeaders(IDictionary<string, string> values)
+            {
+                foreach (var item in values)
+                {
+                    AppendHeaders(item.Key, item.Value);
+                }
 
                 return this;
             }
@@ -359,6 +470,16 @@ namespace Rabbit.Cloud.Client.Go
                     Items = new Dictionary<object, object>();
 
                 Items[key] = value;
+
+                return this;
+            }
+
+            public GoRequestContext AppendPathVariable(IDictionary<string, string> values)
+            {
+                foreach (var item in values)
+                {
+                    AppendPathVariable(item.Key, item.Value);
+                }
 
                 return this;
             }
