@@ -1,189 +1,254 @@
-﻿using Rabbit.Cloud.Client.Abstractions.Features;
-using Rabbit.Cloud.Client.Features;
-using Rabbit.Cloud.Client.Go.Abstractions.Filters;
-using Rabbit.Cloud.Client.Go.Filters;
-using Rabbit.Cloud.Client.Go.Utilities;
+﻿using Rabbit.Cloud.Client.Go.Abstractions.Filters;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Go.Internal
 {
-    public abstract class ServiceInvoker : IServiceInvoker
-    {
-        public abstract ServiceInvokerContext InvokerContext { get; }
-
-        #region Implementation of IServiceInvoker
-
-        public abstract Task InvokeAsync();
-
-        #endregion Implementation of IServiceInvoker
-    }
-
     public class DefaultServiceInvoker : ServiceInvoker
     {
-        private readonly ITemplateEngine _templateEngine;
-
-        public DefaultServiceInvoker(ServiceInvokerContext invokerContext)
+        public DefaultServiceInvoker(ServiceInvokerContext invokerContext) : base(invokerContext)
         {
-            InvokerContext = invokerContext;
-            _templateEngine = new TemplateEngine();
         }
 
         #region Implementation of IServiceInvoker
 
-        public override ServiceInvokerContext InvokerContext { get; }
-
-        public override async Task InvokeAsync()
+        private RequestExecutedContext CreateRequestExecutedContext(RequestExecutingContext requestExecutingContext)
         {
-            var requestContext = InvokerContext.RequestContext;
-            var requestModel = InvokerContext.RequestModel;
-            var rabbitContext = requestContext.RabbitContext;
-
-            BindRabbitContext();
-
-            var filters = requestModel
-                .GetRequestAttributes()
-                .OfType<IFilterMetadata>()
-                .OrderBy(f =>
-                {
-                    if (f is IOrderedFilter orderedFilter)
-                        return orderedFilter.Order;
-
-                    return 20;
-                }).ToArray();
-
-            var asyncRequestFilters = filters.OfType<IAsyncRequestFilter>().ToList();
-
-            // sync filter convert to async filter
-            var requestFilters = filters.OfType<IRequestFilter>()
-                .Where(i => !(i is IAsyncRequestFilter))
-                .ToArray();
-            if (requestFilters.Any())
-                asyncRequestFilters.Add(new SyncRequestFilter(requestFilters));
-
-            var executingContext = CreateExecutingContext(filters);
-            var executedContext = CreateExecutedContext(filters);
-
-            var isInvokeEnd = false;
-            async Task<RequestExecutedContext> InvokeEndAsync()
+            return new RequestExecutedContext(requestExecutingContext, requestExecutingContext.Filters,
+                requestExecutingContext.Arguments)
             {
-                try
-                {
-                    isInvokeEnd = true;
-                    executedContext.Result = executingContext.Result;
+                Result = Result
+            };
+        }
 
-                    await InvokerContext.Invoker(rabbitContext);
-                    executedContext.Result = rabbitContext.Response.Body;
+        private RequestExecutingContext CreateExecutingContext()
+        {
+            return new RequestExecutingContext(InvokerContext.RequestContext, new List<IFilterMetadata>(Filters), InvokerContext.RequestContext.Arguments);
+        }
 
-                    return executedContext;
-                }
-                catch (Exception exception)
-                {
-                    return executedContext = new RequestExecutedContext(requestContext, filters, requestContext.Arguments)
+        private Task Next(ref State next, ref Scope scope, ref object state, ref bool isCompleted)
+        {
+            switch (next)
+            {
+                case State.ActionBegin:
                     {
-                        ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(exception)
-                    };
-                }
+                        Cursor.Reset();
+                        goto case State.ActionNext;
+                    }
+
+                case State.ActionNext:
+                    var current = Cursor.GetNextFilter<IRequestFilter, IAsyncRequestFilter>();
+
+                    if (RequestExecutingContext == null && (current.Filter != null || current.FilterAsync != null))
+                        RequestExecutingContext = CreateExecutingContext();
+
+                    if (current.FilterAsync != null)
+                    {
+                        state = current.FilterAsync;
+
+                        goto case State.ActionAsyncBegin;
+                    }
+                    else if (current.Filter != null)
+                    {
+                        state = current.Filter;
+
+                        goto case State.ActionBegin;
+                    }
+                    else
+                        goto case State.ActionInside;
+
+                case State.ActionAsyncBegin:
+                    {
+                        var filter = (IAsyncRequestFilter)state;
+                        var requestExecutingContext = RequestExecutingContext;
+                        var task = filter.OnRequestExecutionAsync(requestExecutingContext, InvokeNextActionFilterAwaitedAsync);
+                        if (task.Status != TaskStatus.RanToCompletion)
+                        {
+                            next = State.ActionAsyncEnd;
+                            return task;
+                        }
+
+                        goto case State.ActionAsyncEnd;
+                    }
+
+                case State.ActionAsyncEnd:
+                    {
+                        if (RequestExecutedContext == null)
+                        {
+                            RequestExecutedContext = CreateRequestExecutedContext(RequestExecutingContext);
+                        }
+                        goto case State.ActionEnd;
+                    }
+
+                case State.ActionSyncBegin:
+                    {
+                        var filter = (IRequestFilter)state;
+                        var actionExecutingContext = RequestExecutingContext;
+
+                        filter.OnRequestExecuting(actionExecutingContext);
+
+                        if (actionExecutingContext.Result != null)
+                        {
+                            RequestExecutedContext = CreateRequestExecutedContext(actionExecutingContext);
+
+                            goto case State.ActionEnd;
+                        }
+
+                        var task = InvokeNextActionFilterAsync();
+                        if (task.Status != TaskStatus.RanToCompletion)
+                        {
+                            next = State.ActionSyncEnd;
+                            return task;
+                        }
+
+                        goto case State.ActionSyncEnd;
+                    }
+
+                case State.ActionSyncEnd:
+                    {
+                        var filter = (IRequestFilter)state;
+                        var actionExecutedContext = RequestExecutedContext;
+
+                        filter.OnRequestExecuted(actionExecutedContext);
+
+                        goto case State.ActionEnd;
+                    }
+
+                case State.ActionInside:
+                    {
+                        var task = InvokeActionMethodAsync();
+                        if (task.Status != TaskStatus.RanToCompletion)
+                        {
+                            next = State.ActionEnd;
+                            return task;
+                        }
+
+                        goto case State.ActionEnd;
+                    }
+
+                case State.ActionEnd:
+                    {
+                        if (scope == Scope.Action)
+                        {
+                            if (RequestExecutedContext == null)
+                            {
+                                RequestExecutedContext = CreateRequestExecutedContext(RequestExecutingContext);
+                            }
+
+                            isCompleted = true;
+                            return Task.CompletedTask;
+                        }
+
+                        var actionExecutedContext = RequestExecutedContext;
+                        Rethrow(actionExecutedContext);
+
+                        if (actionExecutedContext != null)
+                        {
+                            Result = actionExecutedContext.Result;
+                        }
+
+                        isCompleted = true;
+                        return Task.CompletedTask;
+                    }
+
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
+        private static void Rethrow(RequestExecutedContext context)
+        {
+            if (context == null)
+                return;
+
+            if (context.ExceptionHandled)
+                return;
+
+            context.ExceptionDispatchInfo?.Throw();
+
+            if (context.Exception != null)
+                throw context.Exception;
+        }
+
+        private async Task<RequestExecutedContext> InvokeNextActionFilterAwaitedAsync()
+        {
+            if (RequestExecutingContext.Result != null)
+            {
+                throw new InvalidOperationException("FormatAsyncActionFilter_InvalidShortCircuit");
             }
 
-            if (asyncRequestFilters.Any())
+            await InvokeNextActionFilterAsync();
+
+            return RequestExecutedContext;
+        }
+
+        private async Task InvokeNextActionFilterAsync()
+        {
+            try
             {
-                foreach (var filter in asyncRequestFilters)
+                var next = State.ActionNext;
+                var state = (object)null;
+                var scope = Scope.Action;
+                var isCompleted = false;
+                while (!isCompleted)
                 {
-                    await filter.OnRequestExecutionAsync(executingContext, InvokeEndAsync);
+                    await Next(ref next, ref scope, ref state, ref isCompleted);
                 }
             }
-            else
+            catch (Exception exception)
             {
-                await InvokeEndAsync();
+                RequestExecutedContext = new RequestExecutedContext(this.InvokerContext.RequestContext, Filters, InvokerContext.RequestContext.Arguments)
+                {
+                    ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(exception),
+                };
             }
+        }
 
-            if (!isInvokeEnd)
-                executedContext.Result = executingContext.Result;
+        private async Task InvokeActionMethodAsync()
+        {
+            var rabbitContext = InvokerContext.RequestContext.RabbitContext;
+            await InvokerContext.Invoker(rabbitContext);
 
-            if (!executedContext.ExceptionHandled)
-                executedContext.ExceptionDispatchInfo?.Throw();
-
-            rabbitContext.Response.Body = executedContext.Result;
+            Result = rabbitContext.Response.Body;
         }
 
         #endregion Implementation of IServiceInvoker
 
-        #region Protected Method
-
-        protected virtual void BindRabbitContext()
+        private enum Scope
         {
-            var requestContext = InvokerContext.RequestContext;
-            var rabbitContext = requestContext.RabbitContext;
-            var requestModel = InvokerContext.RequestModel;
+            Invoker,
+            Action,
+        }
 
-            ParameterUtil.BuildParameters(requestContext, requestModel);
+        private enum State
+        {
+            ActionBegin,
+            ActionNext,
+            ActionAsyncBegin,
+            ActionAsyncEnd,
+            ActionSyncBegin,
+            ActionSyncEnd,
+            ActionInside,
+            ActionEnd,
+        }
 
-            var url = _templateEngine.Render(requestContext.RequestUrl, requestContext.PathVariables)?.Result ?? requestContext.RequestUrl;
+        #region Overrides of MyClass
 
-            var request = rabbitContext.Request;
+        protected override async Task InvokeInnerFilterAsync()
+        {
+            var next = State.ActionBegin;
+            var scope = Scope.Invoker;
+            var state = (object)null;
+            var isCompleted = false;
 
-            var uri = new Uri(url);
-
-            request.Host = uri.Host;
-            request.Scheme = uri.Scheme;
-            request.Port = uri.Port;
-            request.Path = uri.PathAndQuery;
-
-            rabbitContext.Features.Set<IServiceRequestFeature>(new ServiceRequestFeature(rabbitContext.Request)
+            while (!isCompleted)
             {
-                RequesType = requestModel.RequesType,
-                ResponseType = requestModel.ResponseType
-            });
-        }
-
-        #endregion Protected Method
-
-        #region Private Method
-
-        private RequestExecutingContext CreateExecutingContext(IEnumerable<IFilterMetadata> filters)
-        {
-            return new RequestExecutingContext(InvokerContext.RequestContext, new List<IFilterMetadata>(filters), InvokerContext.RequestContext.Arguments);
-        }
-
-        private RequestExecutedContext CreateExecutedContext(IEnumerable<IFilterMetadata> filters)
-        {
-            return new RequestExecutedContext(InvokerContext.RequestContext, new List<IFilterMetadata>(filters), InvokerContext.RequestContext.Arguments);
-        }
-
-        #endregion Private Method
-
-        #region Help Type
-
-        private class SyncRequestFilter : RequestFilterAttribute
-        {
-            private readonly IReadOnlyList<IRequestFilter> _filters;
-
-            public SyncRequestFilter(IReadOnlyList<IRequestFilter> filters)
-            {
-                _filters = filters;
+                await Next(ref next, ref scope, ref state, ref isCompleted);
             }
-
-            #region Overrides of RequestFilterAttribute
-
-            public override void OnRequestExecuting(RequestExecutingContext context)
-            {
-                foreach (var filter in _filters)
-                    filter.OnRequestExecuting(context);
-            }
-
-            public override void OnRequestExecuted(RequestExecutedContext context)
-            {
-                foreach (var filter in _filters)
-                    filter.OnRequestExecuted(context);
-            }
-
-            #endregion Overrides of RequestFilterAttribute
         }
 
-        #endregion Help Type
+        #endregion Overrides of MyClass
     }
 }
