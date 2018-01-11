@@ -275,11 +275,6 @@ namespace Rabbit.Cloud.Client.Go.Internal
                     }
                 case State.ResourceInsideEnd:
                     {
-                        if (scope == Scope.Result)
-                        {
-                            goto case State.ActionEnd;
-                        }
-                        else
                             goto case State.InvokeEnd;
                     }
                 case State.InvokeEnd:
@@ -620,7 +615,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
             InvokeEnd,
         }
 
-        protected ServiceInvokerContext InvokerContext { get; }
+        public ServiceInvokerContext InvokerContext { get; }
 
         protected abstract Task InvokeInnerFilterAsync();
 
@@ -628,33 +623,23 @@ namespace Rabbit.Cloud.Client.Go.Internal
         {
             BindRabbitContext();
 
-            try
+            var next = State.InvokeBegin;
+
+            // The `scope` tells the `Next` method who the caller is, and what kind of state to initialize to
+            // communicate a result. The outermost scope is `Scope.Invoker` and doesn't require any type
+            // of context or result other than throwing.
+            var scope = Scope.Result;
+
+            // The `state` is used for internal state handling during transitions between states. In practice this
+            // means storing a filter instance in `state` and then retrieving it in the next state.
+            var state = (object)null;
+
+            // `isCompleted` will be set to true when we've reached a terminal state.
+            var isCompleted = false;
+
+            while (!isCompleted)
             {
-                var next = State.InvokeBegin;
-
-                // The `scope` tells the `Next` method who the caller is, and what kind of state to initialize to
-                // communicate a result. The outermost scope is `Scope.Invoker` and doesn't require any type
-                // of context or result other than throwing.
-                var scope = Scope.Result;
-
-                // The `state` is used for internal state handling during transitions between states. In practice this
-                // means storing a filter instance in `state` and then retrieving it in the next state.
-                var state = (object)null;
-
-                // `isCompleted` will be set to true when we've reached a terminal state.
-                var isCompleted = false;
-
-                while (!isCompleted)
-                {
-                    await Next(ref next, ref scope, ref state, ref isCompleted);
-                }
-            }
-            catch (Exception exception)
-            {
-                ExceptionContext = new ExceptionContext(InvokerContext.RequestContext, Filters)
-                {
-                    ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(exception)
-                };
+                await Next(ref next, ref scope, ref state, ref isCompleted);
             }
         }
     }

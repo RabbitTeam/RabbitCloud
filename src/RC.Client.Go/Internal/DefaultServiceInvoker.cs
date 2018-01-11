@@ -39,25 +39,27 @@ namespace Rabbit.Cloud.Client.Go.Internal
                     }
 
                 case State.ActionNext:
-                    var current = Cursor.GetNextFilter<IRequestFilter, IAsyncRequestFilter>();
-
-                    if (RequestExecutingContext == null && (current.Filter != null || current.FilterAsync != null))
-                        RequestExecutingContext = CreateExecutingContext();
-
-                    if (current.FilterAsync != null)
                     {
-                        state = current.FilterAsync;
+                        var current = Cursor.GetNextFilter<IRequestFilter, IAsyncRequestFilter>();
 
-                        goto case State.ActionAsyncBegin;
-                    }
-                    else if (current.Filter != null)
-                    {
-                        state = current.Filter;
+                        if (RequestExecutingContext == null && (current.Filter != null || current.FilterAsync != null))
+                            RequestExecutingContext = CreateExecutingContext();
 
-                        goto case State.ActionBegin;
-                    }
-                    else
+                        if (current.FilterAsync != null)
+                        {
+                            state = current.FilterAsync;
+
+                            goto case State.ActionAsyncBegin;
+                        }
+
+                        if (current.Filter != null)
+                        {
+                            state = current.Filter;
+
+                            goto case State.ActionSyncBegin;
+                        }
                         goto case State.ActionInside;
+                    }
 
                 case State.ActionAsyncBegin:
                     {
