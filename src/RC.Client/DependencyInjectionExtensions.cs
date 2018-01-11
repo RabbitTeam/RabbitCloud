@@ -18,8 +18,10 @@ namespace Rabbit.Cloud.Client
 
         public static IServiceCollection AddRabbitClient(this IServiceCollection services, IRabbitApplicationBuilder app)
         {
+            var invoker = app.Build();
             return services
-                .AddSingleton<IRabbitClient>(new RabbitClient(app.Build(), app.ApplicationServices));
+                .AddSingleton(invoker)
+                .AddSingleton<IRabbitClient>(new RabbitClient(invoker, app.ApplicationServices));
         }
     }
 }

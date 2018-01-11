@@ -1,25 +1,57 @@
-﻿using Rabbit.Cloud.Abstractions.Utilities;
+﻿using Microsoft.Extensions.Options;
+using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Client.Go.Abstractions;
+using Rabbit.Cloud.Client.Go.Abstractions.Filters;
+using Rabbit.Cloud.Client.Go.ApplicationModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Client.Go.ApplicationModels
+namespace Rabbit.Cloud.Client.Go.Internal
 {
-    public class RabbitApplicationBuilder
+    public class DefaultApplicationModelProvider : IApplicationModelProvider
     {
-        public static ApplicationModel BuildModel(IEnumerable<TypeInfo> types)
+        private readonly ICollection<IFilterMetadata> _globalFilters;
+
+        public DefaultApplicationModelProvider(IOptions<GoOptions> goOptionsAccessor)
         {
-            var applicationModel = new ApplicationModel();
-            foreach (var typeInfo in types)
+            _globalFilters = goOptionsAccessor.Value.Filters;
+        }
+
+        #region Implementation of IApplicationModelProvider
+
+        public int Order => -1000;
+
+        public void OnProvidersExecuting(ApplicationModelProviderContext context)
+        {
+            var application = context.Result;
+
+            foreach (var filter in _globalFilters)
+                application.Filters.Add(filter);
+
+            foreach (var typeInfo in context.ServiceTypes)
             {
                 var serviceModel = CreateServiceModel(typeInfo);
-                applicationModel.Services.Add(serviceModel);
+                application.Services.Add(serviceModel);
             }
+        }
 
-            return applicationModel;
+        public virtual void OnProvidersExecuted(ApplicationModelProviderContext context)
+        {
+        }
+
+        #endregion Implementation of IApplicationModelProvider
+
+        #region Private Method
+
+        private static void AddRange<T>(ICollection<T> list, IEnumerable<T> items)
+        {
+            foreach (var item in items)
+            {
+                list.Add(item);
+            }
         }
 
         private static ServiceModel CreateServiceModel(TypeInfo type)
@@ -28,6 +60,9 @@ namespace Rabbit.Cloud.Client.Go.ApplicationModels
             {
                 Url = GetBaseUrl(type)
             };
+
+            AddRange(serviceModel.Filters, serviceModel.Attributes.OfType<IFilterMetadata>());
+
             foreach (var method in type.GetMethods())
             {
                 var requestModel = CreateRequestModel(serviceModel, method);
@@ -45,6 +80,8 @@ namespace Rabbit.Cloud.Client.Go.ApplicationModels
                 RequesType = GetRequestType(method),
                 ResponseType = GetResponseType(method)
             };
+
+            AddRange(requestModel.Filters, requestModel.Attributes.OfType<IFilterMetadata>());
 
             foreach (var parameter in method.GetParameters())
             {
@@ -133,5 +170,7 @@ namespace Rabbit.Cloud.Client.Go.ApplicationModels
 
             return name;
         }
+
+        #endregion Private Method
     }
 }

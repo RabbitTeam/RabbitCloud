@@ -1,4 +1,5 @@
 ﻿using Rabbit.Cloud.Client.Go.Abstractions;
+using Rabbit.Cloud.Client.Go.Abstractions.Filters;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -7,7 +8,17 @@ namespace Rabbit.Cloud.Client.Go.ApplicationModels
 {
     public class ApplicationModel
     {
-        public IList<ServiceModel> Services { get; } = new List<ServiceModel>();
+        public ApplicationModel()
+        {
+            Services = new List<ServiceModel>();
+            Filters = new List<IFilterMetadata>();
+            Properties = new Dictionary<object, object>();
+        }
+
+        public IList<ServiceModel> Services { get; }
+
+        public IList<IFilterMetadata> Filters { get; }
+        public IDictionary<object, object> Properties { get; }
     }
 
     public class ServiceModel
@@ -19,12 +30,14 @@ namespace Rabbit.Cloud.Client.Go.ApplicationModels
 
             Type = serviceType ?? throw new ArgumentNullException(nameof(serviceType));
             Attributes = new List<object>(attributes);
+            Filters = new List<IFilterMetadata>();
             Properties = new Dictionary<object, object>();
         }
 
         public TypeInfo Type { get; }
         public string Url { get; set; }
         public IReadOnlyList<object> Attributes { get; }
+        public IList<IFilterMetadata> Filters { get; }
         public IDictionary<object, object> Properties { get; }
         public IList<RequestModel> Requests { get; } = new List<RequestModel>();
     }
@@ -63,9 +76,11 @@ namespace Rabbit.Cloud.Client.Go.ApplicationModels
             Attributes = new List<object>(attributes);
             Properties = new Dictionary<object, object>();
             Parameters = new List<ParameterModel>();
+            Filters = new List<IFilterMetadata>();
         }
 
         public IReadOnlyList<object> Attributes { get; }
+        public IList<IFilterMetadata> Filters { get; }
         public IDictionary<object, object> Properties { get; }
         public MethodInfo MethodInfo { get; }
         public IList<ParameterModel> Parameters { get; set; }
