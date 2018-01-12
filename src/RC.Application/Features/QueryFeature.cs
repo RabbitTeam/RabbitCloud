@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Primitives;
+using Rabbit.Cloud.Application.Internal;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Rabbit.Cloud.Application.Features
@@ -13,11 +12,11 @@ namespace Rabbit.Cloud.Application.Features
         private FeatureReferences<IRequestFeature> _features;
 
         private string _original;
-        private IDictionary<string, StringValues> _parsedValues;
+        private IQueryCollection _parsedValues;
 
-        private static readonly IDictionary<string, StringValues> Empty = new Dictionary<string, StringValues>();
+        private static readonly IQueryCollection Empty = QueryCollection.Empty;
 
-        public QueryFeature(IDictionary<string, StringValues> query)
+        public QueryFeature(IQueryCollection query)
         {
             _parsedValues = query ?? throw new ArgumentNullException(nameof(query));
         }
@@ -37,7 +36,7 @@ namespace Rabbit.Cloud.Application.Features
 
         #region Implementation of IQueryFeature
 
-        public IDictionary<string, StringValues> Query
+        public IQueryCollection Query
         {
             get
             {
@@ -53,7 +52,8 @@ namespace Rabbit.Cloud.Application.Features
 
                 var result = QueryHelpers.ParseNullableQuery(current);
 
-                _parsedValues = result ?? Empty;
+                _parsedValues = result == null ? QueryCollection.Empty : new QueryCollection(result);
+
                 return _parsedValues;
             }
             set

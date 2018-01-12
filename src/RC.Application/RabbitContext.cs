@@ -59,7 +59,7 @@ namespace Rabbit.Cloud.Application
             set => RequestFeature.QueryString = value;
         }
 
-        public IDictionary<string, StringValues> Query
+        public IQueryCollection Query
         {
             get => QueryFeature.Query;
             set => QueryFeature.Query = value;
