@@ -47,7 +47,7 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
     }
 
     [AttributeUsage(AttributeTargets.Interface)]
-    public class GoClientAttribute : Attribute, IClientProvider, IGoRequestOptionsProvider
+    public class GoClientAttribute : Attribute, IClientProvider
     {
         public GoClientAttribute()
         {
@@ -63,27 +63,10 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
         public string Url { get; }
 
         #endregion Implementation of IClientProvider
-
-        #region Implementation of IGoRequestOptionsProvider
-
-        /// <summary>
-        /// 如果服务端返回404，则默认返回null而不是抛出异常（这是一个临时的属性）
-        /// </summary>
-        public bool NotFoundReturnNull { get; set; } = true;
-
-        #endregion Implementation of IGoRequestOptionsProvider
-    }
-
-    public interface IGoRequestOptionsProvider
-    {
-        /// <summary>
-        /// 如果服务端返回404，则默认返回null而不是抛出异常（这是一个临时的属性）
-        /// </summary>
-        bool NotFoundReturnNull { get; }
     }
 
     [AttributeUsage(AttributeTargets.Method)]
-    public class GoRequestAttribute : Attribute, IPathProvider, IGoRequestOptionsProvider
+    public class GoRequestAttribute : Attribute, IPathProvider
     {
         public GoRequestAttribute(string path)
         {
@@ -99,15 +82,6 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
         public string Path { get; }
 
         #endregion Implementation of IPathProvider
-
-        #region Implementation of IGoRequestOptionsProvider
-
-        /// <summary>
-        /// 如果服务端返回404，则默认返回null而不是抛出异常（这是一个临时的属性）
-        /// </summary>
-        public bool NotFoundReturnNull { get; set; } = true;
-
-        #endregion Implementation of IGoRequestOptionsProvider
     }
 
     public enum ParameterTarget
@@ -122,13 +96,12 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
     public interface IParameterTargetProvider
     {
         ParameterTarget Target { get; }
+        string Name { get; }
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
     public class GoBodyAttribute : Attribute, IParameterTargetProvider, IHeadersProvider
     {
-        public string ContentType { get; }
-
         public GoBodyAttribute() : this("application/json")
         {
         }
@@ -138,9 +111,12 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
             ContentType = contentType;
         }
 
+        public string ContentType { get; }
+
         #region Implementation of IParameterTargetProvider
 
         public ParameterTarget Target { get; } = ParameterTarget.Body;
+        public string Name { get; set; }
 
         #endregion Implementation of IParameterTargetProvider
 
@@ -157,14 +133,29 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
     [AttributeUsage(AttributeTargets.Parameter)]
     public class GoParameterAttribute : Attribute, IParameterTargetProvider
     {
-        public GoParameterAttribute(ParameterTarget target = ParameterTarget.Query)
+        public GoParameterAttribute()
+        {
+            Target = ParameterTarget.Query;
+        }
+
+        public GoParameterAttribute(string name) : this(ParameterTarget.Query, name)
+        {
+        }
+
+        public GoParameterAttribute(ParameterTarget target) : this(target, null)
+        {
+        }
+
+        public GoParameterAttribute(ParameterTarget target, string name)
         {
             Target = target;
+            Name = name;
         }
 
         #region Implementation of IParameterTargetProvider
 
         public ParameterTarget Target { get; }
+        public string Name { get; }
 
         #endregion Implementation of IParameterTargetProvider
     }

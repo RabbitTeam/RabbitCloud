@@ -122,11 +122,18 @@ namespace Rabbit.Cloud.Client.Go.Internal
             return typeCode == TypeCode.Object ? ParameterTarget.Body : ParameterTarget.Query;
         }
 
+        private static string GetParameterName(IEnumerable<object> attributes, ParameterInfo parameter)
+        {
+            var targetProvider = attributes.OfType<IParameterTargetProvider>().FirstOrDefault();
+            return targetProvider?.Name ?? parameter.Name;
+        }
+
         private static ParameterModel CreateParameterModel(RequestModel requestModel, ParameterInfo parameter)
         {
-            var parameterModel = new ParameterModel(parameter, parameter.GetCustomAttributes().ToArray())
+            var attributes = parameter.GetCustomAttributes().ToArray();
+            var parameterModel = new ParameterModel(parameter, attributes)
             {
-                ParameterName = parameter.Name,
+                ParameterName = GetParameterName(attributes, parameter),
                 Request = requestModel
             };
 

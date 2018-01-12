@@ -1,6 +1,7 @@
 ﻿using Rabbit.Cloud.Client.Abstractions.Features;
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Go.Abstractions.Filters;
+using Rabbit.Cloud.Client.Go.Binder;
 using Rabbit.Cloud.Client.Go.Utilities;
 using System;
 using System.Linq;
@@ -42,30 +43,56 @@ namespace Rabbit.Cloud.Client.Go.Internal
             Cursor = new FilterCursor(Filters);
         }
 
-        protected virtual void BindRabbitContext()
+        protected virtual async Task BuildParametersAsync()
         {
             var requestContext = InvokerContext.RequestContext;
-            var rabbitContext = requestContext.RabbitContext;
             var requestModel = InvokerContext.RequestModel;
 
-            ParameterUtil.BuildParameters(requestContext, requestModel);
-
-            var url = _templateEngine.Render(requestContext.RequestUrl, requestContext.PathVariables)?.Result ?? requestContext.RequestUrl;
-
-            var request = rabbitContext.Request;
-
-            var uri = new Uri(url);
-
-            request.Host = uri.Host;
-            request.Scheme = uri.Scheme;
-            request.Port = uri.Port;
-            request.Path = uri.PathAndQuery;
-
-            rabbitContext.Features.Set<IServiceRequestFeature>(new ServiceRequestFeature(rabbitContext.Request)
+            var parameters = requestModel.Parameters;
+            foreach (var parameter in parameters)
             {
-                RequesType = requestModel.RequesType,
-                ResponseType = requestModel.ResponseType
-            });
+                var modelName = parameters.Count == 1 ? string.Empty : parameter.ParameterName;
+                var model = requestContext.Arguments[parameter.ParameterInfo.Name];
+
+                var bindContext = new ParameterBindContext
+                {
+                    Model = model,
+                    ModelName = modelName,
+                    RequestContext = requestContext,
+                    Target = parameter.Target,
+                    Type = parameter.ParameterInfo.ParameterType
+                };
+                var parameterBinder = parameter.Attributes.OfType<IParameterBinder>().FirstOrDefault() ?? DefaultParameterBinder.Instance;
+                await parameterBinder.BindAsync(bindContext);
+            }
+        }
+
+        protected virtual async Task BindRabbitContextAsync()
+        {
+            using (var requestContext = InvokerContext.RequestContext)
+            {
+                var rabbitContext = requestContext.RabbitContext;
+                var requestModel = InvokerContext.RequestModel;
+
+                await BuildParametersAsync();
+
+                var url = _templateEngine.Render(requestContext.RequestUrl, requestContext.PathVariables)?.Result ?? requestContext.RequestUrl;
+
+                var request = rabbitContext.Request;
+
+                var uri = new Uri(url);
+
+                request.Host = uri.Host;
+                request.Scheme = uri.Scheme;
+                request.Port = uri.Port;
+                request.Path = uri.PathAndQuery;
+
+                rabbitContext.Features.Set<IServiceRequestFeature>(new ServiceRequestFeature(rabbitContext.Request)
+                {
+                    RequesType = requestModel.RequesType,
+                    ResponseType = requestModel.ResponseType
+                });
+            }
         }
 
         private Task Next(ref State next, ref Scope scope, ref object state, ref bool isCompleted)
@@ -275,7 +302,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
                     }
                 case State.ResourceInsideEnd:
                     {
-                            goto case State.InvokeEnd;
+                        goto case State.InvokeEnd;
                     }
                 case State.InvokeEnd:
                     {
@@ -621,7 +648,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
 
         public virtual async Task InvokeAsync()
         {
-            BindRabbitContext();
+            await BindRabbitContextAsync();
 
             var next = State.InvokeBegin;
 
@@ -641,6 +668,8 @@ namespace Rabbit.Cloud.Client.Go.Internal
             {
                 await Next(ref next, ref scope, ref state, ref isCompleted);
             }
+
+            InvokerContext.RequestContext.RabbitContext.Response.Body = Result;
         }
     }
 }

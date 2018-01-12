@@ -1,10 +1,13 @@
 ﻿using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Application.Internal;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Rabbit.Cloud.Client.Go.Abstractions
 {
-    public class GoRequestContext
+    public class GoRequestContext : IDisposable
     {
         public GoRequestContext(IRabbitContext rabbitContext)
         {
@@ -23,6 +26,7 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
         public IDictionary<string, object> Arguments { get; set; }
         public string RequestUrl { get; set; }
         public IDictionary<string, object> PathVariables { get; set; }
+        public Dictionary<string, StringValues> Query { get; private set; }
 
         public GoRequestContext AppendQuery(IDictionary<string, StringValues> values)
         {
@@ -39,10 +43,11 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
 
         public GoRequestContext AppendQuery(string key, StringValues value)
         {
-            var query = RabbitContext.Request.Query;
+            if (Query == null)
+                Query = new Dictionary<string, StringValues>(RabbitContext.Request.Query.ToDictionary(i => i.Key, i => i.Value), StringComparer.OrdinalIgnoreCase);
 
-            value = query.TryGetValue(key, out var temp) ? StringValues.Concat(temp, value) : value;
-            query[key] = value;
+            value = Query.TryGetValue(key, out var temp) ? StringValues.Concat(temp, value) : value;
+            Query[key] = value;
 
             return this;
         }
@@ -120,5 +125,19 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
 
             return this;
         }
+
+        #region IDisposable
+
+        /// <inheritdoc />
+        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+        public void Dispose()
+        {
+            if (Query != null)
+            {
+                RabbitContext.Request.Query = new QueryCollection(Query);
+            }
+        }
+
+        #endregion IDisposable
     }
 }

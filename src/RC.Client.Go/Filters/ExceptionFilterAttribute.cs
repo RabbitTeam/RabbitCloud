@@ -9,7 +9,7 @@ namespace Rabbit.Cloud.Client.Go.Filters
     {
         #region Implementation of IAsyncExceptionFilter
 
-        public Task OnExceptionAsync(ExceptionContext context)
+        public virtual Task OnExceptionAsync(ExceptionContext context)
         {
             if (context == null)
             {
@@ -24,7 +24,7 @@ namespace Rabbit.Cloud.Client.Go.Filters
 
         #region Implementation of IExceptionFilter
 
-        public void OnException(ExceptionContext context)
+        public virtual void OnException(ExceptionContext context)
         {
         }
 

@@ -8,7 +8,6 @@ using Rabbit.Cloud.Client.Go.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
 namespace Rabbit.Cloud.Client.Go.Internal
@@ -57,7 +56,10 @@ namespace Rabbit.Cloud.Client.Go.Internal
             var invocation = interceptContext.Invocation;
 
             var entry = GetRequestEntry(interceptContext);
-            var goRequestContext = new GoRequestContext(new RabbitContext())
+            var goRequestContext = new GoRequestContext(new RabbitContext
+            {
+                RequestServices = ServiceProvider
+            })
             {
                 RequestUrl = entry.Uri,
                 Arguments = invocation.MappingArguments()
@@ -75,25 +77,22 @@ namespace Rabbit.Cloud.Client.Go.Internal
             var requestModel = interceptContext.RequestModel;
             var serviceModel = requestModel.ServiceModel;
 
-            IEnumerable<IGoRequestOptionsProvider> GetRequestOptions()
-            {
-                yield return requestModel.Attributes.OfType<IGoRequestOptionsProvider>().FirstOrDefault();
-                yield return requestModel.ServiceModel.Attributes.OfType<IGoRequestOptionsProvider>().FirstOrDefault();
-                yield return DefaultRequestOptions.RequestOptions;
-            }
-
             var entry = new RequestEntry
             {
                 RequestModel = requestModel,
                 DefaultHeaders = requestModel.GetRequestHeaders(),
                 DefaultItems = requestModel.GetRequestItems()
-                //                                RequestOptions = GetRequestOptions().FirstOrDefault(o => o != null)
             };
 
             var uri = serviceModel.Url.TrimEnd('/') + "/" + requestModel.Path.ToString().TrimStart('/');
             entry.Uri = uri;
 
-            entry.DefaultQuery = QueryHelpers.ParseNullableQuery(uri);
+            var queryStart = uri.IndexOf("?", StringComparison.Ordinal);
+
+            if (queryStart != -1)
+            {
+                entry.DefaultQuery = QueryHelpers.ParseNullableQuery(uri.Substring(queryStart));
+            }
 
             return entry;
         }
@@ -121,12 +120,6 @@ namespace Rabbit.Cloud.Client.Go.Internal
             public IDictionary<object, object> DefaultItems { get; set; }
             public IDictionary<string, StringValues> DefaultHeaders { get; set; }
             public IDictionary<string, StringValues> DefaultQuery { get; set; }
-        }
-
-        private class DefaultRequestOptions : IGoRequestOptionsProvider
-        {
-            public static IGoRequestOptionsProvider RequestOptions { get; } = new DefaultRequestOptions();
-            public bool NotFoundReturnNull { get; } = true;
         }
 
         #endregion Help Type

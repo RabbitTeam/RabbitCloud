@@ -1,6 +1,5 @@
 ﻿using Rabbit.Cloud.Client.Go.Abstractions.Filters;
 using System;
-using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
@@ -13,20 +12,6 @@ namespace Rabbit.Cloud.Client.Go.Internal
         }
 
         #region Implementation of IServiceInvoker
-
-        private RequestExecutedContext CreateRequestExecutedContext(RequestExecutingContext requestExecutingContext)
-        {
-            return new RequestExecutedContext(requestExecutingContext, requestExecutingContext.Filters,
-                requestExecutingContext.Arguments)
-            {
-                Result = Result
-            };
-        }
-
-        private RequestExecutingContext CreateExecutingContext()
-        {
-            return new RequestExecutingContext(InvokerContext.RequestContext, new List<IFilterMetadata>(Filters), InvokerContext.RequestContext.Arguments);
-        }
 
         private Task Next(ref State next, ref Scope scope, ref object state, ref bool isCompleted)
         {
@@ -43,7 +28,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
                         var current = Cursor.GetNextFilter<IRequestFilter, IAsyncRequestFilter>();
 
                         if (RequestExecutingContext == null && (current.Filter != null || current.FilterAsync != null))
-                            RequestExecutingContext = CreateExecutingContext();
+                            RequestExecutingContext = new RequestExecutingContext(InvokerContext.RequestContext, Filters, InvokerContext.RequestContext.Arguments);
 
                         if (current.FilterAsync != null)
                         {
@@ -79,7 +64,11 @@ namespace Rabbit.Cloud.Client.Go.Internal
                     {
                         if (RequestExecutedContext == null)
                         {
-                            RequestExecutedContext = CreateRequestExecutedContext(RequestExecutingContext);
+                            RequestExecutedContext = new RequestExecutedContext(InvokerContext.RequestContext, Filters, InvokerContext.RequestContext.Arguments)
+                            {
+                                Canceled = true,
+                                Result = RequestExecutingContext.Result
+                            };
                         }
                         goto case State.ActionEnd;
                     }
@@ -91,9 +80,13 @@ namespace Rabbit.Cloud.Client.Go.Internal
 
                         filter.OnRequestExecuting(actionExecutingContext);
 
-                        if (actionExecutingContext.Result != null)
+                        if (actionExecutingContext?.Result != null)
                         {
-                            RequestExecutedContext = CreateRequestExecutedContext(actionExecutingContext);
+                            RequestExecutedContext = new RequestExecutedContext(InvokerContext.RequestContext, Filters, InvokerContext.RequestContext.Arguments)
+                            {
+                                Canceled = true,
+                                Result = actionExecutingContext.Result
+                            };
 
                             goto case State.ActionEnd;
                         }
@@ -136,7 +129,10 @@ namespace Rabbit.Cloud.Client.Go.Internal
                         {
                             if (RequestExecutedContext == null)
                             {
-                                RequestExecutedContext = CreateRequestExecutedContext(RequestExecutingContext);
+                                RequestExecutedContext = new RequestExecutedContext(InvokerContext.RequestContext, Filters, InvokerContext.RequestContext.Arguments)
+                                {
+                                    Result = Result
+                                };
                             }
 
                             isCompleted = true;
@@ -236,7 +232,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
             ActionEnd,
         }
 
-        #region Overrides of MyClass
+        #region Overrides of ServiceInvoker
 
         protected override async Task InvokeInnerFilterAsync()
         {
@@ -251,6 +247,6 @@ namespace Rabbit.Cloud.Client.Go.Internal
             }
         }
 
-        #endregion Overrides of MyClass
+        #endregion Overrides of ServiceInvoker
     }
 }

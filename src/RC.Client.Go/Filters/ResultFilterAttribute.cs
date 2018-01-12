@@ -9,11 +9,11 @@ namespace Rabbit.Cloud.Client.Go.Filters
     {
         #region Implementation of IResultFilter
 
-        public void OnResultExecuted(ResultExecutedContext context)
+        public virtual void OnResultExecuted(ResultExecutedContext context)
         {
         }
 
-        public void OnResultExecuting(ResultExecutingContext context)
+        public virtual void OnResultExecuting(ResultExecutingContext context)
         {
         }
 
@@ -21,7 +21,7 @@ namespace Rabbit.Cloud.Client.Go.Filters
 
         #region Implementation of IAsyncResultFilter
 
-        public async Task OnResultExecutionAsync(ResultExecutingContext context, ResultExecutionDelegate next)
+        public virtual async Task OnResultExecutionAsync(ResultExecutingContext context, ResultExecutionDelegate next)
         {
             if (context == null)
             {
