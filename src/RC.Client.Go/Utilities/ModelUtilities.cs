@@ -51,7 +51,10 @@ namespace Rabbit.Cloud.Client.Go.Utilities
 
         public static IEnumerable<object> GetRequestAttributes(this RequestModel requestModel)
         {
-            return requestModel.ServiceModel.Attributes.Concat(requestModel.Attributes)
+            var serviceModel = requestModel.ServiceModel;
+            var application = serviceModel.Application;
+
+            return application.Filters.Concat(serviceModel.Attributes).Concat(requestModel.Attributes)
                 .Concat(requestModel.Parameters.SelectMany(p => p.Attributes));
         }
 

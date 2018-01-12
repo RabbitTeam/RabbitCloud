@@ -1,6 +1,7 @@
 ﻿using Castle.DynamicProxy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
+using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Client.Go.Abstractions;
 using Rabbit.Cloud.Client.Go.ApplicationModels;
 using Rabbit.Cloud.Client.Go.Internal;
@@ -35,7 +36,8 @@ namespace Rabbit.Cloud.Client.Go
 
                     var applicationModel = ApplicationModelUtilities.BuildModel(types, providers);
 
-                    var conventions = s.GetServices<IApplicationModelConvention>();
+                    var goOptions = s.GetRequiredService<IOptions<GoOptions>>().Value;
+                    var conventions = goOptions.Conventions;
 
                     ApplicationModelUtilities.ApplyConventions(applicationModel, conventions);
 

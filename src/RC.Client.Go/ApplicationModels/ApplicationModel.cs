@@ -34,6 +34,7 @@ namespace Rabbit.Cloud.Client.Go.ApplicationModels
             Properties = new Dictionary<object, object>();
         }
 
+        public ApplicationModel Application { get; set; }
         public TypeInfo Type { get; }
         public string Url { get; set; }
         public IReadOnlyList<object> Attributes { get; }

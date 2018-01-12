@@ -1,4 +1,6 @@
-﻿using Rabbit.Cloud.Client.Go.Filters;
+﻿using Rabbit.Cloud.Client.Go.ApplicationModels;
+using Rabbit.Cloud.Client.Go.Filters;
+using System.Collections.Generic;
 
 namespace Rabbit.Cloud.Client.Go
 {
@@ -8,9 +10,11 @@ namespace Rabbit.Cloud.Client.Go
         {
             DefaultScheme = "http";
             Filters = new FilterCollection();
+            Conventions = new List<IApplicationModelConvention>();
         }
 
         public string DefaultScheme { get; set; }
         public FilterCollection Filters { get; }
+        public IList<IApplicationModelConvention> Conventions { get; }
     }
 }

@@ -2,8 +2,9 @@
 using Rabbit.Cloud.Client.Serialization;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
-namespace Rabbit.Cloud.Client.Codec
+namespace Rabbit.Cloud.Client.Internal.Codec
 {
     public class SerializerCodec : ICodec
     {
@@ -22,6 +23,9 @@ namespace Rabbit.Cloud.Client.Codec
 
         public object Encode(object body)
         {
+            if (body == null)
+                return null;
+
             var memoryStream = new MemoryStream();
             _serializer.Serialize(body, memoryStream);
             return memoryStream;
@@ -29,6 +33,9 @@ namespace Rabbit.Cloud.Client.Codec
 
         public object Decode(object data)
         {
+            if (_responseType == typeof(void) || _responseType == typeof(Task))
+                return data;
+
             return _serializer.Deserialize(data as Stream, _responseType);
         }
 

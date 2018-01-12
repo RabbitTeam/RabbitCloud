@@ -2,8 +2,8 @@
 {
     public interface IResultFilter : IFilterMetadata
     {
-        void OnResultExecuted(ResultExecutedContext context);
-
         void OnResultExecuting(ResultExecutingContext context);
+
+        void OnResultExecuted(ResultExecutedContext context);
     }
 }

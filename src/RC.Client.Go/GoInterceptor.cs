@@ -19,13 +19,17 @@ namespace Rabbit.Cloud.Client.Go
             public InterceptContext(IInvocation invocation)
             {
                 ProxyType = GetProxyType(invocation);
-                IsTask = typeof(Task).IsAssignableFrom(invocation.Method.ReturnType);
+
+                var returnType = invocation.Method.ReturnType;
+                IsTask = typeof(Task).IsAssignableFrom(returnType);
+                HasReturnValue = returnType != typeof(void) && returnType != typeof(Task);
             }
 
             public IInvocation Invocation { get; set; }
             public Type ProxyType { get; set; }
             public IServiceInvoker ServiceInvoker { get; set; }
             public bool IsTask { get; }
+            public bool HasReturnValue { get; }
             public RequestModel RequestModel { get; set; }
 
             private static Type GetProxyType(IInvocation invocation)
@@ -87,8 +91,16 @@ namespace Rabbit.Cloud.Client.Go
 
             if (interceptContext.IsTask)
             {
-                var handler = Cache.GetHandler(interceptContext.RequestModel.ResponseType);
-                invocation.ReturnValue = handler(this, interceptContext.ServiceInvoker);
+                var serviceInvoker = interceptContext.ServiceInvoker;
+                if (interceptContext.HasReturnValue)
+                {
+                    var handler = Cache.GetHandler(interceptContext.RequestModel.ResponseType);
+                    invocation.ReturnValue = handler(this, serviceInvoker);
+                }
+                else
+                {
+                    invocation.ReturnValue = HandleTaskAsync(serviceInvoker);
+                }
             }
             else
             {
@@ -99,6 +111,11 @@ namespace Rabbit.Cloud.Client.Go
         #endregion Implementation of IInterceptor
 
         #region Private Method
+
+        private async Task HandleTaskAsync(IServiceInvoker serviceInvoker)
+        {
+            await DoHandleAsync(serviceInvoker);
+        }
 
         private async Task<T> HandleAsync<T>(IServiceInvoker serviceInvoker)
         {

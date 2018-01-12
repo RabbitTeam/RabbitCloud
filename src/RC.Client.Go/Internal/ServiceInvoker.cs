@@ -2,7 +2,6 @@
 using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Client.Go.Abstractions.Filters;
 using Rabbit.Cloud.Client.Go.Binder;
-using Rabbit.Cloud.Client.Go.Utilities;
 using System;
 using System.Linq;
 using System.Runtime.ExceptionServices;
@@ -28,18 +27,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
             InvokerContext = invokerContext;
             _templateEngine = new TemplateEngine();
 
-            var requestModel = invokerContext.RequestModel;
-
-            Filters = requestModel
-                .GetRequestAttributes()
-                .OfType<IFilterMetadata>()
-                .OrderBy(f =>
-                {
-                    if (f is IOrderedFilter orderedFilter)
-                        return orderedFilter.Order;
-
-                    return 20;
-                }).ToArray();
+            Filters = FilterFactory.GetAllFilters(invokerContext).ToArray();
             Cursor = new FilterCursor(Filters);
         }
 
@@ -51,7 +39,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
             var parameters = requestModel.Parameters;
             foreach (var parameter in parameters)
             {
-                var modelName = parameters.Count == 1 ? string.Empty : parameter.ParameterName;
+                var modelName = parameter.ParameterName;
                 var model = requestContext.Arguments[parameter.ParameterInfo.Name];
 
                 var bindContext = new ParameterBindContext
@@ -589,7 +577,8 @@ namespace Rabbit.Cloud.Client.Go.Internal
 
         protected async Task InvokeResultAsync(object result)
         {
-            await InvokerContext.Invoker(InvokerContext.RequestContext.RabbitContext);
+            if (result == null)
+                await InvokerContext.Invoker(InvokerContext.RequestContext.RabbitContext);
         }
 
         private static void Rethrow(ResultExecutedContext context)

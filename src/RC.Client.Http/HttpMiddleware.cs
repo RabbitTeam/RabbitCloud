@@ -166,18 +166,19 @@ namespace Rabbit.Cloud.Client.Http
 
             try
             {
-                httpResponse = httpResponse.EnsureSuccessStatusCode();
-            }
-            catch (RabbitClientException)
-            {
-                throw;
+                if (!httpResponse.IsSuccessStatusCode)
+                {
+                    var content = await httpResponse.Content.ReadAsStringAsync();
+
+                    var requestException = new HttpRequestException($"StatusCode: {httpResponse.StatusCode}, ReasonPhrase: '{httpResponse.ReasonPhrase}', Version: {httpResponse.Version}, Content: {content}, Headers: {httpResponse.Headers}");
+
+                    throw ExceptionUtilities.ServiceRequestFailure(requestFeature.ServiceName, (int)httpResponse.StatusCode, requestException);
+                }
             }
             catch (Exception e)
             {
                 throw ExceptionUtilities.ServiceRequestFailure(requestFeature.ServiceName, (int)httpResponse.StatusCode, e);
             }
-
-            var codec = requestFeature.Codec;
 
             var httpResponseContent = httpResponse.Content;
             foreach (var header in httpResponse.Headers.Concat(httpResponseContent.Headers))
@@ -187,11 +188,12 @@ namespace Rabbit.Cloud.Client.Http
 
             response.StatusCode = (int)httpResponse.StatusCode;
 
-            if (httpResponse.IsSuccessStatusCode)
-            {
-                var stream = await httpResponseContent.ReadAsStreamAsync();
-                response.Body = codec.Decode(stream);
-            }
+            var codec = requestFeature.Codec;
+            if (codec == null)
+                return;
+
+            var stream = await httpResponseContent.ReadAsStreamAsync();
+            response.Body = codec.Decode(stream);
         }
 
         #endregion Private Method

@@ -28,29 +28,47 @@ namespace Rabbit.Cloud.Client.Go.Internal
             if (value == null)
                 return;
 
-            var type = value.GetType();
-            var code = Type.GetTypeCode(type);
+            switch (context.Target)
+            {
+                case ParameterTarget.Query:
+                case ParameterTarget.Header:
+                case ParameterTarget.Path:
+                    var type = value.GetType();
+                    var code = Type.GetTypeCode(type);
 
-            bool IsEnumerable()
-            {
-                return value is IEnumerable;
-            }
+                    bool IsEnumerable()
+                    {
+                        return value is IEnumerable;
+                    }
 
-            if (code == TypeCode.Object)
-            {
-                if (IsEnumerable())
-                {
-                    await BuildEnumerableAsync(name, (IEnumerable)value, context);
-                }
-                else
-                {
-                    //                    BuildModel(context.OnlyOneParameter ? string.Empty : name, value, context);
-                    await BuildModelAsync(name, value, context);
-                }
-            }
-            else
-            {
-                AppendValue(context, context.Target, name, value);
+                    if (code == TypeCode.Object)
+                    {
+                        if (IsEnumerable())
+                        {
+                            await BuildEnumerableAsync(name, (IEnumerable)value, context);
+                        }
+                        else
+                        {
+                            var firstName = context.RequestContext.Arguments.Count == 1 ? string.Empty : name;
+                            await BuildModelAsync(firstName, value, context);
+                        }
+                    }
+                    else
+                    {
+                        AppendValue(context, context.Target, name, value);
+                    }
+                    break;
+
+                case ParameterTarget.Items:
+                    context.RequestContext.AppendItems(name, value);
+                    break;
+
+                case ParameterTarget.Body:
+                    context.RequestContext.SetBody(value);
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 

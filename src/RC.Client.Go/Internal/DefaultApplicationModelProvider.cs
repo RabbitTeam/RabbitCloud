@@ -34,6 +34,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
             foreach (var typeInfo in context.ServiceTypes)
             {
                 var serviceModel = CreateServiceModel(typeInfo);
+                serviceModel.Application = application;
                 application.Services.Add(serviceModel);
             }
         }
@@ -114,12 +115,7 @@ namespace Rabbit.Cloud.Client.Go.Internal
             var name = parameterModel.ParameterName;
             var isPathVariable = parameterModel.Request.Path.Variables.Any(v => string.Equals(v, name, StringComparison.OrdinalIgnoreCase));
 
-            if (isPathVariable)
-                return ParameterTarget.Path;
-
-            var typeCode = Type.GetTypeCode(parameterModel.ParameterInfo.ParameterType);
-
-            return typeCode == TypeCode.Object ? ParameterTarget.Body : ParameterTarget.Query;
+            return isPathVariable ? ParameterTarget.Path : ParameterTarget.Query;
         }
 
         private static string GetParameterName(IEnumerable<object> attributes, ParameterInfo parameter)

@@ -4,7 +4,7 @@ using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Codec;
 using Rabbit.Cloud.Client.Abstractions.Features;
-using Rabbit.Cloud.Client.Codec;
+using Rabbit.Cloud.Client.Internal.Codec;
 using System;
 using System.Collections.Generic;
 using System.Linq;
