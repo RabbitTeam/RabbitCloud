@@ -5,12 +5,12 @@ using System.Collections.Generic;
 namespace Rabbit.Cloud.Client.Go.Abstractions
 {
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
-    public class GoHeaderAttribute : Attribute, IHeadersProvider
+    public class GoDefaultHeaderAttribute : Attribute, IHeadersProvider
     {
         public string Name { get; }
         public string Value { get; }
 
-        public GoHeaderAttribute(string name, string value)
+        public GoDefaultHeaderAttribute(string name, string value)
         {
             Name = name;
             Value = value;
@@ -154,9 +154,48 @@ namespace Rabbit.Cloud.Client.Go.Abstractions
 
         #region Implementation of IParameterTargetProvider
 
-        public ParameterTarget Target { get; }
-        public string Name { get; }
+        public ParameterTarget Target { get; set; }
+        public string Name { get; set; }
 
         #endregion Implementation of IParameterTargetProvider
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class GoQueryAttribute : GoParameterAttribute
+    {
+        public GoQueryAttribute() : base(ParameterTarget.Query)
+        {
+        }
+
+        public GoQueryAttribute(string name) : this()
+        {
+            Name = name;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class GoHeaderAttribute : GoParameterAttribute
+    {
+        public GoHeaderAttribute() : base(ParameterTarget.Header)
+        {
+        }
+
+        public GoHeaderAttribute(string name) : this()
+        {
+            Name = name;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class GoPathAttribute : GoParameterAttribute
+    {
+        public GoPathAttribute() : base(ParameterTarget.Path)
+        {
+        }
+
+        public GoPathAttribute(string name) : this()
+        {
+            Name = name;
+        }
     }
 }
