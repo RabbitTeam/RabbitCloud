@@ -168,11 +168,8 @@ namespace Rabbit.Cloud.Client.Http
             {
                 if (!httpResponse.IsSuccessStatusCode)
                 {
-                    var content = await httpResponse.Content.ReadAsStringAsync();
-
-                    var requestException = new HttpRequestException($"StatusCode: {httpResponse.StatusCode}, ReasonPhrase: '{httpResponse.ReasonPhrase}', Version: {httpResponse.Version}, Content: {content}, Headers: {httpResponse.Headers}");
-
-                    throw ExceptionUtilities.ServiceRequestFailure(requestFeature.ServiceName, (int)httpResponse.StatusCode, requestException);
+                    var requestDetailedException = new HttpRequestDetailedException(httpResponse);
+                    throw requestDetailedException;
                 }
             }
             catch (Exception e)
