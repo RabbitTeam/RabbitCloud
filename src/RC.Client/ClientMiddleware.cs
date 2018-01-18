@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
+using Rabbit.Cloud.Client.Features;
 using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Generic;
@@ -40,6 +41,18 @@ namespace Rabbit.Cloud.Client
             }
         }
 
+        private ILoadBalanceFeature EnsureLoadBalanceFeature(IRabbitContext context, ServiceRequestOptions requestOptions)
+        {
+            var loadBalanceFeature = context.Features.Get<ILoadBalanceFeature>();
+            if (loadBalanceFeature == null)
+                context.Features.Set(loadBalanceFeature = new LoadBalanceFeature());
+
+            loadBalanceFeature.ServiceInstanceChooser =
+                _options.Choosers.Get(requestOptions.ServiceChooser) ?? _options.DefaultChooser;
+
+            return loadBalanceFeature;
+        }
+
         private async Task RequestAsync(IRabbitContext context, IRabbitClientFeature rabbitClientFeature)
         {
             var requestOptions = rabbitClientFeature?.RequestOptions ?? _options.DefaultRequestOptions;
@@ -52,28 +65,30 @@ namespace Rabbit.Cloud.Client
             var serviceDiscoveryFeature = context.Features.Get<IServiceDiscoveryFeature>();
             var serviceInstances = serviceDiscoveryFeature?.ServiceInstances;
 
-            void SetAvailableServiceInstances(IEnumerable<IServiceInstance> ignores = null)
-            {
-                // 没有启用服务发现，则直接调用
-                if (serviceInstances == null)
-                    return;
-
-                // 没有忽略任何服务实例（第一次调用），则返回全部实例
-                if (ignores == null)
-                    return;
-
-                // 如果全部的实例都被忽略，则初始化状态 从第一个继续开始
-                serviceInstances = serviceInstances.Any() ? serviceInstances.Except(ignores).ToArray() : new List<IServiceInstance>(ignores).ToArray();
-
-                serviceDiscoveryFeature.ServiceInstances = serviceInstances;
-            }
-
             if (serviceInstances == null || serviceInstances.Count <= 1)
             {
                 await InvokeServiceInstanceAsync(context, retries, exceptions);
             }
             else
             {
+                void SetAvailableServiceInstances(IEnumerable<IServiceInstance> ignores = null)
+                {
+                    // 没有启用服务发现，则直接调用
+                    if (serviceInstances == null)
+                        return;
+
+                    // 没有忽略任何服务实例（第一次调用），则返回全部实例
+                    if (ignores == null)
+                        return;
+
+                    // 如果全部的实例都被忽略，则初始化状态 从第一个继续开始
+                    serviceInstances = serviceInstances.Any() ? serviceInstances.Except(ignores).ToArray() : new List<IServiceInstance>(ignores).ToArray();
+
+                    serviceDiscoveryFeature.ServiceInstances = serviceInstances;
+                }
+
+                var loadBalanceFeature = EnsureLoadBalanceFeature(context, requestOptions);
+
                 //允许切换服务实例的次数
                 var retriesNextServer = Math.Max(requestOptions.MaxAutoRetriesNextServer, 0) + 1;
 
@@ -82,7 +97,7 @@ namespace Rabbit.Cloud.Client
                 {
                     await InvokeServiceInstanceAsync(context, retries, exceptions);
 
-                    var requestInstance = context.Features.Get<ILoadBalanceFeature>()?.RequestInstance;
+                    var requestInstance = loadBalanceFeature.RequestInstance;
                     if (requestInstance == null)
                         continue;
 
