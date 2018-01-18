@@ -2,9 +2,8 @@
 using Microsoft.Extensions.Options;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
-using Rabbit.Cloud.Client.Abstractions.Codec;
 using Rabbit.Cloud.Client.Abstractions.Features;
-using Rabbit.Cloud.Client.Internal.Codec;
+using Rabbit.Cloud.Discovery.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,78 +26,104 @@ namespace Rabbit.Cloud.Client
 
         public async Task Invoke(IRabbitContext context)
         {
-            var serviceRequestFeature = context.Features.Get<IServiceRequestFeature>();
+            var rabbitClientFeature = context.Features.Get<IRabbitClientFeature>();
             try
             {
-                await RequestAsync(context, serviceRequestFeature);
+                await RequestAsync(context, rabbitClientFeature);
             }
             catch (Exception e)
             {
-                var clientException = e as RabbitClientException ?? ExceptionUtilities.ServiceRequestFailure(serviceRequestFeature.ServiceName, 400, e);
+                var clientException = e as RabbitClientException ?? ExceptionUtilities.ServiceRequestFailure(context.Request.Host, 400, e);
                 context.Response.StatusCode = clientException.StatusCode;
 
                 throw clientException;
             }
         }
 
-        private async Task RequestAsync(IRabbitContext context, IServiceRequestFeature serviceRequestFeature)
+        private async Task RequestAsync(IRabbitContext context, IRabbitClientFeature rabbitClientFeature)
         {
-            serviceRequestFeature.Codec = GetCodec(context);
-            var requestOptions = serviceRequestFeature.RequestOptions ?? _options.DefaultRequestOptions;
+            var requestOptions = rabbitClientFeature?.RequestOptions ?? _options.DefaultRequestOptions;
 
             //最少调用一次
             var retries = Math.Max(requestOptions.MaxAutoRetries, 0) + 1;
-            //最少使用一个服务
-            var retriesNextServer = Math.Max(requestOptions.MaxAutoRetriesNextServer, 0) + 1;
 
-            IList<Exception> exceptions = null;
-            for (var i = 0; i < retriesNextServer; i++)
+            IList<Exception> exceptions = new List<Exception>();
+
+            var serviceDiscoveryFeature = context.Features.Get<IServiceDiscoveryFeature>();
+            var serviceInstances = serviceDiscoveryFeature?.ServiceInstances;
+
+            void SetAvailableServiceInstances(IEnumerable<IServiceInstance> ignores = null)
             {
-                var getServiceInstance = serviceRequestFeature.GetServiceInstance;
-                var serviceInstance = getServiceInstance();
-                serviceRequestFeature.GetServiceInstance = () => serviceInstance;
+                // 没有启用服务发现，则直接调用
+                if (serviceInstances == null)
+                    return;
 
-                for (var j = 0; j < retries; j++)
+                // 没有忽略任何服务实例（第一次调用），则返回全部实例
+                if (ignores == null)
+                    return;
+
+                // 如果全部的实例都被忽略，则初始化状态 从第一个继续开始
+                serviceInstances = serviceInstances.Any() ? serviceInstances.Except(ignores).ToArray() : new List<IServiceInstance>(ignores).ToArray();
+
+                serviceDiscoveryFeature.ServiceInstances = serviceInstances;
+            }
+
+            if (serviceInstances == null || serviceInstances.Count <= 1)
+            {
+                await InvokeServiceInstanceAsync(context, retries, exceptions);
+            }
+            else
+            {
+                //允许切换服务实例的次数
+                var retriesNextServer = Math.Max(requestOptions.MaxAutoRetriesNextServer, 0) + 1;
+
+                IList<IServiceInstance> errorServiceInstances = null;
+                for (var i = 0; i < retriesNextServer; i++)
                 {
-                    try
-                    {
-                        await _next(context);
-                        return;
-                    }
-                    catch (Exception e)
-                    {
-                        if (exceptions == null)
-                            exceptions = new List<Exception>();
+                    await InvokeServiceInstanceAsync(context, retries, exceptions);
 
-                        exceptions.Add(e);
+                    var requestInstance = context.Features.Get<ILoadBalanceFeature>()?.RequestInstance;
+                    if (requestInstance == null)
+                        continue;
 
-                        _logger.LogError(e, "请求失败。");
+                    if (errorServiceInstances == null)
+                        errorServiceInstances = new List<IServiceInstance>();
 
-                        //只有服务器错误才进行重试
-                        if (!(e is RabbitClientException rabbitClientException) ||
-                            rabbitClientException.StatusCode < 500)
-                            throw;
-                    }
+                    errorServiceInstances.Add(requestInstance);
+
+                    // 忽略已经调用过的服务实例
+                    SetAvailableServiceInstances(errorServiceInstances);
                 }
             }
+
             if (exceptions != null && exceptions.Any())
                 throw new AggregateException(exceptions);
         }
 
-        private ICodec GetCodec(IRabbitContext rabbitContext)
+        private async Task InvokeServiceInstanceAsync(IRabbitContext context, int retries, IList<Exception> exceptions)
         {
-            var requestFeature = rabbitContext.Features.Get<IServiceRequestFeature>();
+            for (var j = 0; j < retries; j++)
+            {
+                try
+                {
+                    await _next(context);
+                    return;
+                }
+                catch (Exception e)
+                {
+                    if (exceptions == null)
+                        exceptions = new List<Exception>();
 
-            if (requestFeature.Codec != null)
-                return requestFeature.Codec;
+                    exceptions.Add(e);
 
-            var requestOptions = requestFeature.RequestOptions ?? _options.DefaultRequestOptions;
+                    _logger.LogError(e, "请求失败。");
 
-            var serializerName = requestOptions.SerializerName;
-
-            var serializer = (string.IsNullOrEmpty(serializerName) ? null : _options.SerializerTable.Get(serializerName)) ?? _options.SerializerTable.Get("json");
-
-            return requestFeature.Codec = new SerializerCodec(serializer, requestFeature.RequesType, requestFeature.ResponseType);
+                    //只有服务器错误才进行重试
+                    if (!(e is RabbitClientException rabbitClientException) ||
+                        rabbitClientException.StatusCode < 500)
+                        throw;
+                }
+            }
         }
     }
 }
