@@ -230,6 +230,7 @@ namespace Rabbit.Go.Internal
                 RequestExecutedContext = new RequestExecutedContext(RequestContext, Filters, RequestContext.Arguments)
                 {
                     ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(exception),
+                    Result = Result
                 };
             }
         }
@@ -238,9 +239,14 @@ namespace Rabbit.Go.Internal
         {
             var rabbitContext = RequestContext.RabbitContext;
 
-            await _app(rabbitContext);
-
-            Result = rabbitContext.Response.Body;
+            try
+            {
+                await _app(rabbitContext);
+            }
+            finally
+            {
+                Result = rabbitContext.Response.Body;
+            }
         }
 
         #endregion Private Method

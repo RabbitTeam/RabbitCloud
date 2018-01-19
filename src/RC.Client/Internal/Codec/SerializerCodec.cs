@@ -36,7 +36,10 @@ namespace Rabbit.Cloud.Client.Internal.Codec
             if (data == null || _responseType == null || _responseType == typeof(void) || _responseType == typeof(Task))
                 return data;
 
-            return _serializer.Deserialize(data as Stream, _responseType);
+            if (!(data is Stream stream) || !stream.CanRead || stream.Length <= 0)
+                return null;
+
+            return _serializer.Deserialize(stream, _responseType);
         }
 
         #endregion Implementation of ICodec

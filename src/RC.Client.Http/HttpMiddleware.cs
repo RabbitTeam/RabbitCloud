@@ -169,8 +169,17 @@ namespace Rabbit.Cloud.Client.Http
         {
             var response = context.Response;
 
+            response.StatusCode = (int)httpResponse.StatusCode;
+
             try
             {
+                var httpResponseContent = httpResponse.Content;
+                foreach (var header in httpResponse.Headers.Concat(httpResponseContent.Headers))
+                {
+                    response.Headers[header.Key] = new StringValues(header.Value.ToArray());
+                }
+                var stream = await httpResponseContent.ReadAsStreamAsync();
+                response.Body = stream;
                 if (!httpResponse.IsSuccessStatusCode)
                 {
                     var requestDetailedException = new HttpRequestDetailedException(httpResponse);
@@ -182,17 +191,6 @@ namespace Rabbit.Cloud.Client.Http
                 var request = context.Request;
                 throw ExceptionUtilities.ServiceRequestFailure(request.Host, (int)httpResponse.StatusCode, e);
             }
-
-            var httpResponseContent = httpResponse.Content;
-            foreach (var header in httpResponse.Headers.Concat(httpResponseContent.Headers))
-            {
-                response.Headers[header.Key] = new StringValues(header.Value.ToArray());
-            }
-
-            response.StatusCode = (int)httpResponse.StatusCode;
-
-            var stream = await httpResponseContent.ReadAsStreamAsync();
-            response.Body = stream;
         }
 
         #endregion Private Method
