@@ -1,4 +1,5 @@
 ﻿using System;
+using Rabbit.Go.Abstractions.Filters;
 
 namespace Rabbit.Go.Abstractions
 {
@@ -47,7 +48,7 @@ namespace Rabbit.Go.Abstractions
     }
 
     [AttributeUsage(AttributeTargets.Method)]
-    public class GoMethodAttribute : GoRequestAttribute
+    public class GoMethodAttribute : GoRequestAttribute,IRequestFilter
     {
         public GoMethodAttribute(string method)
         {
@@ -60,5 +61,19 @@ namespace Rabbit.Go.Abstractions
         }
 
         public string Method { get; }
+
+        #region Implementation of IRequestFilter
+
+        public void OnRequestExecuting(RequestExecutingContext context)
+        {
+            context.RabbitContext.Items["HttpMethod"] = Method;
+
+        }
+
+        public void OnRequestExecuted(RequestExecutedContext context)
+        {
+        }
+
+        #endregion
     }
 }

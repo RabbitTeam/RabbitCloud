@@ -117,7 +117,7 @@ namespace Rabbit.Cloud.Client.Http
                     headers.Add(header.Key, header.Value.ToArray());
                 }
 
-                headers.ContentType = new MediaTypeHeaderValue(httpRequestFeature.ContentType);
+                headers.ContentType = new MediaTypeHeaderValue(httpRequestFeature.ContentType ?? "application/json");
             }
             else
             {

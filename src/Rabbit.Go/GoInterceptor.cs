@@ -127,14 +127,6 @@ namespace Rabbit.Go
             return DoHandleAsync(invoker).GetAwaiter().GetResult();
         }
 
-        /*        private static RequestModel GetRequestModel(ApplicationModel applicationModel, Type proxyType, MethodInfo proxyMethod)
-                {
-                    return applicationModel.Services
-                        .Where(i => i.Type == proxyType)
-                        .SelectMany(i => i.Requests)
-                        .SingleOrDefault(i => i.MethodInfo == proxyMethod);
-                }*/
-
         #endregion Private Method
 
         #region Help Type

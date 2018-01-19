@@ -33,7 +33,7 @@ namespace Rabbit.Cloud.Client.Internal.Codec
 
         public object Decode(object data)
         {
-            if (_responseType == null || _responseType == typeof(void) || _responseType == typeof(Task))
+            if (data == null || _responseType == null || _responseType == typeof(void) || _responseType == typeof(Task))
                 return data;
 
             return _serializer.Deserialize(data as Stream, _responseType);
