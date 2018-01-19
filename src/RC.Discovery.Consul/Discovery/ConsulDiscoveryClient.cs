@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -31,6 +32,8 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
         private readonly ConcurrentDictionary<string, ICollection<IServiceInstance>> _instances = new ConcurrentDictionary<string, ICollection<IServiceInstance>>(StringComparer.OrdinalIgnoreCase);
 
         #region Constructor
+
+        private ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim();
 
         public ConsulDiscoveryClient(IOptionsMonitor<ConsulOptions> consulOptionsMonitor, ILogger<ConsulDiscoveryClient> logger, ServiceNameResolver serviceNameResolver)
             : base(consulOptionsMonitor)
@@ -92,7 +95,11 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
                         index = result.LastIndex;
 
                         var response = result.Response;
-                        Services = response.Where(i => i.Value.Contains(ConsulUtil.ServicePrefix)).Select(i => i.Key).ToArray();
+                        Services = response
+                            .Where(i => i.Value.Contains(ConsulUtil.ServicePrefix))
+                            .Select(i => i.Key)
+                            .Distinct(StringComparer.OrdinalIgnoreCase) // consul not case sensitive
+                            .ToArray();
                     }
                     catch (Exception e)
                     {
@@ -107,7 +114,23 @@ namespace Rabbit.Cloud.Discovery.Consul.Discovery
         #region Implementation of IDiscoveryClient
 
         public string Description => "Rabbit Cloud Consul Client";
-        public IReadOnlyList<string> Services { get; private set; }
+
+        private IReadOnlyList<string> _services;
+
+        public IReadOnlyList<string> Services
+        {
+            get
+            {
+                _manualResetEventSlim?.Wait();
+                _manualResetEventSlim = null;
+                return _services;
+            }
+            private set
+            {
+                _services = value;
+                _manualResetEventSlim?.Set();
+            }
+        }
 
         public IReadOnlyList<IServiceInstance> GetInstances(string serviceId)
         {

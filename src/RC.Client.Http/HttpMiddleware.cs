@@ -2,6 +2,7 @@
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
+using Rabbit.Cloud.Client.Http.Features;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,12 +36,22 @@ namespace Rabbit.Cloud.Client.Http
 
         public async Task Invoke(IRabbitContext context)
         {
-            var serviceRequestFeature = context.Features.Get<IServiceRequestFeature>();
-            var requestOptions = serviceRequestFeature.RequestOptions;
+            var rabbitClientFeature = context.Features.Get<IRabbitClientFeature>();
+            var requestOptions = rabbitClientFeature.RequestOptions;
+
+            var httpRequestFeature = context.Features.Get<IHttpRequestFeature>();
+            if (httpRequestFeature == null)
+                context.Features.Set(httpRequestFeature = new HttpRequestFeature());
+
+            var request = context.Request;
+            if (request.Headers.ContainsKey("Content-Type"))
+                httpRequestFeature.ContentType = request.Headers.TryGetValue("Content-Type", out var values) ? values.ToString() : "application/json";
+
+            if (context.Items.ContainsKey("HttpMethod"))
+                httpRequestFeature.Method = context.Items["HttpMethod"]?.ToString();
 
             var httpRequest = CreateHttpRequestMessage(context);
             HttpResponseMessage httpResponse;
-
             try
             {
                 using (var timeoutCancellationTokenSource = new CancellationTokenSource(requestOptions.ConnectionTimeout.Add(requestOptions.ReadTimeout)))
@@ -61,11 +72,8 @@ namespace Rabbit.Cloud.Client.Http
         private static HttpRequestMessage CreateHttpRequestMessage(IRabbitContext context)
         {
             var request = context.Request;
-            var requestFeature = context.Features.Get<IServiceRequestFeature>();
-            var instance = requestFeature.GetServiceInstance();
-            var codec = requestFeature.Codec;
 
-            var authority = instance.Port >= 0 ? $"{instance.Host}:{instance.Port}" : instance.Host;
+            var authority = request.Port >= 0 ? $"{request.Host}:{request.Port}" : request.Host;
             var url = $"{request.Scheme}://{authority}{request.Path}";
             if (request.QueryString.Length > 1)
                 url += request.QueryString;
@@ -75,12 +83,12 @@ namespace Rabbit.Cloud.Client.Http
                 RequestUri = new Uri(url)
             };
 
-            var method = context.Items.TryGetValue("HttpMethod", out var httpMethod) ? httpMethod.ToString() : null;
-            httpRequest.Method = GetHttpMethod(method, HttpMethod.Get);
+            var httpRequestFeature = context.Features.Get<IHttpRequestFeature>();
+
+            httpRequest.Method = GetHttpMethod(httpRequestFeature.Method, HttpMethod.Get);
 
             if (request.Body != null)
             {
-                context.Request.Body = codec.Encode(context.Request.Body);
                 HttpContent httpContent;
                 if (request.Body is string content)
                 {
@@ -102,16 +110,14 @@ namespace Rabbit.Cloud.Client.Http
 
                 var headers = httpContent.Headers;
 
-                if (request.Headers.ContainsKey("Content-Type"))
-                    headers.ContentType = null;
+                headers.ContentType = null;
 
                 foreach (var header in request.Headers)
                 {
                     headers.Add(header.Key, header.Value.ToArray());
                 }
 
-                if (headers.ContentType == null)
-                    headers.ContentType = new MediaTypeHeaderValue("application/json");
+                headers.ContentType = new MediaTypeHeaderValue(httpRequestFeature.ContentType ?? "application/json");
             }
             else
             {
@@ -161,39 +167,30 @@ namespace Rabbit.Cloud.Client.Http
 
         private static async Task SetResponseAsync(IRabbitContext context, HttpResponseMessage httpResponse)
         {
-            var requestFeature = context.Features.Get<IServiceRequestFeature>();
             var response = context.Response;
+
+            response.StatusCode = (int)httpResponse.StatusCode;
 
             try
             {
+                var httpResponseContent = httpResponse.Content;
+                foreach (var header in httpResponse.Headers.Concat(httpResponseContent.Headers))
+                {
+                    response.Headers[header.Key] = new StringValues(header.Value.ToArray());
+                }
+                var stream = await httpResponseContent.ReadAsStreamAsync();
+                response.Body = stream;
                 if (!httpResponse.IsSuccessStatusCode)
                 {
-                    var content = await httpResponse.Content.ReadAsStringAsync();
-
-                    var requestException = new HttpRequestException($"StatusCode: {httpResponse.StatusCode}, ReasonPhrase: '{httpResponse.ReasonPhrase}', Version: {httpResponse.Version}, Content: {content}, Headers: {httpResponse.Headers}");
-
-                    throw ExceptionUtilities.ServiceRequestFailure(requestFeature.ServiceName, (int)httpResponse.StatusCode, requestException);
+                    var requestDetailedException = new HttpRequestDetailedException(httpResponse);
+                    throw requestDetailedException;
                 }
             }
             catch (Exception e)
             {
-                throw ExceptionUtilities.ServiceRequestFailure(requestFeature.ServiceName, (int)httpResponse.StatusCode, e);
+                var request = context.Request;
+                throw ExceptionUtilities.ServiceRequestFailure(request.Host, (int)httpResponse.StatusCode, e);
             }
-
-            var httpResponseContent = httpResponse.Content;
-            foreach (var header in httpResponse.Headers.Concat(httpResponseContent.Headers))
-            {
-                response.Headers[header.Key] = new StringValues(header.Value.ToArray());
-            }
-
-            response.StatusCode = (int)httpResponse.StatusCode;
-
-            var codec = requestFeature.Codec;
-            if (codec == null)
-                return;
-
-            var stream = await httpResponseContent.ReadAsStreamAsync();
-            response.Body = codec.Decode(stream);
         }
 
         #endregion Private Method

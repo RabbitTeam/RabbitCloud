@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Rabbit.Cloud.Application;
+﻿using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
 using System;
 
-namespace Rabbit.Cloud.Client
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class DependencyInjectionExtensions
     {
@@ -20,8 +20,8 @@ namespace Rabbit.Cloud.Client
         {
             var invoker = app.Build();
             return services
-                .AddSingleton(invoker)
-                .AddSingleton<IRabbitClient>(new RabbitClient(invoker, app.ApplicationServices));
+                .AddSingleton(invoker);
+            //                .AddSingleton<IRabbitClient>(new RabbitClient(invoker, app.ApplicationServices));
         }
     }
 }

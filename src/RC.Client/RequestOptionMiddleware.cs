@@ -3,6 +3,7 @@ using Rabbit.Cloud.Abstractions.Utilities;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
 using Rabbit.Cloud.Client.Abstractions.Features;
+using Rabbit.Cloud.Client.Features;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,9 +24,13 @@ namespace Rabbit.Cloud.Client
 
         public async Task Invoke(IRabbitContext context)
         {
-            var serviceRequestFeature = context.Features.Get<IServiceRequestFeature>();
+            var rabbitClientFeature = context.Features.Get<IRabbitClientFeature>();
+            if (rabbitClientFeature == null)
+                context.Features.Set(rabbitClientFeature = new RabbitClientFeature());
 
-            if (!string.IsNullOrEmpty(serviceRequestFeature.ServiceName) && !_options.RequestOptionses.TryGetValue(serviceRequestFeature.ServiceName, out var requestOptions))
+            var serviceId = context.Features.Get<IServiceDiscoveryFeature>()?.ServiceId;
+
+            if (!string.IsNullOrEmpty(serviceId) && !_options.RequestOptionses.TryGetValue(serviceId, out var requestOptions))
                 requestOptions = _options.DefaultRequestOptions;
             else
                 requestOptions = new ServiceRequestOptions();
@@ -36,7 +41,7 @@ namespace Rabbit.Cloud.Client
             requestOptions.MaxAutoRetriesNextServer = GetRequestOption(context, "RetriesNextServer", requestOptions.MaxAutoRetriesNextServer);
             requestOptions.ServiceChooser = GetRequestOption(context, "ServiceChooser", requestOptions.ServiceChooser);
 
-            serviceRequestFeature.RequestOptions = requestOptions;
+            rabbitClientFeature.RequestOptions = requestOptions;
 
             await _next(context);
         }
