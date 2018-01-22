@@ -12,11 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\RC.Application\RC.Application.csproj" />
-    <ProjectReference Include="..\..\src\RC.Client.Abstractions\RC.Client.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Rabbit.DingTalk.Go\Rabbit.DingTalk.Go.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Go\RC.Client.Go.csproj" />
     <ProjectReference Include="..\..\src\RC.Client.Http\RC.Client.Http.csproj" />
-    <ProjectReference Include="..\..\src\RC.Discovery.Consul\RC.Discovery.Consul.csproj" />
   </ItemGroup>
 
 </Project>
