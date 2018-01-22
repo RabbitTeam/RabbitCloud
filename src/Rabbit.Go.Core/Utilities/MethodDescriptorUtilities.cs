@@ -66,6 +66,9 @@ namespace Rabbit.Go.Core.Utilities
             var baseUrl = type.GetCustomAttribute<GoAttribute>().Url;
             var path = method.GetCustomAttribute<GoRequestAttribute>().Path;
 
+            if (string.IsNullOrEmpty(path))
+                return baseUrl;
+
             if (!baseUrl.EndsWith("/") && !path.StartsWith("/"))
                 path += "/";
             else if (baseUrl.EndsWith("/") && path.StartsWith("/"))

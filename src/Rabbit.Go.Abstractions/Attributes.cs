@@ -71,6 +71,10 @@ namespace Rabbit.Go.Abstractions
     [AttributeUsage(AttributeTargets.Method)]
     public class GoPostAttribute : GoRequestAttribute
     {
+        public GoPostAttribute() : this(string.Empty)
+        {
+        }
+
         public GoPostAttribute(string path) : base(path, "POST")
         {
         }

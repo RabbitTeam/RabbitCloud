@@ -38,7 +38,10 @@ namespace Rabbit.Go.Core
 
             var responseMessage = await _client.ExecuteAsync(requestMessage, _options);
 
-            return _decoder?.Decode(responseMessage, _descriptor.ReturnType);
+            if (_decoder == null)
+                return null;
+
+            return await _decoder.DecodeAsync(responseMessage, _descriptor.ReturnType);
         }
 
         private static string BuildQueryString(RequestContext context)

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Web;
 
 namespace Rabbit.Go.Abstractions
@@ -88,6 +89,13 @@ namespace Rabbit.Go.Abstractions
         public static RequestContext SetBody(this RequestContext context, byte[] body)
         {
             context.Body = body;
+
+            return context;
+        }
+
+        public static RequestContext SetBody(this RequestContext context, string bodyContent)
+        {
+            context.Body = bodyContent == null ? null : Encoding.UTF8.GetBytes(bodyContent);
 
             return context;
         }

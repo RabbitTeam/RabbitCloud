@@ -56,7 +56,7 @@ namespace Rabbit.Go.Core
                 result = Handle(invocation);
             }
 
-            if (returnType != null)
+            if (result != null)
                 invocation.ReturnValue = result;
         }
 
@@ -209,10 +209,10 @@ namespace Rabbit.Go.Core
                     };
 
                     BuildQueryAndHeaders(requestContext, formatResult);
-                    BuildBody(requestContext, requestCache.Encoder, descriptor.Parameters, arguments);
+                    await BuildBodyAsync(requestContext, requestCache.Encoder, descriptor.Parameters, arguments);
 
                     foreach (var interceptor in requestCache.GoInterceptors)
-                        interceptor.Apply(requestContext);
+                        await interceptor.ApplyAsync(requestContext);
 
                     return requestContext;
                 },
@@ -303,8 +303,10 @@ namespace Rabbit.Go.Core
             }
         }
 
-        private static void BuildBody(RequestContext requestContext, IEncoder encoder, IReadOnlyList<ParameterDescriptor> parameterDescriptors, object[] arguments)
+        private static async Task BuildBodyAsync(RequestContext requestContext, IEncoder encoder, IReadOnlyList<ParameterDescriptor> parameterDescriptors, object[] arguments)
         {
+            if (encoder == null)
+                return;
             for (var i = 0; i < parameterDescriptors.Count; i++)
             {
                 var parameterDescriptor = parameterDescriptors[i];
@@ -313,7 +315,7 @@ namespace Rabbit.Go.Core
 
                 var body = arguments[i];
 
-                encoder?.Encode(body, parameterDescriptor.ParameterType, requestContext);
+                await encoder.EncodeAsync(body, parameterDescriptor.ParameterType, requestContext);
                 return;
             }
         }

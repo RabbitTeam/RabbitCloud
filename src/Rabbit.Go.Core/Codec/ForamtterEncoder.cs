@@ -2,6 +2,7 @@
 using Rabbit.Go.Abstractions;
 using Rabbit.Go.Abstractions.Codec;
 using System;
+using System.Threading.Tasks;
 
 namespace Rabbit.Go.Core.Codec
 {
@@ -21,13 +22,14 @@ namespace Rabbit.Go.Core.Codec
 
         #region Implementation of IEncoder
 
-        public void Encode(object instance, Type type, RequestContext requestContext)
+        public async Task EncodeAsync(object instance, Type type, RequestContext requestContext)
         {
             var headers = requestContext.Headers;
             headers.TryGetValue("Content-Type", out var value);
             var encoder = _goOptions.FormatterMappings.GetEncoder(value);
 
-            encoder?.Encode(instance, type, requestContext);
+            if (encoder != null)
+                await encoder.EncodeAsync(instance, type, requestContext);
         }
 
         #endregion Implementation of IEncoder

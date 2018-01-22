@@ -4,6 +4,7 @@ using Rabbit.Go.Abstractions.Codec;
 using System;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Rabbit.Go.Core.Codec
 {
@@ -11,9 +12,9 @@ namespace Rabbit.Go.Core.Codec
     {
         #region Implementation of IDecoder
 
-        public object Decode(HttpResponseMessage response, Type type)
+        public async Task<object> DecodeAsync(HttpResponseMessage response, Type type)
         {
-            var json = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            var json = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject(json, type);
         }
 
@@ -24,11 +25,12 @@ namespace Rabbit.Go.Core.Codec
     {
         #region Implementation of IEncoder
 
-        public void Encode(object instance, Type type, RequestContext requestContext)
+        public Task EncodeAsync(object instance, Type type, RequestContext requestContext)
         {
             var json = JsonConvert.SerializeObject(instance);
 
             requestContext.Body = Encoding.UTF8.GetBytes(json);
+            return Task.CompletedTask;
         }
 
         #endregion Implementation of IEncoder

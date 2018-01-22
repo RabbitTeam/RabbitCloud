@@ -2,6 +2,7 @@
 using Rabbit.Go.Abstractions.Codec;
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Rabbit.Go.Core.Codec
 {
@@ -21,11 +22,16 @@ namespace Rabbit.Go.Core.Codec
 
         #region Implementation of IDecoder
 
-        public object Decode(HttpResponseMessage response, Type type)
+        public async Task<object> DecodeAsync(HttpResponseMessage response, Type type)
         {
             var mediaType = response.Content.Headers.ContentType.MediaType;
 
-            return _goOptions.FormatterMappings.GetDecoder(mediaType)?.Decode(response, type);
+            var decoder = _goOptions.FormatterMappings.GetDecoder(mediaType);
+
+            if (decoder == null)
+                return null;
+
+            return await decoder.DecodeAsync(response, type);
         }
 
         #endregion Implementation of IDecoder

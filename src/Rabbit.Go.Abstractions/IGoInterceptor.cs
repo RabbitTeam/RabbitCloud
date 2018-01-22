@@ -1,7 +1,9 @@
-﻿namespace Rabbit.Go.Abstractions
+﻿using System.Threading.Tasks;
+
+namespace Rabbit.Go.Abstractions
 {
     public interface IGoInterceptor
     {
-        void Apply(RequestContext context);
+        Task ApplyAsync(RequestContext context);
     }
 }
