@@ -7,13 +7,12 @@
     <RootNamespace>Rabbit.Cloud.Client.Go</RootNamespace>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Castle.Core" Version="4.2.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.4" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\RC.Client.Go.Abstractions\RC.Client.Go.Abstractions.csproj" />
+    <ProjectReference Include="..\Rabbit.Go.Core\Rabbit.Go.Core.csproj" />
     <ProjectReference Include="..\RC.Client\RC.Client.csproj" />
   </ItemGroup>
 

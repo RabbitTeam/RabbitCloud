@@ -14,11 +14,5 @@ namespace Rabbit.Cloud.Application.Abstractions
                 .UseMiddleware<ClientMiddleware>()
                 .UseMiddleware<LoadBalanceMiddleware>();
         }
-
-        public static IRabbitApplicationBuilder UseCodec(this IRabbitApplicationBuilder app)
-        {
-            return app
-                .UseMiddleware<CodecMiddleware>();
-        }
     }
 }

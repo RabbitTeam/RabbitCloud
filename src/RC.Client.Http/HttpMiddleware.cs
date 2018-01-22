@@ -102,6 +102,10 @@ namespace Rabbit.Cloud.Client.Http
                 {
                     httpContent = new StreamContent(stream);
                 }
+                else if (request.Body is HttpContent bodyContent)
+                {
+                    httpContent = bodyContent;
+                }
                 else
                 {
                     throw new Exception("不支持的Body类型。");
@@ -165,7 +169,7 @@ namespace Rabbit.Cloud.Client.Http
             }
         }
 
-        private static async Task SetResponseAsync(IRabbitContext context, HttpResponseMessage httpResponse)
+        private static Task SetResponseAsync(IRabbitContext context, HttpResponseMessage httpResponse)
         {
             var response = context.Response;
 
@@ -178,8 +182,7 @@ namespace Rabbit.Cloud.Client.Http
                 {
                     response.Headers[header.Key] = new StringValues(header.Value.ToArray());
                 }
-                var stream = await httpResponseContent.ReadAsStreamAsync();
-                response.Body = stream;
+                response.Body = httpResponse;
                 if (!httpResponse.IsSuccessStatusCode)
                 {
                     var requestDetailedException = new HttpRequestDetailedException(httpResponse);
@@ -191,6 +194,8 @@ namespace Rabbit.Cloud.Client.Http
                 var request = context.Request;
                 throw ExceptionUtilities.ServiceRequestFailure(request.Host, (int)httpResponse.StatusCode, e);
             }
+
+            return Task.CompletedTask;
         }
 
         #endregion Private Method
