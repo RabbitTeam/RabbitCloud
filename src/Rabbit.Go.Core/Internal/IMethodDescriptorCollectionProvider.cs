@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Rabbit.Go.Abstractions;
+using System.Collections.Generic;
 
 namespace Rabbit.Go.Core.Internal
 {

@@ -1,12 +1,5 @@
-﻿using System.Collections.Generic;
-
-namespace Rabbit.Go.Core
+﻿namespace Rabbit.Go.Abstractions
 {
-    public class MethodDescriptorProviderContext
-    {
-        public IList<MethodDescriptor> Results { get; } = new List<MethodDescriptor>();
-    }
-
     public interface IMethodDescriptorProvider
     {
         int Order { get; }

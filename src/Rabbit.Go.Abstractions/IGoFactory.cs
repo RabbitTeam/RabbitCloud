@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Rabbit.Go.Core
+namespace Rabbit.Go.Abstractions
 {
     public interface IGoFactory
     {

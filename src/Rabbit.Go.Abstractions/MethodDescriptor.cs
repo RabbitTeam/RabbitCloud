@@ -1,11 +1,9 @@
 ﻿using Microsoft.Extensions.Primitives;
-using Rabbit.Go.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 
-namespace Rabbit.Go.Core
+namespace Rabbit.Go.Abstractions
 {
     public class MethodDescriptor
     {
@@ -18,17 +16,6 @@ namespace Rabbit.Go.Core
 
         public MethodInfo MethodInfo { get; set; }
         public Type ClienType { get; set; }
-    }
-
-    public static class MethodDescriptorExtensions
-    {
-        public static ParameterDescriptor GetBodyParameter(this MethodDescriptor descriptor)
-        {
-            if (descriptor == null)
-                throw new ArgumentNullException(nameof(descriptor));
-
-            return descriptor.Parameters?.SingleOrDefault(i => i.Target == ParameterTarget.Body);
-        }
     }
 
     public class ParameterDescriptor
