@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Formatters
+namespace Rabbit.Go.Formatters
 {
     public interface IKeyValueFormatterFactory
     {

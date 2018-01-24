@@ -1,11 +1,11 @@
 ﻿using Castle.DynamicProxy;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Abstractions.Codec;
-using Rabbit.Go.Core.Formatters;
-using Rabbit.Go.Core.Internal;
-using Rabbit.Go.Core.Utilities;
+using Rabbit.Go.Codec;
+using Rabbit.Go.Formatters;
+using Rabbit.Go.Interceptors;
+using Rabbit.Go.Internal;
+using Rabbit.Go.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,11 +14,11 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core
+namespace Rabbit.Go
 {
     public class RequestCache
     {
-        public IReadOnlyList<IGoInterceptor> GoInterceptors { get; set; }
+        public IReadOnlyList<IInterceptorMetadata> Interceptors { get; set; }
         public IEncoder Encoder { get; set; }
         public IDecoder Decoder { get; set; }
         public RequestOptions RequestOptions { get; set; }
@@ -169,18 +169,18 @@ namespace Rabbit.Go.Core
             if (_requestCaches.TryGetValue(descriptor, out var cache))
                 return cache;
 
-            var interceptors = new List<IGoInterceptor>(_goOptions.GlobalInterceptors);
+            var interceptors = new List<IInterceptorMetadata>(_goOptions.GlobalInterceptors);
 
             interceptors.AddRange(descriptor
                 .ClienType
-                .GetTypeAttributes<IGoInterceptor>()
-                .Concat(descriptor.MethodInfo.GetTypeAttributes<IGoInterceptor>()));
+                .GetTypeAttributes<IInterceptorMetadata>()
+                .Concat(descriptor.MethodInfo.GetTypeAttributes<IInterceptorMetadata>()));
 
             cache = new RequestCache
             {
                 Encoder = _goOptions.ForamtterEncoder,
                 Decoder = _goOptions.ForamtterDecoder,
-                GoInterceptors = interceptors,
+                Interceptors = interceptors.OrderBy(i => i is IOrderedInterceptor ordered ? ordered.Order : -10).ToArray(),
                 RequestOptions = RequestOptions.Default
             };
 
@@ -211,13 +211,11 @@ namespace Rabbit.Go.Core
                     BuildQueryAndHeaders(requestContext, formatResult);
                     await BuildBodyAsync(requestContext, requestCache.Encoder, descriptor.Parameters, arguments);
 
-                    foreach (var interceptor in requestCache.GoInterceptors)
-                        await interceptor.ApplyAsync(requestContext);
-
                     return requestContext;
                 },
                 requestCache.RequestOptions,
-                requestCache.Decoder);
+                requestCache.Decoder,
+                requestCache.Interceptors);
 
             return methodHandler;
         }

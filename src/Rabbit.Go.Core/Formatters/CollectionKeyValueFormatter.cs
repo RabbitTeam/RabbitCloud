@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Formatters
+namespace Rabbit.Go.Formatters
 {
     public class CollectionKeyValueFormatter : IKeyValueFormatter
     {

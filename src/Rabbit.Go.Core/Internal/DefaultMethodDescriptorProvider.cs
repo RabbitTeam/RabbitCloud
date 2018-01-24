@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Core.Utilities;
+using Rabbit.Go.Utilities;
 using System.Linq;
 
-namespace Rabbit.Go.Core.Internal
+namespace Rabbit.Go.Internal
 {
     public class DefaultMethodDescriptorProvider : IMethodDescriptorProvider
     {

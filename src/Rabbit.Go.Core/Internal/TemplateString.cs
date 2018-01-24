@@ -1,10 +1,10 @@
-﻿using Rabbit.Go.Core.Utilities;
+﻿using Rabbit.Go.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Rabbit.Go.Core.Internal
+namespace Rabbit.Go.Internal
 {
     public class ParseContext
     {

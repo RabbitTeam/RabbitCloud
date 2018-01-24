@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Primitives;
-using Rabbit.Go.Abstractions.Codec;
 using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Go.Core.Codec
+namespace Rabbit.Go.Codec
 {
     public class FormatterCodecMappings
     {

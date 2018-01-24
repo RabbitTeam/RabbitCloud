@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Abstractions.Codec;
 using System;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Codec
+namespace Rabbit.Go.Codec
 {
     public class ForamtterEncoder : IEncoder
     {

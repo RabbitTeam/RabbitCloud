@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Primitives;
 using System.Collections.Generic;
 
-namespace Rabbit.Go.Core.Utilities
+namespace Rabbit.Go.Utilities
 {
     public static class StringValuesExtensions
     {

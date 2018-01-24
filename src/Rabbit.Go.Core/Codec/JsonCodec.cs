@@ -1,12 +1,10 @@
 ﻿using Newtonsoft.Json;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Abstractions.Codec;
 using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Codec
+namespace Rabbit.Go.Codec
 {
     public class JsonDecoder : IDecoder
     {

@@ -1,12 +1,14 @@
-﻿using Rabbit.Go.Abstractions;
-using Rabbit.Go.Abstractions.Codec;
+﻿using Rabbit.Go.Codec;
+using Rabbit.Go.Interceptors;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core
+namespace Rabbit.Go
 {
     public class AsynchronousMethodHandler
     {
@@ -15,33 +17,146 @@ namespace Rabbit.Go.Core
         private readonly Func<object[], Task<RequestContext>> _requestContextFactory;
         private readonly RequestOptions _options;
         private readonly IDecoder _decoder;
+        private readonly IEnumerable<IInterceptorMetadata> _interceptors;
 
         public AsynchronousMethodHandler(
             IGoClient client,
             MethodDescriptor descriptor,
             Func<object[], Task<RequestContext>> requestContextFactory,
             RequestOptions options,
-            IDecoder decoder)
+            IDecoder decoder,
+            IEnumerable<IInterceptorMetadata> interceptors)
         {
             _client = client;
             _descriptor = descriptor;
             _requestContextFactory = requestContextFactory;
             _options = options;
             _decoder = decoder;
+            _interceptors = interceptors;
         }
 
         public async Task<object> InvokeAsync(object[] arguments)
         {
             var requestContext = await _requestContextFactory(arguments);
+            var requestExecutionDelegate = GetRequestExecutionDelegate(requestContext);
 
-            var requestMessage = CreateRequestMessage(requestContext);
+            RequestExecutedContext requestExecutedContext = null;
+            try
+            {
+                requestExecutedContext = await requestExecutionDelegate();
 
-            var responseMessage = await _client.ExecuteAsync(requestMessage, _options);
+                Rethrow(requestExecutedContext);
 
-            if (_decoder == null)
-                return null;
+                return requestExecutedContext.Result;
+            }
+            catch (Exception e)
+            {
+                var exceptionInterceptorContext = new ExceptionInterceptorContext(requestContext)
+                {
+                    ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e),
+                    Result = requestExecutedContext?.Result
+                };
 
-            return await _decoder.DecodeAsync(responseMessage, _descriptor.ReturnType);
+                /*                var syncExceptionInterceptors = _interceptors.OfType<IExceptionInterceptor>().ToArray();
+                                foreach (var interceptor in syncExceptionInterceptors)
+                                    interceptor.OnException(exceptionInterceptorContext);*/
+
+                var exceptionInterceptors = _interceptors
+                    .OfType<IAsyncExceptionInterceptor>()
+                    .Reverse()
+                    .ToArray();
+                foreach (var interceptor in exceptionInterceptors)
+                    await interceptor.OnExceptionAsync(exceptionInterceptorContext);
+
+                Rethrow(exceptionInterceptorContext);
+
+                return exceptionInterceptorContext.Result;
+            }
+        }
+
+        private static void Rethrow(RequestExecutedContext context)
+        {
+            if (context == null)
+                return;
+
+            if (context.ExceptionHandled)
+                return;
+
+            context.ExceptionDispatchInfo?.Throw();
+
+            if (context.Exception != null)
+                throw context.Exception;
+        }
+
+        private static void Rethrow(ExceptionInterceptorContext context)
+        {
+            if (context == null)
+                return;
+
+            if (context.ExceptionHandled)
+                return;
+
+            context.ExceptionDispatchInfo?.Throw();
+
+            if (context.Exception != null)
+                throw context.Exception;
+        }
+
+        private RequestExecutionDelegate GetRequestExecutionDelegate(RequestContext requestContext)
+        {
+            var requestExecutingContext = new RequestExecutingContext(requestContext);
+            var requestExecutedContext = new RequestExecutedContext(requestContext);
+
+            var requestInterceptors = _interceptors
+                .OfType<IAsyncRequestInterceptor>()
+                .ToArray();
+            IList<Func<RequestExecutionDelegate, RequestExecutionDelegate>> requestExecutions = new List<Func<RequestExecutionDelegate, RequestExecutionDelegate>>();
+
+            foreach (var interceptor in requestInterceptors)
+            {
+                requestExecutions.Add(next =>
+                {
+                    return async () =>
+                    {
+                        await interceptor.OnActionExecutionAsync(requestExecutingContext, next);
+                        return requestExecutedContext;
+                    };
+                });
+            }
+
+            RequestExecutionDelegate requestInvoker = async () =>
+            {
+                /*var syncRequestInterceptors = _interceptors.OfType<IRequestInterceptor>().ToArray();
+                foreach (var interceptor in syncRequestInterceptors)
+                    interceptor.OnRequestExecuting(requestExecutingContext);*/
+
+                try
+                {
+                    var requestMessage = CreateRequestMessage(requestContext);
+                    var responseMessage = await _client.ExecuteAsync(requestMessage, _options);
+
+                    var result = _decoder == null
+                        ? responseMessage
+                        : await _decoder.DecodeAsync(responseMessage, _descriptor.ReturnType);
+
+                    requestExecutedContext.Result = result;
+                }
+                catch (Exception e)
+                {
+                    requestExecutedContext.ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e);
+                }
+
+                /*foreach (var interceptor in syncRequestInterceptors)
+                    interceptor.OnRequestExecuted(requestExecutedContext);*/
+
+                return requestExecutedContext;
+            };
+            foreach (var func in requestExecutions.Reverse())
+            {
+                requestInvoker = func(requestInvoker);
+            }
+
+            return requestInvoker;
         }
 
         private static string BuildQueryString(RequestContext context)

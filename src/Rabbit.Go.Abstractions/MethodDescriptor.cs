@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Rabbit.Go.Abstractions
+namespace Rabbit.Go
 {
     public class MethodDescriptor
     {

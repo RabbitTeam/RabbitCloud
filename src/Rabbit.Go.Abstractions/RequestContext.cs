@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Web;
 
-namespace Rabbit.Go.Abstractions
+namespace Rabbit.Go
 {
     public class RequestContext
     {
@@ -66,8 +66,8 @@ namespace Rabbit.Go.Abstractions
             }
         }
 
-        public IDictionary<string, StringValues> Query { get; }
-        public IDictionary<string, StringValues> Headers { get; }
+        public IDictionary<string, StringValues> Query { get; internal set; }
+        public IDictionary<string, StringValues> Headers { get; internal set; }
         public string Charset { get; set; }
         public byte[] Body { get; set; }
     }

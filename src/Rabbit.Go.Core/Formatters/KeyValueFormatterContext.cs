@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Go.Core.Formatters
+namespace Rabbit.Go.Formatters
 {
     public class KeyValueFormatterContext
     {

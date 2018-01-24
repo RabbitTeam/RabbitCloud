@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
-using Rabbit.Go.Abstractions;
+using Rabbit.Go;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;

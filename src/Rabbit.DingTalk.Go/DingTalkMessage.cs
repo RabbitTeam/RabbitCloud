@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Abstractions.Codec;
+using Rabbit.Go;
+using Rabbit.Go.Codec;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;

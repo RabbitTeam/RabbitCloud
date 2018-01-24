@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Formatters
+namespace Rabbit.Go.Formatters
 {
     public class SimpleKeyValueFormatter : IKeyValueFormatter
     {

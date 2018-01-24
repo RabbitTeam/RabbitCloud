@@ -1,4 +1,4 @@
-﻿using Rabbit.Go.Abstractions;
+﻿using Rabbit.Go;
 using System.Threading.Tasks;
 
 namespace Rabbit.DingTalk.Go

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Formatters
+namespace Rabbit.Go.Formatters
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Parameter)]
     public abstract class CustomFormatterAttribute : Attribute, IKeyValueFormatter

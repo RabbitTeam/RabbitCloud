@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Rabbit.Go.Abstractions
+namespace Rabbit.Go
 {
     public class MethodDescriptorProviderContext
     {

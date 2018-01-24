@@ -1,16 +1,16 @@
 ﻿using Microsoft.Extensions.Primitives;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Core.Codec;
+using Rabbit.Go.Codec;
+using Rabbit.Go.Interceptors;
 using System;
 using System.Collections.Generic;
 
-namespace Rabbit.Go.Core
+namespace Rabbit.Go
 {
     public class GoOptions
     {
         public GoOptions()
         {
-            GlobalInterceptors = new List<IGoInterceptor>();
+            GlobalInterceptors = new List<IInterceptorMetadata>();
             FormatterMappings = new FormatterCodecMappings();
             Types = new List<Type>();
 
@@ -23,7 +23,7 @@ namespace Rabbit.Go.Core
             ForamtterDecoder = new ForamtterDecoder(this);
         }
 
-        public IList<IGoInterceptor> GlobalInterceptors { get; }
+        public IList<IInterceptorMetadata> GlobalInterceptors { get; }
         public IList<Type> Types { get; set; }
         public FormatterCodecMappings FormatterMappings { get; }
 

@@ -1,9 +1,8 @@
-﻿using Rabbit.Go.Abstractions;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Internal
+namespace Rabbit.Go.Internal
 {
     public class HttpGoClient : IGoClient
     {

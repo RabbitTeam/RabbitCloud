@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyModel;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Core;
-using Rabbit.Go.Core.Formatters;
-using Rabbit.Go.Core.Internal;
-using Rabbit.Go.Core.Utilities;
+using Rabbit.Go;
+using Rabbit.Go.Formatters;
+using Rabbit.Go.Internal;
+using Rabbit.Go.Utilities;
 using System;
 using System.Linq;
 using System.Reflection;

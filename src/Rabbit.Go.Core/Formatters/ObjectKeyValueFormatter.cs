@@ -1,8 +1,8 @@
-﻿using Rabbit.Go.Core.Utilities;
+﻿using Rabbit.Go.Utilities;
 using System;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Formatters
+namespace Rabbit.Go.Formatters
 {
     public class ObjectKeyValueFormatter : IKeyValueFormatter
     {

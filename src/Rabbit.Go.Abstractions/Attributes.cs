@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Rabbit.Go.Abstractions
+namespace Rabbit.Go
 {
     [AttributeUsage(AttributeTargets.Interface)]
     public class GoAttribute : Attribute

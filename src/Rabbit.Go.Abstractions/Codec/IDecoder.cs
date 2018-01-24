@@ -2,7 +2,7 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Abstractions.Codec
+namespace Rabbit.Go.Codec
 {
     public interface IDecoder
     {

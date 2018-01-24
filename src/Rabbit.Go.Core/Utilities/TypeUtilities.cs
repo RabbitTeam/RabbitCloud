@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Reflection;
 
-namespace Rabbit.Go.Core.Utilities
+namespace Rabbit.Go.Utilities
 {
     public static class TypeUtilities
     {

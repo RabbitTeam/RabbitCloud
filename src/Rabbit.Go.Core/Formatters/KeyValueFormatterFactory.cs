@@ -1,7 +1,7 @@
-﻿using Rabbit.Go.Core.Utilities;
+﻿using Rabbit.Go.Utilities;
 using System;
 
-namespace Rabbit.Go.Core.Formatters
+namespace Rabbit.Go.Formatters
 {
     public class KeyValueFormatterFactory : IKeyValueFormatterFactory
     {

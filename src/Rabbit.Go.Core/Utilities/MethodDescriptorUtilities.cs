@@ -1,11 +1,10 @@
-﻿using Rabbit.Go.Abstractions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core.Utilities
+namespace Rabbit.Go.Utilities
 {
     public static class MethodDescriptorUtilities
     {
@@ -61,7 +60,7 @@ namespace Rabbit.Go.Core.Utilities
             };
         }
 
-        private static string GetUri(Type type, MethodInfo method)
+        private static string GetUri(MemberInfo type, MemberInfo method)
         {
             var baseUrl = type.GetCustomAttribute<GoAttribute>().Url;
             var path = method.GetCustomAttribute<GoRequestAttribute>().Path;
@@ -70,7 +69,7 @@ namespace Rabbit.Go.Core.Utilities
                 return baseUrl;
 
             if (!baseUrl.EndsWith("/") && !path.StartsWith("/"))
-                path += "/";
+                path = "/" + path;
             else if (baseUrl.EndsWith("/") && path.StartsWith("/"))
                 baseUrl = baseUrl.Substring(0, baseUrl.Length - 1);
 
