@@ -18,7 +18,7 @@ namespace Rabbit.Go
         private readonly RequestOptions _options;
         private readonly IDecoder _decoder;
         private readonly IEnumerable<IInterceptorMetadata> _interceptors;
-        private readonly IRetryer _retryer;
+        private readonly Func<IRetryer> _retryerFactory;
 
         public AsynchronousMethodHandler(
             IGoClient client,
@@ -27,7 +27,7 @@ namespace Rabbit.Go
             RequestOptions options,
             IDecoder decoder,
             IEnumerable<IInterceptorMetadata> interceptors,
-            IRetryer retryer)
+            Func<IRetryer> retryerFactory)
         {
             _client = client;
             _descriptor = descriptor;
@@ -35,7 +35,7 @@ namespace Rabbit.Go
             _options = options;
             _decoder = decoder;
             _interceptors = interceptors;
-            _retryer = retryer;
+            _retryerFactory = retryerFactory;
         }
 
         public async Task<object> InvokeAsync(object[] arguments)
@@ -46,7 +46,7 @@ namespace Rabbit.Go
             RequestExecutedContext requestExecutedContext = null;
             try
             {
-                var retryer = _retryer.CloneRetryer();
+                var retryer = _retryerFactory();
 
                 RetryableException retryableException = null;
                 do

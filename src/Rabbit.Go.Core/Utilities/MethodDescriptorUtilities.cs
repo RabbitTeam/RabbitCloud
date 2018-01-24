@@ -29,14 +29,6 @@ namespace Rabbit.Go.Utilities
                 ClienType = type
             };
 
-            descriptor.DefaultQuery
-                .Merge(type.GetTypeAttributes<DefaultQueryAttribute>().ToDictionary(i => i.Name, i => i.Value))
-                .Merge(method.GetTypeAttributes<DefaultQueryAttribute>().ToDictionary(i => i.Name, i => i.Value));
-
-            descriptor.DefaultHeaders
-                .Merge(type.GetTypeAttributes<DefaultHeaderAttribute>().ToDictionary(i => i.Name, i => i.Value))
-                .Merge(method.GetTypeAttributes<DefaultHeaderAttribute>().ToDictionary(i => i.Name, i => i.Value));
-
             return descriptor;
         }
 

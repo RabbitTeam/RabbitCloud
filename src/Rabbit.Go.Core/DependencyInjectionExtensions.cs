@@ -4,6 +4,7 @@ using Rabbit.Go.Formatters;
 using Rabbit.Go.Internal;
 using Rabbit.Go.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -33,10 +34,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IMethodDescriptorCollectionProvider, MethodDescriptorCollectionProvider>()
                 .AddSingleton<IMethodDescriptorProvider, DefaultMethodDescriptorProvider>()
                 .AddSingleton<IGoFactory, DefaultGoFactory>()
-                .AddSingleton<IGoClient, HttpGoClient>();
+                .AddSingleton<IGoClient, HttpGoClient>()
+                .AddSingleton<IRequestCacheFactory, RequestCacheFactory>()
+                .AddSingleton<ITemplateParser, TemplateParser>();
         }
 
-        private static Type[] GetTypes(Func<AssemblyName, bool> assemblyPredicate = null, Func<Type, bool> typePredicate = null)
+        private static IEnumerable<Type> GetTypes(Func<AssemblyName, bool> assemblyPredicate = null, Func<Type, bool> typePredicate = null)
         {
             var assemblyNames = DependencyContext.Default.RuntimeLibraries
                 .SelectMany(i => i.GetDefaultAssemblyNames(DependencyContext.Default));

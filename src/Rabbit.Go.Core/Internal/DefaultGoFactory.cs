@@ -1,11 +1,8 @@
 ﻿using Castle.DynamicProxy;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Rabbit.Go.Codec;
 using Rabbit.Go.Formatters;
-using Rabbit.Go.Interceptors;
 using Rabbit.Go.Internal;
-using Rabbit.Go.Utilities;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,14 +13,6 @@ using System.Threading.Tasks;
 
 namespace Rabbit.Go
 {
-    public class RequestCache
-    {
-        public IReadOnlyList<IInterceptorMetadata> Interceptors { get; set; }
-        public IEncoder Encoder { get; set; }
-        public IDecoder Decoder { get; set; }
-        public RequestOptions RequestOptions { get; set; }
-    }
-
     public class InterceptorAsync : IInterceptor
     {
         private readonly Func<IInvocation, Task<object>> _invoker;
@@ -122,29 +111,16 @@ namespace Rabbit.Go
 
     public class DefaultGoFactory : IGoFactory
     {
-        private readonly GoOptions _goOptions;
-
-        private readonly ConcurrentDictionary<MethodDescriptor, RequestCache> _requestCaches = new ConcurrentDictionary<MethodDescriptor, RequestCache>();
-
-        private readonly IKeyValueFormatterFactory _keyValueFormatterFactory;
-        private readonly IGoClient _goClient;
-
+        private readonly IRequestCacheFactory _requestCacheFactory;
         private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
-
-        private readonly ITemplateParser _templateParser = new TemplateParser();
+        private readonly ITemplateParser _templateParser;
         private readonly IReadOnlyList<MethodDescriptor> _methodDescriptors;
 
-        public DefaultGoFactory(
-            IKeyValueFormatterFactory keyValueFormatterFactory,
-            IMethodDescriptorCollectionProvider methodDescriptorCollectionProvider,
-            IOptions<GoOptions> goOptions,
-            IGoClient goClient
-        )
+        public DefaultGoFactory(IRequestCacheFactory requestCacheFactory, IMethodDescriptorCollectionProvider methodDescriptorCollectionProvider, ITemplateParser templateParser)
         {
-            _keyValueFormatterFactory = keyValueFormatterFactory;
-            _goClient = goClient;
+            _requestCacheFactory = requestCacheFactory;
+            _templateParser = templateParser;
             _methodDescriptors = methodDescriptorCollectionProvider.Items;
-            _goOptions = goOptions.Value;
         }
 
         #region Overrides of IGoFactory
@@ -164,44 +140,20 @@ namespace Rabbit.Go
 
         #region Private Method
 
-        private RequestCache GetRequestCache(MethodDescriptor descriptor)
-        {
-            if (_requestCaches.TryGetValue(descriptor, out var cache))
-                return cache;
-
-            var interceptors = new List<IInterceptorMetadata>(_goOptions.GlobalInterceptors);
-
-            interceptors.AddRange(descriptor
-                .ClienType
-                .GetTypeAttributes<IInterceptorMetadata>()
-                .Concat(descriptor.MethodInfo.GetTypeAttributes<IInterceptorMetadata>()));
-
-            cache = new RequestCache
-            {
-                Encoder = _goOptions.ForamtterEncoder,
-                Decoder = _goOptions.ForamtterDecoder,
-                Interceptors = interceptors.OrderBy(i => i is IOrderedInterceptor ordered ? ordered.Order : -10).ToArray(),
-                RequestOptions = RequestOptions.Default
-            };
-
-            _requestCaches[descriptor] = cache;
-
-            return cache;
-        }
-
         private AsynchronousMethodHandler CreateMethodHandler(IInvocation invocation)
         {
             var descriptor = GetMethodDescriptor(invocation);
-            var requestCache = GetRequestCache(descriptor);
+            var requestCache = _requestCacheFactory.GetRequestCache(descriptor);
 
             var methodHandler = new AsynchronousMethodHandler(
-                _goClient,
+                requestCache.Client,
                 descriptor,
                 async arguments =>
                 {
-                    var formatResult = await FormatAsync(descriptor, arguments);
-                    var requestUri = _templateParser.Parse(descriptor.Uri,
-                        formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString()));
+                    var formatResult = await FormatAsync(requestCache, arguments);
+
+                    var pathArguments = formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString());
+                    var requestUri = _templateParser.Parse(descriptor.Uri, pathArguments);
 
                     var requestContext = new RequestContext(requestUri)
                     {
@@ -216,7 +168,7 @@ namespace Rabbit.Go
                 requestCache.RequestOptions,
                 requestCache.Decoder,
                 requestCache.Interceptors,
-                new EmptyRetryer());
+                requestCache.RetryerFactory);
 
             return methodHandler;
         }
@@ -237,25 +189,27 @@ namespace Rabbit.Go
             return proxyType.GetInterface(name);
         }
 
-        private async Task<IDictionary<ParameterTarget, IDictionary<string, StringValues>>> FormatAsync(MethodDescriptor methodDescriptor, IReadOnlyList<object> arguments)
+        private async Task<IDictionary<ParameterTarget, IDictionary<string, StringValues>>> FormatAsync(RequestCache requestCache, IReadOnlyList<object> arguments)
         {
             IDictionary<ParameterTarget, IDictionary<string, StringValues>> formatResult =
                 new Dictionary<ParameterTarget, IDictionary<string, StringValues>>
                 {
                     {
                         ParameterTarget.Query,
-                        new Dictionary<string, StringValues>(methodDescriptor.DefaultQuery,
+                        new Dictionary<string, StringValues>(requestCache.DefaultQuery,
                             StringComparer.OrdinalIgnoreCase)
                     },
                     {ParameterTarget.Path, new Dictionary<string, StringValues>()},
                     {
                         ParameterTarget.Header,
-                        new Dictionary<string, StringValues>(methodDescriptor.DefaultHeaders,
+                        new Dictionary<string, StringValues>(requestCache.DefaultHeaders,
                             StringComparer.OrdinalIgnoreCase)
                     }
                 };
 
+            var methodDescriptor = requestCache.Descriptor;
             var parameterDescriptors = methodDescriptor.Parameters;
+            var keyValueFormatterFactory = requestCache.KeyValueFormatterFactory;
 
             for (var i = 0; i < parameterDescriptors.Count; i++)
             {
@@ -266,7 +220,7 @@ namespace Rabbit.Go
 
                 var parameter = parameterDescriptors[i];
                 var value = arguments[i];
-                var item = await _keyValueFormatterFactory.FormatAsync(value, parameter.ParameterType, parameterDescriptor.Name);
+                var item = await keyValueFormatterFactory.FormatAsync(value, parameter.ParameterType, parameterDescriptor.Name);
 
                 foreach (var t in item)
                     itemResult[t.Key] = t.Value;
