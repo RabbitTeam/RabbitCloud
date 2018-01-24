@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Net.Http;
 
-namespace Rabbit.Go.Abstractions
+namespace Rabbit.Go
 {
     public class GoException : Exception
     {
@@ -10,6 +11,11 @@ namespace Rabbit.Go.Abstractions
 
         public GoException(string message, Exception innerException) : base(message, innerException)
         {
+        }
+
+        public static GoException ErrorExecuting(HttpRequestMessage request, Exception exception)
+        {
+            return new RetryableException($"{exception.Message} executing {request.Method} {request.RequestUri}", exception);
         }
     }
 }

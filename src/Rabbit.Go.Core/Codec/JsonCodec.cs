@@ -18,7 +18,7 @@ namespace Rabbit.Go.Codec
 
             var json = await response.Content.ReadAsStringAsync();
 
-            return json == null ? null : (Task<object>)JsonConvert.DeserializeObject(json, type);
+            return json == null ? null : JsonConvert.DeserializeObject(json, type);
         }
 
         #endregion Implementation of IDecoder

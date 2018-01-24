@@ -215,7 +215,8 @@ namespace Rabbit.Go
                 },
                 requestCache.RequestOptions,
                 requestCache.Decoder,
-                requestCache.Interceptors);
+                requestCache.Interceptors,
+                new EmptyRetryer());
 
             return methodHandler;
         }
@@ -305,16 +306,34 @@ namespace Rabbit.Go
         {
             if (encoder == null)
                 return;
+
+            object bodyArgument = null;
+            Type bodyType = null;
             for (var i = 0; i < parameterDescriptors.Count; i++)
             {
                 var parameterDescriptor = parameterDescriptors[i];
                 if (parameterDescriptor.Target != ParameterTarget.Body)
                     continue;
 
-                var body = arguments[i];
+                bodyArgument = arguments[i];
+                bodyType = parameterDescriptor.ParameterType;
+                break;
+            }
 
-                await encoder.EncodeAsync(body, parameterDescriptor.ParameterType, requestContext);
+            if (bodyArgument == null || bodyType == null)
                 return;
+
+            try
+            {
+                await encoder.EncodeAsync(bodyArgument, bodyType, requestContext);
+            }
+            catch (EncodeException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new EncodeException(e.Message, e);
             }
         }
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Rabbit.Go.Abstractions.Codec
+namespace Rabbit.Go.Codec
 {
     public class EncodeException : GoException
     {

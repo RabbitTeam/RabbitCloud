@@ -18,6 +18,7 @@ namespace Rabbit.Go
         private readonly RequestOptions _options;
         private readonly IDecoder _decoder;
         private readonly IEnumerable<IInterceptorMetadata> _interceptors;
+        private readonly IRetryer _retryer;
 
         public AsynchronousMethodHandler(
             IGoClient client,
@@ -25,7 +26,8 @@ namespace Rabbit.Go
             Func<object[], Task<RequestContext>> requestContextFactory,
             RequestOptions options,
             IDecoder decoder,
-            IEnumerable<IInterceptorMetadata> interceptors)
+            IEnumerable<IInterceptorMetadata> interceptors,
+            IRetryer retryer)
         {
             _client = client;
             _descriptor = descriptor;
@@ -33,6 +35,7 @@ namespace Rabbit.Go
             _options = options;
             _decoder = decoder;
             _interceptors = interceptors;
+            _retryer = retryer;
         }
 
         public async Task<object> InvokeAsync(object[] arguments)
@@ -43,11 +46,24 @@ namespace Rabbit.Go
             RequestExecutedContext requestExecutedContext = null;
             try
             {
-                requestExecutedContext = await requestExecutionDelegate();
+                var retryer = _retryer.CloneRetryer();
+
+                RetryableException retryableException = null;
+                do
+                {
+                    try
+                    {
+                        requestExecutedContext = await requestExecutionDelegate();
+                    }
+                    catch (RetryableException e)
+                    {
+                        retryableException = e;
+                    }
+                } while (retryableException != null && await retryer.IsContinueAsync(retryableException));
 
                 Rethrow(requestExecutedContext);
 
-                return requestExecutedContext.Result;
+                return requestExecutedContext?.Result;
             }
             catch (Exception e)
             {
@@ -130,16 +146,16 @@ namespace Rabbit.Go
                 foreach (var interceptor in syncRequestInterceptors)
                     interceptor.OnRequestExecuting(requestExecutingContext);*/
 
+                var requestMessage = CreateRequestMessage(requestContext);
                 try
                 {
-                    var requestMessage = CreateRequestMessage(requestContext);
                     var responseMessage = await _client.ExecuteAsync(requestMessage, _options);
 
-                    var result = _decoder == null
-                        ? responseMessage
-                        : await _decoder.DecodeAsync(responseMessage, _descriptor.ReturnType);
-
-                    requestExecutedContext.Result = result;
+                    requestExecutedContext.Result = await DecodeAsync(responseMessage);
+                }
+                catch (HttpRequestException requestException)
+                {
+                    throw GoException.ErrorExecuting(requestMessage, requestException);
                 }
                 catch (Exception e)
                 {
@@ -157,6 +173,24 @@ namespace Rabbit.Go
             }
 
             return requestInvoker;
+        }
+
+        private async Task<object> DecodeAsync(HttpResponseMessage response)
+        {
+            try
+            {
+                return _decoder == null
+                    ? null
+                    : await _decoder.DecodeAsync(response, _descriptor.ReturnType);
+            }
+            catch (DecodeException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new DecodeException(e.Message, e);
+            }
         }
 
         private static string BuildQueryString(RequestContext context)
