@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Rabbit.Go.Interceptors;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -10,9 +11,9 @@ namespace Rabbit.Go
         public Type ReturnType { get; set; }
         public IReadOnlyList<ParameterDescriptor> Parameters { get; set; }
         public string Method { get; set; }
-
         public MethodInfo MethodInfo { get; set; }
         public Type ClienType { get; set; }
+        public IList<InterceptorDescriptor> InterceptorDescriptors { get; set; }
     }
 
     public class ParameterDescriptor

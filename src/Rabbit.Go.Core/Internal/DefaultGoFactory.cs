@@ -114,12 +114,14 @@ namespace Rabbit.Go
         private readonly IRequestCacheFactory _requestCacheFactory;
         private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
         private readonly ITemplateParser _templateParser;
+        private readonly IServiceProvider _services;
         private readonly IReadOnlyList<MethodDescriptor> _methodDescriptors;
 
-        public DefaultGoFactory(IRequestCacheFactory requestCacheFactory, IMethodDescriptorCollectionProvider methodDescriptorCollectionProvider, ITemplateParser templateParser)
+        public DefaultGoFactory(IRequestCacheFactory requestCacheFactory, IMethodDescriptorCollectionProvider methodDescriptorCollectionProvider, ITemplateParser templateParser, IServiceProvider services)
         {
             _requestCacheFactory = requestCacheFactory;
             _templateParser = templateParser;
+            _services = services;
             _methodDescriptors = methodDescriptorCollectionProvider.Items;
         }
 
@@ -157,7 +159,9 @@ namespace Rabbit.Go
 
                     var requestContext = new RequestContext(requestUri)
                     {
-                        Method = descriptor.Method
+                        Method = descriptor.Method,
+                        MethodDescriptor = descriptor,
+                        RequestServices = _services
                     };
 
                     BuildQueryAndHeaders(requestContext, formatResult);

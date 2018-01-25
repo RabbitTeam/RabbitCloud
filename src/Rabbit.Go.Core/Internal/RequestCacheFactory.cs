@@ -2,10 +2,10 @@
 using Rabbit.Go.Codec;
 using Rabbit.Go.Core.Codec;
 using Rabbit.Go.Formatters;
-using Rabbit.Go.Interceptors;
+using Rabbit.Go.Internal;
 using Rabbit.Go.Utilities;
+using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -13,13 +13,15 @@ namespace Rabbit.Go
 {
     public class RequestCacheFactory : IRequestCacheFactory
     {
+        private readonly IServiceProvider _services;
         private readonly IGoClient _goClient;
         private readonly IKeyValueFormatterFactory _keyValueFormatterFactory;
         private readonly GoOptions _goOptions;
         private readonly EmptyRetryer _emptyRetryer = new EmptyRetryer();
 
-        public RequestCacheFactory(IOptions<GoOptions> goOptions, IGoClient goClient, IKeyValueFormatterFactory keyValueFormatterFactory)
+        public RequestCacheFactory(IServiceProvider services, IOptions<GoOptions> goOptions, IGoClient goClient, IKeyValueFormatterFactory keyValueFormatterFactory)
         {
+            _services = services;
             _goClient = goClient;
             _keyValueFormatterFactory = keyValueFormatterFactory;
             _goOptions = goOptions.Value;
@@ -36,9 +38,6 @@ namespace Rabbit.Go
 
             var typeAndMethodAttributes = descriptor.ClienType.GetCustomAttributes().Concat(descriptor.MethodInfo.GetCustomAttributes()).ToArray();
 
-            var interceptors = new List<IInterceptorMetadata>(_goOptions.GlobalInterceptors);
-            interceptors.AddRange(typeAndMethodAttributes.OfType<IInterceptorMetadata>());
-
             IEncoder encoder = _goOptions.ForamtterEncoder;
             IDecoder decoder = _goOptions.ForamtterDecoder;
 
@@ -53,11 +52,15 @@ namespace Rabbit.Go
                 decoder = typeAndMethodAttributes.OfType<DecoderAttribute>().LastOrDefault() ?? decoder;
             }
 
+            var interceptorFactoryResult = InterceptorFactory.GetAllInterceptors(descriptor, _services);
+
+            var interceptors = interceptorFactoryResult.Interceptors;
+
             cache = new RequestCache
             {
                 Encoder = encoder,
                 Decoder = decoder,
-                Interceptors = interceptors.OrderBy(i => i is IOrderedInterceptor ordered ? ordered.Order : -10).ToArray(),
+                Interceptors = interceptors,
                 RequestOptions = RequestOptions.Default,
                 Client = _goClient,
                 Descriptor = descriptor,

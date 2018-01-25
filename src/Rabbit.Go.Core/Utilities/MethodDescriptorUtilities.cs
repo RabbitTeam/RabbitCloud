@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Rabbit.Go.Interceptors;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -19,6 +20,11 @@ namespace Rabbit.Go.Utilities
             if (returnType.IsGenericType && typeof(Task).IsAssignableFrom(returnType))
                 returnType = returnType.GenericTypeArguments[0];
 
+            var interceptorDescriptors = type.GetCustomAttributes().Concat(method.GetCustomAttributes())
+                .OfType<IInterceptorMetadata>()
+                .Select(i => new InterceptorDescriptor(i))
+                .ToArray();
+
             var descriptor = new MethodDescriptor
             {
                 ReturnType = returnType,
@@ -26,7 +32,8 @@ namespace Rabbit.Go.Utilities
                 Uri = GetUri(method.DeclaringType, method),
                 Method = goRequestAttribute?.Method ?? "GET",
                 MethodInfo = method,
-                ClienType = type
+                ClienType = type,
+                InterceptorDescriptors = interceptorDescriptors
             };
 
             return descriptor;

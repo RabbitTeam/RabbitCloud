@@ -42,6 +42,9 @@ namespace Rabbit.Go
             Headers = new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase);
         }
 
+        public MethodDescriptor MethodDescriptor { get; set; }
+        public IServiceProvider RequestServices { get; set; }
+
         public string Method { get; set; }
         public string Scheme { get; set; }
         public string Host { get; set; }
