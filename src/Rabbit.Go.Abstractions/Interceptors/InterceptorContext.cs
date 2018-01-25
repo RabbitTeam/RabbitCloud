@@ -13,6 +13,9 @@
             Port = requestContext.Port;
             Query = requestContext.Query;
             Scheme = requestContext.Scheme;
+            RequestServices = requestContext.RequestServices;
+            MethodDescriptor = requestContext.MethodDescriptor;
+            Options = requestContext.Options;
         }
     }
 }

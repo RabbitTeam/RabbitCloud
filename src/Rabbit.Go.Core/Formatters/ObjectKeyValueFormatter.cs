@@ -21,6 +21,7 @@ namespace Rabbit.Go.Formatters
             {
                 if (property.GetTypeAttribute<PropertyIgnoreAttribute>() != null)
                     continue;
+
                 var propertyContext = new KeyValueFormatterContext(context.FormatterFactory)
                 {
                     BinderModelName = context.BinderModelName + "." + (property.GetTypeAttribute<KeyNameAttribute>()?.Name ?? property.Name),

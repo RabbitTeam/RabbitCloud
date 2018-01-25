@@ -6,7 +6,6 @@ namespace Rabbit.Go.Internal
 {
     public class HttpGoClient : IGoClient
     {
-        public static IGoClient Instance { get; } = new HttpGoClient();
         private readonly HttpClient _httpClient = new HttpClient();
 
         #region Implementation of IGoClient

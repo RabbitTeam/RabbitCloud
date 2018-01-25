@@ -26,6 +26,18 @@ namespace Microsoft.Extensions.DependencyInjection
                 });
         }
 
+        public static IServiceCollection AddGo(this IServiceCollection serviceCollection, IEnumerable<Type> types)
+        {
+            return serviceCollection
+                .AddGo(options =>
+                {
+                    foreach (var type in types)
+                    {
+                        options.Types.Add(type);
+                    }
+                });
+        }
+
         public static IServiceCollection AddGo(this IServiceCollection serviceCollection, Action<GoOptions> configureOptions)
         {
             return serviceCollection
@@ -35,7 +47,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IMethodDescriptorProvider, DefaultMethodDescriptorProvider>()
                 .AddSingleton<IGoFactory, DefaultGoFactory>()
                 .AddSingleton<IGoClient, HttpGoClient>()
-                .AddSingleton<IRequestCacheFactory, RequestCacheFactory>()
+                .AddSingleton<MethodInvokerProvider>()
+                .AddSingleton<AsynchronousMethodInvokerCache>()
                 .AddSingleton<ITemplateParser, TemplateParser>();
         }
 

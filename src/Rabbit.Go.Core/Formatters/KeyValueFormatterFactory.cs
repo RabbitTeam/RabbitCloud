@@ -16,6 +16,8 @@ namespace Rabbit.Go.Formatters
             switch (Type.GetTypeCode(type))
             {
                 case TypeCode.Object:
+                    if (type.IsGenericType && typeof(Nullable<>) == type.GetGenericTypeDefinition())
+                        return SimpleKeyValueFormatter;
                     var customKeyValueFormatter = type.GetTypeAttribute<IKeyValueFormatter>();
                     if (customKeyValueFormatter != null)
                         return customKeyValueFormatter;

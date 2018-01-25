@@ -109,111 +109,73 @@ namespace Rabbit.Go
         #endregion Help Type
     }
 
-    public class DefaultGoFactory : IGoFactory
+    public class MethodInvokerProvider
     {
-        private readonly IRequestCacheFactory _requestCacheFactory;
-        private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
-        private readonly ITemplateParser _templateParser;
+        private readonly AsynchronousMethodInvokerCache _invokerCache;
         private readonly IServiceProvider _services;
-        private readonly IReadOnlyList<MethodDescriptor> _methodDescriptors;
+        private readonly ITemplateParser _templateParser = new TemplateParser();
 
-        public DefaultGoFactory(IRequestCacheFactory requestCacheFactory, IMethodDescriptorCollectionProvider methodDescriptorCollectionProvider, ITemplateParser templateParser, IServiceProvider services)
+        public MethodInvokerProvider(AsynchronousMethodInvokerCache invokerCache, IServiceProvider services)
         {
-            _requestCacheFactory = requestCacheFactory;
-            _templateParser = templateParser;
+            _invokerCache = invokerCache;
             _services = services;
-            _methodDescriptors = methodDescriptorCollectionProvider.Items;
         }
 
-        #region Overrides of IGoFactory
-
-        public object CreateInstance(Type type)
+        private RequestContext CreateRequestContext(IDictionary<ParameterTarget, IDictionary<string, StringValues>> formatResult, MethodDescriptor descriptor, IReadOnlyList<object> arguments)
         {
-            return _proxyGenerator.CreateInterfaceProxyWithoutTarget(type, new Type[0], new InterceptorAsync(async invocation =>
-              {
-                  var methodHandler = CreateMethodHandler(invocation);
-                  var result = await methodHandler.InvokeAsync(invocation.Arguments);
+            var pathArguments = formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString());
+            var requestUri = _templateParser.Parse(descriptor.Uri, pathArguments);
 
-                  return result;
-              }));
+            var requestContext = new RequestContext(requestUri)
+            {
+                Method = descriptor.Method,
+                MethodDescriptor = descriptor,
+                RequestServices = _services
+            };
+
+            return requestContext;
         }
 
-        #endregion Overrides of IGoFactory
-
-        #region Private Method
-
-        private AsynchronousMethodHandler CreateMethodHandler(IInvocation invocation)
+        public async Task<AsynchronousMethodInvoker> CreateMethodHandlerAsync(MethodDescriptor descriptor, object[] arguments)
         {
-            var descriptor = GetMethodDescriptor(invocation);
-            var requestCache = _requestCacheFactory.GetRequestCache(descriptor);
+            var formatResult = await FormatAsync(descriptor, new KeyValueFormatterFactory(), arguments);
+            var requestContext = CreateRequestContext(formatResult, descriptor, arguments);
 
-            var methodHandler = new AsynchronousMethodHandler(
-                requestCache.Client,
-                descriptor,
-                async arguments =>
-                {
-                    var formatResult = await FormatAsync(requestCache, arguments);
+            var result = _invokerCache.GetCachedResult(requestContext);
+            var entry = result.entry;
 
-                    var pathArguments = formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString());
-                    var requestUri = _templateParser.Parse(descriptor.Uri, pathArguments);
+            // set default headers and query
+            foreach (var item in entry.DefaultHeaders)
+                requestContext.AppendHeader(item.Key, item.Value);
+            foreach (var item in entry.DefaultQuery)
+                requestContext.AppendQuery(item.Key, item.Value);
 
-                    var requestContext = new RequestContext(requestUri)
-                    {
-                        Method = descriptor.Method,
-                        MethodDescriptor = descriptor,
-                        RequestServices = _services
-                    };
+            BuildQueryAndHeaders(requestContext, formatResult);
 
-                    BuildQueryAndHeaders(requestContext, formatResult);
-                    await BuildBodyAsync(requestContext, requestCache.Encoder, descriptor.Parameters, arguments);
+            await BuildBodyAsync(requestContext, entry.Encoder, descriptor.Parameters, arguments);
 
-                    return requestContext;
-                },
-                requestCache.RequestOptions,
-                requestCache.Decoder,
-                requestCache.Interceptors,
-                requestCache.RetryerFactory);
+            var methodHandler = new AsynchronousMethodInvoker(requestContext, entry.RetryerFactory(), entry);
 
             return methodHandler;
         }
 
-        private MethodDescriptor GetMethodDescriptor(IInvocation invocation)
-        {
-            var type = GetProxyType(invocation);
-            var method = invocation.Method;
-
-            return _methodDescriptors.SingleOrDefault(i => i.ClienType == type && i.MethodInfo == method);
-        }
-
-        private static Type GetProxyType(IInvocation context)
-        {
-            //todo: think of a more reliable way
-            var proxyType = context.Proxy.GetType();
-            var name = proxyType.Name.Substring(0, proxyType.Name.Length - 5);
-            return proxyType.GetInterface(name);
-        }
-
-        private async Task<IDictionary<ParameterTarget, IDictionary<string, StringValues>>> FormatAsync(RequestCache requestCache, IReadOnlyList<object> arguments)
+        private static async Task<IDictionary<ParameterTarget, IDictionary<string, StringValues>>> FormatAsync(MethodDescriptor methodDescriptor, IKeyValueFormatterFactory keyValueFormatterFactory, IReadOnlyList<object> arguments)
         {
             IDictionary<ParameterTarget, IDictionary<string, StringValues>> formatResult =
                 new Dictionary<ParameterTarget, IDictionary<string, StringValues>>
                 {
                     {
                         ParameterTarget.Query,
-                        new Dictionary<string, StringValues>(requestCache.DefaultQuery,
-                            StringComparer.OrdinalIgnoreCase)
+                        new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase)
                     },
                     {ParameterTarget.Path, new Dictionary<string, StringValues>()},
                     {
                         ParameterTarget.Header,
-                        new Dictionary<string, StringValues>(requestCache.DefaultHeaders,
-                            StringComparer.OrdinalIgnoreCase)
+                        new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase)
                     }
                 };
 
-            var methodDescriptor = requestCache.Descriptor;
             var parameterDescriptors = methodDescriptor.Parameters;
-            var keyValueFormatterFactory = requestCache.KeyValueFormatterFactory;
 
             for (var i = 0; i < parameterDescriptors.Count; i++)
             {
@@ -293,6 +255,52 @@ namespace Rabbit.Go
             {
                 throw new EncodeException(e.Message, e);
             }
+        }
+    }
+
+    public class DefaultGoFactory : IGoFactory
+    {
+        private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
+        private readonly MethodInvokerProvider _invokerProvider;
+        private readonly IReadOnlyList<MethodDescriptor> _methodDescriptors;
+
+        public DefaultGoFactory(MethodInvokerProvider invokerProvider, IMethodDescriptorCollectionProvider methodDescriptorCollectionProvider)
+        {
+            _invokerProvider = invokerProvider;
+            _methodDescriptors = methodDescriptorCollectionProvider.Items;
+        }
+
+        #region Overrides of IGoFactory
+
+        public object CreateInstance(Type type)
+        {
+            return _proxyGenerator.CreateInterfaceProxyWithoutTarget(type, new Type[0], new InterceptorAsync(async invocation =>
+            {
+                var invoker = await _invokerProvider.CreateMethodHandlerAsync(GetMethodDescriptor(invocation), invocation.Arguments);
+                var result = await invoker.InvokeAsync();
+
+                return result;
+            }));
+        }
+
+        #endregion Overrides of IGoFactory
+
+        #region Private Method
+
+        private static Type GetProxyType(IInvocation context)
+        {
+            //todo: think of a more reliable way
+            var proxyType = context.Proxy.GetType();
+            var name = proxyType.Name.Substring(0, proxyType.Name.Length - 5);
+            return proxyType.GetInterface(name);
+        }
+
+        private MethodDescriptor GetMethodDescriptor(IInvocation invocation)
+        {
+            var type = GetProxyType(invocation);
+            var method = invocation.Method;
+
+            return _methodDescriptors.SingleOrDefault(i => i.ClienType == type && i.MethodInfo == method);
         }
 
         #endregion Private Method

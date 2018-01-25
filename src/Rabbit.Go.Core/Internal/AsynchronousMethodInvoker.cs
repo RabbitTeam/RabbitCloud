@@ -1,5 +1,6 @@
 ﻿using Rabbit.Go.Codec;
 using Rabbit.Go.Interceptors;
+using Rabbit.Go.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,43 +11,36 @@ using System.Threading.Tasks;
 
 namespace Rabbit.Go
 {
-    public class AsynchronousMethodHandler
+    public class AsynchronousMethodInvoker
     {
         private readonly IGoClient _client;
         private readonly MethodDescriptor _descriptor;
-        private readonly Func<object[], Task<RequestContext>> _requestContextFactory;
+        private readonly RequestContext _requestContext;
         private readonly RequestOptions _options;
         private readonly IDecoder _decoder;
         private readonly IEnumerable<IInterceptorMetadata> _interceptors;
-        private readonly Func<IRetryer> _retryerFactory;
+        private readonly IRetryer _retryer;
 
-        public AsynchronousMethodHandler(
-            IGoClient client,
-            MethodDescriptor descriptor,
-            Func<object[], Task<RequestContext>> requestContextFactory,
-            RequestOptions options,
-            IDecoder decoder,
-            IEnumerable<IInterceptorMetadata> interceptors,
-            Func<IRetryer> retryerFactory)
+        public AsynchronousMethodInvoker(RequestContext requestContext, IRetryer retryer, RequestCacheEntry entry)
         {
-            _client = client;
-            _descriptor = descriptor;
-            _requestContextFactory = requestContextFactory;
-            _options = options;
-            _decoder = decoder;
-            _interceptors = interceptors;
-            _retryerFactory = retryerFactory;
+            _client = entry.Client;
+            _descriptor = entry.MethodDescriptor;
+            _requestContext = requestContext;
+            _options = entry.Options;
+            _decoder = entry.Decoder;
+            _interceptors = entry.Interceptors;
+            _retryer = retryer;
         }
 
-        public async Task<object> InvokeAsync(object[] arguments)
+        public async Task<object> InvokeAsync()
         {
-            var requestContext = await _requestContextFactory(arguments);
+            var requestContext = _requestContext;
             var requestExecutionDelegate = GetRequestExecutionDelegate(requestContext);
 
             RequestExecutedContext requestExecutedContext = null;
             try
             {
-                var retryer = _retryerFactory();
+                var retryer = _retryer;
 
                 RetryableException retryableException = null;
                 do
@@ -135,6 +129,8 @@ namespace Rabbit.Go
                     return async () =>
                     {
                         await interceptor.OnActionExecutionAsync(requestExecutingContext, next);
+                        if (requestExecutingContext.Result != null)
+                            requestExecutedContext.Result = requestExecutingContext.Result;
                         return requestExecutedContext;
                     };
                 });

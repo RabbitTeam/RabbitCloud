@@ -44,6 +44,7 @@ namespace Rabbit.Go
 
         public MethodDescriptor MethodDescriptor { get; set; }
         public IServiceProvider RequestServices { get; set; }
+        public RequestOptions Options { get; set; }
 
         public string Method { get; set; }
         public string Scheme { get; set; }
