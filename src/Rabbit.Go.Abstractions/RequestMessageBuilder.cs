@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Web;
 
 namespace Rabbit.Go
@@ -39,7 +40,7 @@ namespace Rabbit.Go
                 Path = pathAndQuery.Substring(0, queryStartIndex);
                 var querys = QueryHelpers.ParseNullableQuery(pathAndQuery.Substring(queryStartIndex));
                 foreach (var item in querys)
-                    Query[item.Key] = querys[item.Value];
+                    Query[item.Key] = querys[item.Key];
             }
         }
 
@@ -134,9 +135,6 @@ namespace Rabbit.Go
         public RequestMessageBuilder Query(string name, StringValues values)
         {
             var query = UrlDescriptor.Query;
-            if (query.TryGetValue(name, out var current))
-                values = StringValues.Concat(current, values);
-
             query[name] = values;
 
             return this;
@@ -145,21 +143,45 @@ namespace Rabbit.Go
         public RequestMessageBuilder Header(string name, StringValues values)
         {
             var headers = (HttpHeaders)_requestMessage.Content?.Headers ?? _requestMessage.Headers;
+
+            headers.Remove(name);
             headers.Add(name, values.ToArray());
 
             return this;
         }
 
-        public RequestMessageBuilder Body(byte[] data)
+        public RequestMessageBuilder AddQuery(string name, StringValues values)
         {
-            _requestMessage.Content = new ByteArrayContent(data);
+            var query = UrlDescriptor.Query;
+            if (query.TryGetValue(name, out var current))
+                values = StringValues.Concat(current, values);
+
+            query[name] = values;
+
             return this;
         }
 
-        public RequestMessageBuilder Body(string content)
+        public RequestMessageBuilder AddHeader(string name, StringValues values)
         {
-            _requestMessage.Content = new StringContent(content);
+            var headers = (HttpHeaders)_requestMessage.Content?.Headers ?? _requestMessage.Headers;
+
+            headers.Add(name, values.ToArray());
+
             return this;
+        }
+
+        public RequestMessageBuilder Body(byte[] data, string contentType = "application/json")
+        {
+            _requestMessage.Content = new ByteArrayContent(data)
+            {
+                Headers = { ContentType = new MediaTypeHeaderValue(contentType) }
+            };
+            return this;
+        }
+
+        public RequestMessageBuilder Body(string content, string contentType = "text/plain")
+        {
+            return Body(Encoding.UTF8.GetBytes(content), contentType);
         }
 
         public HttpRequestMessage Build()

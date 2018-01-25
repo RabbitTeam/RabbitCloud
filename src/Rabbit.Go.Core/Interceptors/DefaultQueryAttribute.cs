@@ -18,7 +18,7 @@ namespace Rabbit.Go.Interceptors
 
         public override void OnRequestExecuting(RequestExecutingContext context)
         {
-            context.RequestBuilder.Query(Name, Value);
+            context.RequestBuilder.AddQuery(Name, Value);
         }
 
         #endregion Overrides of RequestInterceptorAttribute

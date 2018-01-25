@@ -1,5 +1,6 @@
 ﻿using Castle.DynamicProxy;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Core;
 using Rabbit.Go.Core.Internal;
@@ -62,6 +63,11 @@ namespace Rabbit.Go
             return this;
         }
 
+        public GoBuilder Interceptor(Action<RequestExecutingContext> interceptorDelegate)
+        {
+            return Interceptors(new DelegateRequestInterceptor(interceptorDelegate));
+        }
+
         public object Target(Type type)
         {
             return Build().CreateInstance(type);
@@ -71,6 +77,31 @@ namespace Rabbit.Go
         {
             return new Go(_keyValueFormatterFactory, _client, _codec, _interceptors.Distinct().ToArray());
         }
+
+        #region Help Type
+
+        private class DelegateRequestInterceptor : IAsyncRequestInterceptor
+        {
+            private readonly Action<RequestExecutingContext> _interceptor;
+
+            public DelegateRequestInterceptor(Action<RequestExecutingContext> interceptor)
+            {
+                _interceptor = interceptor;
+            }
+
+            #region Implementation of IAsyncRequestInterceptor
+
+            public async Task OnActionExecutionAsync(RequestExecutingContext context, RequestExecutionDelegate next)
+            {
+                _interceptor(context);
+
+                await next();
+            }
+
+            #endregion Implementation of IAsyncRequestInterceptor
+        }
+
+        #endregion Help Type
     }
 
     public static class GoBuilderExtensions
@@ -78,6 +109,11 @@ namespace Rabbit.Go
         public static T Target<T>(this GoBuilder builder)
         {
             return (T)builder.Target(typeof(T));
+        }
+
+        public static GoBuilder Query(this GoBuilder builder, string name, StringValues value)
+        {
+            return builder.Interceptor(context => context.RequestBuilder.Query(name, value));
         }
     }
 

@@ -81,10 +81,11 @@ namespace Rabbit.Go.Internal
 
                         var parameterDescriptor = new ParameterDescriptor
                         {
-                            Name = goParameterAttribute?.Name ?? parameterModel.ParameterName,
+                            Name = name,
                             ParameterType = parameterModel.ParameterInfo.ParameterType,
-                            Target = GetParameterTarget(methodDescriptor.UrlTemplate, goParameterAttribute, name, parameterModel)
+                            Target = GetParameterTarget(methodDescriptor, name, parameterModel)
                         };
+
                         parameterModels.Add(parameterDescriptor);
                     }
 
@@ -95,12 +96,16 @@ namespace Rabbit.Go.Internal
             }
         }
 
-        private static ParameterTarget GetParameterTarget(TemplateString urlTemplate, GoParameterAttribute goParameterAttribute, string name, ParameterModel parameterModel)
+        private static ParameterTarget GetParameterTarget(MethodDescriptor methodDescriptor, string name, ParameterModel parameterModel)
         {
+            var goParameterAttribute = parameterModel.Attributes.OfType<GoParameterAttribute>().SingleOrDefault();
+
             if (goParameterAttribute != null)
                 return goParameterAttribute.Target;
 
-            if (urlTemplate.Variables.Contains(name, StringComparer.OrdinalIgnoreCase))
+            var urlVariables = methodDescriptor.UrlTemplate.Variables;
+            // is path variable
+            if (urlVariables.Contains(name, StringComparer.OrdinalIgnoreCase))
                 return ParameterTarget.Path;
 
             return parameterModel.Target;

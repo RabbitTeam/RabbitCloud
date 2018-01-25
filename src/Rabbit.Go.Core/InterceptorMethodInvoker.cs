@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
@@ -14,12 +15,10 @@ namespace Rabbit.Go.Core
 
     public abstract class InterceptorMethodInvoker : IMethodInvoker
     {
-        protected RequestMessageBuilder RequestBuilder { get; }
         private readonly IReadOnlyList<IInterceptorMetadata> _interceptors;
 
-        protected InterceptorMethodInvoker(RequestMessageBuilder requestBuilder, IReadOnlyList<IInterceptorMetadata> interceptors)
+        protected InterceptorMethodInvoker(IReadOnlyList<IInterceptorMetadata> interceptors)
         {
-            RequestBuilder = requestBuilder;
             _interceptors = interceptors;
         }
 
@@ -51,10 +50,12 @@ namespace Rabbit.Go.Core
                 throw context.Exception;
         }
 
-        private RequestExecutionDelegate GetRequestExecutionDelegate(object[] arguments)
+        protected abstract Task<RequestMessageBuilder> CreateRequestBuilderAsync(object[] arguments);
+
+        private RequestExecutionDelegate GetRequestExecutionDelegate(RequestMessageBuilder requestBuilder, object[] arguments)
         {
-            var requestExecutingContext = new RequestExecutingContext(RequestBuilder);
-            var requestExecutedContext = new RequestExecutedContext(RequestBuilder);
+            var requestExecutingContext = new RequestExecutingContext(requestBuilder);
+            var requestExecutedContext = new RequestExecutedContext(requestBuilder);
 
             var requestInterceptors = _interceptors
                 .OfType<IAsyncRequestInterceptor>()
@@ -86,7 +87,7 @@ namespace Rabbit.Go.Core
                 {
                     //                    var responseMessage = await _client.ExecuteAsync(requestMessage, _options);
 
-                    requestExecutedContext.Result = await DoInvokeAsync(arguments);
+                    requestExecutedContext.Result = await DoInvokeAsync(requestBuilder.Build(), arguments);
                 }
                 /*catch (HttpRequestException requestException)
                 {
@@ -110,13 +111,14 @@ namespace Rabbit.Go.Core
             return requestInvoker;
         }
 
-        protected abstract Task<object> DoInvokeAsync(object[] arguments);
+        protected abstract Task<object> DoInvokeAsync(HttpRequestMessage requestMessage, object[] arguments);
 
         #region Implementation of IMethodInvoker
 
         public virtual async Task<object> InvokeAsync(object[] arguments)
         {
-            var requestExecutionDelegate = GetRequestExecutionDelegate(arguments);
+            var requestBuilder = await CreateRequestBuilderAsync(arguments);
+            var requestExecutionDelegate = GetRequestExecutionDelegate(requestBuilder, arguments);
 
             RequestExecutedContext requestExecutedContext = null;
             try
@@ -127,7 +129,7 @@ namespace Rabbit.Go.Core
             }
             catch (Exception e)
             {
-                var exceptionInterceptorContext = new ExceptionInterceptorContext(RequestBuilder)
+                var exceptionInterceptorContext = new ExceptionInterceptorContext(requestBuilder)
                 {
                     ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e),
                     Result = requestExecutedContext?.Result

@@ -21,7 +21,7 @@ namespace Rabbit.Go.Core
         private readonly ITemplateParser _templateParser;
 
         public DefaultMethodInvoker(MethodDescriptor methodDescriptor, MethodInvokerEntry entry)
-            : base(new RequestMessageBuilder(new UrlDescriptor(methodDescriptor.UrlTemplate.Template)), entry.Interceptors)
+            : base(entry.Interceptors)
         {
             _httpClient = entry.Client;
             _methodDescriptor = methodDescriptor;
@@ -41,11 +41,11 @@ namespace Rabbit.Go.Core
                 switch (item.Key)
                 {
                     case ParameterTarget.Query:
-                        set = requestBuilder.Query;
+                        set = requestBuilder.AddQuery;
                         break;
 
                     case ParameterTarget.Header:
-                        set = requestBuilder.Header;
+                        set = requestBuilder.AddHeader;
                         break;
 
                     default:
@@ -151,26 +151,66 @@ namespace Rabbit.Go.Core
 
         #region Overrides of MethodInvokerBase
 
-        protected override async Task<object> DoInvokeAsync(object[] arguments)
+        protected override async Task<RequestMessageBuilder> CreateRequestBuilderAsync(object[] arguments)
         {
             var formatResult = await FormatAsync(_methodDescriptor.Parameters, _keyValueFormatterFactory, arguments);
 
-            var requestBuilder = RequestBuilder;
-            var urlDescriptor = requestBuilder.UrlDescriptor;
+            var urlTemplate = _methodDescriptor.UrlTemplate;
 
-            if (formatResult != null && _templateParser != null)
-                urlDescriptor.Path = _templateParser.Parse(urlDescriptor.Path, formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString()));
+            var url = urlTemplate.Template;
+            if (urlTemplate.NeedParse)
+                url = _templateParser.Parse(urlTemplate.Template, formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString()));
 
-            var requestMessage = requestBuilder.Build();
+            var requestBuilder = new RequestMessageBuilder(new UrlDescriptor(url));
+            requestBuilder.Method(GetHttpMethod(_methodDescriptor.Method, HttpMethod.Get));
 
-            BuildQueryAndHeaders(requestBuilder, formatResult);
             await BuildBodyAsync(requestBuilder, _codec.Encoder, _methodDescriptor.Parameters, arguments);
+            BuildQueryAndHeaders(requestBuilder, formatResult);
 
+            return requestBuilder;
+        }
+
+        protected override async Task<object> DoInvokeAsync(HttpRequestMessage requestMessage, object[] arguments)
+        {
             var responseMessage = await _httpClient.SendAsync(requestMessage);
 
             return await DecodeAsync(responseMessage);
         }
 
         #endregion Overrides of MethodInvokerBase
+
+        private static HttpMethod GetHttpMethod(string method, HttpMethod def)
+        {
+            switch (method?.ToLower())
+            {
+                case "delete":
+                    return HttpMethod.Delete;
+
+                case "get":
+                    return HttpMethod.Get;
+
+                case "head":
+                    return HttpMethod.Head;
+
+                case "options":
+                    return HttpMethod.Options;
+
+                case "post":
+                    return HttpMethod.Post;
+
+                case "put":
+                    return HttpMethod.Put;
+
+                case "trace":
+                    return HttpMethod.Trace;
+
+                case null:
+                case "":
+                    return def;
+
+                default:
+                    return new HttpMethod(method);
+            }
+        }
     }
 }

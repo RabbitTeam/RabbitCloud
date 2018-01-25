@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Rabbit.Go;
+using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Codec;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Rabbit.DingTalk.Go
 {
-    public class DingTalkCodec : IEncoder, IDecoder
+    public class DingTalkCodec : IEncoder, IDecoder, ICodec
     {
         private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
         {
@@ -19,7 +20,7 @@ namespace Rabbit.DingTalk.Go
 
         #region Implementation of IEncoder
 
-        public Task EncodeAsync(object instance, Type type, RequestContext requestContext)
+        public Task EncodeAsync(object instance, Type type, RequestMessageBuilder requestBuilder)
         {
             if (!(instance is DingTalkMessage dingTalkMessage))
                 return Task.CompletedTask;
@@ -46,7 +47,7 @@ namespace Rabbit.DingTalk.Go
             }
 
             var json = JsonConvert.SerializeObject(dictionary, _jsonSerializerSettings);
-            requestContext.SetBody(json);
+            requestBuilder.Body(json, "application/json");
 
             return Task.CompletedTask;
         }
@@ -65,6 +66,13 @@ namespace Rabbit.DingTalk.Go
         }
 
         #endregion Implementation of IDecoder
+
+        #region Implementation of ICodec
+
+        public IEncoder Encoder => this;
+        public IDecoder Decoder => this;
+
+        #endregion Implementation of ICodec
     }
 
     public enum MessageType
