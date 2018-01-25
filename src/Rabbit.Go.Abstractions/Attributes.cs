@@ -13,14 +13,6 @@ namespace Rabbit.Go
         public string Url { get; }
     }
 
-    public enum ParameterTarget
-    {
-        Query,
-        Header,
-        Path,
-        Body
-    }
-
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Parameter)]
     public class GoIgnoreAttribute : Attribute
     {
@@ -145,32 +137,6 @@ namespace Rabbit.Go
 
         public GoHeaderAttribute(string name) : base(name, ParameterTarget.Header)
         {
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method, AllowMultiple = true)]
-    public class DefaultHeaderAttribute : Attribute
-    {
-        public string Name { get; }
-        public string Value { get; }
-
-        public DefaultHeaderAttribute(string name, string value)
-        {
-            Name = name;
-            Value = value;
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method, AllowMultiple = true)]
-    public class DefaultQueryAttribute : Attribute
-    {
-        public string Name { get; }
-        public string Value { get; }
-
-        public DefaultQueryAttribute(string name, string value)
-        {
-            Name = name;
-            Value = value;
         }
     }
 }

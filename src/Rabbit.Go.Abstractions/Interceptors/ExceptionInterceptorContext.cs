@@ -8,7 +8,7 @@ namespace Rabbit.Go.Interceptors
         private Exception _exception;
         private ExceptionDispatchInfo _exceptionDispatchInfo;
 
-        public ExceptionInterceptorContext(RequestContext requestContext) : base(requestContext)
+        public ExceptionInterceptorContext(RequestMessageBuilder requestBuilder) : base(requestBuilder)
         {
         }
 

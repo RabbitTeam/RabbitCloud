@@ -2,7 +2,7 @@
 {
     public class RequestExecutingContext : InterceptorContext
     {
-        public RequestExecutingContext(RequestContext requestContext) : base(requestContext)
+        public RequestExecutingContext(RequestMessageBuilder requestBuilder) : base(requestBuilder)
         {
         }
 

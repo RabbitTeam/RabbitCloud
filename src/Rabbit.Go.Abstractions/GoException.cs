@@ -13,9 +13,14 @@ namespace Rabbit.Go
         {
         }
 
-        public static GoException ErrorExecuting(HttpRequestMessage request, Exception exception)
+        /*public static GoException ErrorExecuting(HttpRequestMessage request, Exception exception)
         {
             return new RetryableException($"{exception.Message} executing {request.Method} {request.RequestUri}", exception);
+        }*/
+
+        public static GoException ErrorExecuting(HttpRequestMessage request, Exception exception)
+        {
+            return new GoException($"{exception.Message} executing {request.Method} {request.RequestUri}", exception);
         }
     }
 }

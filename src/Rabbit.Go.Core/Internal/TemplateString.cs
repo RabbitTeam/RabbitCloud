@@ -1,7 +1,6 @@
 ﻿using Rabbit.Go.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Rabbit.Go.Internal
@@ -29,7 +28,7 @@ namespace Rabbit.Go.Internal
     {
         public static string Parse(this ITemplateParser parser, string contengt, IDictionary<string, string> arguments)
         {
-            var context = new ParseContext(new TemplateString(contengt), arguments);
+            var context = new ParseContext(new TemplateString(contengt, TemplateUtilities.GetVariables(contengt)), arguments);
             parser.Parse(context);
 
             return context.Result;
@@ -73,20 +72,5 @@ namespace Rabbit.Go.Internal
 
             return value;
         }
-    }
-
-    public struct TemplateString
-    {
-        public TemplateString(string template)
-        {
-            Template = template;
-            Variables = TemplateUtilities.GetVariables(Template);
-            NeedParse = Variables.Any();
-        }
-
-        public string Template { get; }
-        public string[] Variables { get; }
-
-        public bool NeedParse { get; }
     }
 }

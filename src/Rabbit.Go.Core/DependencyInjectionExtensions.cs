@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyModel;
+﻿/*using Microsoft.Extensions.DependencyModel;
 using Rabbit.Go;
 using Rabbit.Go.Formatters;
 using Rabbit.Go.Internal;
@@ -67,4 +67,4 @@ namespace Microsoft.Extensions.DependencyInjection
             return types.ToArray();
         }
     }
-}
+}*/

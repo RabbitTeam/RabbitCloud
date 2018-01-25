@@ -5,6 +5,6 @@ namespace Rabbit.Go.Codec
 {
     public interface IEncoder
     {
-        Task EncodeAsync(object instance, Type type, RequestContext requestContext);
+        Task EncodeAsync(object instance, Type type, RequestMessageBuilder requestBuilder);
     }
 }

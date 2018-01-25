@@ -1,46 +1,87 @@
 ﻿using Newtonsoft.Json;
+using Rabbit.Go.Abstractions.Codec;
+using Rabbit.Go.Codec;
 using System;
-using System.Linq;
+using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Codec
+namespace Rabbit.Go.Core.Codec
 {
-    public class JsonDecoder : IDecoder
+    public class JsonCodec : ICodec
     {
-        #region Implementation of IDecoder
+        public static ICodec Instance { get; } = new JsonCodec();
 
-        public async Task<object> DecodeAsync(HttpResponseMessage response, Type type)
+        public JsonCodec() : this(JsonSerializer.CreateDefault())
         {
-            if (response?.Content == null)
-                return null;
-
-            var json = await response.Content.ReadAsStringAsync();
-
-            return json == null ? null : JsonConvert.DeserializeObject(json, type);
         }
 
-        #endregion Implementation of IDecoder
-    }
-
-    public class JsonEncoder : IEncoder
-    {
-        #region Implementation of IEncoder
-
-        public Task EncodeAsync(object instance, Type type, RequestContext requestContext)
+        public JsonCodec(JsonSerializer jsonSerializer)
         {
-            if (type == null)
-                throw new ArgumentNullException(nameof(type));
+            Encoder = new JsonEncoder(jsonSerializer);
+            Decoder = new JsonDecoder(jsonSerializer);
+        }
 
-            if (instance == null)
+        #region Implementation of ICodec
+
+        public IEncoder Encoder { get; }
+        public IDecoder Decoder { get; }
+
+        #endregion Implementation of ICodec
+
+        public class JsonEncoder : IEncoder
+        {
+            private readonly JsonSerializer _jsonSerializer;
+
+            public JsonEncoder(JsonSerializer jsonSerializer)
+            {
+                _jsonSerializer = jsonSerializer;
+            }
+
+            #region Implementation of IEncoder
+
+            public Task EncodeAsync(object instance, Type type, RequestMessageBuilder requestBuilder)
+            {
+                if (instance == null)
+                    return Task.CompletedTask;
+
+                using (var sw = new StringWriter())
+                {
+                    _jsonSerializer.Serialize(sw, instance, type);
+
+                    requestBuilder.Body(sw.ToString());
+                }
+
                 return Task.CompletedTask;
+            }
 
-            var json = JsonConvert.SerializeObject(instance);
-            requestContext.Body = string.IsNullOrEmpty(json) ? Enumerable.Empty<byte>().ToArray() : Encoding.UTF8.GetBytes(json);
-            return Task.CompletedTask;
+            #endregion Implementation of IEncoder
         }
 
-        #endregion Implementation of IEncoder
+        public class JsonDecoder : IDecoder
+        {
+            private readonly JsonSerializer _jsonSerializer;
+
+            public JsonDecoder(JsonSerializer jsonSerializer)
+            {
+                _jsonSerializer = jsonSerializer;
+            }
+
+            #region Implementation of IDecoder
+
+            public async Task<object> DecodeAsync(HttpResponseMessage response, Type type)
+            {
+                if (response.Content == null)
+                    return null;
+
+                var json = await response.Content.ReadAsStringAsync();
+                using (var sr = new StringReader(json))
+                {
+                    return _jsonSerializer.Deserialize(sr, type);
+                }
+            }
+
+            #endregion Implementation of IDecoder
+        }
     }
 }
