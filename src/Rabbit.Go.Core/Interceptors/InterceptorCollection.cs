@@ -39,9 +39,9 @@ namespace Rabbit.Go.Core.Interceptors
                 throw new ArgumentException(message, nameof(interceptorType));
             }
 
-            var filter = new TypeFilterAttribute(interceptorType) { Order = order };
-            Add(filter);
-            return filter;
+            var interceptor = new TypeInterceptorAttribute(interceptorType) { Order = order };
+            Add(interceptor);
+            return interceptor;
         }
 
         public IInterceptorMetadata AddService<TInterceptorType>() where TInterceptorType : IInterceptorMetadata
@@ -78,9 +78,9 @@ namespace Rabbit.Go.Core.Interceptors
                 throw new ArgumentException(message, nameof(interceptorType));
             }
 
-            var filter = new ServiceFilterAttribute(interceptorType) { Order = order };
-            Add(filter);
-            return filter;
+            var interceptor = new ServiceInterceptorAttribute(interceptorType) { Order = order };
+            Add(interceptor);
+            return interceptor;
         }
     }
 }

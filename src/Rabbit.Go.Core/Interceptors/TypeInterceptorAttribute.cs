@@ -5,13 +5,13 @@ using System.Linq;
 namespace Rabbit.Go.Interceptors
 {
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method, AllowMultiple = true)]
-    public class TypeFilterAttribute : Attribute, IInterceptorFactory, IOrderedInterceptor
+    public class TypeInterceptorAttribute : Attribute, IInterceptorFactory, IOrderedInterceptor
     {
         private ObjectFactory _factory;
         public object[] Arguments { get; set; }
         public Type ImplementationType { get; }
 
-        public TypeFilterAttribute(Type type)
+        public TypeInterceptorAttribute(Type type)
         {
             ImplementationType = type;
         }

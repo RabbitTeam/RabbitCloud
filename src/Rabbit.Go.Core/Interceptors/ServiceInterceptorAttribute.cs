@@ -3,9 +3,9 @@ using System;
 
 namespace Rabbit.Go.Interceptors
 {
-    public class ServiceFilterAttribute : Attribute, IInterceptorFactory, IOrderedInterceptor
+    public class ServiceInterceptorAttribute : Attribute, IInterceptorFactory, IOrderedInterceptor
     {
-        public ServiceFilterAttribute(Type type)
+        public ServiceInterceptorAttribute(Type type)
         {
             ServiceType = type ?? throw new ArgumentNullException(nameof(type));
         }
@@ -27,7 +27,7 @@ namespace Rabbit.Go.Interceptors
 
             if (!(service is IInterceptorMetadata filter))
             {
-                throw new InvalidOperationException($"FormatFilterFactoryAttribute_TypeMustImplementIFilter {typeof(ServiceFilterAttribute).Name} {typeof(IInterceptorMetadata).Name}");
+                throw new InvalidOperationException($"FormatFilterFactoryAttribute_TypeMustImplementIFilter {typeof(ServiceInterceptorAttribute).Name} {typeof(IInterceptorMetadata).Name}");
             }
 
             return filter;
