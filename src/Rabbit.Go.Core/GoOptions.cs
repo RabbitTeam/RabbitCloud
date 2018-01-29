@@ -1,4 +1,5 @@
-﻿using Rabbit.Go.Interceptors;
+﻿using Rabbit.Go.Core.GoModels;
+using Rabbit.Go.Core.Interceptors;
 using System.Collections.Generic;
 
 namespace Rabbit.Go.Core
@@ -7,9 +8,11 @@ namespace Rabbit.Go.Core
     {
         public GoOptions()
         {
-            Interceptors = new List<IInterceptorMetadata>();
+            Interceptors = new InterceptorCollection();
+            Conventions = new List<IGoModelConvention>();
         }
 
-        public IList<IInterceptorMetadata> Interceptors { get; }
+        public IList<IGoModelConvention> Conventions { get; }
+        public InterceptorCollection Interceptors { get; }
     }
 }

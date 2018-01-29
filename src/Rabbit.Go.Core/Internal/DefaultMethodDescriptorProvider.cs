@@ -1,4 +1,6 @@
-﻿using Rabbit.Go.Core.Codec;
+﻿using Microsoft.Extensions.Options;
+using Rabbit.Go.Core;
+using Rabbit.Go.Core.Codec;
 using Rabbit.Go.Core.GoModels;
 using Rabbit.Go.Interceptors;
 using Rabbit.Go.Utilities;
@@ -13,11 +15,16 @@ namespace Rabbit.Go.Internal
     {
         private readonly IEnumerable<Type> _types;
         private readonly IReadOnlyList<IGoModelProvider> _modelProviders;
+        private readonly IList<IGoModelConvention> _conventions;
 
-        public DefaultMethodDescriptorProvider(IEnumerable<Type> types, IEnumerable<IGoModelProvider> modelProviders)
+        public DefaultMethodDescriptorProvider(
+            IEnumerable<Type> types,
+            IEnumerable<IGoModelProvider> modelProviders,
+            IOptions<GoOptions> optionsAccessor)
         {
             _types = types;
             _modelProviders = modelProviders.OrderBy(i => i.Order).ToArray();
+            _conventions = optionsAccessor.Value.Conventions;
         }
 
         #region Implementation of IMethodDescriptorProvider
@@ -26,15 +33,9 @@ namespace Rabbit.Go.Internal
 
         public void OnProvidersExecuting(MethodDescriptorProviderContext context)
         {
-            var providerContext = new GoModelProviderContext(_types);
+            var model = BuildModel();
 
-            foreach (var provider in _modelProviders)
-                provider.OnProvidersExecuting(providerContext);
-
-            for (var i = _modelProviders.Count - 1; i >= 0; i--)
-                _modelProviders[i].OnProvidersExecuted(providerContext);
-
-            var model = providerContext.Result;
+            ApplyConventions(model);
 
             foreach (var typeModel in model.Types)
             {
@@ -96,6 +97,49 @@ namespace Rabbit.Go.Internal
             }
         }
 
+        public void OnProvidersExecuted(MethodDescriptorProviderContext context)
+        {
+        }
+
+        #endregion Implementation of IMethodDescriptorProvider
+
+        #region Private Method
+
+        private void ApplyConventions(GoModel model)
+        {
+            foreach (var convention in _conventions)
+                convention.Apply(model);
+
+            foreach (var type in model.Types)
+            {
+                foreach (var typeModelConvention in type.Attributes.OfType<ITypeModelConvention>())
+                    typeModelConvention.Apply(type);
+
+                foreach (var methodModel in type.Methods)
+                {
+                    foreach (var methodModelConvention in methodModel.Attributes.OfType<IMethodModelConvention>())
+                        methodModelConvention.Apply(methodModel);
+
+                    foreach (var parameterModel in methodModel.Parameters)
+                        foreach (var parameterModelConvention in parameterModel.Attributes.OfType<IParameterModelConvention>())
+                            parameterModelConvention.Apply(parameterModel);
+                }
+            }
+        }
+
+        private GoModel BuildModel()
+        {
+            var providerContext = new GoModelProviderContext(_types);
+
+            foreach (var provider in _modelProviders)
+                provider.OnProvidersExecuting(providerContext);
+
+            for (var i = _modelProviders.Count - 1; i >= 0; i--)
+                _modelProviders[i].OnProvidersExecuted(providerContext);
+
+            return providerContext.Result;
+        }
+
         private static ParameterTarget GetParameterTarget(MethodDescriptor methodDescriptor, string name, ParameterModel parameterModel)
         {
             var goParameterAttribute = parameterModel.Attributes.OfType<GoParameterAttribute>().SingleOrDefault();
@@ -111,10 +155,6 @@ namespace Rabbit.Go.Internal
             return parameterModel.Target;
         }
 
-        public void OnProvidersExecuted(MethodDescriptorProviderContext context)
-        {
-        }
-
-        #endregion Implementation of IMethodDescriptorProvider
+        #endregion Private Method
     }
 }

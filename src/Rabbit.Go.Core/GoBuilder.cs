@@ -151,7 +151,7 @@ namespace Rabbit.Go
             var descriptorProviderContext = new MethodDescriptorProviderContext();
 
             var defaultMethodDescriptorProvider =
-                new DefaultMethodDescriptorProvider(new[] { type }, new[] { goModelProvider });
+                new DefaultMethodDescriptorProvider(new[] { type }, new[] { goModelProvider }, options);
 
             defaultMethodDescriptorProvider.OnProvidersExecuting(descriptorProviderContext);
 
