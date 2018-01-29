@@ -3,7 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Rabbit.Go.Core.DependencyInjection
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ModelConventionExtensions
     {
