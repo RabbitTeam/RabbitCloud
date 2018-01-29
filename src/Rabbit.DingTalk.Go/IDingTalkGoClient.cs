@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Rabbit.DingTalk.Go
 {
-    [Go("https://oapi.dingtalk.com/robot/send")]
+    [Go("https://oapi.dingtalk.com/robot/send"), DingTalkCodec]
     public interface IDingTalkGoClient
     {
         [GoPost]

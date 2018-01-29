@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Core;
 using Rabbit.Go.Core.Codec;
 using Rabbit.Go.Core.GoModels;
@@ -18,13 +19,13 @@ namespace Rabbit.Go.Internal
         private readonly IList<IGoModelConvention> _conventions;
 
         public DefaultMethodDescriptorProvider(
-            IEnumerable<Type> types,
             IEnumerable<IGoModelProvider> modelProviders,
             IOptions<GoOptions> optionsAccessor)
         {
-            _types = types;
+            var options = optionsAccessor.Value;
+            _types = options.Types;
             _modelProviders = modelProviders.OrderBy(i => i.Order).ToArray();
-            _conventions = optionsAccessor.Value.Conventions;
+            _conventions = options.Conventions;
         }
 
         #region Implementation of IMethodDescriptorProvider
@@ -62,10 +63,13 @@ namespace Rabbit.Go.Internal
                     if (returnType.IsGenericType && typeof(Task).IsAssignableFrom(returnType))
                         returnType = returnType.GenericTypeArguments[0];
 
+                    var codec = methodModel.Attributes.Concat(typeModel.Attributes).OfType<ICodec>().FirstOrDefault() ??
+                                JsonCodec.Instance;
+
                     var methodDescriptor = new MethodDescriptor
                     {
                         ClienType = typeModel.Type,
-                        Codec = JsonCodec.Instance,
+                        Codec = codec,
                         InterceptorDescriptors = interceptorDescriptors,
                         Method = goRequestAttribute.Method,
                         MethodInfo = methodModel.Method,

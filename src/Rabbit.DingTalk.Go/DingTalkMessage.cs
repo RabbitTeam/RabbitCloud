@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Rabbit.DingTalk.Go
 {
-    public class DingTalkCodec : IEncoder, IDecoder, ICodec
+    public class DingTalkCodecAttribute : Attribute, IEncoder, IDecoder, ICodec
     {
         private readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
         {
