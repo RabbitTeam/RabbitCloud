@@ -1,25 +1,30 @@
 ﻿using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
-using Rabbit.Go;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Go
 {
-    public class RabbitCloudGoClient : IGoClient
+    public class RabbitCloudMessageHandler : HttpMessageHandler
     {
         private readonly RabbitRequestDelegate _app;
 
-        public RabbitCloudGoClient(RabbitRequestDelegate app)
+        public RabbitCloudMessageHandler(RabbitRequestDelegate app)
         {
             _app = app;
         }
 
-        #region Implementation of IGoClient
+        #region Overrides of HttpMessageHandler
 
-        public async Task<HttpResponseMessage> ExecuteAsync(HttpRequestMessage request, RequestOptions options)
+        /// <summary>Send an HTTP request as an asynchronous operation.</summary>
+        /// <param name="request">The HTTP request message to send.</param>
+        /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+        /// <returns>The task object representing the asynchronous operation.</returns>
+        /// <exception cref="T:System.ArgumentNullException">The <paramref name="request">request</paramref> was null.</exception>
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var rabbitContext = new RabbitContext();
 
@@ -54,6 +59,6 @@ namespace Rabbit.Cloud.Client.Go
             return (HttpResponseMessage)rabbitContext.Response.Body;
         }
 
-        #endregion Implementation of IGoClient
+        #endregion Overrides of HttpMessageHandler
     }
 }
