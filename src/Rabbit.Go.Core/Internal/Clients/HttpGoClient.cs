@@ -3,6 +3,7 @@ using Microsoft.Extensions.Primitives;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rabbit.Go.Core
@@ -21,7 +22,13 @@ namespace Rabbit.Go.Core
         public async Task RequestAsync(GoContext context)
         {
             var httpRequest = CreateHttpRequestMessage(context.Request);
-            var httpResponse = await _httpClient.SendAsync(httpRequest);
+
+            var options = context.Request.Options;
+
+            HttpResponseMessage httpResponse;
+
+            using (var tokenSource = new CancellationTokenSource(options.Timeout))
+                httpResponse = await _httpClient.SendAsync(httpRequest, tokenSource.Token);
 
             await InitializeResponseAsync(context.Response, httpResponse);
         }

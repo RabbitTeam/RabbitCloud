@@ -31,9 +31,11 @@ namespace Rabbit.Go
             GoContext = goContext;
             Headers = new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase);
             Query = new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase);
+            Options = RequestOptions.Default;
         }
 
         public GoContext GoContext { get; }
+        public RequestOptions Options { get; set; }
         public string Method { get; set; }
         public string Scheme { get; set; }
         public string Host { get; set; }
