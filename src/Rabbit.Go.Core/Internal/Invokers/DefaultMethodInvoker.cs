@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Codec;
 using Rabbit.Go.Core.Internal;
 using Rabbit.Go.Formatters;

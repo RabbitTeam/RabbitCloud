@@ -1,5 +1,4 @@
-﻿using Rabbit.Go.Abstractions;
-using Rabbit.Go.Interceptors;
+﻿using Rabbit.Go.Interceptors;
 using System;
 using System.Collections.Generic;
 using System.Linq;

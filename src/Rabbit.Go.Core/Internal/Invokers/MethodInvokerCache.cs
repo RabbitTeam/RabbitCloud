@@ -1,5 +1,4 @@
-﻿using Rabbit.Go.Abstractions;
-using Rabbit.Go.Formatters;
+﻿using Rabbit.Go.Formatters;
 using Rabbit.Go.Internal;
 using System;
 using System.Collections.Concurrent;

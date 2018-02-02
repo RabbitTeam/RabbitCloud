@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
-using Rabbit.Go.Abstractions;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;

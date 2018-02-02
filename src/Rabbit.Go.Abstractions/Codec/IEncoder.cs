@@ -1,5 +1,4 @@
-﻿using Rabbit.Go.Abstractions;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace Rabbit.Go.Codec

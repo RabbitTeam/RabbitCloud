@@ -17,6 +17,10 @@ namespace Rabbit.Go
     {
         private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
 
+        protected abstract MethodDescriptor GetMethodDescriptor(Type type, MethodInfo methodInfo);
+
+        protected abstract IMethodInvoker CreateInvoker(Type type, MethodInfo methodInfo);
+
         #region Overrides of Go
 
         public override object CreateInstance(Type type)
@@ -30,8 +34,6 @@ namespace Rabbit.Go
         }
 
         #endregion Overrides of Go
-
-        protected abstract IMethodInvoker CreateInvoker(Type type, MethodInfo methodInfo);
     }
 
     public class DefaultGo : GoBase
@@ -47,12 +49,20 @@ namespace Rabbit.Go
 
         #region Overrides of Go
 
-        protected override IMethodInvoker CreateInvoker(Type type, MethodInfo methodInfo)
+        protected override MethodDescriptor GetMethodDescriptor(Type type, MethodInfo methodInfo)
         {
             var descriptors = _methodDescriptorCollectionProvider.Items;
             var descriptor = descriptors.SingleOrDefault(i => i.ClienType == type && i.MethodInfo == methodInfo);
-            var invoker = _methodInvokerFactory.CreateInvoker(descriptor);
-            return invoker;
+            return descriptor;
+        }
+
+        protected override IMethodInvoker CreateInvoker(Type type, MethodInfo methodInfo)
+        {
+            {
+                var descriptor = GetMethodDescriptor(type, methodInfo);
+                var invoker = _methodInvokerFactory.CreateInvoker(descriptor);
+                return invoker;
+            }
         }
 
         #endregion Overrides of Go

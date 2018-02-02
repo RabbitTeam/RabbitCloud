@@ -1,6 +1,4 @@
-﻿using Rabbit.Go.Abstractions;
-
-namespace Rabbit.Go.Core.Internal
+﻿namespace Rabbit.Go.Core.Internal
 {
     public class DefaultMethodInvokerFactory : IMethodInvokerFactory
     {

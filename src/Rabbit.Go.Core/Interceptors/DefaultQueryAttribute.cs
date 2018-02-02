@@ -1,5 +1,4 @@
-﻿using Rabbit.Go.Abstractions;
-using System;
+﻿using System;
 
 namespace Rabbit.Go.Interceptors
 {

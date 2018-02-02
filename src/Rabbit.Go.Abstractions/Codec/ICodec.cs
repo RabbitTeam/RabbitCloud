@@ -1,6 +1,4 @@
-﻿using Rabbit.Go.Codec;
-
-namespace Rabbit.Go.Abstractions.Codec
+﻿namespace Rabbit.Go.Codec
 {
     public interface ICodec
     {

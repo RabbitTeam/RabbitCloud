@@ -1,6 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Rabbit.Go.Abstractions;
-using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Codec;
 using System;
 using System.IO;

@@ -1,4 +1,4 @@
-﻿using Rabbit.Go.Abstractions.Codec;
+﻿using Rabbit.Go.Codec;
 using Rabbit.Go.Interceptors;
 using System;
 using System.Collections.Generic;

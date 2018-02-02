@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿/*using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using Rabbit.Go.Abstractions;
 using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Core;
 using Rabbit.Go.Core.Codec;
 using Rabbit.Go.Core.Internal;
+using Rabbit.Go.Core.Internal.Descriptors;
 using Rabbit.Go.Formatters;
 using Rabbit.Go.Interceptors;
 using Rabbit.Go.Internal;
@@ -13,11 +13,190 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rabbit.Go
 {
-    public class GoBuilder
+    public class GoBuilder 
+    {
+        private IGoClient _client;
+        private IKeyValueFormatterFactory _keyValueFormatterFactory;
+        private IList<IInterceptorMetadata> _interceptors;
+        private ICodec _codec;
+
+
+        public GoBuilder Codec(ICodec codec)
+        {
+            _codec = codec;
+
+            return this;
+        }
+
+        public GoBuilder Client(IGoClient client)
+        {
+            _client = client;
+            return this;
+        }
+
+        public GoBuilder KeyValueFormatterFactory(IKeyValueFormatterFactory keyValueFormatterFactory)
+        {
+            _keyValueFormatterFactory = keyValueFormatterFactory;
+            return this;
+        }
+
+        public GoBuilder Interceptors(params IInterceptorMetadata[] interceptors)
+        {
+            if (_interceptors == null)
+                _interceptors = new List<IInterceptorMetadata>();
+
+            foreach (var interceptor in interceptors)
+                _interceptors.Add(interceptor);
+
+            return this;
+        }
+
+        public GoBuilder Interceptor(Action<RequestExecutingContext> interceptorDelegate)
+        {
+            return Interceptors(new DelegateRequestInterceptor(interceptorDelegate));
+        }
+
+        public object Target(Type type)
+        {
+            return Build().CreateInstance(type);
+        }
+
+        private static class Defaults
+        {
+            public static readonly IGoClient Client = new HttpGoClient(new HttpClient());
+            public static readonly ICodec Codec = JsonCodec.Instance;
+            public static readonly IKeyValueFormatterFactory FormatterFactory = new KeyValueFormatterFactory();
+
+            public static readonly IInterceptorMetadata[] Interceptors = Enumerable.Empty<IInterceptorMetadata>().ToArray();
+        }
+
+
+        public Go Build()
+        {
+            if (_client == null)
+                _client = Defaults.Client;
+            if (_keyValueFormatterFactory == null)
+                _keyValueFormatterFactory = Defaults.FormatterFactory;
+
+            IMethodInvokerFactory methodInvokerFactory = new DefaultMethodInvokerFactory(new MethodInvokerCache(_client, _keyValueFormatterFactory, null, null));
+            return new GoBuilderProxy(methodInvokerFactory);
+        }
+
+        private class GoBuilderProxy : GoBase
+        {
+            private readonly IMethodInvokerFactory _methodInvokerFactory;
+
+            public GoBuilderProxy(IMethodInvokerFactory methodInvokerFactory)
+            {
+                _methodInvokerFactory = methodInvokerFactory;
+            }
+
+            #region Overrides of GoBase
+
+            protected override MethodDescriptor GetMethodDescriptor(Type type, MethodInfo methodInfo)
+            {
+                var goModel = GoModelBuilder.Build(new[] { type });
+                return GoModelDescriptorBuilder.Build(goModel).First();
+            }
+
+            protected override IMethodInvoker CreateInvoker(Type type, MethodInfo methodInfo)
+            {
+                var descriptor = GetMethodDescriptor(type, methodInfo);
+
+                return _methodInvokerFactory.CreateInvoker(descriptor);
+            }
+
+            #endregion Overrides of GoBase
+        }
+
+        /*private class GoBuilderProx : GoBase
+        {
+            private readonly HttpClient _client;
+            private readonly ICodec _codec;
+            private readonly IKeyValueFormatterFactory _keyValueFormatterFactory;
+            private readonly IReadOnlyList<IInterceptorMetadata> _interceptors;
+
+            public GoBuilderProx(HttpClient client, ICodec codec, IKeyValueFormatterFactory keyValueFormatterFactory, IReadOnlyList<IInterceptorMetadata> interceptors)
+            {
+                _client = client;
+                _codec = codec;
+                _keyValueFormatterFactory = keyValueFormatterFactory;
+                _interceptors = interceptors;
+            }
+
+            #region Overrides of GoBase
+
+            private readonly IDictionary<Type, IServiceProvider> _services = new Dictionary<Type, IServiceProvider>();
+
+            protected override IMethodInvoker CreateInvoker(Type type, MethodInfo methodInfo)
+            {
+                if (!_services.TryGetValue(type, out var services))
+                {
+                    services =
+                        new ServiceCollection()
+                            .AddOptions()
+                            .AddGo(options =>
+                            {
+                                options.Types.Add(type);
+                            })
+                            .AddSingleton(_client)
+                            .AddSingleton(_keyValueFormatterFactory)
+                            .BuildServiceProvider();
+
+                    var methodDescriptorCollectionProvider = services.GetRequiredService<IMethodDescriptorCollectionProvider>();
+
+                    var interceptorDescriptors = _interceptors.Select(i => new InterceptorDescriptor(i)).ToArray();
+                    foreach (var methodDescriptor in methodDescriptorCollectionProvider.Items)
+                    {
+                        methodDescriptor.Codec = _codec;
+                        methodDescriptor.InterceptorDescriptors = interceptorDescriptors;
+                    }
+
+                    _services[type] = services;
+                }
+
+                var descriptors = services.GetRequiredService<IMethodDescriptorCollectionProvider>().Items;
+                var descriptor = descriptors.SingleOrDefault(i =>
+                    i.ClienType == type && i.MethodInfo == methodInfo);
+
+                return services.GetRequiredService<IMethodInvokerFactory>().CreateInvoker(descriptor);
+            }
+
+            #endregion Overrides of GoBase
+        }#1#
+
+        #region Help Type
+
+        private class DelegateRequestInterceptor : IAsyncRequestInterceptor
+        {
+            private readonly Action<RequestExecutingContext> _interceptor;
+
+            public DelegateRequestInterceptor(Action<RequestExecutingContext> interceptor)
+            {
+                _interceptor = interceptor;
+            }
+
+            #region Implementation of IAsyncRequestInterceptor
+
+            public async Task OnActionExecutionAsync(RequestExecutingContext context, RequestExecutionDelegate next)
+            {
+                _interceptor(context);
+
+                await next();
+            }
+
+            #endregion Implementation of IAsyncRequestInterceptor
+        }
+
+        #endregion Help Type
+    }
+
+    /*public class GoBuilder
     {
         private HttpClient _client;
         private IKeyValueFormatterFactory _keyValueFormatterFactory;
@@ -164,7 +343,7 @@ namespace Rabbit.Go
         }
 
         #endregion Help Type
-    }
+    }#1#
 
     public static class GoBuilderExtensions
     {
@@ -178,4 +357,4 @@ namespace Rabbit.Go
             return builder.Interceptor(context => context.GoContext.Request.Query(name, value));
         }
     }
-}
+}*/

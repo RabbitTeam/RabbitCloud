@@ -1,4 +1,4 @@
-﻿namespace Rabbit.Go.Abstractions
+﻿namespace Rabbit.Go
 {
     public class RequestContext
     {
