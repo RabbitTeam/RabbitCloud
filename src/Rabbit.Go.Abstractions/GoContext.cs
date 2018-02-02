@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Rabbit.Go.Abstractions
+namespace Rabbit.Go
 {
     public delegate Task GoRequestDelegate(GoContext context);
 

@@ -1,7 +1,6 @@
-﻿using Rabbit.Go.Abstractions;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Rabbit.Go.Core
+namespace Rabbit.Go
 {
     public interface IGoClient
     {

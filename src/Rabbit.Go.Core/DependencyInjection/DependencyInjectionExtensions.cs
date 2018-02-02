@@ -60,7 +60,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .Configure(configureOptions)
                 .AddSingleton<IKeyValueFormatterFactory, KeyValueFormatterFactory>()
                 .AddSingleton<IMethodDescriptorCollectionProvider, MethodDescriptorCollectionProvider>()
-                .AddSingleton<IMethodDescriptorProvider, DefaultMethodDescriptorProvider>()
+                .AddSingleton<IMethodDescriptorProvider, GoModelMethodDescriptorProvider>()
                 .AddSingleton<ITemplateParser, TemplateParser>()
                 .AddSingleton<IMethodInvokerFactory, DefaultMethodInvokerFactory>()
                 .AddSingleton<MethodInvokerCache>()

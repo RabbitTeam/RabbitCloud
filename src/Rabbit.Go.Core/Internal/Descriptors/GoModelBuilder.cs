@@ -1,45 +1,32 @@
-﻿using Microsoft.Extensions.Options;
-using Rabbit.Go.Core.GoModels;
+﻿using Rabbit.Go.Core.GoModels;
 using Rabbit.Go.Interceptors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Rabbit.Go.Core.Internal
+namespace Rabbit.Go.Core.Internal.Descriptors
 {
-    public class DefaultGoModelProvider : IGoModelProvider
+    public static class GoModelBuilder
     {
-        private readonly IList<IInterceptorMetadata> _globalInterceptors;
-
-        public DefaultGoModelProvider(IOptions<GoOptions> optionsAccessor)
+        public static GoModel Build(IEnumerable<Type> types)
         {
-            _globalInterceptors = optionsAccessor.Value.Interceptors;
+            var goModel = new GoModel();
+
+            Build(goModel, types);
+
+            return goModel;
         }
 
-        #region Implementation of IGoModelProvider
-
-        public int Order => -1000;
-
-        public void OnProvidersExecuting(GoModelProviderContext context)
+        public static void Build(GoModel goModel, IEnumerable<Type> types)
         {
-            var goModel = context.Result;
-            foreach (var interceptor in _globalInterceptors)
-                goModel.Interceptors.Add(interceptor);
-
-            foreach (var type in context.Types)
+            foreach (var type in types)
             {
                 var model = CreateModel(type);
                 model.Go = goModel;
                 goModel.Types.Add(model);
             }
         }
-
-        public void OnProvidersExecuted(GoModelProviderContext context)
-        {
-        }
-
-        #endregion Implementation of IGoModelProvider
 
         private static TypeModel CreateModel(Type type)
         {

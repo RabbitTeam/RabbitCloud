@@ -45,7 +45,7 @@ namespace Rabbit.Go.Core
 
         private static void BuildQueryAndHeaders(GoRequest request, IDictionary<ParameterTarget, IDictionary<string, StringValues>> parameters)
         {
-            if (parameters == null)
+            if (parameters == null || !parameters.Any())
                 return;
             foreach (var item in parameters)
             {
@@ -72,9 +72,9 @@ namespace Rabbit.Go.Core
             }
         }
 
-        private static async Task BuildBodyAsync(GoRequest request, IEncoder encoder, IReadOnlyList<ParameterDescriptor> parameterDescriptors, object[] arguments)
+        private static async Task BuildBodyAsync(GoRequest request, IEncoder encoder, IReadOnlyList<ParameterDescriptor> parameterDescriptors, IReadOnlyList<object> arguments)
         {
-            if (encoder == null)
+            if (encoder == null || parameterDescriptors == null || !parameterDescriptors.Any() || arguments == null || !arguments.Any())
                 return;
 
             object bodyArgument = null;
@@ -109,7 +109,7 @@ namespace Rabbit.Go.Core
 
         private static async Task<IDictionary<ParameterTarget, IDictionary<string, StringValues>>> FormatAsync(IReadOnlyList<ParameterDescriptor> parameterDescriptors, IKeyValueFormatterFactory keyValueFormatterFactory, IReadOnlyList<object> arguments)
         {
-            if (keyValueFormatterFactory == null)
+            if (keyValueFormatterFactory == null || parameterDescriptors == null || !parameterDescriptors.Any() || arguments == null || !arguments.Any())
                 return null;
 
             IDictionary<ParameterTarget, IDictionary<string, StringValues>> formatResult =
@@ -162,7 +162,7 @@ namespace Rabbit.Go.Core
             }
         }
 
-        private async Task InitializeRequestAsync(GoRequest request, object[] arguments)
+        private async Task InitializeRequestAsync(GoRequest request, IReadOnlyList<object> arguments)
         {
             var methodDescriptor = RequestContext.MethodDescriptor;
 
@@ -171,7 +171,7 @@ namespace Rabbit.Go.Core
             var urlTemplate = methodDescriptor.UrlTemplate;
 
             var url = urlTemplate.Template;
-            if (urlTemplate.NeedParse)
+            if (urlTemplate.NeedParse && formatResult != null)
                 url = _templateParser.Parse(urlTemplate.Template, formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString()));
 
             var uri = new Uri(url);
@@ -202,8 +202,6 @@ namespace Rabbit.Go.Core
 
             await BuildBodyAsync(request, _codec.Encoder, methodDescriptor.Parameters, arguments);
             BuildQueryAndHeaders(request, formatResult);
-            //todo:考虑 httpmethod 是否直接强类型定义
-            //            RequestContext.GoContext.Items["HttpMethod"] = GetHttpMethod(methodDescriptor.Method, HttpMethod.Get);
         }
     }
 }

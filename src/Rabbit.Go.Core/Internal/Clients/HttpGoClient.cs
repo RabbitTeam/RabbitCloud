@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
 using Rabbit.Go.Abstractions;
-using System;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -67,7 +66,7 @@ namespace Rabbit.Go.Core
             return url;
         }
 
-        private HttpRequestMessage CreateHttpRequestMessage(GoRequest request)
+        private static HttpRequestMessage CreateHttpRequestMessage(GoRequest request)
         {
             var requestUrl = BuildUrl(request);
             var httpRequest = new HttpRequestMessage(GetHttpMethod(request.Method, HttpMethod.Get), requestUrl);
@@ -83,7 +82,7 @@ namespace Rabbit.Go.Core
                     continue;
 
                 if (httpRequest.Content == null)
-                    httpRequest.Content = new StringContent(String.Empty);
+                    httpRequest.Content = new StringContent(string.Empty);
 
                 httpRequest.Content.Headers.Add(name, value);
             }
