@@ -1,4 +1,6 @@
-﻿using Rabbit.Go.Core.GoModels;
+﻿using Rabbit.Go.Codec;
+using Rabbit.Go.Core.Codec;
+using Rabbit.Go.Core.GoModels;
 using Rabbit.Go.Interceptors;
 using System;
 using System.Collections.Generic;
@@ -36,7 +38,7 @@ namespace Rabbit.Go.Core.Internal.Descriptors
             foreach (var interceptor in attributes.OfType<IInterceptorMetadata>())
                 model.Interceptors.Add(interceptor);
             foreach (var methodModel in type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .Select(CreateModel))
+                .Select(m => CreateModel(m, model)))
             {
                 methodModel.Type = model;
                 model.Methods.Add(methodModel);
@@ -45,12 +47,17 @@ namespace Rabbit.Go.Core.Internal.Descriptors
             return model;
         }
 
-        private static MethodModel CreateModel(MethodInfo methodInfo)
+        private static MethodModel CreateModel(MethodInfo methodInfo, TypeModel typeModel)
         {
             var attributes = methodInfo.GetCustomAttributes(true);
-            var model = new MethodModel(methodInfo, attributes);
+            var model = new MethodModel(methodInfo, attributes)
+            {
+                Codec = typeModel.Attributes.Concat(attributes).OfType<ICodec>().LastOrDefault() ?? JsonCodec.Instance
+            };
+
             foreach (var interceptor in attributes.OfType<IInterceptorMetadata>())
                 model.Interceptors.Add(interceptor);
+
             foreach (var parameterModel in methodInfo.GetParameters().Select(CreateModel))
             {
                 parameterModel.Method = model;

@@ -17,32 +17,32 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class DependencyInjectionExtensions
     {
-        /*
-                public static IServiceCollection AddGo(this IServiceCollection services, GoOptions options)
-                {
-                    return services
-                        .AddSingleton(Options.Options.Create(options))
-                        .InjectionGoClient(options.Types);
-                }
-        */
+        public static IServiceCollection AddGoClient(this IServiceCollection services)
+        {
+            return services
+                .AddGoClient(options => { });
+        }
 
-        public static IServiceCollection InjectionGoClient(this IServiceCollection services)
+        public static IServiceCollection AddGoClient(this IServiceCollection services, Action<GoOptions> configureOptions)
         {
             var types = GetTypes(typePredicate: t => t.IsInterface && t.GetTypeAttribute<GoAttribute>() != null).ToList();
 
-            return services.InjectionGoClient(types);
+            return services
+                .AddGoClient(types, configureOptions);
         }
 
-        public static IServiceCollection InjectionGoClient(this IServiceCollection services, IEnumerable<Type> types)
+        public static IServiceCollection AddGoClient(this IServiceCollection services, IEnumerable<Type> goClienTypes, Action<GoOptions> configureOptions)
         {
             services
                 .AddGo(options =>
                 {
-                    foreach (var type in types)
+                    foreach (var type in goClienTypes)
                         options.Types.Add(type);
+
+                    configureOptions?.Invoke(options);
                 });
 
-            foreach (var type in types)
+            foreach (var type in goClienTypes)
             {
                 services.AddSingleton(type, s =>
                 {

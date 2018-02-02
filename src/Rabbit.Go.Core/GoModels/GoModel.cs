@@ -1,4 +1,5 @@
-﻿using Rabbit.Go.Interceptors;
+﻿using Rabbit.Go.Codec;
+using Rabbit.Go.Interceptors;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -55,6 +56,7 @@ namespace Rabbit.Go.Core.GoModels
         public TypeModel Type { get; set; }
         public IReadOnlyList<object> Attributes { get; }
         public IDictionary<object, object> Properties { get; }
+        public ICodec Codec { get; set; }
         public IList<IInterceptorMetadata> Interceptors { get; }
         public IList<ParameterModel> Parameters { get; }
     }

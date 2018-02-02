@@ -1,6 +1,4 @@
-﻿using Rabbit.Go.Codec;
-using Rabbit.Go.Core.Codec;
-using Rabbit.Go.Core.GoModels;
+﻿using Rabbit.Go.Core.GoModels;
 using Rabbit.Go.Interceptors;
 using Rabbit.Go.Utilities;
 using System;
@@ -41,13 +39,10 @@ namespace Rabbit.Go.Core.Internal.Descriptors
                     if (returnType.IsGenericType && typeof(Task).IsAssignableFrom(returnType))
                         returnType = returnType.GenericTypeArguments[0];
 
-                    var codec = methodModel.Attributes.Concat(typeModel.Attributes).OfType<ICodec>().FirstOrDefault() ??
-                                JsonCodec.Instance;
-
                     var methodDescriptor = new MethodDescriptor
                     {
                         ClienType = typeModel.Type,
-                        Codec = codec,
+                        Codec = methodModel.Codec,
                         InterceptorDescriptors = interceptorDescriptors,
                         Method = goRequestAttribute.Method,
                         MethodInfo = methodModel.Method,
