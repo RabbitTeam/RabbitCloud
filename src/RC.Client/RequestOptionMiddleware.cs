@@ -35,8 +35,7 @@ namespace Rabbit.Cloud.Client
             else
                 requestOptions = new ServiceRequestOptions();
 
-            requestOptions.ConnectionTimeout = GetRequestOption(context, "ConnectionTimeout", requestOptions.ConnectionTimeout);
-            requestOptions.ReadTimeout = GetRequestOption(context, "ReadTimeout", requestOptions.ReadTimeout);
+            requestOptions.Timeout = GetRequestOption(context, "ReadTimeout", requestOptions.Timeout);
             requestOptions.MaxAutoRetries = GetRequestOption(context, "Retries", requestOptions.MaxAutoRetries);
             requestOptions.MaxAutoRetriesNextServer = GetRequestOption(context, "RetriesNextServer", requestOptions.MaxAutoRetriesNextServer);
             requestOptions.ServiceChooser = GetRequestOption(context, "ServiceChooser", requestOptions.ServiceChooser);

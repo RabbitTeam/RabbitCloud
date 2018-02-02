@@ -9,7 +9,6 @@ using Rabbit.Go.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 
 // ReSharper disable once CheckNamespace
@@ -64,7 +63,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<ITemplateParser, TemplateParser>()
                 .AddSingleton<IMethodInvokerFactory, DefaultMethodInvokerFactory>()
                 .AddSingleton<MethodInvokerCache>()
-                .AddSingleton<HttpClient>()
                 .AddSingleton<IGoModelProvider, DefaultGoModelProvider>()
                 .AddSingleton<IGoFactory, DefaultGoGoFactory>();
 

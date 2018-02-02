@@ -55,6 +55,11 @@ namespace Rabbit.Go.Core
 
                 return exceptionInterceptorContext.Result;
             }
+            finally
+            {
+                if (RequestContext.GoContext.RequestServices is IDisposable disposable)
+                    disposable.Dispose();
+            }
         }
 
         #endregion Implementation of IMethodInvoker

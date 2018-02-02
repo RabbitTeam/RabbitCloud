@@ -54,7 +54,7 @@ namespace Rabbit.Cloud.Client.Http
             HttpResponseMessage httpResponse;
             try
             {
-                using (var timeoutCancellationTokenSource = new CancellationTokenSource(requestOptions.ConnectionTimeout.Add(requestOptions.ReadTimeout)))
+                using (var timeoutCancellationTokenSource = new CancellationTokenSource(requestOptions.Timeout))
                     httpResponse = await HttpClient.SendAsync(httpRequest, timeoutCancellationTokenSource.Token);
             }
             catch (TaskCanceledException)

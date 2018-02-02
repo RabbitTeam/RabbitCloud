@@ -1,64 +1,65 @@
-﻿using Microsoft.Extensions.Primitives;
+﻿using Microsoft.AspNetCore.WebUtilities;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
+using Rabbit.Cloud.Client.Abstractions;
+using Rabbit.Cloud.Client.Abstractions.Features;
+using Rabbit.Cloud.Client.Features;
+using Rabbit.Go;
 using System.Linq;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Go
 {
-    public class RabbitCloudMessageHandler : HttpMessageHandler
+    public class RabbitCloudGoClient : IGoClient
     {
         private readonly RabbitRequestDelegate _app;
 
-        public RabbitCloudMessageHandler(RabbitRequestDelegate app)
+        public RabbitCloudGoClient(RabbitRequestDelegate app)
         {
             _app = app;
         }
 
-        #region Overrides of HttpMessageHandler
+        #region Implementation of IGoClient
 
-        /// <summary>Send an HTTP request as an asynchronous operation.</summary>
-        /// <param name="request">The HTTP request message to send.</param>
-        /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-        /// <returns>The task object representing the asynchronous operation.</returns>
-        /// <exception cref="T:System.ArgumentNullException">The <paramref name="request">request</paramref> was null.</exception>
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        public async Task RequestAsync(GoContext context)
         {
             var rabbitContext = new RabbitContext();
 
             var rabbitRequest = rabbitContext.Request;
 
-            var requestUri = request.RequestUri;
-            rabbitRequest.Host = requestUri.Host;
-            //            rabbitRequest.Headers= requestUri.
-            rabbitRequest.Port = requestUri.Port;
+            var goRequest = context.Request;
 
-            var pathAndQuery = requestUri.PathAndQuery;
+            rabbitRequest.Scheme = goRequest.Scheme;
+            rabbitRequest.Host = goRequest.Host;
+            rabbitRequest.Port = goRequest.Port ?? 0;
 
-            var queryStartIndex = pathAndQuery.IndexOf('?');
+            rabbitRequest.Path = goRequest.Path;
 
-            if (queryStartIndex != -1)
+            if (goRequest.Query.Any())
+                rabbitRequest.QueryString = QueryHelpers.AddQueryString(string.Empty, goRequest.Query.ToDictionary(i => i.Key, i => i.Value.ToString()));
+
+            foreach (var item in goRequest.Headers)
+                rabbitRequest.Headers[item.Key] = item.Value;
+
+            rabbitRequest.Body = goRequest.Body;
+
+            IRabbitClientFeature rabbitClientFeature = new RabbitClientFeature
             {
-                rabbitRequest.Path = pathAndQuery.Substring(0, queryStartIndex);
-                rabbitRequest.QueryString = pathAndQuery.Substring(queryStartIndex);
-            }
-            else
-                rabbitRequest.Path = pathAndQuery;
+                RequestOptions = new ServiceRequestOptions
+                {
+                    Timeout = context.Request.Options.Timeout
+                }
+            };
 
-            rabbitRequest.Scheme = requestUri.Scheme;
-
-            foreach (var item in request.Headers)
-                rabbitRequest.Headers[item.Key] = new StringValues(item.Value.ToArray());
-
-            rabbitRequest.Body = request.Content;
+            rabbitContext.Features.Set(rabbitClientFeature);
 
             await _app(rabbitContext);
 
-            return (HttpResponseMessage)rabbitContext.Response.Body;
+            context.Response.Content =
+                await ((HttpResponseMessage)rabbitContext.Response.Body).Content.ReadAsStreamAsync();
         }
 
-        #endregion Overrides of HttpMessageHandler
+        #endregion Implementation of IGoClient
     }
 }
