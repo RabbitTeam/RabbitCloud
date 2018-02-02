@@ -176,6 +176,7 @@ namespace Rabbit.Go.Core
 
             var uri = new Uri(url);
 
+            request.Method = methodDescriptor.Method;
             request.Scheme = uri.Scheme;
             request.Host = uri.Host;
             request.Port = uri.Port;
