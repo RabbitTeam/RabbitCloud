@@ -46,8 +46,8 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 services.AddSingleton(type, s =>
                 {
-                    var go = s.GetRequiredService<Go>();
-                    return go.CreateInstance(type);
+                    var goFactory = s.GetRequiredService<IGoFactory>();
+                    return goFactory.CreateInstance(type);
                 });
             }
 
@@ -66,7 +66,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<MethodInvokerCache>()
                 .AddSingleton<HttpClient>()
                 .AddSingleton<IGoModelProvider, DefaultGoModelProvider>()
-                .AddSingleton<Go, DefaultGo>();
+                .AddSingleton<IGoFactory, DefaultGoGoFactory>();
 
             return serviceCollection;
         }

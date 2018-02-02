@@ -8,12 +8,7 @@ using System.Reflection;
 
 namespace Rabbit.Go
 {
-    public abstract class Go
-    {
-        public abstract object CreateInstance(Type type);
-    }
-
-    public abstract class GoBase : Go
+    public abstract class GoFactoryBase : IGoFactory
     {
         private readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
 
@@ -21,9 +16,9 @@ namespace Rabbit.Go
 
         protected abstract IMethodInvoker CreateInvoker(Type type, MethodInfo methodInfo);
 
-        #region Overrides of Go
+        #region Implementation of IGoFactory
 
-        public override object CreateInstance(Type type)
+        public object CreateInstance(Type type)
         {
             return _proxyGenerator.CreateInterfaceProxyWithoutTarget(type, Enumerable.Empty<Type>().ToArray(), new InterceptorAsync(async invocation =>
             {
@@ -33,15 +28,15 @@ namespace Rabbit.Go
             }));
         }
 
-        #endregion Overrides of Go
+        #endregion Implementation of IGoFactory
     }
 
-    public class DefaultGo : GoBase
+    public class DefaultGoGoFactory : GoFactoryBase
     {
         private readonly IMethodDescriptorCollectionProvider _methodDescriptorCollectionProvider;
         private readonly IMethodInvokerFactory _methodInvokerFactory;
 
-        public DefaultGo(IMethodDescriptorCollectionProvider methodDescriptorCollectionProvider, IMethodInvokerFactory methodInvokerFactory)
+        public DefaultGoGoFactory(IMethodDescriptorCollectionProvider methodDescriptorCollectionProvider, IMethodInvokerFactory methodInvokerFactory)
         {
             _methodDescriptorCollectionProvider = methodDescriptorCollectionProvider;
             _methodInvokerFactory = methodInvokerFactory;
