@@ -10,7 +10,7 @@ namespace Rabbit.Go
             Url = url;
         }
 
-        public string Url { get; }
+        public string Url { get; set; }
     }
 
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Parameter)]
@@ -21,8 +21,8 @@ namespace Rabbit.Go
     [AttributeUsage(AttributeTargets.Parameter)]
     public class GoParameterAttribute : Attribute
     {
-        public string Name { get; }
-        public ParameterTarget Target { get; }
+        public string Name { get; set; }
+        public ParameterTarget Target { get; set; }
 
         public GoParameterAttribute(ParameterTarget target) : this(null, target)
         {
@@ -48,8 +48,8 @@ namespace Rabbit.Go
             Method = method;
         }
 
-        public string Path { get; }
-        public string Method { get; }
+        public string Path { get; set; }
+        public string Method { get; set; }
     }
 
     [AttributeUsage(AttributeTargets.Method)]
