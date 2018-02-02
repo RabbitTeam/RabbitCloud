@@ -26,10 +26,17 @@ namespace Rabbit.Go
         public ICodec Codec { get; set; }
     }
 
+    public class ParameterFormattingInfo
+    {
+        public string FormatterName { get; set; }
+        public Type FormatterType { get; set; }
+        public ParameterTarget Target { get; set; }
+    }
+
     public class ParameterDescriptor
     {
         public Type ParameterType { get; set; }
-        public ParameterTarget Target { get; set; }
+        public ParameterFormattingInfo FormattingInfo { get; set; }
         public string Name { get; set; }
     }
 }

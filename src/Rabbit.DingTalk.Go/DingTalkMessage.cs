@@ -1,11 +1,9 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Rabbit.Go;
-using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Codec;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Rabbit.DingTalk.Go
@@ -20,7 +18,7 @@ namespace Rabbit.DingTalk.Go
 
         #region Implementation of IEncoder
 
-        public Task EncodeAsync(object instance, Type type, RequestMessageBuilder requestBuilder)
+        public Task EncodeAsync(object instance, Type type, GoRequest request)
         {
             if (!(instance is DingTalkMessage dingTalkMessage))
                 return Task.CompletedTask;
@@ -47,7 +45,7 @@ namespace Rabbit.DingTalk.Go
             }
 
             var json = JsonConvert.SerializeObject(dictionary, _jsonSerializerSettings);
-            requestBuilder.Body(json, "application/json");
+            request.Body(json, "application/json");
 
             return Task.CompletedTask;
         }
@@ -56,12 +54,12 @@ namespace Rabbit.DingTalk.Go
 
         #region Implementation of IDecoder
 
-        public async Task<object> DecodeAsync(HttpResponseMessage response, Type type)
+        public async Task<object> DecodeAsync(GoResponse response, Type type)
         {
             //            { "errcode":300001,"errmsg":"token is not exist"}
             //            { "errcode":0,"errmsg":"ok"}
             //todo:等待处理
-            var t = await response.Content.ReadAsStringAsync();
+            //            var t = await response.Content.ReadAsStringAsync();
             return null;
         }
 

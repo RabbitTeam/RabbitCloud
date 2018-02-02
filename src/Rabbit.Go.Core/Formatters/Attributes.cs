@@ -1,16 +1,18 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 namespace Rabbit.Go.Formatters
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Parameter)]
-    public abstract class CustomFormatterAttribute : Attribute, IKeyValueFormatter
+    public class CustomFormatterAttribute : Attribute
     {
-        #region Implementation of IKeyValueFormatter
+        public CustomFormatterAttribute(Type formatterType)
+        {
+            if (!typeof(IKeyValueFormatter).IsAssignableFrom(formatterType))
+                throw new InvalidOperationException($"{formatterType} not IKeyValueFormatter type.");
+            FormatterType = formatterType;
+        }
 
-        public abstract Task FormatAsync(KeyValueFormatterContext context);
-
-        #endregion Implementation of IKeyValueFormatter
+        public Type FormatterType { get; }
     }
 
     [AttributeUsage(AttributeTargets.Property)]

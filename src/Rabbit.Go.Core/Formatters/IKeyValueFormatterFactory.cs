@@ -11,16 +11,15 @@ namespace Rabbit.Go.Formatters
 
     public static class KeyValueFormatterFactoryExtensions
     {
-        public static async Task<IDictionary<string, string>> FormatAsync(this IKeyValueFormatterFactory keyValueFormatterFactory, object model, Type type = null, string name = null)
+        public static async Task<IDictionary<string, string>> FormatAsync(this IKeyValueFormatterFactory keyValueFormatterFactory, IKeyValueFormatter formatter, object model, Type type = null, string name = null)
         {
-            var modelType = type ?? model.GetType();
             var context = new KeyValueFormatterContext(keyValueFormatterFactory)
             {
                 BinderModelName = name ?? string.Empty,
                 Model = model,
-                ModelType = type
+                ModelType = type ?? model.GetType()
             };
-            await keyValueFormatterFactory.CreateFormatter(modelType).FormatAsync(context);
+            await formatter.FormatAsync(context);
 
             return context.Result;
         }

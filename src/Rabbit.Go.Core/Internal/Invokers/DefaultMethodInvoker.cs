@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using Rabbit.Go.Codec;
 using Rabbit.Go.Core.Internal;
@@ -82,7 +83,7 @@ namespace Rabbit.Go.Core
             for (var i = 0; i < parameterDescriptors.Count; i++)
             {
                 var parameterDescriptor = parameterDescriptors[i];
-                if (parameterDescriptor.Target != ParameterTarget.Body)
+                if (parameterDescriptor.FormattingInfo.Target != ParameterTarget.Body)
                     continue;
 
                 bodyArgument = arguments[i];
@@ -107,7 +108,7 @@ namespace Rabbit.Go.Core
             }
         }
 
-        private static async Task<IDictionary<ParameterTarget, IDictionary<string, StringValues>>> FormatAsync(IReadOnlyList<ParameterDescriptor> parameterDescriptors, IKeyValueFormatterFactory keyValueFormatterFactory, IReadOnlyList<object> arguments)
+        private async Task<IDictionary<ParameterTarget, IDictionary<string, StringValues>>> FormatAsync(IReadOnlyList<ParameterDescriptor> parameterDescriptors, IKeyValueFormatterFactory keyValueFormatterFactory, IReadOnlyList<object> arguments)
         {
             if (keyValueFormatterFactory == null || parameterDescriptors == null || !parameterDescriptors.Any() || arguments == null || !arguments.Any())
                 return null;
@@ -130,12 +131,19 @@ namespace Rabbit.Go.Core
             {
                 var parameterDescriptor = parameterDescriptors[i];
 
-                if (!formatResult.TryGetValue(parameterDescriptor.Target, out var itemResult))
+                if (!formatResult.TryGetValue(parameterDescriptor.FormattingInfo.Target, out var itemResult))
                     continue;
+
+                IKeyValueFormatter formatter = null;
+                if (parameterDescriptor.FormattingInfo.FormatterType != null)
+                    formatter = (IKeyValueFormatter)ActivatorUtilities.GetServiceOrCreateInstance(RequestContext.GoContext.RequestServices, parameterDescriptor.FormattingInfo.FormatterType);
+
+                if (formatter == null)
+                    formatter = keyValueFormatterFactory.CreateFormatter(parameterDescriptor.ParameterType);
 
                 var parameter = parameterDescriptors[i];
                 var value = arguments[i];
-                var item = await keyValueFormatterFactory.FormatAsync(value, parameter.ParameterType, parameterDescriptor.Name);
+                var item = await keyValueFormatterFactory.FormatAsync(formatter, value, parameter.ParameterType, parameterDescriptor.Name);
 
                 foreach (var t in item)
                     itemResult[t.Key] = t.Value;

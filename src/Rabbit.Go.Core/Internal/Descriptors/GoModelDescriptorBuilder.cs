@@ -1,4 +1,5 @@
 ﻿using Rabbit.Go.Core.GoModels;
+using Rabbit.Go.Formatters;
 using Rabbit.Go.Interceptors;
 using Rabbit.Go.Utilities;
 using System;
@@ -55,13 +56,16 @@ namespace Rabbit.Go.Core.Internal.Descriptors
                     {
                         var goParameterAttribute = parameterModel.Attributes.OfType<GoParameterAttribute>().SingleOrDefault();
 
-                        var name = goParameterAttribute?.Name ?? parameterModel.ParameterName;
-
                         var parameterDescriptor = new ParameterDescriptor
                         {
-                            Name = name,
+                            Name = parameterModel.ParameterName,
                             ParameterType = parameterModel.ParameterInfo.ParameterType,
-                            Target = GetParameterTarget(methodDescriptor, name, parameterModel)
+                            FormattingInfo = new ParameterFormattingInfo
+                            {
+                                FormatterName = goParameterAttribute?.Name,
+                                FormatterType = parameterModel.Attributes.OfType<CustomFormatterAttribute>().LastOrDefault()?.FormatterType,
+                                Target = GetParameterTarget(methodDescriptor, parameterModel)
+                            }
                         };
 
                         parameterModels.Add(parameterDescriptor);
@@ -76,7 +80,7 @@ namespace Rabbit.Go.Core.Internal.Descriptors
             return descriptors;
         }
 
-        private static ParameterTarget GetParameterTarget(MethodDescriptor methodDescriptor, string name, ParameterModel parameterModel)
+        private static ParameterTarget GetParameterTarget(MethodDescriptor methodDescriptor, ParameterModel parameterModel)
         {
             var goParameterAttribute = parameterModel.Attributes.OfType<GoParameterAttribute>().SingleOrDefault();
 
@@ -85,7 +89,7 @@ namespace Rabbit.Go.Core.Internal.Descriptors
 
             var urlVariables = methodDescriptor.UrlTemplate.Variables;
             // is path variable
-            if (urlVariables.Contains(name, StringComparer.OrdinalIgnoreCase))
+            if (urlVariables.Contains(parameterModel.ParameterName, StringComparer.OrdinalIgnoreCase))
                 return ParameterTarget.Path;
 
             return parameterModel.Target;

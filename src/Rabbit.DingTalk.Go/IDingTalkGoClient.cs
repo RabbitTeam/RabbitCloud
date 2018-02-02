@@ -12,19 +12,4 @@ namespace Rabbit.DingTalk.Go
         [GoPost]
         Task SendAsync([GoBody]DingTalkMessage message, [GoQuery("access_token")]string accessToken);
     }
-
-    /*        [GoPost]
-            Task SendAsync([GoBody]LinkMessage message);
-
-            [GoPost]
-            Task SendAsync([GoBody]MarkdownMessage message);
-
-            [GoPost]
-            Task SendAsync([GoBody]SingleActionCardMessage message);
-
-            [GoPost]
-            Task SendAsync([GoBody]ActionCardMessage message);
-
-            [GoPost]
-            Task SendAsync([GoBody]FeedCardMessage message);*/
 }
