@@ -42,8 +42,10 @@ namespace Rabbit.Go.Core.Internal
                     Codec = methodDescriptor.Codec,
                     Interceptors = result.Interceptors,
                     KeyValueFormatterFactory = _keyValueFormatterFactory,
-                    TemplateParser = _templateParser
+                    TemplateParser = _templateParser,
+                    UrlTemplate = new UrlDescriptor(methodDescriptor.UrlTemplate.Template)
                 };
+
                 _caches[methodDescriptor] = cache;
             }
             cache.Interceptors = result.Interceptors;

@@ -13,6 +13,7 @@ namespace Rabbit.Go.Core
 {
     public class DefaultMethodInvoker : InterceptorMethodInvoker
     {
+        private readonly MethodInvokerEntry _entry;
         private readonly ICodec _codec;
         private readonly IKeyValueFormatterFactory _keyValueFormatterFactory;
         private readonly ITemplateParser _templateParser;
@@ -21,6 +22,7 @@ namespace Rabbit.Go.Core
         public DefaultMethodInvoker(RequestContext requestContext, MethodInvokerEntry entry)
             : base(requestContext, entry.Interceptors)
         {
+            _entry = entry;
             _client = entry.Client;
             _codec = entry.Codec;
             _keyValueFormatterFactory = entry.KeyValueFormatterFactory;
@@ -166,30 +168,24 @@ namespace Rabbit.Go.Core
 
             var formatResult = await FormatAsync(methodDescriptor.Parameters, _keyValueFormatterFactory, arguments);
 
-            var urlTemplate = methodDescriptor.UrlTemplate;
-
-            var url = urlTemplate.Template;
-            if (urlTemplate.NeedParse && formatResult != null)
-                url = _templateParser.Parse(urlTemplate.Template, formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString()));
-
-            var uri = new Uri(url);
+            var urlTemplate = _entry.UrlTemplate;
 
             request.Method = methodDescriptor.Method;
-            request.Scheme = uri.Scheme;
-            request.Host = uri.Host;
-            request.Port = uri.Port;
-            var pathAndQuery = uri.PathAndQuery;
+            request.Scheme = urlTemplate.Scheme;
+            request.Host = urlTemplate.Host;
+            request.Port = urlTemplate.Port;
 
-            var queryStartIndex = pathAndQuery.IndexOf('?');
+            var path = urlTemplate.Path;
 
-            if (queryStartIndex == -1)
+            // render path
+            if (path.Contains("{") && path.Contains("}"))
+                path = _templateParser.Parse(path, formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString()));
+
+            request.Path = path;
+
+            if (urlTemplate.HasQuery())
             {
-                request.Path = pathAndQuery;
-            }
-            else
-            {
-                request.Path = pathAndQuery.Substring(0, queryStartIndex);
-                var queryString = pathAndQuery.Substring(queryStartIndex);
+                var queryString = urlTemplate.QueryString;
                 var query = QueryHelpers.ParseNullableQuery(queryString);
                 if (query != null && query.Any())
                 {
