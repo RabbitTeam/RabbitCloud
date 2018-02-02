@@ -48,7 +48,7 @@ namespace Rabbit.Go.Core.Codec
                 {
                     _jsonSerializer.Serialize(sw, instance, type);
 
-                    request.Body(sw.ToString());
+                    request.Body(sw.ToString(), "application/json");
                 }
 
                 return Task.CompletedTask;

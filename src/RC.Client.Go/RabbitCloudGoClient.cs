@@ -36,6 +36,8 @@ namespace Rabbit.Cloud.Client.Go
 
             rabbitRequest.Path = goRequest.Path;
 
+            rabbitContext.Items["HttpMethod"] = goRequest.Method;
+
             if (goRequest.Query.Any())
                 rabbitRequest.QueryString = QueryHelpers.AddQueryString(string.Empty, goRequest.Query.ToDictionary(i => i.Key, i => i.Value.ToString()));
 
