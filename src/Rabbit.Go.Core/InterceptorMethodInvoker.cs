@@ -1,8 +1,8 @@
-﻿using Rabbit.Go.Interceptors;
+﻿using Rabbit.Go.Abstractions;
+using Rabbit.Go.Interceptors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
@@ -15,12 +15,52 @@ namespace Rabbit.Go.Core
 
     public abstract class InterceptorMethodInvoker : IMethodInvoker
     {
-        private readonly IReadOnlyList<IInterceptorMetadata> _interceptors;
+        protected readonly IList<IInterceptorMetadata> Interceptors;
+        protected readonly RequestContext RequestContext;
 
-        protected InterceptorMethodInvoker(IReadOnlyList<IInterceptorMetadata> interceptors)
+        protected InterceptorMethodInvoker(RequestContext requestContext, IList<IInterceptorMetadata> interceptors)
         {
-            _interceptors = interceptors;
+            RequestContext = requestContext;
+            Interceptors = interceptors;
         }
+
+        #region Implementation of IMethodInvoker
+
+        public virtual async Task<object> InvokeAsync(object[] arguments)
+        {
+            var requestExecutionDelegate = GetRequestExecutionDelegate(arguments);
+
+            RequestExecutedContext requestExecutedContext = null;
+            try
+            {
+                requestExecutedContext = await requestExecutionDelegate();
+                Rethrow(requestExecutedContext);
+                return requestExecutedContext?.Result;
+            }
+            catch (Exception e)
+            {
+                var exceptionInterceptorContext = new ExceptionInterceptorContext(RequestContext, Interceptors)
+                {
+                    ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e),
+                    Result = requestExecutedContext?.Result
+                };
+
+                var exceptionInterceptors = Interceptors
+                    .OfType<IAsyncExceptionInterceptor>()
+                    .Reverse()
+                    .ToArray();
+                foreach (var interceptor in exceptionInterceptors)
+                    await interceptor.OnExceptionAsync(exceptionInterceptorContext);
+
+                Rethrow(exceptionInterceptorContext);
+
+                return exceptionInterceptorContext.Result;
+            }
+        }
+
+        #endregion Implementation of IMethodInvoker
+
+        protected abstract Task<object> DoInvokeAsync(object[] arguments);
 
         private static void Rethrow(RequestExecutedContext context)
         {
@@ -50,14 +90,12 @@ namespace Rabbit.Go.Core
                 throw context.Exception;
         }
 
-        protected abstract Task<RequestMessageBuilder> CreateRequestBuilderAsync(object[] arguments);
-
-        private RequestExecutionDelegate GetRequestExecutionDelegate(RequestMessageBuilder requestBuilder, object[] arguments)
+        private RequestExecutionDelegate GetRequestExecutionDelegate(object[] arguments)
         {
-            var requestExecutingContext = new RequestExecutingContext(requestBuilder);
-            var requestExecutedContext = new RequestExecutedContext(requestBuilder);
+            var requestExecutingContext = new RequestExecutingContext(RequestContext, Interceptors);
+            var requestExecutedContext = new RequestExecutedContext(RequestContext, Interceptors);
 
-            var requestInterceptors = _interceptors
+            var requestInterceptors = Interceptors
                 .OfType<IAsyncRequestInterceptor>()
                 .ToArray();
             IList<Func<RequestExecutionDelegate, RequestExecutionDelegate>> requestExecutions = new List<Func<RequestExecutionDelegate, RequestExecutionDelegate>>();
@@ -78,28 +116,14 @@ namespace Rabbit.Go.Core
 
             RequestExecutionDelegate requestInvoker = async () =>
             {
-                /*var syncRequestInterceptors = _interceptors.OfType<IRequestInterceptor>().ToArray();
-                foreach (var interceptor in syncRequestInterceptors)
-                    interceptor.OnRequestExecuting(requestExecutingContext);*/
-
-                //                var requestMessage = CreateRequestMessage(requestContext);
                 try
                 {
-                    //                    var responseMessage = await _client.ExecuteAsync(requestMessage, _options);
-
-                    requestExecutedContext.Result = await DoInvokeAsync(requestBuilder.Build(), arguments);
+                    requestExecutedContext.Result = await DoInvokeAsync(arguments);
                 }
-                /*catch (HttpRequestException requestException)
-                {
-                    throw GoException.ErrorExecuting(requestMessage, requestException);
-                }*/
                 catch (Exception e)
                 {
                     requestExecutedContext.ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e);
                 }
-
-                /*foreach (var interceptor in syncRequestInterceptors)
-                    interceptor.OnRequestExecuted(requestExecutedContext);*/
 
                 return requestExecutedContext;
             };
@@ -110,44 +134,5 @@ namespace Rabbit.Go.Core
 
             return requestInvoker;
         }
-
-        protected abstract Task<object> DoInvokeAsync(HttpRequestMessage requestMessage, object[] arguments);
-
-        #region Implementation of IMethodInvoker
-
-        public virtual async Task<object> InvokeAsync(object[] arguments)
-        {
-            var requestBuilder = await CreateRequestBuilderAsync(arguments);
-            var requestExecutionDelegate = GetRequestExecutionDelegate(requestBuilder, arguments);
-
-            RequestExecutedContext requestExecutedContext = null;
-            try
-            {
-                requestExecutedContext = await requestExecutionDelegate();
-                Rethrow(requestExecutedContext);
-                return requestExecutedContext?.Result;
-            }
-            catch (Exception e)
-            {
-                var exceptionInterceptorContext = new ExceptionInterceptorContext(requestBuilder)
-                {
-                    ExceptionDispatchInfo = ExceptionDispatchInfo.Capture(e),
-                    Result = requestExecutedContext?.Result
-                };
-
-                var exceptionInterceptors = _interceptors
-                    .OfType<IAsyncExceptionInterceptor>()
-                    .Reverse()
-                    .ToArray();
-                foreach (var interceptor in exceptionInterceptors)
-                    await interceptor.OnExceptionAsync(exceptionInterceptorContext);
-
-                Rethrow(exceptionInterceptorContext);
-
-                return exceptionInterceptorContext.Result;
-            }
-        }
-
-        #endregion Implementation of IMethodInvoker
     }
 }

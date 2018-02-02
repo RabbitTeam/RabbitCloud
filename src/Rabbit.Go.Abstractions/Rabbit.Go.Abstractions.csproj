@@ -11,4 +11,8 @@
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Utilities\Extensions\" />
+  </ItemGroup>
+
 </Project>

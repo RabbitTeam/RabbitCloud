@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Rabbit.Go.Abstractions;
+using System;
 using System.Threading.Tasks;
 
 namespace Rabbit.Go.Codec
 {
     public interface IEncoder
     {
-        Task EncodeAsync(object instance, Type type, RequestMessageBuilder requestBuilder);
+        Task EncodeAsync(object instance, Type type, GoRequest request);
     }
 }

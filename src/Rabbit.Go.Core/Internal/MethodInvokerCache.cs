@@ -8,22 +8,22 @@ namespace Rabbit.Go.Core.Internal
 {
     public class MethodInvokerCache
     {
-        private readonly HttpClient _httpClient;
+        private readonly IGoClient _goClient;
         private readonly IKeyValueFormatterFactory _keyValueFormatterFactory;
         private readonly ITemplateParser _templateParser;
         private readonly IServiceProvider _services;
 
-        private static readonly HttpClient DefaultHttpClient = new HttpClient();
+        private static readonly IGoClient DefaultGoClient = new HttpGoClient(new HttpClient());
         private static readonly IKeyValueFormatterFactory DefaultKeyValueFormatterFactory = new KeyValueFormatterFactory();
         private static readonly ITemplateParser DefaultTemplateParser = new TemplateParser();
 
         public MethodInvokerCache(
-            HttpClient httpClient = null,
+            IGoClient goClient = null,
             IKeyValueFormatterFactory keyValueFormatterFactory = null,
             ITemplateParser templateParser = null,
             IServiceProvider services = null)
         {
-            _httpClient = httpClient ?? DefaultHttpClient;
+            _goClient = goClient ?? DefaultGoClient;
             _keyValueFormatterFactory = keyValueFormatterFactory ?? DefaultKeyValueFormatterFactory;
             _templateParser = templateParser ?? DefaultTemplateParser;
             _services = services;
@@ -38,7 +38,7 @@ namespace Rabbit.Go.Core.Internal
             {
                 cache = new MethodInvokerEntry
                 {
-                    Client = _httpClient,
+                    Client = _goClient,
                     Codec = methodDescriptor.Codec,
                     Interceptors = result.Interceptors,
                     KeyValueFormatterFactory = _keyValueFormatterFactory,

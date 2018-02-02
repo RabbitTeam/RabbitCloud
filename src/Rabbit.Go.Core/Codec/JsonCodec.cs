@@ -1,9 +1,10 @@
 ﻿using Newtonsoft.Json;
+using Rabbit.Go.Abstractions;
 using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Codec;
 using System;
 using System.IO;
-using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Rabbit.Go.Core.Codec
@@ -40,7 +41,7 @@ namespace Rabbit.Go.Core.Codec
 
             #region Implementation of IEncoder
 
-            public Task EncodeAsync(object instance, Type type, RequestMessageBuilder requestBuilder)
+            public Task EncodeAsync(object instance, Type type, GoRequest request)
             {
                 if (instance == null)
                     return Task.CompletedTask;
@@ -49,7 +50,7 @@ namespace Rabbit.Go.Core.Codec
                 {
                     _jsonSerializer.Serialize(sw, instance, type);
 
-                    requestBuilder.Body(sw.ToString());
+                    request.Body(sw.ToString());
                 }
 
                 return Task.CompletedTask;
@@ -69,12 +70,15 @@ namespace Rabbit.Go.Core.Codec
 
             #region Implementation of IDecoder
 
-            public async Task<object> DecodeAsync(HttpResponseMessage response, Type type)
+            public async Task<object> DecodeAsync(GoResponse response, Type type)
             {
                 if (response.Content == null)
                     return null;
 
-                var json = await response.Content.ReadAsStringAsync();
+                string json;
+                using (var streamReader = new StreamReader(response.Content, Encoding.UTF8))
+                    json = await streamReader.ReadToEndAsync();
+
                 using (var sr = new StringReader(json))
                 {
                     return _jsonSerializer.Deserialize(sr, type);

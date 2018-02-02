@@ -1,11 +1,11 @@
-﻿using System;
-using System.Net.Http;
+﻿using Rabbit.Go.Abstractions;
+using System;
 using System.Threading.Tasks;
 
 namespace Rabbit.Go.Codec
 {
     public interface IDecoder
     {
-        Task<object> DecodeAsync(HttpResponseMessage response, Type type);
+        Task<object> DecodeAsync(GoResponse response, Type type);
     }
 }

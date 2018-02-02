@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Primitives;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Primitives;
+using Rabbit.Go.Abstractions;
 using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Codec;
 using Rabbit.Go.Core.Internal;
@@ -7,45 +9,56 @@ using Rabbit.Go.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Rabbit.Go.Core
 {
     public class DefaultMethodInvoker : InterceptorMethodInvoker
     {
-        private readonly HttpClient _httpClient;
-        private readonly MethodDescriptor _methodDescriptor;
         private readonly ICodec _codec;
         private readonly IKeyValueFormatterFactory _keyValueFormatterFactory;
         private readonly ITemplateParser _templateParser;
+        private readonly IGoClient _client;
 
-        public DefaultMethodInvoker(MethodDescriptor methodDescriptor, MethodInvokerEntry entry)
-            : base(entry.Interceptors)
+        public DefaultMethodInvoker(RequestContext requestContext, MethodInvokerEntry entry)
+            : base(requestContext, entry.Interceptors)
         {
-            _httpClient = entry.Client;
-            _methodDescriptor = methodDescriptor;
+            _client = entry.Client;
             _codec = entry.Codec;
             _keyValueFormatterFactory = entry.KeyValueFormatterFactory;
             _templateParser = entry.TemplateParser;
         }
 
-        private static void BuildQueryAndHeaders(RequestMessageBuilder requestBuilder, IDictionary<ParameterTarget, IDictionary<string, StringValues>> parameters)
+        #region Overrides of InterceptorMethodInvoker
+
+        protected override async Task<object> DoInvokeAsync(object[] arguments)
+        {
+            var goContext = RequestContext.GoContext;
+            await InitializeRequestAsync(goContext.Request, arguments);
+
+            await _client.RequestAsync(goContext);
+
+            return await DecodeAsync(goContext.Response);
+        }
+
+        #endregion Overrides of InterceptorMethodInvoker
+
+        private static void BuildQueryAndHeaders(GoRequest request, IDictionary<ParameterTarget, IDictionary<string, StringValues>> parameters)
         {
             if (parameters == null)
                 return;
             foreach (var item in parameters)
             {
                 var target = item.Value;
-                Func<string, StringValues, RequestMessageBuilder> set;
+                Func<string, StringValues, GoRequest> set;
                 switch (item.Key)
                 {
                     case ParameterTarget.Query:
-                        set = requestBuilder.AddQuery;
+                        set = request.AddQuery;
                         break;
 
                     case ParameterTarget.Header:
-                        set = requestBuilder.AddHeader;
+                        set = request.AddHeader;
                         break;
 
                     default:
@@ -59,7 +72,7 @@ namespace Rabbit.Go.Core
             }
         }
 
-        private static async Task BuildBodyAsync(RequestMessageBuilder requestBuilder, IEncoder encoder, IReadOnlyList<ParameterDescriptor> parameterDescriptors, object[] arguments)
+        private static async Task BuildBodyAsync(GoRequest request, IEncoder encoder, IReadOnlyList<ParameterDescriptor> parameterDescriptors, object[] arguments)
         {
             if (encoder == null)
                 return;
@@ -82,7 +95,7 @@ namespace Rabbit.Go.Core
 
             try
             {
-                await encoder.EncodeAsync(bodyArgument, bodyType, requestBuilder);
+                await encoder.EncodeAsync(bodyArgument, bodyType, request);
             }
             catch (EncodeException)
             {
@@ -131,13 +144,13 @@ namespace Rabbit.Go.Core
             return formatResult;
         }
 
-        private async Task<object> DecodeAsync(HttpResponseMessage response)
+        private async Task<object> DecodeAsync(GoResponse response)
         {
             try
             {
                 return _codec?.Decoder == null
                     ? null
-                    : await _codec?.Decoder.DecodeAsync(response, _methodDescriptor.ReturnType);
+                    : await _codec?.Decoder.DecodeAsync(response, RequestContext.MethodDescriptor.ReturnType);
             }
             catch (DecodeException)
             {
@@ -149,68 +162,47 @@ namespace Rabbit.Go.Core
             }
         }
 
-        #region Overrides of MethodInvokerBase
-
-        protected override async Task<RequestMessageBuilder> CreateRequestBuilderAsync(object[] arguments)
+        private async Task InitializeRequestAsync(GoRequest request, object[] arguments)
         {
-            var formatResult = await FormatAsync(_methodDescriptor.Parameters, _keyValueFormatterFactory, arguments);
+            var methodDescriptor = RequestContext.MethodDescriptor;
 
-            var urlTemplate = _methodDescriptor.UrlTemplate;
+            var formatResult = await FormatAsync(methodDescriptor.Parameters, _keyValueFormatterFactory, arguments);
+
+            var urlTemplate = methodDescriptor.UrlTemplate;
 
             var url = urlTemplate.Template;
             if (urlTemplate.NeedParse)
                 url = _templateParser.Parse(urlTemplate.Template, formatResult[ParameterTarget.Path].ToDictionary(i => i.Key, i => i.Value.ToString()));
 
-            var requestBuilder = new RequestMessageBuilder(new UrlDescriptor(url));
-            requestBuilder.Method(GetHttpMethod(_methodDescriptor.Method, HttpMethod.Get));
+            var uri = new Uri(url);
 
-            await BuildBodyAsync(requestBuilder, _codec.Encoder, _methodDescriptor.Parameters, arguments);
-            BuildQueryAndHeaders(requestBuilder, formatResult);
+            request.Scheme = uri.Scheme;
+            request.Host = uri.Host;
+            request.Port = uri.Port;
+            var pathAndQuery = uri.PathAndQuery;
 
-            return requestBuilder;
-        }
+            var queryStartIndex = pathAndQuery.IndexOf('?');
 
-        protected override async Task<object> DoInvokeAsync(HttpRequestMessage requestMessage, object[] arguments)
-        {
-            var responseMessage = await _httpClient.SendAsync(requestMessage);
-
-            return await DecodeAsync(responseMessage);
-        }
-
-        #endregion Overrides of MethodInvokerBase
-
-        private static HttpMethod GetHttpMethod(string method, HttpMethod def)
-        {
-            switch (method?.ToLower())
+            if (queryStartIndex == -1)
             {
-                case "delete":
-                    return HttpMethod.Delete;
-
-                case "get":
-                    return HttpMethod.Get;
-
-                case "head":
-                    return HttpMethod.Head;
-
-                case "options":
-                    return HttpMethod.Options;
-
-                case "post":
-                    return HttpMethod.Post;
-
-                case "put":
-                    return HttpMethod.Put;
-
-                case "trace":
-                    return HttpMethod.Trace;
-
-                case null:
-                case "":
-                    return def;
-
-                default:
-                    return new HttpMethod(method);
+                request.Path = pathAndQuery;
             }
+            else
+            {
+                request.Path = pathAndQuery.Substring(0, queryStartIndex);
+                var queryString = pathAndQuery.Substring(queryStartIndex);
+                var query = QueryHelpers.ParseNullableQuery(queryString);
+                if (query != null && query.Any())
+                {
+                    foreach (var item in query)
+                        request.AddQuery(item.Key, item.Value);
+                }
+            }
+
+            await BuildBodyAsync(request, _codec.Encoder, methodDescriptor.Parameters, arguments);
+            BuildQueryAndHeaders(request, formatResult);
+            //todo:考虑 httpmethod 是否直接强类型定义
+            //            RequestContext.GoContext.Items["HttpMethod"] = GetHttpMethod(methodDescriptor.Method, HttpMethod.Get);
         }
     }
 }

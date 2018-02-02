@@ -1,4 +1,6 @@
-﻿namespace Rabbit.Go.Core.Internal
+﻿using Rabbit.Go.Abstractions;
+
+namespace Rabbit.Go.Core.Internal
 {
     public class DefaultMethodInvokerFactory : IMethodInvokerFactory
     {
@@ -12,7 +14,10 @@
         public IMethodInvoker CreateInvoker(MethodDescriptor methodDescriptor)
         {
             var entry = _methodInvokerCache.Get(methodDescriptor);
-            return new DefaultMethodInvoker(methodDescriptor, entry);
+
+            var goContext = new GoContext();
+
+            return new DefaultMethodInvoker(new RequestContext(goContext, methodDescriptor), entry);
         }
     }
 }

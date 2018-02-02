@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Rabbit.Go.Abstractions;
+using System;
 
 namespace Rabbit.Go.Interceptors
 {
@@ -18,7 +19,7 @@ namespace Rabbit.Go.Interceptors
 
         public override void OnRequestExecuting(RequestExecutingContext context)
         {
-            context.RequestBuilder.AddHeader(Name, Value);
+            context.GoContext.Request.AddHeader(Name, Value);
         }
 
         #endregion Overrides of RequestInterceptorAttribute

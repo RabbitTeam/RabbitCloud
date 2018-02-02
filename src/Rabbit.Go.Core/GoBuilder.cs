@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
+using Rabbit.Go.Abstractions;
 using Rabbit.Go.Abstractions.Codec;
 using Rabbit.Go.Core;
 using Rabbit.Go.Core.Codec;
@@ -174,7 +175,7 @@ namespace Rabbit.Go
 
         public static GoBuilder Query(this GoBuilder builder, string name, StringValues value)
         {
-            return builder.Interceptor(context => context.RequestBuilder.Query(name, value));
+            return builder.Interceptor(context => context.GoContext.Request.Query(name, value));
         }
     }
 }

@@ -1,8 +1,12 @@
-﻿namespace Rabbit.Go.Interceptors
+﻿using Rabbit.Go.Abstractions;
+using System.Collections.Generic;
+
+namespace Rabbit.Go.Interceptors
 {
     public class RequestExecutingContext : InterceptorContext
     {
-        public RequestExecutingContext(RequestMessageBuilder requestBuilder) : base(requestBuilder)
+        public RequestExecutingContext(RequestContext requestContext, IList<IInterceptorMetadata> interceptors)
+            : base(requestContext, interceptors)
         {
         }
 

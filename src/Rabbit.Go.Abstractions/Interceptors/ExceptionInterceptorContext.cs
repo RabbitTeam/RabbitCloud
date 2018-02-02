@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Rabbit.Go.Abstractions;
+using System;
+using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 
 namespace Rabbit.Go.Interceptors
@@ -8,7 +10,8 @@ namespace Rabbit.Go.Interceptors
         private Exception _exception;
         private ExceptionDispatchInfo _exceptionDispatchInfo;
 
-        public ExceptionInterceptorContext(RequestMessageBuilder requestBuilder) : base(requestBuilder)
+        public ExceptionInterceptorContext(RequestContext requestContext, IList<IInterceptorMetadata> interceptors)
+            : base(requestContext, interceptors)
         {
         }
 

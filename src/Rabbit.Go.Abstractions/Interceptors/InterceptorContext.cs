@@ -1,27 +1,16 @@
-﻿namespace Rabbit.Go.Interceptors
+﻿using Rabbit.Go.Abstractions;
+using System.Collections.Generic;
+
+namespace Rabbit.Go.Interceptors
 {
-    public abstract class InterceptorContext
+    public abstract class InterceptorContext : RequestContext
     {
-        protected InterceptorContext(RequestMessageBuilder requestBuilder)
+        protected InterceptorContext(RequestContext requestContext, IList<IInterceptorMetadata> interceptors)
+            : base(requestContext)
         {
-            RequestBuilder = requestBuilder;
+            Interceptors = interceptors;
         }
 
-        public RequestMessageBuilder RequestBuilder { get; }
-        /*        protected InterceptorContext(RequestContext requestContext)
-                {
-                    Method = requestContext.Method;
-                    Body = requestContext.Body;
-                    Charset = requestContext.Charset;
-                    Headers = requestContext.Headers;
-                    Host = requestContext.Host;
-                    Path = requestContext.Path;
-                    Port = requestContext.Port;
-                    Query = requestContext.Query;
-                    Scheme = requestContext.Scheme;
-                    RequestServices = requestContext.RequestServices;
-                    MethodDescriptor = requestContext.MethodDescriptor;
-                    Options = requestContext.Options;
-                }*/
+        public IList<IInterceptorMetadata> Interceptors { get; }
     }
 }
