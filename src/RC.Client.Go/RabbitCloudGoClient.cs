@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Primitives;
 using Rabbit.Cloud.Application;
 using Rabbit.Cloud.Application.Abstractions;
 using Rabbit.Cloud.Client.Abstractions;
@@ -7,6 +8,7 @@ using Rabbit.Cloud.Client.Features;
 using Rabbit.Go;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Rabbit.Cloud.Client.Go
@@ -58,10 +60,32 @@ namespace Rabbit.Cloud.Client.Go
 
             await _app(rabbitContext);
 
-            context.Response.Content =
-                await ((HttpResponseMessage)rabbitContext.Response.Body).Content.ReadAsStreamAsync();
+            await InitializeResponseAsync(context.Response, (HttpResponseMessage)rabbitContext.Response.Body);
         }
 
         #endregion Implementation of IGoClient
+
+        private static async Task InitializeResponseAsync(GoResponse response, HttpResponseMessage httpResponse)
+        {
+            response.StatusCode = (int)httpResponse.StatusCode;
+            response.Content = await httpResponse.Content.ReadAsStreamAsync();
+
+            void AddHeaders(HttpHeaders headers)
+            {
+                if (headers == null || !headers.Any())
+                    return;
+
+                foreach (var header in headers)
+                {
+                    if (response.Headers.TryGetValue(header.Key, out var current))
+                    {
+                        response.Headers[header.Key] = StringValues.Concat(current, new StringValues(header.Value.ToArray()));
+                    }
+                }
+            }
+
+            AddHeaders(httpResponse.Headers);
+            AddHeaders(httpResponse.Content?.Headers);
+        }
     }
 }

@@ -2,6 +2,7 @@
 using Rabbit.Go.Codec;
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -71,6 +72,10 @@ namespace Rabbit.Go.Core.Codec
             public async Task<object> DecodeAsync(GoResponse response, Type type)
             {
                 if (response.Content == null)
+                    return null;
+
+                if (!response.Headers.TryGetValue("Content-Type", out var contentType) ||
+                    contentType.Contains("json", StringComparer.OrdinalIgnoreCase))
                     return null;
 
                 string json;

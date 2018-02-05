@@ -183,11 +183,11 @@ namespace Rabbit.Cloud.Client.Http
                     response.Headers[header.Key] = new StringValues(header.Value.ToArray());
                 }
                 response.Body = httpResponse;
-                if (!httpResponse.IsSuccessStatusCode)
+/*                if (!httpResponse.IsSuccessStatusCode)
                 {
                     var requestDetailedException = new HttpRequestDetailedException(httpResponse);
                     throw requestDetailedException;
-                }
+                }*/
             }
             catch (Exception e)
             {
