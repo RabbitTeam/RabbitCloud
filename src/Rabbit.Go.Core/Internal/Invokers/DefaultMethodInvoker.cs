@@ -32,10 +32,9 @@ namespace Rabbit.Go.Core
 
         #region Overrides of InterceptorMethodInvoker
 
-        protected override async Task<object> DoInvokeAsync(object[] arguments)
+        protected override async Task<object> DoInvokeAsync()
         {
             var goContext = RequestContext.GoContext;
-            await InitializeRequestAsync(goContext.Request, arguments);
 
             await _client.RequestAsync(goContext);
 
@@ -170,7 +169,7 @@ namespace Rabbit.Go.Core
             }
         }
 
-        private async Task InitializeRequestAsync(GoRequest request, IReadOnlyList<object> arguments)
+        protected override async Task InitializeRequestAsync(GoRequest request, IReadOnlyList<object> arguments)
         {
             var methodDescriptor = RequestContext.MethodDescriptor;
 

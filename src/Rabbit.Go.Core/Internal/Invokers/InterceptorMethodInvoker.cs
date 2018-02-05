@@ -32,6 +32,7 @@ namespace Rabbit.Go.Core
             RequestExecutedContext requestExecutedContext = null;
             try
             {
+                await InitializeRequestAsync(RequestContext.GoContext.Request, arguments);
                 requestExecutedContext = await requestExecutionDelegate();
                 Rethrow(requestExecutedContext);
                 return requestExecutedContext?.Result;
@@ -64,7 +65,9 @@ namespace Rabbit.Go.Core
 
         #endregion Implementation of IMethodInvoker
 
-        protected abstract Task<object> DoInvokeAsync(object[] arguments);
+        protected abstract Task InitializeRequestAsync(GoRequest request, IReadOnlyList<object> arguments);
+
+        protected abstract Task<object> DoInvokeAsync();
 
         private static void Rethrow(RequestExecutedContext context)
         {
@@ -94,9 +97,28 @@ namespace Rabbit.Go.Core
                 throw context.Exception;
         }
 
+        private IDictionary<string, object> MappingArguments(IReadOnlyList<object> arguments)
+        {
+            if (!arguments.Any())
+                return new Dictionary<string, object>();
+
+            var method = RequestContext.MethodDescriptor.MethodInfo;
+            var parameters = method.GetParameters();
+
+            var argumentMapping = new Dictionary<string, object>(arguments.Count);
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                var name = parameters[i].Name;
+                var value = arguments[i];
+                argumentMapping[name] = value;
+            }
+
+            return argumentMapping;
+        }
+
         private RequestExecutionDelegate GetRequestExecutionDelegate(object[] arguments)
         {
-            var requestExecutingContext = new RequestExecutingContext(RequestContext, Interceptors);
+            var requestExecutingContext = new RequestExecutingContext(RequestContext, Interceptors, MappingArguments(arguments));
             var requestExecutedContext = new RequestExecutedContext(RequestContext, Interceptors);
 
             var requestInterceptors = Interceptors
@@ -122,7 +144,7 @@ namespace Rabbit.Go.Core
             {
                 try
                 {
-                    requestExecutedContext.Result = await DoInvokeAsync(arguments);
+                    requestExecutedContext.Result = await DoInvokeAsync();
                 }
                 catch (Exception e)
                 {
