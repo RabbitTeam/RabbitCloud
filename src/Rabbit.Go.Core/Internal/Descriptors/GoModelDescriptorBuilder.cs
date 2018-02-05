@@ -33,6 +33,11 @@ namespace Rabbit.Go.Core.Internal.Descriptors
                     var baseUrl = goAttribute.Url;
                     var path = goRequestAttribute.Path;
 
+                    if (baseUrl.EndsWith("/") && path.StartsWith("/"))
+                        baseUrl = baseUrl.Substring(0, baseUrl.Length - 1);
+                    if (!baseUrl.EndsWith("/") && !path.StartsWith("/"))
+                        path = path.Insert(0, "/");
+
                     var uri = baseUrl + path;
 
                     var returnType = methodModel.Method.ReturnType;
