@@ -17,7 +17,10 @@ namespace Rabbit.Go.Formatters
 
             string value = null;
 
-            switch (Type.GetTypeCode(context.ModelType))
+            var modelType = context.ModelType;
+            modelType = Nullable.GetUnderlyingType(modelType) ?? modelType;
+
+            switch (Type.GetTypeCode(modelType))
             {
                 case TypeCode.Boolean:
                     value = model is bool b && b ? "true" : "false";
