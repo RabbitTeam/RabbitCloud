@@ -7,9 +7,6 @@ namespace Rabbit.DingTalk.Go
     public interface IDingTalkGoClient
     {
         [GoPost]
-        Task SendAsync([GoBody]DingTalkMessage message);
-
-        [GoPost]
-        Task SendAsync([GoBody]DingTalkMessage message, [GoQuery("access_token")]string accessToken);
+        Task<DingTalkApiResult> SendAsync([GoBody]DingTalkMessage message, [GoQuery("access_token")]string accessToken);
     }
 }
