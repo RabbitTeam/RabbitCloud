@@ -53,11 +53,12 @@ namespace Rabbit.Go
 
         protected override IMethodInvoker CreateInvoker(Type type, MethodInfo methodInfo)
         {
-            {
-                var descriptor = GetMethodDescriptor(type, methodInfo);
-                var invoker = _methodInvokerFactory.CreateInvoker(descriptor);
-                return invoker;
-            }
+            var descriptor = GetMethodDescriptor(type, methodInfo);
+            if (descriptor == null)
+                throw new NotSupportedException($"Can not find Method Descriptor '{type.Name}.{methodInfo.Name}'");
+
+            var invoker = _methodInvokerFactory.CreateInvoker(descriptor);
+            return invoker;
         }
 
         #endregion Overrides of Go

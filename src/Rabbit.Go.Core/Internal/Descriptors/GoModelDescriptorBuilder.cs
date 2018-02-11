@@ -17,10 +17,14 @@ namespace Rabbit.Go.Core.Internal.Descriptors
 
             foreach (var typeModel in model.Types)
             {
-                var goAttribute = typeModel.Attributes.OfType<GoAttribute>().Single();
+                var goAttribute = typeModel.Attributes.OfType<GoAttribute>().SingleOrDefault();
+                if (goAttribute == null)
+                    continue;
                 foreach (var methodModel in typeModel.Methods)
                 {
-                    var goRequestAttribute = methodModel.Attributes.OfType<GoRequestAttribute>().Single();
+                    var goRequestAttribute = methodModel.Attributes.OfType<GoRequestAttribute>().SingleOrDefault();
+                    if (goRequestAttribute == null)
+                        continue;
 
                     var interceptorDescriptors = model
                         .Interceptors
