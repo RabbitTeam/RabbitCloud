@@ -63,15 +63,13 @@ namespace Rabbit.Go.Core.Internal.Descriptors
                     var parameterModels = new List<ParameterDescriptor>(methodModel.Parameters.Count);
                     foreach (var parameterModel in methodModel.Parameters)
                     {
-                        var goParameterAttribute = parameterModel.Attributes.OfType<GoParameterAttribute>().SingleOrDefault();
-
                         var parameterDescriptor = new ParameterDescriptor
                         {
                             Name = parameterModel.ParameterName,
                             ParameterType = parameterModel.ParameterInfo.ParameterType,
                             FormattingInfo = new ParameterFormattingInfo
                             {
-                                FormatterName = goParameterAttribute?.Name,
+                                FormatterName = GetFormatterName(parameterModel),
                                 FormatterType = parameterModel.Attributes.OfType<CustomFormatterAttribute>().LastOrDefault()?.FormatterType,
                                 Target = GetParameterTarget(methodDescriptor, parameterModel)
                             }
@@ -87,6 +85,18 @@ namespace Rabbit.Go.Core.Internal.Descriptors
             }
 
             return descriptors;
+        }
+
+        private static string GetFormatterName(ParameterModel parameter)
+        {
+            var goParameterAttribute = parameter.Attributes.OfType<GoParameterAttribute>().SingleOrDefault();
+
+            // 如果 attribute name有效，则无条件使用 attribute 提供的 name
+            if (goParameterAttribute?.Name != null)
+                return goParameterAttribute.Name;
+
+            // 如果对应目标只有一个参数则name为null，否则使用原参数名称
+            return parameter.Method.Parameters.GroupBy(i => i.Target).Count() == 1 ? null : parameter.ParameterName;
         }
 
         private static ParameterTarget GetParameterTarget(MethodDescriptor methodDescriptor, ParameterModel parameterModel)
