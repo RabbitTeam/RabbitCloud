@@ -53,8 +53,16 @@ namespace Rabbit.Go
         private async Task<T> HandleAsync<T>(IInvocation invocation)
         {
             var value = await DoHandleAsync(invocation);
-            if (value is Task<T> task)
-                return await task;
+
+            switch (value)
+            {
+                case null:
+                    return default(T);
+
+                case Task<T> task:
+                    return await task;
+            }
+
             return (T)value;
         }
 

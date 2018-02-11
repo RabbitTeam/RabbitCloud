@@ -50,6 +50,8 @@ namespace Rabbit.Go.Core
             foreach (var item in parameters)
             {
                 var target = item.Value;
+                if (!target.Any())
+                    continue;
                 Func<string, StringValues, GoRequest> set;
                 switch (item.Key)
                 {
@@ -142,7 +144,7 @@ namespace Rabbit.Go.Core
 
                 var parameter = parameterDescriptors[i];
                 var value = arguments[i];
-                var item = await keyValueFormatterFactory.FormatAsync(formatter, value, parameter.ParameterType, parameterDescriptor.Name);
+                var item = await keyValueFormatterFactory.FormatAsync(formatter, value, parameter.ParameterType, parameterDescriptor.FormattingInfo.FormatterName);
 
                 foreach (var t in item)
                     itemResult[t.Key] = t.Value;

@@ -132,7 +132,7 @@ namespace Rabbit.Go.Core
                 {
                     return async () =>
                     {
-                        await interceptor.OnActionExecutionAsync(requestExecutingContext, next);
+                        await interceptor.OnRequestExecutionAsync(requestExecutingContext, next);
                         if (requestExecutingContext.Result != null)
                             requestExecutedContext.Result = requestExecutingContext.Result;
                         return requestExecutedContext;

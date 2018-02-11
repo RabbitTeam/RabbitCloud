@@ -8,7 +8,7 @@ namespace Rabbit.Go.Interceptors
     {
         #region Implementation of IAsyncRequestInterceptor
 
-        public virtual async Task OnActionExecutionAsync(RequestExecutingContext context, RequestExecutionDelegate next)
+        public virtual async Task OnRequestExecutionAsync(RequestExecutingContext context, RequestExecutionDelegate next)
         {
             if (context == null)
                 throw new ArgumentNullException(nameof(context));

@@ -19,7 +19,7 @@ namespace Rabbit.Go.Internal
             IOptions<GoOptions> optionsAccessor)
         {
             var options = optionsAccessor.Value;
-            _types = options.Types;
+            _types = options.Types.Distinct().ToArray();
             _modelProviders = modelProviders.OrderBy(i => i.Order).ToArray();
             _conventions = options.Conventions;
         }

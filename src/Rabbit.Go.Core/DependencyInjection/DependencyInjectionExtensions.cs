@@ -57,6 +57,14 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             serviceCollection
                 .Configure(configureOptions)
+                .AddGo();
+
+            return serviceCollection;
+        }
+
+        public static IServiceCollection AddGo(this IServiceCollection serviceCollection)
+        {
+            serviceCollection
                 .AddSingleton<IKeyValueFormatterFactory, KeyValueFormatterFactory>()
                 .AddSingleton<IMethodDescriptorCollectionProvider, MethodDescriptorCollectionProvider>()
                 .AddSingleton<IMethodDescriptorProvider, GoModelMethodDescriptorProvider>()
