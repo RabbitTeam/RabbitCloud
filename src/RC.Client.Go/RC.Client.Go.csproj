@@ -12,7 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Rabbit.Go.Core\Rabbit.Go.Core.csproj" />
+    <PackageReference Include="Rabbit.Go.Core" Version="0.0.1-preview2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RC.Client\RC.Client.csproj" />
   </ItemGroup>
 
