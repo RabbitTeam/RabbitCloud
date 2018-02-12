@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2024
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{850A43C4-8B62-4732-95F9-A769981A59E5}"
 EndProject
@@ -49,13 +49,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "client", "client", "{DB09CE
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "http", "http", "{E09BAC81-918F-467E-9357-128385A22388}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rabbit.Go.Abstractions", "src\Rabbit.Go.Abstractions\Rabbit.Go.Abstractions.csproj", "{79B5EAD0-21C0-485A-8DD9-EB061D2939C9}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rabbit.Go.Core", "src\Rabbit.Go.Core\Rabbit.Go.Core.csproj", "{99E6E343-9A26-4616-9817-7C0D5199BF63}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RC.Client.Go", "src\RC.Client.Go\RC.Client.Go.csproj", "{633CF908-BA5D-4A83-B30A-52CDBF3433E8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rabbit.DingTalk.Go", "src\Rabbit.DingTalk.Go\Rabbit.DingTalk.Go.csproj", "{28A1FA7A-E388-4B8B-BDAF-F140809BADD1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -111,22 +105,10 @@ Global
 		{2E87FE39-33D0-407F-93D6-15AE98C5CDCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E87FE39-33D0-407F-93D6-15AE98C5CDCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E87FE39-33D0-407F-93D6-15AE98C5CDCF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{79B5EAD0-21C0-485A-8DD9-EB061D2939C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{79B5EAD0-21C0-485A-8DD9-EB061D2939C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{79B5EAD0-21C0-485A-8DD9-EB061D2939C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{79B5EAD0-21C0-485A-8DD9-EB061D2939C9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{99E6E343-9A26-4616-9817-7C0D5199BF63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{99E6E343-9A26-4616-9817-7C0D5199BF63}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{99E6E343-9A26-4616-9817-7C0D5199BF63}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{99E6E343-9A26-4616-9817-7C0D5199BF63}.Release|Any CPU.Build.0 = Release|Any CPU
 		{633CF908-BA5D-4A83-B30A-52CDBF3433E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{633CF908-BA5D-4A83-B30A-52CDBF3433E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{633CF908-BA5D-4A83-B30A-52CDBF3433E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{633CF908-BA5D-4A83-B30A-52CDBF3433E8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{28A1FA7A-E388-4B8B-BDAF-F140809BADD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{28A1FA7A-E388-4B8B-BDAF-F140809BADD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{28A1FA7A-E388-4B8B-BDAF-F140809BADD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{28A1FA7A-E388-4B8B-BDAF-F140809BADD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -149,8 +131,6 @@ Global
 		{2E87FE39-33D0-407F-93D6-15AE98C5CDCF} = {E09BAC81-918F-467E-9357-128385A22388}
 		{DB09CEC5-FFB3-4068-B28D-86C0B4179D9F} = {850A43C4-8B62-4732-95F9-A769981A59E5}
 		{E09BAC81-918F-467E-9357-128385A22388} = {DB09CEC5-FFB3-4068-B28D-86C0B4179D9F}
-		{79B5EAD0-21C0-485A-8DD9-EB061D2939C9} = {850A43C4-8B62-4732-95F9-A769981A59E5}
-		{99E6E343-9A26-4616-9817-7C0D5199BF63} = {850A43C4-8B62-4732-95F9-A769981A59E5}
 		{633CF908-BA5D-4A83-B30A-52CDBF3433E8} = {DB09CEC5-FFB3-4068-B28D-86C0B4179D9F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
