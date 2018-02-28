@@ -73,7 +73,7 @@ namespace Rabbit.Cloud.Client.Http
         {
             var request = context.Request;
 
-            var authority = request.Port >= 0 ? $"{request.Host}:{request.Port}" : request.Host;
+            var authority = request.Port > 0 ? $"{request.Host}:{request.Port}" : request.Host;
             var url = $"{request.Scheme}://{authority}{request.Path}";
             if (request.QueryString.Length > 1)
                 url += request.QueryString;
@@ -183,11 +183,11 @@ namespace Rabbit.Cloud.Client.Http
                     response.Headers[header.Key] = new StringValues(header.Value.ToArray());
                 }
                 response.Body = httpResponse;
-/*                if (!httpResponse.IsSuccessStatusCode)
-                {
-                    var requestDetailedException = new HttpRequestDetailedException(httpResponse);
-                    throw requestDetailedException;
-                }*/
+                /*                if (!httpResponse.IsSuccessStatusCode)
+                                {
+                                    var requestDetailedException = new HttpRequestDetailedException(httpResponse);
+                                    throw requestDetailedException;
+                                }*/
             }
             catch (Exception e)
             {
