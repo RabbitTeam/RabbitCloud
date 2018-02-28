@@ -95,19 +95,34 @@ namespace Rabbit.Cloud.Client
                 IList<IServiceInstance> errorServiceInstances = null;
                 for (var i = 0; i < retriesNextServer; i++)
                 {
-                    await InvokeServiceInstanceAsync(context, retries, exceptions);
+                    try
+                    {
+                        await InvokeServiceInstanceAsync(context, retries, exceptions);
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        exceptions.Add(e);
 
-                    var requestInstance = loadBalanceFeature.RequestInstance;
-                    if (requestInstance == null)
-                        continue;
+                        _logger.LogError(e, "请求失败。");
 
-                    if (errorServiceInstances == null)
-                        errorServiceInstances = new List<IServiceInstance>();
+                        //只有服务器错误才进行重试
+                        if (!(e is RabbitClientException rabbitClientException) ||
+                            rabbitClientException.StatusCode < 500)
+                            throw;
 
-                    errorServiceInstances.Add(requestInstance);
+                        var requestInstance = loadBalanceFeature.RequestInstance;
+                        if (requestInstance == null)
+                            continue;
 
-                    // 忽略已经调用过的服务实例
-                    SetAvailableServiceInstances(errorServiceInstances);
+                        if (errorServiceInstances == null)
+                            errorServiceInstances = new List<IServiceInstance>();
+
+                        errorServiceInstances.Add(requestInstance);
+
+                        // 忽略已经调用过的服务实例
+                        SetAvailableServiceInstances(errorServiceInstances);
+                    }
                 }
             }
 
