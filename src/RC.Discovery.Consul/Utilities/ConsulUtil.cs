@@ -58,6 +58,7 @@ namespace Rabbit.Cloud.Discovery.Consul.Utilities
 
         private static bool IsRabbitCloudService(AgentService agentService)
         {
+            return true;
             return agentService.ID.StartsWith(ServicePrefix);
         }
 
